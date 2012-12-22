@@ -1,0 +1,6 @@
+syntax: glob
+.metadata/*
+ODKSurvey/bin/*
+actionbarsherlock/bin/*
+ODKSurvey/gen/*
+actionbarsherlock/gen/*
