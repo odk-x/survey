@@ -57,6 +57,8 @@ public class FormInfo {
 	public final String language;
 	public final String xmlSubmissionUrl;
 	public final String xmlBase64RsaPublicKey;
+	public final String xmlDeviceIdPropertyName;
+	public final String xmlUserIdPropertyName;
 	public final String xmlRootElementName;
 
 	// formDef.json file...
@@ -66,21 +68,25 @@ public class FormInfo {
 
 	static final String FORMDEF_VALUE = "value";
 
-	static final String FORMDEF_XML_ROOT_ELEMENT_NAME = "xmlRootElementName";
+	static final String FORMDEF_XML_ROOT_ELEMENT_NAME = "xml_root_element_name";
 
-	static final String FORMDEF_BASE64_RSA_PUBLIC_KEY = "xmlBase64RsaPublicKey";
+	static final String FORMDEF_XML_DEVICE_ID_PROPERTY_NAME = "xml_device_id_property_name";
 
-	static final String FORMDEF_XML_SUBMISSION_URL = "xmlSubmissionUrl";
+	static final String FORMDEF_XML_USER_ID_PROPERTY_NAME = "xml_user_id_property_name";
 
-	static final String FORMDEF_DEFAULT_LOCALE = "defaultLocale";
+	static final String FORMDEF_BASE64_RSA_PUBLIC_KEY = "xml_base64_rsa_public_key";
 
-	static final String FORMDEF_FORM_TITLE = "formTitle";
+	static final String FORMDEF_XML_SUBMISSION_URL = "xml_submission_url";
 
-	static final String FORMDEF_TABLE_ID = "tableId";
+	static final String FORMDEF_DEFAULT_LOCALE = "default_locale";
 
-	static final String FORMDEF_FORM_VERSION = "formVersion";
+	static final String FORMDEF_FORM_TITLE = "form_title";
 
-	static final String FORMDEF_FORM_ID = "formId";
+	static final String FORMDEF_TABLE_ID = "table_id";
+
+	static final String FORMDEF_FORM_VERSION = "form_version";
+
+	static final String FORMDEF_FORM_ID = "form_id";
 
 	/**
 	 * Return an array of string values. Useful for passing as selectionArgs to SQLite.
@@ -131,6 +137,10 @@ public class FormInfo {
 				ret[i] = xmlBase64RsaPublicKey;
 			} else if ( FormsColumns.XML_ROOT_ELEMENT_NAME.equals(s) ) {
 				ret[i] = xmlRootElementName;
+			} else if ( FormsColumns.XML_DEVICE_ID_PROPERTY_NAME.equals(s) ) {
+				ret[i] = xmlDeviceIdPropertyName;
+			} else if ( FormsColumns.XML_USER_ID_PROPERTY_NAME.equals(s) ) {
+				ret[i] = xmlUserIdPropertyName;
     		}
 		}
 		return ret;
@@ -171,6 +181,8 @@ public class FormInfo {
     	language = c.getString(c.getColumnIndex(FormsColumns.DEFAULT_FORM_LOCALE));
     	xmlSubmissionUrl = c.getString(c.getColumnIndex(FormsColumns.XML_SUBMISSION_URL));
     	xmlBase64RsaPublicKey = c.getString(c.getColumnIndex(FormsColumns.XML_BASE64_RSA_PUBLIC_KEY));
+    	xmlDeviceIdPropertyName = c.getString(c.getColumnIndex(FormsColumns.XML_DEVICE_ID_PROPERTY_NAME));
+    	xmlUserIdPropertyName = c.getString(c.getColumnIndex(FormsColumns.XML_USER_ID_PROPERTY_NAME));
     	xmlRootElementName = c.getString(c.getColumnIndex(FormsColumns.XML_ROOT_ELEMENT_NAME));
 
     	if ( parseFormDef && !formDefFile.exists() ) {
@@ -375,14 +387,42 @@ public class FormInfo {
 		if ( setting != null ) {
 			Object o = setting.get(FORMDEF_VALUE);
 			if ( o == null ) {
-				xmlRootElementName = null;
+				xmlRootElementName = "data";
 			} else if ( o instanceof String ) {
 				xmlRootElementName = (String) o;
 			} else {
 				throw new IllegalArgumentException("Invalid value for " + FORMDEF_XML_ROOT_ELEMENT_NAME);
 			}
 		} else {
-			xmlRootElementName = null;
+			xmlRootElementName = "data";
+		}
+
+		setting = getSetting(FORMDEF_XML_DEVICE_ID_PROPERTY_NAME, settings);
+		if ( setting != null ) {
+			Object o = setting.get(FORMDEF_VALUE);
+			if ( o == null ) {
+				xmlDeviceIdPropertyName = null;
+			} else if ( o instanceof String ) {
+				xmlDeviceIdPropertyName = (String) o;
+			} else {
+				throw new IllegalArgumentException("Invalid value for " + FORMDEF_XML_DEVICE_ID_PROPERTY_NAME);
+			}
+		} else {
+			xmlDeviceIdPropertyName = null;
+		}
+
+		setting = getSetting(FORMDEF_XML_USER_ID_PROPERTY_NAME, settings);
+		if ( setting != null ) {
+			Object o = setting.get(FORMDEF_VALUE);
+			if ( o == null ) {
+				xmlUserIdPropertyName = null;
+			} else if ( o instanceof String ) {
+				xmlUserIdPropertyName = (String) o;
+			} else {
+				throw new IllegalArgumentException("Invalid value for " + FORMDEF_XML_USER_ID_PROPERTY_NAME);
+			}
+		} else {
+			xmlUserIdPropertyName = null;
 		}
 
 		lastModificationDate = formDefFile.lastModified();

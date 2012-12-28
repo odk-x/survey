@@ -66,8 +66,6 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	public static int ID = R.layout.remote_file_manage_list;
 
-	private static final int PROGRESS_DIALOG = 1;
-
 	private static final String BUNDLE_TOGGLED_KEY = "toggled";
 	private static final String BUNDLE_SELECTED_COUNT = "selectedcount";
 	private static final String BUNDLE_FORM_MAP = "formmap";
@@ -300,7 +298,7 @@ public class FormDownloadListFragment extends ListFragment implements
 			// show dialog box
 			showProgressDialog();
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
-			f.downloadForms(this, filesToDownload);
+			f.downloadForms(this, filesToDownload.toArray(new FormDetails[filesToDownload.size()]));
 		} else {
 			Toast.makeText(getActivity(), R.string.noselect_error,
 					Toast.LENGTH_SHORT).show();

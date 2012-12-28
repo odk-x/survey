@@ -15,9 +15,8 @@
 package org.opendatakit.survey.android.tasks;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
@@ -27,12 +26,13 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.ClientProtocolException;
@@ -48,13 +48,16 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
+import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.provider.DataModelDatabaseHelper;
+import org.opendatakit.survey.android.provider.FileSet;
+import org.opendatakit.survey.android.provider.FileSet.MimeFile;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI.InstanceColumns;
-import org.opendatakit.survey.android.utilities.EncryptionUtils;
-import org.opendatakit.survey.android.utilities.EncryptionUtils.EncryptedFormInformation;
+import org.opendatakit.survey.android.provider.SubmissionProvider;
 import org.opendatakit.survey.android.utilities.WebUtils;
 
 import android.content.ContentValues;
@@ -64,14 +67,13 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
-import android.webkit.MimeTypeMap;
 
 /**
  * Background task for uploading completed forms.
  *
  * @author Carl Hartung (carlhartung@gmail.com)
  */
-public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, InstanceUploadOutcome> {
+public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUploadOutcome> {
 
     private static String t = "InstanceUploaderTask";
     private InstanceUploaderListener mStateListener;
@@ -91,14 +93,13 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
      * @param urlString destination URL
      * @param id
      * @param instanceFilePath
-     * @param toUpdate - Instance URL for recording status update.
      * @param httpclient - client connection
      * @param localContext - context (e.g., credentials, cookies) for client connection
      * @param uriRemap - mapping of Uris to avoid redirects on subsequent invocations
      * @return false if credentials are required and we should terminate immediately.
      */
-    private boolean uploadOneSubmission(String urlString, String id, FileSet instanceFiles,
-    			Uri toUpdate, HttpClient httpclient, HttpContext localContext, Map<URI, URI> uriRemap) {
+    private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id, FileSet instanceFiles,
+    			HttpClient httpclient, HttpContext localContext, Map<URI, URI> uriRemap) {
 
         ContentValues cv = new ContentValues();
         URI u = null;
@@ -128,13 +129,13 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
             return true;
         }
 
-        boolean openRosaServer = false;
+        // NOTE: ODK Survey assumes you are interfacing with an OpenRosa-compliant server
+
         if (uriRemap.containsKey(u)) {
             // we already issued a head request and got a response,
             // so we know the proper URL to send the submission to
             // and the proper scheme. We also know that it was an
             // OpenRosa compliant server.
-            openRosaServer = true;
             u = uriRemap.get(u);
         } else {
             // we need to issue a head request
@@ -160,7 +161,6 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
                                 new URL(URLDecoder.decode(locations[0].getValue(), "utf-8"));
                             URI uNew = url.toURI();
                             if (u.getHost().equalsIgnoreCase(uNew.getHost())) {
-                                openRosaServer = true;
                                 // trust the server to tell us a new location
                                 // ... and possibly to use https instead.
                                 uriRemap.put(u, uNew);
@@ -263,39 +263,7 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
             return true;
         }
 
-        // find all files in parent directory
-        // add media files
-        List<File> files = new ArrayList<File>();
-        for (File f : instanceFiles.attachmentFiles) {
-            String fileName = f.getName();
-
-            int dotIndex = fileName.lastIndexOf(".");
-            String extension = "";
-            if (dotIndex != -1) {
-                extension = fileName.substring(dotIndex + 1);
-            }
-
-            if (fileName.startsWith(".")) {
-                // ignore invisible files
-                continue;
-            }
-            if (fileName.equals(instanceFile.getName())) {
-                continue; // the xml file has already been added
-            } else if (openRosaServer) {
-                files.add(f);
-            } else if (extension.equals("jpg")) { // legacy 0.9x
-                files.add(f);
-            } else if (extension.equals("3gpp")) { // legacy 0.9x
-                files.add(f);
-            } else if (extension.equals("3gp")) { // legacy 0.9x
-                files.add(f);
-            } else if (extension.equals("mp4")) { // legacy 0.9x
-                files.add(f);
-            } else {
-                Log.w(t, "unrecognized file type " + f.getName());
-            }
-        }
-
+        List<MimeFile> files = instanceFiles.attachmentFiles;
         boolean first = true;
         int j = 0;
         int lastJ;
@@ -304,8 +272,6 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
             first = false;
 
             HttpPost httppost = WebUtils.createOpenRosaHttpPost(u, mAuth);
-
-            MimeTypeMap m = MimeTypeMap.getSingleton();
 
             long byteCount = 0L;
 
@@ -319,73 +285,19 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
             byteCount += instanceFile.length();
 
             for (; j < files.size(); j++) {
-                File f = files.get(j);
-                String fileName = f.getName();
-                int idx = fileName.lastIndexOf(".");
-                String extension = "";
-                if (idx != -1) {
-                    extension = fileName.substring(idx + 1);
-                }
-                String contentType = m.getMimeTypeFromExtension(extension);
+                MimeFile mf = files.get(j);
+                File f = mf.file;
+                String contentType = mf.contentType;
 
-                // we will be processing every one of these, so
-                // we only need to deal with the content type determination...
-                if (extension.equals("xml")) {
-                    fb = new FileBody(f, "text/xml");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added xml file " + f.getName());
-                } else if (extension.equals("jpg")) {
-                    fb = new FileBody(f, "image/jpeg");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added image file " + f.getName());
-                } else if (extension.equals("3gpp")) {
-                    fb = new FileBody(f, "audio/3gpp");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added audio file " + f.getName());
-                } else if (extension.equals("3gp")) {
-                    fb = new FileBody(f, "video/3gpp");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added video file " + f.getName());
-                } else if (extension.equals("mp4")) {
-                    fb = new FileBody(f, "video/mp4");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added video file " + f.getName());
-                } else if (extension.equals("csv")) {
-                    fb = new FileBody(f, "text/csv");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added csv file " + f.getName());
-                } else if (f.getName().endsWith(".amr")) {
-                    fb = new FileBody(f, "audio/amr");
-                    entity.addPart(f.getName(), fb);
-                    Log.i(t, "added audio file " + f.getName());
-                } else if (extension.equals("xls")) {
-                    fb = new FileBody(f, "application/vnd.ms-excel");
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t, "added xls file " + f.getName());
-                } else if (contentType != null) {
-                    fb = new FileBody(f, contentType);
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.i(t,
-                        "added recognized filetype (" + contentType + ") " + f.getName());
-                } else {
-                    contentType = "application/octet-stream";
-                    fb = new FileBody(f, contentType);
-                    entity.addPart(f.getName(), fb);
-                    byteCount += f.length();
-                    Log.w(t, "added unrecognized file (" + contentType + ") " + f.getName());
-                }
+                fb = new FileBody(f, contentType);
+                entity.addPart(f.getName(), fb);
+                byteCount += f.length();
+                Log.i(t, "added " + contentType + " file " + f.getName());
 
                 // we've added at least one attachment to the request...
                 if (j + 1 < files.size()) {
-                    if ((j-lastJ+1 > 100) || (byteCount + files.get(j + 1).length() > 10000000L)) {
+                    long nextFileLength = (files.get(j+1).file.length());
+                    if ((j-lastJ+1 > 100) || (byteCount + nextFileLength > 10000000L)) {
                         // the next file would exceed the 10MB threshold...
                         Log.i(t, "Extremely long post is being split into multiple posts");
                         try {
@@ -442,171 +354,102 @@ public class InstanceUploaderTask extends AsyncTask<ArrayList<String>, Integer, 
     }
 
     /**
-     * This method actually writes the xml to disk.
-     * @param payload
-     * @param path
-     * @return
-     */
-    private static boolean exportXmlFile(String payload, File outputFilePath) {
-        // write xml file
-    	FileOutputStream os = null;
-    	OutputStreamWriter osw = null;
-        try {
-        	os = new FileOutputStream(outputFilePath);
-        	osw = new OutputStreamWriter(os, "UTF-8");
-        	osw.write(payload);
-        	osw.flush();
-        	osw.close();
-            return true;
-
-        } catch (IOException e) {
-            Log.e(t, "Error writing XML file");
-            e.printStackTrace();
-            return false;
-        } finally {
-        	try {
-				osw.close();
-	        	os.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-        }
-    }
-
-    /**
-     * Generate the XML submission record from the data in cursor.
-     * As we traverse cursor, collect the list of files that should
-     * be sent along with the submission into the Fileset.
-     *
-     * @param fi
-     * @param instanceId
-     * @param c
-     * @param freturn
-     * @return
-     */
-    private String getSubmissionXml(FormInfo fi, String instanceId, Cursor c, FileSet freturn) {
-    	return "";
-    }
-
-    /**
      * Write's the data to the sdcard, and updates the instances content provider.
      * In theory we don't have to write to disk, and this is where you'd add
      * other methods.
      * @param markCompleted
      * @return
+     * @throws IOException
+     * @throws JsonMappingException
+     * @throws JsonParseException
      */
-    private FileSet constructSubmissionFiles(FormInfo fi, String instanceId, Cursor c) {
+    private FileSet constructSubmissionFiles(FormInfo fi, String instanceId) throws JsonParseException, JsonMappingException, IOException {
 
-    	File instanceFolder = new File(MainMenuActivity.getInstanceFolder(instanceId));
-    	File instanceXml = new File(instanceFolder, "instance.xml");
-    	File submissionXml = new File(instanceFolder, "submission.xml");
+    	Uri manifest =  Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX + "/" +
+    			StringEscapeUtils.escapeHtml4(fi.tableId) + "/" + StringEscapeUtils.escapeHtml4(instanceId) );
 
-    	FileSet freturn = new FileSet();
-    	freturn.instanceFile = instanceXml;
+    	InputStream is = Survey.getInstance().getContentResolver().openInputStream(manifest);
 
-        boolean isEncrypted = false;
-
-        instanceXml.delete();
-        submissionXml.delete();
-
-        // build a submission.xml to hold the data being submitted
-        // and (if appropriate) encrypt the files on the side
-
-        // pay attention to the ref attribute of the submission profile...
-        String payload = getSubmissionXml(fi, instanceId, c, freturn);
-
-        // see if the form is encrypted and we can encrypt it...
-        EncryptedFormInformation formInfo = EncryptionUtils.getEncryptedFormInformation(fi, instanceId);
-        if ( formInfo != null ) {
-            // write out submission.xml -- the data to encrypt before sending to aggregate
-            exportXmlFile(payload, submissionXml);
-
-            // if we are encrypting, the form cannot be reopened afterward
-            // and encrypt the submission (this is a one-way operation)...
-            if ( !EncryptionUtils.generateEncryptedSubmission(submissionXml, instanceXml, formInfo) ) {
-                return null;
-            }
-            isEncrypted = true;
-        } else {
-            exportXmlFile(payload, instanceXml);
-
-        }
-
-        // At this point, we have:
-        // 1. the saved instanceXml to be sent to server,
-        // 2. all the encrypted attachments if encrypting (isEncrypted = true).
-        // 3. all the plaintext attachments
-        // 4. and the plaintext instance.xml (as submission.xml) if encrypting
-        //
-
-        // if encrypted, delete all plaintext files
-        // (anything not named instanceXml or anything not ending in .enc)
-        if ( isEncrypted ) {
-            if ( !EncryptionUtils.deletePlaintextFiles(instanceXml) ) {
-                Log.e(t, "Error deleting plaintext files for " + instanceXml.getAbsolutePath());
-            }
-        }
-        return freturn;
+    	FileSet f = FileSet.parse(is);
+        return f;
     }
 
 
     // TODO: This method is like 350 lines long, down from 400.
     // still. ridiculous. make it smaller.
     @Override
-    protected InstanceUploadOutcome doInBackground(ArrayList<String>... values) {
+    protected InstanceUploadOutcome doInBackground(String... toUpload) {
     	mOutcome.mResults = new HashMap<String, String>();
     	mOutcome.mAuthRequestingServer = null;
+    	FormIdStruct uploadingForm = MainMenuActivity.currentForm;
 
     	SharedPreferences settings =
                 PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());
         String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
         setAuth(auth);
 
-        FormInfo fi = new FormInfo(MainMenuActivity.currentForm.formDefFile);
+        FormInfo fi = new FormInfo(uploadingForm.formDefFile);
         // get shared HttpContext so that authentication and cookies are retained.
         HttpContext localContext = Survey.getInstance().getHttpContext();
         HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
 
         Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 
-        ArrayList<String> toUpload = values[0];
-
-        for ( int i = 0 ; i < toUpload.size() ; ++i ) {
+        for ( int i = 0 ; i < toUpload.length ; ++i ) {
             if (isCancelled()) {
                 return mOutcome;
             }
-	        Cursor c = null;
-	        try {
-	        	// construct the Uri for the instance record
-	            Uri forTable = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-	            		MainMenuActivity.currentForm.tableId + "/" + StringEscapeUtils.escapeHtml4(toUpload.get(i)));
-	        	c = Survey.getInstance().getContentResolver().query(forTable, null, null, null, null);
+            publishProgress(i + 1, toUpload.length);
 
-	        	if ( c.getCount() != 1 || !c.moveToNext() ) {
-	        		Log.w(t, "Unexpected failure to retrieve instance: " + toUpload.get(i));
-	        		mOutcome.mResults.put(toUpload.get(i), fail + "unable to access: " + forTable.toString());
-	        	} else {
-	                publishProgress(i + 1, c.getCount());
-	                String id = c.getString(c.getColumnIndex(InstanceColumns._ID));
-	                FileSet instanceFiles = constructSubmissionFiles(fi, id, c);
-	                String urlString = fi.xmlSubmissionUrl;
-	                if (urlString == null) {
-	                    urlString = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
-	                    // NOTE: /submission must not be translated! It is the well-known path on the server.
-	                    String submissionUrl =
-	                        settings.getString(PreferencesActivity.KEY_SUBMISSION_URL, "/submission");
-	                    urlString = urlString + submissionUrl;
-	                }
+        	Uri toUpdate = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+        			uploadingForm.tableId +
+        			"/" + StringEscapeUtils.escapeHtml4(toUpload[i]) +
+        			"/" + StringEscapeUtils.escapeHtml4(uploadingForm.formPath) );
+        	Cursor c = null;
+        	try {
+        		c = Survey.getInstance().getContentResolver().query(toUpdate, null, null, null, null);
+        		if ( c.getCount() == 1 && c.moveToFirst() ) {
 
-	                if ( !uploadOneSubmission(urlString, id, instanceFiles, forTable, httpclient, localContext, uriRemap) ) {
-	                	return null; // get credentials...
-	                }
-	            }
-	        } finally {
-	            if (c != null) {
-	                c.close();
-	            }
-	        }
+                    String id = c.getString(c.getColumnIndex(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN));
+                    c.close();
+
+                    FileSet instanceFiles;
+        			try {
+        				instanceFiles = constructSubmissionFiles(fi, id);
+        	            String urlString = fi.xmlSubmissionUrl;
+        	            if (urlString == null) {
+        	                urlString = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
+        	                // NOTE: /submission must not be translated! It is the well-known path on the server.
+        	                String submissionUrl =
+        	                    settings.getString(PreferencesActivity.KEY_SUBMISSION_URL, "/submission");
+        	                urlString = urlString + submissionUrl;
+        	            }
+
+        	            if ( !uploadOneSubmission(urlString, toUpdate, id, instanceFiles, httpclient, localContext, uriRemap) ) {
+        	            	return null; // get credentials...
+        	            }
+        			} catch (JsonParseException e) {
+        				e.printStackTrace();
+        	            mOutcome.mResults.put(id,
+        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
+        			} catch (JsonMappingException e) {
+        				e.printStackTrace();
+        	            mOutcome.mResults.put(id,
+        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
+        			} catch (IOException e) {
+        				e.printStackTrace();
+        	            mOutcome.mResults.put(id,
+        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
+        			}
+        		} else {
+    	            mOutcome.mResults.put("unknown",
+    	                    fail + "unable to retrieve instance information via: " + toUpdate.toString());
+        		}
+        	} finally {
+        		if ( c != null && !c.isClosed() ) {
+        			c.close();
+        		}
+        	}
         }
 
         return mOutcome;

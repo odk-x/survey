@@ -6,7 +6,9 @@
 	<classpathentry exported="true" kind="lib" path="libs/httpclientandroidlib-4.2.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/commons-lang3-3.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="libs/commons-io-2.2.jar"/>
-	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
+	<classpathentry exported="true" kind="lib" path="libs/jackson-core-asl-1.8.8.jar"/>
+	<classpathentry exported="true" kind="lib" path="libs/jackson-mapper-asl-1.8.8.jar"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
+	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

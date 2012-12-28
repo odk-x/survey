@@ -76,7 +76,7 @@ public class ProgressDialogFragment extends DialogFragment {
 		mProgressDialog.setIcon(android.R.drawable.ic_dialog_info);
 		mProgressDialog.setIndeterminate(true);
 		mProgressDialog.setCancelable(false);
-		mProgressDialog.setButton(getString(R.string.cancel),
+		mProgressDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.cancel),
 				loadingButtonListener);
 		return mProgressDialog;
 	}

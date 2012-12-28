@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2009 University of Washington
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.utilities;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -44,7 +45,7 @@ import android.util.Log;
 
 /**
  * Static methods used for common file operations.
- * 
+ *
  * @author Carl Hartung (carlhartung@gmail.com)
  */
 public class ODKFileUtils {
@@ -53,7 +54,7 @@ public class ODKFileUtils {
     // Used to validate and display valid form names.
     public static final String VALID_FILENAME = "[ _\\-A-Za-z0-9]*.x[ht]*ml";
 
-    
+
     public static boolean createFolder(String path) {
         boolean made = true;
         File dir = new File(path);
@@ -179,6 +180,61 @@ public class ODKFileUtils {
 
     }
 
+    public static String getMd5Hash(String contents) {
+        try {
+            // CTS (6/15/2010) : stream file through digest instead of handing it the byte[]
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            int chunkSize = 256;
+
+            byte[] chunk = new byte[chunkSize];
+
+            // Get the size of the file
+            long lLength = contents.length();
+
+            if (lLength > Integer.MAX_VALUE) {
+                Log.e(t, "Contents is too large");
+                return null;
+            }
+
+            int length = (int) lLength;
+
+            InputStream is = null;
+            is = new ByteArrayInputStream(contents.getBytes("UTF-8"));
+
+            int l = 0;
+            for (l = 0; l + chunkSize < length; l += chunkSize) {
+                is.read(chunk, 0, chunkSize);
+                md.update(chunk, 0, chunkSize);
+            }
+
+            int remaining = length - l;
+            if (remaining > 0) {
+                is.read(chunk, 0, remaining);
+                md.update(chunk, 0, remaining);
+            }
+            byte[] messageDigest = md.digest();
+
+            BigInteger number = new BigInteger(1, messageDigest);
+            String md5 = number.toString(16);
+            while (md5.length() < 32)
+                md5 = "0" + md5;
+            is.close();
+            return md5;
+
+        } catch (NoSuchAlgorithmException e) {
+            Log.e("MD5", e.getMessage());
+            return null;
+
+        } catch (FileNotFoundException e) {
+            Log.e("No Cache File", e.getMessage());
+            return null;
+        } catch (IOException e) {
+            Log.e("Problem reading from file", e.getMessage());
+            return null;
+        }
+
+    }
+
 
     public static Bitmap getBitmapScaledToDisplay(File f, int screenHeight, int screenWidth) {
         // Determine image size of f
@@ -247,7 +303,7 @@ public class ODKFileUtils {
     public static class ParseException extends RuntimeException {
 
 		/**
-		 * 
+		 *
 		 */
 		private static final long serialVersionUID = -3114591479411925707L;
 
@@ -255,7 +311,7 @@ public class ODKFileUtils {
 			super(errorMsg, t);
 		}
 	};
-    
+
 	public static Document getXMLDocument(Reader reader)  {
 		Document doc = new Document();
 
@@ -284,7 +340,7 @@ public class ODKFileUtils {
 			System.out.println("Error closing reader");
 			e.printStackTrace();
 		}
-		
+
 		return doc;
 	}
 
@@ -382,17 +438,17 @@ public class ODKFileUtils {
 
             String xforms = "http://www.w3.org/2002/xforms";
             String html = doc.getRootElement().getNamespace();
-            
+
             Element head = doc.getRootElement().getElement(html, "head");
             Element title = head.getElement(html, "title");
             if (title != null) {
                 fields.put(TITLE, getXMLText(title, true));
-            } 
-            
+            }
+
             Element model = getChildElement(head, "model");
             // TODO: this assumes the first instance element in XForms is the primary one. OK?
             Element cur = getChildElement(model,"instance");
-            
+
             int idx = cur.getChildCount();
             int i;
             for (i = 0; i < idx; ++i) {
@@ -431,7 +487,7 @@ public class ODKFileUtils {
                 // and that's totally fine.
                 fields.put(SUBMISSIONREF, fields.get(ROOTREF));
             }
-            
+
             String path = fields.get(SUBMISSIONREF);
             String[] elements = path.split("/");
             if ( !elements[0].equals(cur.getName()) ) {
@@ -467,7 +523,7 @@ public class ODKFileUtils {
 		            String noderef = getRef(instanceIdKey, fields, sub);
 		            fields.put(INSTANCEIDREF, noderef);
 	            }
-	            
+
 	            // now find the encrypted field key, if it has one...
 	            Element eFieldKey = null;
 	            for ( k = 0 ; k < meta.getChildCount() ; ++k ) {
@@ -478,14 +534,14 @@ public class ODKFileUtils {
 	        			break;
 	        		}
 	        	}
-	            
+
 	            if ( eFieldKey != null ) {
 	            	// looks like there is per-element encryption...
-	            	
+
 		            // this is the xpath to the encryption field key
 		            String noderef = getRef(eFieldKey, fields, sub);
 		            fields.put(FIELDKEYREF, noderef);
-		        
+
 		            // and now search through the bind elements to find the bind for that key
 		            // so we can get the rsa public key with which to encrypt it...
 		            // and also traverse all binds, finding those that are encrypted...
@@ -507,18 +563,18 @@ public class ODKFileUtils {
 		            }
 	            }
             }
-            
+
             // and now emit the sequence of nested fields in the form definition...
             int termCount = 0;
             for ( i = 0 ; i < sub.getChildCount() ; ++i ) {
             	if ( sub.getType(i) != Node.ELEMENT ) continue;
             	termCount = recordElement(sub.getElement(i), fields, termCount, sub);
             }
-            
+
         }
         return fields;
     }
-    
+
     private static String getRef(Element eKey, Map<String,String> fields, Element sub) {
         List<Element> nesting = new ArrayList<Element>();
         nesting.add(eKey);
@@ -528,7 +584,7 @@ public class ODKFileUtils {
         	e = (Element) e.getParent();
         }
         Collections.reverse(nesting);
-        
+
         StringBuilder b = new StringBuilder();
         b.append(fields.get(ODKFileUtils.SUBMISSIONREF));
         for ( Element elem : nesting ) {
@@ -536,15 +592,15 @@ public class ODKFileUtils {
         }
         return b.toString();
     }
-    
+
     private static int recordElement(Element cur, Map<String,String> fields, int termCount, Element sub) {
     	// form up the element path...
         // this is the xpath to the encryption field key
         String noderef = getRef(cur, fields, sub);
-        
+
         ++termCount;
         fields.put(ODKFileUtils.SUBMISSIONREF + Integer.toString(- termCount ), noderef);
-        
+
         for ( int i = 0 ; i < cur.getChildCount() ; ++i ) {
         	if ( cur.getType(i) != Node.ELEMENT ) continue;
         	termCount = recordElement(cur.getElement(i), fields, termCount, sub);
@@ -565,7 +621,7 @@ public class ODKFileUtils {
     	}
     	return null;
     }
-    
+
     // needed because element.getelement fails when there are attributes
     private static Element getChildElement(Element parent, String childName) {
         Element e = null;

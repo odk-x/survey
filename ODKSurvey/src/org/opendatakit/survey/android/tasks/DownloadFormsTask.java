@@ -66,7 +66,7 @@ import android.util.Log;
  * @author carlhartung
  */
 public class DownloadFormsTask extends
-        AsyncTask<ArrayList<FormDetails>, String, HashMap<String, String>> {
+        AsyncTask<FormDetails, String, HashMap<String, String>> {
 
     private static final String t = "DownloadFormsTask";
 
@@ -90,21 +90,20 @@ public class DownloadFormsTask extends
 
 
     @Override
-    protected HashMap<String, String> doInBackground(ArrayList<FormDetails>... values) {
-        ArrayList<FormDetails> toDownload = values[0];
+    protected HashMap<String, String> doInBackground(FormDetails... values) {
 
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(Survey.getInstance());
 		String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
 		setAuth(auth);
 
-        int total = toDownload.size();
+        int total = values.length;
         int count = 1;
 
         HashMap<String, String> result = new HashMap<String, String>();
 
         for (int i = 0; i < total; i++) {
-            FormDetails fd = toDownload.get(i);
+            FormDetails fd = values[i];
 
         	if ( isCancelled() ) {
         		result.put(fd.formName, "cancelled");

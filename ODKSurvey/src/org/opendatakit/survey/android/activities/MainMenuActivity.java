@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 University of Washington
+ * Copyright (C) 2009-2012 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -26,11 +26,11 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
+import org.opendatakit.survey.android.fragments.FormChooserListFragment.FormChooserListListener;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
 import org.opendatakit.survey.android.fragments.FormManagerListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
-import org.opendatakit.survey.android.fragments.FormChooserListFragment.FormChooserListListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
@@ -84,10 +84,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     public static enum ScreenList { MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW };
 
     private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
-    private ScreenList topScreen = ScreenList.MAIN_SCREEN;
     private ScreenList nestScreen = ScreenList.WEBKIT;
-
-    private int fragmentId;
 
     // TODO: can this go away?
     // Extra returned from gp activity
@@ -276,8 +273,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			((FormChooserListFragment) f).setFormChooserListListener(this);
 			mgr.beginTransaction().show(f).commit();
 		}
-		topScreen = ScreenList.FORM_CHOOSER;
-		fragmentId = FormChooserListFragment.ID;
 
 //		{
 //			MainMenuFragment f = (MainMenuFragment) mgr.findFragmentById(MainMenuFragment.ID);
@@ -297,11 +292,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         super.onCreateOptionsMenu(menu);
 
         MenuItem item;
-        if ( currentScreen == ScreenList.MAIN_SCREEN ) {
-	        item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE,
-					 getString(R.string.enter_data_button));
-	        item.setIcon(R.drawable.forms)
+        item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE,
+				 getString(R.string.enter_data_button));
+        item.setIcon(R.drawable.forms)
+        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
+        if (  currentScreen == ScreenList.WEBKIT || (currentForm != null && instanceId != null) ) {
+        	// we are editing something...
+	        item = menu.add(Menu.NONE, MENU_EDIT_INSTANCE, Menu.NONE,
+					 getString(R.string.review_data));
+	        item.setIcon(R.drawable.form)
 	        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+        }
+
+        if ( currentScreen == ScreenList.MAIN_SCREEN ) {
 	        boolean get = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_GET_BLANK,
 	                true);
 	        if ( get ) {
@@ -310,6 +314,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		        item.setIcon(R.drawable.down_arrow)
 		        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 	        }
+
 	        boolean manage = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_MANAGE_FORMS,
 	                true);
 	        if ( manage ) {
@@ -318,22 +323,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		        item.setIcon(R.drawable.trash)
 		        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 	        }
-	        boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, true);
-	        if ( settings ) {
-		        item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
-		        						 getString(R.string.general_preferences));
-		        item.setIcon(android.R.drawable.ic_menu_preferences)
-		        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-	        }
-	        item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
-					 getString(R.string.admin_preferences));
-	        item.setIcon(R.drawable.ic_menu_login)
-	        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+
         } else {
-	        item = menu.add(Menu.NONE, MENU_EDIT_INSTANCE, Menu.NONE,
-					 getString(R.string.review_data));
-	        item.setIcon(R.drawable.form)
-	        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 	        boolean send = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_SEND_FINALIZED,
 	                true);
 	        if ( send ) {
@@ -342,18 +333,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		        item.setIcon(R.drawable.up_arrow)
 		        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 	        }
-	        boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, true);
-	        if ( settings ) {
-		        item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
-		        						 getString(R.string.general_preferences));
-		        item.setIcon(android.R.drawable.ic_menu_preferences)
-		        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-	        }
-	        item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
-					 getString(R.string.admin_preferences));
-	        item.setIcon(R.drawable.ic_menu_login)
-	        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 	    }
+
+        boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, true);
+        if ( settings ) {
+	        item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
+	        						 getString(R.string.general_preferences));
+	        item.setIcon(android.R.drawable.ic_menu_preferences)
+	        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+        }
+        item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
+				 getString(R.string.admin_preferences));
+        item.setIcon(R.drawable.ic_menu_login)
+        	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 
 
         return true;
@@ -362,7 +354,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		FragmentManager mgr = getSupportFragmentManager();
-		Fragment currentFragment = mgr.findFragmentById(fragmentId);
+		// Fragment currentFragment = mgr.findFragmentById(fragmentId);
 
 		Fragment f;
 		if ( item.getItemId() == MENU_FILL_FORM ) {
@@ -372,14 +364,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				((FormChooserListFragment) f).setFormChooserListListener(this);
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_CHOOSER;
-				fragmentId = FormChooserListFragment.ID;
 				swapToFragmentView();
 			} else {
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_CHOOSER;
-				fragmentId = FormChooserListFragment.ID;
 				swapToFragmentView();
 			}
 			return true;
@@ -389,14 +377,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				f = new FormDownloadListFragment();
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_DOWNLOADER;
-				fragmentId = FormDownloadListFragment.ID;
 				swapToFragmentView();
 			} else {
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_DOWNLOADER;
-				fragmentId = FormDownloadListFragment.ID;
 				swapToFragmentView();
 			}
 			return true;
@@ -406,14 +390,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				f = new FormManagerListFragment();
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_DELETER;
-				fragmentId = FormManagerListFragment.ID;
 				swapToFragmentView();
 			} else {
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.MAIN_SCREEN;
-				topScreen = ScreenList.FORM_DELETER;
-				fragmentId = FormManagerListFragment.ID;
 				swapToFragmentView();
 			}
 			return true;
@@ -424,13 +404,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.WEBKIT;
 				nestScreen = ScreenList.WEBKIT;
-				fragmentId = WebViewFragment.ID;
 				swapToWebKitView();
 			} else {
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.WEBKIT;
 				nestScreen = ScreenList.WEBKIT;
-				fragmentId = WebViewFragment.ID;
 				swapToWebKitView();
 			}
 			return true;
@@ -441,13 +419,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.WEBKIT;
 				nestScreen = ScreenList.INSTANCE_UPLOADER;
-				fragmentId = InstanceUploaderListFragment.ID;
 				swapToFragmentView();
 			} else {
 				mgr.beginTransaction().replace(R.id.main_content, f).commit();
 				currentScreen = ScreenList.WEBKIT;
 				nestScreen = ScreenList.INSTANCE_UPLOADER;
-				fragmentId = InstanceUploaderListFragment.ID;
 				swapToFragmentView();
 			}
 			return true;
@@ -531,8 +507,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		}
 
 		swapToWebKitView();
-		invalidateOptionsMenu();
-
 	}
 
 
@@ -563,7 +537,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				swapToFragmentView();
 			}
 		}
-		invalidateOptionsMenu();
 	}
 
     @Override
@@ -676,6 +649,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     	JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
     	instanceId = null;
     	webkitView.loadPage(null);
+    	//
+    	// This is a callback thread.
+    	// We must invalidate the options menu on the UI thread
+    	// (this may be an issue with the Sherlock compatibility library)
+    	this.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				invalidateOptionsMenu();
+			}});
     }
 
     public void swapToWebKitView() {
@@ -686,6 +668,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     	shadow.removeAllViews();
 		frags.setVisibility(View.GONE);
 		wkt.setVisibility(View.VISIBLE);
+		invalidateOptionsMenu();
     }
 
     public void swapToCustomView(View customView) {
@@ -712,6 +695,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     		frags.setVisibility(View.VISIBLE);
     		wkt.setVisibility(View.GONE);
     	}
+		invalidateOptionsMenu();
     }
 
     public void swapToFragmentView() {
@@ -722,6 +706,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     	shadow.removeAllViews();
 		wkt.setVisibility(View.GONE);
 		frags.setVisibility(View.VISIBLE);
+		invalidateOptionsMenu();
     }
 
 	@Override

@@ -23,26 +23,22 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI.InstanceColumns;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
@@ -61,15 +57,15 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 /**
- * List view of the instances of the current form that are finalized and
- * can be uploaded.
+ * List view of the instances of the current form that are finalized and can be
+ * uploaded.
  *
  * @author mitchellsundt@gmail.com
  *
  */
 public class InstanceUploaderListFragment extends ListFragment implements
 		OnLongClickListener, LoaderManager.LoaderCallbacks<Cursor>,
-		InstanceUploaderListener {
+		InstanceUploaderListener, CancelProgressDialog {
 	private static final String t = "InstanceUploaderListFragment";
 
 	private static int INSTANCE_UPLOADER_LIST_LOADER = 0x03;
@@ -81,8 +77,6 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	private static final String DIALOG_TITLE = "dialogtitle";
 	private static final String DIALOG_MSG = "dialogmsg";
 	private static final String DIALOG_SHOWING = "dialogshowing";
-
-	private static final int INSTANCE_UPLOADER = 0;
 
 	private String mAlertMsg;
 	private boolean mAlertShowing = false;
@@ -106,7 +100,6 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		super.onCreate(savedInstanceState);
 	}
 
-
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
@@ -116,15 +109,17 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		int[] view = new int[] { R.id.text1, R.id.text2 };
 
 		// render total instance view
-		mInstances =  new SimpleCursorAdapter(getActivity(), R.layout.two_item_multiple_choice, null, data, view, 0);
+		mInstances = new SimpleCursorAdapter(getActivity(),
+				R.layout.two_item_multiple_choice, null, data, view, 0);
 		setListAdapter(mInstances);
-		getLoaderManager().initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
+		getLoaderManager()
+				.initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
 	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		view = inflater.inflate(R.layout.instance_uploader_list, container, false);
+		view = inflater.inflate(ID, container, false);
 
 		// set up long click listener
 
@@ -133,12 +128,13 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 			@Override
 			public void onClick(View arg0) {
-				ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+				ConnectivityManager connectivityManager = (ConnectivityManager) getActivity()
+						.getSystemService(Context.CONNECTIVITY_SERVICE);
 				NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
 
 				if (ni == null || !ni.isConnected()) {
-					Toast.makeText(getActivity(),
-							R.string.no_connection, Toast.LENGTH_SHORT).show();
+					Toast.makeText(getActivity(), R.string.no_connection,
+							Toast.LENGTH_SHORT).show();
 				} else {
 					// items selected
 					uploadSelectedFiles();
@@ -164,7 +160,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 					// add all items if mToggled sets to select all
 					if (mToggled) {
 						Cursor c = (Cursor) ls.getItemAtPosition(pos);
-						String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+						String uuid = c.getString(c
+								.getColumnIndex(InstanceColumns._ID));
 						mSelected.add(uuid);
 					}
 				}
@@ -174,7 +171,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		});
 		mToggleButton.setOnLongClickListener(this);
 
-		if ( savedInstanceState != null ) {
+		if (savedInstanceState != null) {
 			String[] selectedArray = savedInstanceState
 					.getStringArray(BUNDLE_SELECTED_ITEMS_KEY);
 			for (int i = 0; i < selectedArray.length; i++)
@@ -239,13 +236,15 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	}
 
 	private void uploadSelectedFiles() {
-		if ( mSelected.size() > 0 ) {
+		if (mSelected.size() > 0) {
 			// show dialog box
 			mAlertMsg = getString(R.string.please_wait);
 			showProgressDialog();
 
-			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
-			f.uploadInstances(this, mSelected);
+			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+					.findFragmentByTag("background");
+			String[] str = new String[mSelected.size()];
+			f.uploadInstances(this, mSelected.toArray(str));
 		}
 	}
 
@@ -262,7 +261,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		for (String id : mSelected) {
 			for (int pos = 0; pos < ls.getCount(); pos++) {
 				Cursor c = (Cursor) ls.getItemAtPosition(pos);
-				String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+				String uuid = c
+						.getString(c.getColumnIndex(InstanceColumns._ID));
 				if (id.equals(uuid)) {
 					ls.setItemChecked(pos, true);
 					break;
@@ -280,7 +280,6 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		if (mAlertShowing) {
 			createAlertDialog(mAlertTitle, mAlertMsg);
 		}
-		super.onResume();
 	}
 
 	@Override
@@ -292,64 +291,36 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	}
 
 	private void showAuthDialog() {
-		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(getActivity().getBaseContext());
-		String server = settings.getString(
-				PreferencesActivity.KEY_SERVER_URL,
-				getString(R.string.default_server_url));
-
 		AuthDialogFragment f = AuthDialogFragment.newInstance(getId(),
 				getString(R.string.server_requires_auth),
-				getString(R.string.server_auth_credentials, mUrl.toString()), mUrl.toString());
+				getString(R.string.server_auth_credentials, mUrl.toString()),
+				mUrl.toString());
 
 		f.show(getFragmentManager(), "authDialog");
 	}
 
 	private void showProgressDialog() {
 		ProgressDialogFragment f = ProgressDialogFragment.newInstance(getId(),
-				getString(R.string.uploading_data),
-				mAlertMsg);
+				getString(R.string.uploading_data), mAlertMsg);
 
 		f.show(getFragmentManager(), "progressDialog");
 	}
 
 	private void updateProgressDialogMessage(String message) {
-		Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
+		Fragment dialog = getFragmentManager().findFragmentByTag(
+				"progressDialog");
 
-		if ( dialog != null ) {
+		if (dialog != null) {
 			((ProgressDialogFragment) dialog).setMessage(message);
 		}
 	}
 
 	private void dismissProgressDialog() {
-		Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
-		if ( dialog != null ) {
+		Fragment dialog = getFragmentManager().findFragmentByTag(
+				"progressDialog");
+		if (dialog != null) {
 			((ProgressDialogFragment) dialog).dismiss();
 		}
-	}
-
-
-	@Override
-	public void onActivityResult(int requestCode, int resultCode,
-			Intent intent) {
-		if (resultCode == Activity.RESULT_CANCELED) {
-			return;
-		}
-		switch (requestCode) {
-		// returns with a form path, start entry
-		case INSTANCE_UPLOADER:
-			if (intent.getBooleanExtra(MainMenuActivity.KEY_SUCCESS, false)) {
-				mSelected.clear();
-				getListView().clearChoices();
-				if (mInstances.isEmpty()) {
-					getActivity().finish();
-				}
-			}
-			break;
-		default:
-			break;
-		}
-		super.onActivityResult(requestCode, resultCode, intent);
 	}
 
 	/**
@@ -375,7 +346,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			}
 		};
 		mAlertDialog.setCancelable(false);
-		mAlertDialog.setButton(Dialog.BUTTON_POSITIVE, getString(R.string.ok), quitListener);
+		mAlertDialog.setButton(Dialog.BUTTON_POSITIVE, getString(R.string.ok),
+				quitListener);
 		mAlertDialog.setIcon(android.R.drawable.ic_dialog_info);
 		mAlertMsg = message;
 		mAlertTitle = title;
@@ -383,84 +355,90 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		mAlertDialog.show();
 	}
 
-    @Override
-    public void progressUpdate(int progress, int total) {
-        mAlertMsg = getString(R.string.sending_items, progress, total);
-        updateProgressDialogMessage(mAlertMsg);
-    }
+	@Override
+	public void progressUpdate(int progress, int total) {
+		mAlertMsg = getString(R.string.sending_items, progress, total);
+		updateProgressDialogMessage(mAlertMsg);
+	}
 
 	@Override
 	public void uploadingComplete(InstanceUploadOutcome outcome) {
-        try {
-        	dismissProgressDialog();
-        } catch (Exception e) {
-        	e.printStackTrace();
-        	Log.i(t,"Attempting to close a dialog that was not previously opened");
-        }
+		try {
+			dismissProgressDialog();
+		} catch (Exception e) {
+			e.printStackTrace();
+			Log.i(t,
+					"Attempting to close a dialog that was not previously opened");
+		}
 
-		if ( outcome.mAuthRequestingServer == null ) {
-	        StringBuilder message = new StringBuilder();
+		if (outcome.mAuthRequestingServer == null) {
+			StringBuilder message = new StringBuilder();
 
-	        Set<String> keys = outcome.mResults.keySet();
-	        for ( String id : keys ) {
+			Set<String> keys = outcome.mResults.keySet();
+			for (String id : keys) {
 
-	        	Cursor results = null;
-	        	try {
-	        		Uri uri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-							MainMenuActivity.currentForm.tableId + "/" + StringEscapeUtils.escapeHtml4(id));
-	                results = Survey.getInstance().getContentResolver().query( uri, null, null, null, null);
-	                if (results.getCount() == 1 && results.moveToFirst() ) {
-	                    String name =
-	                        results.getString(results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
-	                    message.append(name + " - " + outcome.mResults.get(id) + "\n\n");
-	                }
-	        	} finally {
-	        		if ( results != null ) {
-	        			results.close();
-	        		}
-	        	}
-	        }
+				Cursor results = null;
+				try {
+					Uri uri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+							MainMenuActivity.currentForm.tableId + "/"
+									+ StringEscapeUtils.escapeHtml4(id));
+					results = Survey.getInstance().getContentResolver()
+							.query(uri, null, null, null, null);
+					if (results.getCount() == 1 && results.moveToFirst()) {
+						String name = results.getString(results
+								.getColumnIndex(InstanceColumns.DISPLAY_NAME));
+						message.append(name + " - " + outcome.mResults.get(id)
+								+ "\n\n");
+					}
+				} finally {
+					if (results != null) {
+						results.close();
+					}
+				}
+			}
 
-	        if ( message.length() == 0 ) {
-	            message.append(getString(R.string.no_forms_uploaded));
-	        }
+			if (message.length() == 0) {
+				message.append(getString(R.string.no_forms_uploaded));
+			}
 
-	        createAlertDialog(getString(R.string.uploading_data), message.toString().trim());
-	    } else {
-	        // add our list of completed uploads to "completed"
-	        // and remove them from our toSend list.
-	        if (outcome.mResults != null) {
-	            Set<String> uploadedInstances = outcome.mResults.keySet();
-	            Iterator<String> itr = uploadedInstances.iterator();
+			createAlertDialog(getString(R.string.uploading_data), message
+					.toString().trim());
+		} else {
+			// add our list of completed uploads to "completed"
+			// and remove them from our toSend list.
+			if (outcome.mResults != null) {
+				Set<String> uploadedInstances = outcome.mResults.keySet();
+				Iterator<String> itr = uploadedInstances.iterator();
 
-	            while (itr.hasNext()) {
-	            	String removeMe = itr.next();
-	                boolean removed = mSelected.remove(removeMe);
-	                if (removed) {
-	                    Log.i(t, removeMe
-	                            + " was already sent, removing from queue before restarting task");
-	                }
-	            }
-	        }
+				while (itr.hasNext()) {
+					String removeMe = itr.next();
+					boolean removed = mSelected.remove(removeMe);
+					if (removed) {
+						Log.i(t,
+								removeMe
+										+ " was already sent, removing from queue before restarting task");
+					}
+				}
+			}
 
-	        // Bundle b = new Bundle();
-	        // b.putString(AUTH_URI, url.toString());
-	        // showDialog(AUTH_DIALOG, b);
-	        mUrl = outcome.mAuthRequestingServer;
-	        showAuthDialog();
-	    }
+			// Bundle b = new Bundle();
+			// b.putString(AUTH_URI, url.toString());
+			// showDialog(AUTH_DIALOG, b);
+			mUrl = outcome.mAuthRequestingServer;
+			showAuthDialog();
+		}
 	}
-
-
 
 	private void showUnsent() {
 		mShowUnsent = true;
-		getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
+		getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null,
+				this);
 	}
 
 	private void showAll() {
 		mShowUnsent = false;
-		getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
+		getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null,
+				this);
 	}
 
 	@Override
@@ -510,19 +488,19 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		MainMenuActivity a = (MainMenuActivity) getActivity();
 		FormIdStruct fs = MainMenuActivity.currentForm;
-		Uri baseUri =  Uri.withAppendedPath(InstanceColumns.CONTENT_URI, fs.tableId);
+		Uri baseUri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+				fs.tableId);
 
 		String selection;
 		String selectionArgs[];
 		String sortOrder;
 
-		if ( mShowUnsent ) {
+		if (mShowUnsent) {
 			// show all unsent or failed-sending records
-			selection = InstanceColumns.XML_PUBLISH_STATUS + " IS NULL or " +
-						InstanceColumns.XML_PUBLISH_STATUS + "=?";
-			selectionArgs = new String[]{ InstanceProviderAPI.STATUS_SUBMISSION_FAILED };
+			selection = InstanceColumns.XML_PUBLISH_STATUS + " IS NULL or "
+					+ InstanceColumns.XML_PUBLISH_STATUS + "=?";
+			selectionArgs = new String[] { InstanceProviderAPI.STATUS_SUBMISSION_FAILED };
 			sortOrder = InstanceColumns.DISPLAY_NAME + " ASC";
 		} else {
 			// show all completed instances (ones ready to be submitted)
@@ -533,8 +511,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.
-		return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs,
-				sortOrder);
+		return new CursorLoader(getActivity(), baseUri, null, selection,
+				selectionArgs, sortOrder);
 	}
 
 	@Override
@@ -550,6 +528,14 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		// above is about to be closed. We need to make sure we are no
 		// longer using it.
 		mInstances.swapCursor(null);
+	}
+
+	@Override
+	public void cancelProgressDialog() {
+
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+				.findFragmentByTag("background");
+		f.clearUploadInstancesTask();
 	}
 
 }

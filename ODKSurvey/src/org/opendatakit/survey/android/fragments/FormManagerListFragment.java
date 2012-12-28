@@ -95,7 +95,7 @@ public class FormManagerListFragment extends ListFragment implements
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		view = inflater.inflate(R.layout.form_manage_list, container, false);
+		view = inflater.inflate(ID, container, false);
 
 		mDeleteButton = (Button) view.findViewById(R.id.delete_button);
 		mDeleteButton.setText(getString(R.string.delete_file));
@@ -201,9 +201,9 @@ public class FormManagerListFragment extends ListFragment implements
 			}
 		};
 		mAlertDialog.setCancelable(false);
-		mAlertDialog.setButton(getString(R.string.delete_yes),
+		mAlertDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.delete_yes),
 				dialogYesNoListener);
-		mAlertDialog.setButton2(getString(R.string.delete_no),
+		mAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.delete_no),
 				dialogYesNoListener);
 		mAlertDialog.show();
 	}

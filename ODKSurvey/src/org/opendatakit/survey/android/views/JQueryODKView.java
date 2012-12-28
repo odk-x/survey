@@ -147,7 +147,7 @@ public class JQueryODKView extends FrameLayout {
 		String formPath = null;
 		try {
             //
-            // find if there is already a form definition with the same formId and formVersion...
+            // the default form is named 'default' ...
         	String selection = FormsColumns.FORM_ID + "=?";
     		String[] selectionArgs = { "default" };
     		String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the most recently created of the matches (in case DB corrupted)

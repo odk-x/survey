@@ -14,7 +14,6 @@
 
 package org.opendatakit.survey.android.fragments;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.opendatakit.survey.android.R;
@@ -215,7 +214,7 @@ public class BackgroundTaskFragment extends Fragment
 		executeTask(mBackgroundTasks.mDownloadFormListTask, (Void[]) null);
 	}
 
-	public void downloadForms(FormDownloaderListener listener, ArrayList<FormDetails> filesToDownload) {
+	public void downloadForms(FormDownloaderListener listener, FormDetails[] filesToDownload) {
 		if ( mBackgroundTasks.mDownloadFormsTask != null &&
 				mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED ) {
 			Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),
@@ -230,7 +229,7 @@ public class BackgroundTaskFragment extends Fragment
 		executeTask(mBackgroundTasks.mDownloadFormsTask, filesToDownload);
 	}
 
-	public void uploadInstances(InstanceUploaderListener listener, ArrayList<String> instancesToUpload) {
+	public void uploadInstances(InstanceUploaderListener listener, String[] instancesToUpload) {
 		if ( mBackgroundTasks.mInstanceUploaderTask != null &&
 				mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED ) {
 			Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),

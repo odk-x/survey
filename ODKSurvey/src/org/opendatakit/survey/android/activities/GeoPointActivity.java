@@ -140,7 +140,7 @@ public class GeoPointActivity extends Activity implements LocationListener {
             i.putExtra(MainMenuActivity.LOCATION_LATITUDE_RESULT, mLocation.getLatitude());
             i.putExtra(MainMenuActivity.LOCATION_LONGITUDE_RESULT, mLocation.getLongitude());
             i.putExtra(MainMenuActivity.LOCATION_ALTITUDE_RESULT, mLocation.getAltitude());
-            i.putExtra(MainMenuActivity.LOCATION_ACCURACY_RESULT, mLocation.getAccuracy());
+            i.putExtra(MainMenuActivity.LOCATION_ACCURACY_RESULT, Double.valueOf(mLocation.getAccuracy()));
             setResult(RESULT_OK, i);
         }
         finish();

@@ -22,6 +22,7 @@ import com.actionbarsherlock.internal.widget.IcsLinearLayout;
 import com.actionbarsherlock.internal.widget.IcsListPopupWindow;
 import com.actionbarsherlock.view.ActionProvider;
 import com.actionbarsherlock.widget.ActivityChooserModel.ActivityChooserModelClient;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -236,12 +237,12 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         mDefaultActivityButton = (FrameLayout) findViewById(R.id.abs__default_activity_button);
         mDefaultActivityButton.setOnClickListener(mCallbacks);
         mDefaultActivityButton.setOnLongClickListener(mCallbacks);
-        mDefaultActivityButtonImage = (ImageView) mDefaultActivityButton.findViewById(R.id.abs__image);
+        mDefaultActivityButtonImage = (ImageView) mDefaultActivityButton.findViewById(R.id.abs_default_image);
 
         mExpandActivityOverflowButton = (FrameLayout) findViewById(R.id.abs__expand_activities_button);
         mExpandActivityOverflowButton.setOnClickListener(mCallbacks);
         mExpandActivityOverflowButtonImage =
-            (ImageView) mExpandActivityOverflowButton.findViewById(R.id.abs__image);
+            (ImageView) mExpandActivityOverflowButton.findViewById(R.id.abs_overflow_image);
         mExpandActivityOverflowButtonImage.setImageDrawable(expandActivityOverflowButtonDrawable);
 
         mAdapter = new ActivityChooserViewAdapter();
@@ -617,7 +618,8 @@ class ActivityChooserView extends ViewGroup implements ActivityChooserModelClien
         }
     }
 
-    private static class SetActivated {
+    @SuppressLint("NewApi")
+	private static class SetActivated {
         public static void invoke(View view, boolean activated) {
             view.setActivated(activated);
         }

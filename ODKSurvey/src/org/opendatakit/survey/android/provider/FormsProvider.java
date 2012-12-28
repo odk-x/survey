@@ -21,11 +21,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.database.ODKSQLiteOpenHelper;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.utilities.ODKFileUtils;
 
@@ -49,9 +49,7 @@ public class FormsProvider extends ContentProvider {
     private static final String t = "FormsProvider";
 
 
-    private static final String DATABASE_NAME = "forms.db";
-    private static final int DATABASE_VERSION = 10;
-    private static final String FORMS_TABLE_NAME = "formDefs";
+    public static final String FORMS_TABLE_NAME = "formDefs";
 
     private static HashMap<String, String> sFormsProjectionMap;
 
@@ -60,138 +58,18 @@ public class FormsProvider extends ContentProvider {
 
     private static final UriMatcher sUriMatcher;
 
-    /**
-     * This class helps open, create, and upgrade the database file.
-     */
-    private static class DatabaseHelper extends ODKSQLiteOpenHelper {
-
-        DatabaseHelper(String databaseName) {
-            super(Survey.METADATA_PATH, databaseName, null, DATABASE_VERSION);
-        }
-
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-        	onCreateNamed(db, FORMS_TABLE_NAME);
-        }
-
-        private void onCreateNamed(SQLiteDatabase db, String tableName) {
-            db.execSQL("CREATE TABLE " + tableName + " ("
-            		+ FormsColumns._ID + " integer primary key, "
-            		+ FormsColumns.DISPLAY_NAME + " text not null, "
-                    + FormsColumns.DISPLAY_SUBTEXT + " text not null, "
-                    + FormsColumns.DESCRIPTION + " text, "
-                    + FormsColumns.TABLE_ID + " text not null, "
-                    + FormsColumns.FORM_ID + " text not null, "
-                    + FormsColumns.FORM_VERSION + " text, "
-                    + FormsColumns.FORM_FILE_PATH + " text null, "
-                    + FormsColumns.FORM_MEDIA_PATH + " text not null, "
-                    + FormsColumns.FORM_PATH + " text not null, "
-                    + FormsColumns.MD5_HASH + " text not null, "
-                    + FormsColumns.DATE + " integer not null, " // milliseconds
-                    + FormsColumns.DEFAULT_FORM_LOCALE + " text, "
-                    + FormsColumns.XML_SUBMISSION_URL + " text, "
-                    + FormsColumns.XML_BASE64_RSA_PUBLIC_KEY + " text, "
-                    + FormsColumns.XML_ROOT_ELEMENT_NAME + " text );");
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        	if ( oldVersion < 10 ) {
-                Log.w(t, "Upgrading database from version " + oldVersion + " to " + newVersion
-                        + ", which will destroy all old data");
-                db.execSQL("DROP TABLE IF EXISTS " + FORMS_TABLE_NAME);
-                onCreate(db);
-                return;
-        	} else {
-            	// int initialVersion = oldVersion;
-        		/* retained as an example of how to migrate...
-        		// adding BASE64_RSA_PUBLIC_KEY and changing type and name of integer MODEL_VERSION to text VERSION
-                db.execSQL("DROP TABLE IF EXISTS " + TEMP_FORMS_TABLE_NAME);
-                onCreateNamed(db, TEMP_FORMS_TABLE_NAME);
-        		db.execSQL("INSERT INTO " + TEMP_FORMS_TABLE_NAME + " ("
-                		+ FormsColumns._ID + ", "
-                		+ FormsColumns.DISPLAY_NAME + ", "
-                        + FormsColumns.DISPLAY_SUBTEXT + ", "
-                        + FormsColumns.DESCRIPTION + ", "
-                        + FormsColumns.JR_FORM_ID + ", "
-                        + FormsColumns.MD5_HASH + ", "
-                        + FormsColumns.DATE + ", " // milliseconds
-                        + FormsColumns.FORM_MEDIA_PATH + ", "
-                        + FormsColumns.FORM_FILE_PATH + ", "
-                        + FormsColumns.LANGUAGE + ", "
-                        + FormsColumns.SUBMISSION_URI + ", "
-                        + FormsColumns.JR_VERSION + ", "
-                        + ((oldVersion != 3) ? "" : (FormsColumns.BASE64_RSA_PUBLIC_KEY + ", "))
-                        + FormsColumns.JRCACHE_FILE_PATH + ") SELECT "
-                		+ FormsColumns._ID + ", "
-                		+ FormsColumns.DISPLAY_NAME + ", "
-                        + FormsColumns.DISPLAY_SUBTEXT + ", "
-                        + FormsColumns.DESCRIPTION + ", "
-                        + FormsColumns.JR_FORM_ID + ", "
-                        + FormsColumns.MD5_HASH + ", "
-                        + FormsColumns.DATE + ", " // milliseconds
-                        + FormsColumns.FORM_MEDIA_PATH + ", "
-                        + FormsColumns.FORM_FILE_PATH + ", "
-                        + FormsColumns.LANGUAGE + ", "
-                        + FormsColumns.SUBMISSION_URI + ", "
-                        + "CASE WHEN " + MODEL_VERSION + " IS NOT NULL THEN " +
-                        			"CAST(" + MODEL_VERSION + " AS TEXT) ELSE NULL END, "
-                        + ((oldVersion != 3) ? "" : (FormsColumns.BASE64_RSA_PUBLIC_KEY + ", "))
-                        + FormsColumns.JRCACHE_FILE_PATH + " FROM " + FORMS_TABLE_NAME);
-
-        		// risky failures here...
-        		db.execSQL("DROP TABLE IF EXISTS " + FORMS_TABLE_NAME);
-        		onCreateNamed(db, FORMS_TABLE_NAME);
-        		db.execSQL("INSERT INTO " + FORMS_TABLE_NAME + " ("
-                		+ FormsColumns._ID + ", "
-                		+ FormsColumns.DISPLAY_NAME + ", "
-                        + FormsColumns.DISPLAY_SUBTEXT + ", "
-                        + FormsColumns.DESCRIPTION + ", "
-                        + FormsColumns.JR_FORM_ID + ", "
-                        + FormsColumns.MD5_HASH + ", "
-                        + FormsColumns.DATE + ", " // milliseconds
-                        + FormsColumns.FORM_MEDIA_PATH + ", "
-                        + FormsColumns.FORM_FILE_PATH + ", "
-                        + FormsColumns.LANGUAGE + ", "
-                        + FormsColumns.SUBMISSION_URI + ", "
-                        + FormsColumns.JR_VERSION + ", "
-                        + FormsColumns.BASE64_RSA_PUBLIC_KEY + ", "
-                        + FormsColumns.JRCACHE_FILE_PATH + ") SELECT "
-                		+ FormsColumns._ID + ", "
-                		+ FormsColumns.DISPLAY_NAME + ", "
-                        + FormsColumns.DISPLAY_SUBTEXT + ", "
-                        + FormsColumns.DESCRIPTION + ", "
-                        + FormsColumns.JR_FORM_ID + ", "
-                        + FormsColumns.MD5_HASH + ", "
-                        + FormsColumns.DATE + ", " // milliseconds
-                        + FormsColumns.FORM_MEDIA_PATH + ", "
-                        + FormsColumns.FORM_FILE_PATH + ", "
-                        + FormsColumns.LANGUAGE + ", "
-                        + FormsColumns.SUBMISSION_URI + ", "
-                        + FormsColumns.JR_VERSION + ", "
-                        + FormsColumns.BASE64_RSA_PUBLIC_KEY + ", "
-                        + FormsColumns.JRCACHE_FILE_PATH + " FROM " + TEMP_FORMS_TABLE_NAME);
-        		db.execSQL("DROP TABLE IF EXISTS " + TEMP_FORMS_TABLE_NAME);
-
-	            Log.w(t, "Successfully upgraded database from version " + initialVersion + " to " + newVersion
-	                    + ", without destroying all the old data");
-	            */
-        	}
-        }
-    }
-
-    private ODKSQLiteOpenHelper mDbHelper;
-
+    private WebSqlDatabaseHelper h;
+    private DataModelDatabaseHelper mDbHelper;
 
 
     @Override
     public boolean onCreate() {
 
-        // must be at the beginning of any activity that can be called from an external intent
-        Survey.createODKDirs();
-
-        mDbHelper = new DatabaseHelper(DATABASE_NAME);
+    	h = new WebSqlDatabaseHelper();
+    	WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
+    	if ( defn != null ) {
+    		mDbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(), defn.dbFile.getName());
+    	}
         return true;
     }
 
@@ -336,7 +214,7 @@ public class FormsProvider extends ContentProvider {
 
         if (values.containsKey(FormsColumns.DISPLAY_SUBTEXT) == false) {
             Date today = new Date();
-            String ts = new SimpleDateFormat(getContext().getString(R.string.added_on_date_at_time)).format(today);
+            String ts = new SimpleDateFormat(getContext().getString(R.string.added_on_date_at_time), Locale.getDefault()).format(today);
             values.put(FormsColumns.DISPLAY_SUBTEXT, ts);
         }
 
@@ -594,7 +472,7 @@ public class FormsProvider extends ContentProvider {
         // Make sure that the necessary fields are all set
         if (values.containsKey(FormsColumns.DATE) == true) {
             Date today = new Date();
-            String ts = new SimpleDateFormat(getContext().getString(R.string.added_on_date_at_time)).format(today);
+            String ts = new SimpleDateFormat(getContext().getString(R.string.added_on_date_at_time), Locale.getDefault()).format(today);
             values.put(FormsColumns.DISPLAY_SUBTEXT, ts);
         }
 
@@ -639,6 +517,8 @@ public class FormsProvider extends ContentProvider {
         sFormsProjectionMap.put(FormsColumns.XML_SUBMISSION_URL, FormsColumns.XML_SUBMISSION_URL);
         sFormsProjectionMap.put(FormsColumns.XML_BASE64_RSA_PUBLIC_KEY, FormsColumns.XML_BASE64_RSA_PUBLIC_KEY);
         sFormsProjectionMap.put(FormsColumns.XML_ROOT_ELEMENT_NAME, FormsColumns.XML_ROOT_ELEMENT_NAME);
+        sFormsProjectionMap.put(FormsColumns.XML_DEVICE_ID_PROPERTY_NAME, FormsColumns.XML_DEVICE_ID_PROPERTY_NAME);
+        sFormsProjectionMap.put(FormsColumns.XML_USER_ID_PROPERTY_NAME, FormsColumns.XML_USER_ID_PROPERTY_NAME);
         sFormsProjectionMap.put(FormsColumns.MD5_HASH, FormsColumns.MD5_HASH);
         sFormsProjectionMap.put(FormsColumns.DATE, FormsColumns.DATE);
         sFormsProjectionMap.put(FormsColumns.FORM_MEDIA_PATH, FormsColumns.FORM_MEDIA_PATH);
