@@ -40,6 +40,7 @@ import org.opendatakit.survey.android.views.JQueryODKView;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -83,20 +84,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     public static enum ScreenList { MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW };
 
-    private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
-    private ScreenList nestScreen = ScreenList.WEBKIT;
-
     // TODO: can this go away?
     // Extra returned from gp activity
     public static final String LOCATION_LATITUDE_RESULT = "latitude";
     public static final String LOCATION_LONGITUDE_RESULT = "longitude";
     public static final String LOCATION_ALTITUDE_RESULT = "altitude";
     public static final String LOCATION_ACCURACY_RESULT = "accuracy";
-
-    // TODO: move elsewhere?
-    // keys in instance uploader...
-    public static final String KEY_INSTANCES = "instances";
-    public static final String KEY_SUCCESS = "success";
 
     // menu options
 
@@ -111,6 +104,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // activity callback codes
     public static final int HANDLER_ACTIVITY_CODE = 20;
 
+    private static final boolean EXIT = true;
+
     /*package*/ static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS =
             new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -122,15 +117,51 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             ViewGroup.LayoutParams.MATCH_PARENT,
             Gravity.CENTER);
 
-    private JQueryJavascriptCallback mJSCallback = null;
-    private SharedPreferences mAdminPreferences;
-
-    private AlertDialog mAlertDialog;
-
-    private static boolean EXIT = true;
 
     public static FormIdStruct currentForm = null;
     public static String instanceId = null;
+
+    private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
+    private ScreenList nestScreen = ScreenList.WEBKIT;
+
+    private String pageWaitingForData = null;
+	private String pathWaitingForData = null;
+	private String actionWaitingForData = null;
+
+    private AlertDialog mAlertDialog;
+
+    private JQueryJavascriptCallback mJSCallback = null; // cached for efficiency only -- no need to preserve
+    private SharedPreferences mAdminPreferences; // cached for efficiency only -- no need to preserve
+
+    Bitmap mDefaultVideoPoster = null; // cached for efficiency only -- no need to preserve
+
+    View mVideoProgressView = null; // cached for efficiency only -- no need to preserve
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mAlertDialog != null && mAlertDialog.isShowing()) {
+            mAlertDialog.dismiss();
+        }
+    }
+
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		// TODO Auto-generated method stub
+		super.onSaveInstanceState(outState);
+	}
+
+	@Override
+	protected void onRestoreInstanceState(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onRestoreInstanceState(savedInstanceState);
+	}
+
+	@Override
+	protected void onResume() {
+		// TODO Auto-generated method stub
+		super.onResume();
+	}
 
     public static String getInstanceFolder(String instanceId) {
     	if ( instanceId == null || currentForm == null ) {
@@ -362,70 +393,48 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			if ( f == null ) {
 				f = new FormChooserListFragment();
 				((FormChooserListFragment) f).setFormChooserListListener(this);
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
-			} else {
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
 			}
+			mgr.beginTransaction().replace(R.id.main_content, f).commit();
+			currentScreen = ScreenList.MAIN_SCREEN;
+			swapToFragmentView();
 			return true;
 		} else if ( item.getItemId() == MENU_PULL_FORMS ) {
 			f = this.getSupportFragmentManager().findFragmentById(FormDownloadListFragment.ID);
 			if ( f == null ) {
 				f = new FormDownloadListFragment();
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
-			} else {
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
 			}
+			mgr.beginTransaction().replace(R.id.main_content, f).commit();
+			currentScreen = ScreenList.MAIN_SCREEN;
+			swapToFragmentView();
 			return true;
 		} else if ( item.getItemId() == MENU_MANAGE_FORMS ) {
 			f = this.getSupportFragmentManager().findFragmentById(FormManagerListFragment.ID);
 			if ( f == null ) {
 				f = new FormManagerListFragment();
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
-			} else {
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.MAIN_SCREEN;
-				swapToFragmentView();
 			}
+			mgr.beginTransaction().replace(R.id.main_content, f).commit();
+			currentScreen = ScreenList.MAIN_SCREEN;
+			swapToFragmentView();
 			return true;
 		} else if ( item.getItemId() == MENU_EDIT_INSTANCE ) {
 			f = mgr.findFragmentById(WebViewFragment.ID);
 			if ( f == null ) {
 				f = new WebViewFragment();
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.WEBKIT;
-				nestScreen = ScreenList.WEBKIT;
-				swapToWebKitView();
-			} else {
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.WEBKIT;
-				nestScreen = ScreenList.WEBKIT;
-				swapToWebKitView();
 			}
+			mgr.beginTransaction().replace(R.id.main_content, f).commit();
+			currentScreen = ScreenList.WEBKIT;
+			nestScreen = ScreenList.WEBKIT;
+			swapToWebKitView();
 			return true;
 		} else if ( item.getItemId() == MENU_PUSH_INSTANCES ) {
 			f = this.getSupportFragmentManager().findFragmentById(InstanceUploaderListFragment.ID);
 			if ( f == null ) {
 				f = new InstanceUploaderListFragment();
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.WEBKIT;
-				nestScreen = ScreenList.INSTANCE_UPLOADER;
-				swapToFragmentView();
-			} else {
-				mgr.beginTransaction().replace(R.id.main_content, f).commit();
-				currentScreen = ScreenList.WEBKIT;
-				nestScreen = ScreenList.INSTANCE_UPLOADER;
-				swapToFragmentView();
 			}
+			mgr.beginTransaction().replace(R.id.main_content, f).commit();
+			currentScreen = ScreenList.WEBKIT;
+			nestScreen = ScreenList.INSTANCE_UPLOADER;
+			swapToFragmentView();
 			return true;
 		} else if ( item.getItemId() == MENU_PREFERENCES ) {
 			// PreferenceFragment missing from support library...
@@ -539,14 +548,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		}
 	}
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (mAlertDialog != null && mAlertDialog.isShowing()) {
-            mAlertDialog.dismiss();
-        }
-    }
-
     private void createErrorDialog(String errorMsg, final boolean shouldExit) {
     	if ( mAlertDialog != null ) {
     		mAlertDialog.dismiss();
@@ -622,9 +623,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         mAlertDialog.show();
     }
 
-    Bitmap mDefaultVideoPoster = null;
-
-    public Bitmap getDefaultVideoPoster() {
+    public synchronized Bitmap getDefaultVideoPoster() {
         if (mDefaultVideoPoster == null) {
             mDefaultVideoPoster = BitmapFactory.decodeResource(
                     getResources(), R.drawable.expander_ic_right);
@@ -632,9 +631,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         return mDefaultVideoPoster;
     }
 
-    View mVideoProgressView = null;
-
-    public View getVideoLoadingProgressView() {
+    public synchronized View getVideoLoadingProgressView() {
         if (mVideoProgressView == null) {
             LayoutInflater inflater = LayoutInflater.from(this);
             mVideoProgressView = inflater.inflate(
@@ -644,18 +641,16 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     public void hideWebkitView() {
-
-    	// In the fragment UI, we want to return to not having any instanceId defined.
-    	JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
-    	instanceId = null;
-    	webkitView.loadPage(null);
-    	//
     	// This is a callback thread.
     	// We must invalidate the options menu on the UI thread
     	// (this may be an issue with the Sherlock compatibility library)
     	this.runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+		    	// In the fragment UI, we want to return to not having any instanceId defined.
+		    	JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
+		    	instanceId = null;
+		    	webkitView.loadPage(null);
 				invalidateOptionsMenu();
 			}});
     }
@@ -942,10 +937,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         }
     }
 
-	private String pageWaitingForData = null;
-	private String pathWaitingForData = null;
-	private String actionWaitingForData = null;
-
 	public boolean isWaitingForBinaryData() {
 		return actionWaitingForData != null;
 	}
@@ -995,8 +986,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		pathWaitingForData = path;
 		actionWaitingForData = action;
 
-        startActivityForResult(i, HANDLER_ACTIVITY_CODE );
-		return "OK";
+		try {
+			startActivityForResult(i, HANDLER_ACTIVITY_CODE );
+			return "OK";
+		} catch ( ActivityNotFoundException ex ) {
+			ex.printStackTrace();
+			Log.e(t, "Unable to launch activity: " + ex.toString());
+			return "Application not found";
+		}
 	}
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {

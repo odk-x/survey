@@ -64,6 +64,7 @@ public class InstanceProvider extends ContentProvider {
 		h = new WebSqlDatabaseHelper();
 		WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
 		if (defn != null) {
+    		defn.dbFile.getParentFile().mkdirs();
 			mDbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(),
 					defn.dbFile.getName());
 		}

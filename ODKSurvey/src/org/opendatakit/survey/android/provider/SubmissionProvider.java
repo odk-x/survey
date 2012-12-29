@@ -22,11 +22,12 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -87,6 +88,7 @@ public class SubmissionProvider extends ContentProvider {
 		h = new WebSqlDatabaseHelper();
 		WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
 		if (defn != null) {
+    		defn.dbFile.getParentFile().mkdirs();
 			mDbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(),
 					defn.dbFile.getName());
 		}
@@ -94,7 +96,7 @@ public class SubmissionProvider extends ContentProvider {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static final void putElementValue(TreeMap<String, Object> dataMap,
+	private static final void putElementValue(HashMap<String, Object> dataMap,
 			ColumnDefinition defn, Object value) {
 		List<ColumnDefinition> nesting = new ArrayList<ColumnDefinition>();
 		ColumnDefinition cur = defn.parent;
@@ -103,14 +105,14 @@ public class SubmissionProvider extends ContentProvider {
 			cur = cur.parent;
 		}
 
-		TreeMap<String, Object> elem = dataMap;
+		HashMap<String, Object> elem = dataMap;
 		for (int i = nesting.size() - 1; i >= 0; --i) {
 			cur = nesting.get(i);
 			if (elem.containsKey(cur.elementName)) {
-				elem = (TreeMap<String, Object>) elem.get(cur.elementName);
+				elem = (HashMap<String, Object>) elem.get(cur.elementName);
 			} else {
-				elem.put(cur.elementName, new TreeMap<String, Object>());
-				elem = (TreeMap<String, Object>) elem.get(cur.elementName);
+				elem.put(cur.elementName, new HashMap<String, Object>());
+				elem = (HashMap<String, Object>) elem.get(cur.elementName);
 			}
 		}
 		elem.put(defn.elementName, value);
@@ -118,9 +120,8 @@ public class SubmissionProvider extends ContentProvider {
 
 	@SuppressWarnings("unchecked")
 	private static final int generateXmlHelper(Document d, Element data,
-			int idx, Map.Entry<String, Object> entry) {
-		String key = entry.getKey();
-		Object o = entry.getValue();
+			int idx, String key, Map<String, Object> values) {
+		Object o = values.get(key);
 
 		Element e = d.createElement(XML_DEFAULT_NAMESPACE, key);
 
@@ -157,8 +158,12 @@ public class SubmissionProvider extends ContentProvider {
 			// it is an object...
 			Map<String, Object> m = (Map<String, Object>) o;
 			int nidx = 0;
-			for (Map.Entry<String, Object> etry : m.entrySet()) {
-				nidx = generateXmlHelper(d, e, nidx, etry);
+
+			ArrayList<String> entryNames = new ArrayList<String>();
+			entryNames.addAll(m.keySet());
+			Collections.sort(entryNames);
+			for ( String name : entryNames ) {
+				nidx = generateXmlHelper(d, e, nidx, name, m);
 			}
 		} else {
 			throw new IllegalArgumentException(
@@ -186,7 +191,7 @@ public class SubmissionProvider extends ContentProvider {
 
 		List<String> segments = uri.getPathSegments();
 
-		if (segments.size() != (2 + (asXml ? 1 : 0))) {
+		if (segments.size() != 2) {
 			throw new IllegalArgumentException(
 					"Unknown URI (incorrect number of path segments!) " + uri);
 		}
@@ -194,7 +199,15 @@ public class SubmissionProvider extends ContentProvider {
 		final String tableId = segments.get(0);
 		final String instanceId = (segments.size() >= 2 ? segments.get(1)
 				: null);
-		final String formPath = (segments.size() == 3) ? segments.get(2) : null;
+		final String formId;
+		final String formVersion;
+		if ( asXml ) {
+			formId = uri.getQueryParameter("formId");
+			formVersion = uri.getQueryParameter("formVersion");
+		} else {
+			formId = null;
+			formVersion = null;
+		}
 
 		final SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
@@ -210,7 +223,7 @@ public class SubmissionProvider extends ContentProvider {
 			// get map of (elementKey -> ColumnDefinition)
 			Map<String, ColumnDefinition> defns = DataModelDatabaseHelper
 					.getColumnDefinitions(db, tableId);
-			TreeMap<String, Object> values = new TreeMap<String, Object>();
+			HashMap<String, Object> values = new HashMap<String, Object>();
 
 			// issue query to retrieve the instanceId
 			StringBuilder b = new StringBuilder();
@@ -246,6 +259,7 @@ public class SubmissionProvider extends ContentProvider {
 						ColumnDefinition defn = defns.get(columnName);
 						if (defn != null && !c.isNull(i)) {
 							// user-defined column
+							Log.i(t, "element type: " + defn.elementType);
 							if (defn.elementType.equals("string")) {
 								String value = c.getString(i);
 								putElementValue(values, defn, value);
@@ -258,6 +272,15 @@ public class SubmissionProvider extends ContentProvider {
 							} else if (defn.elementType.equals("boolean")) {
 								Boolean value = (c.getInt(i) != 0);
 								putElementValue(values, defn, value);
+							} else if (defn.elementType.equals("date")) {
+								String value = c.getString(i);
+								putElementValue(values, defn, value);
+							} else if (defn.elementType.equals("dateTime")) {
+								String value = c.getString(i);
+								putElementValue(values, defn, value);
+							} else if (defn.elementType.equals("time")) {
+								String value = c.getString(i);
+								putElementValue(values, defn, value);
 							} else if (defn.elementType.equals("array")) {
 								String valueString = c.getString(i);
 								ArrayList<Object> al = DataModelDatabaseHelper.mapper
@@ -265,13 +288,14 @@ public class SubmissionProvider extends ContentProvider {
 								putElementValue(values, defn, al);
 							} else if (defn.elementType.equals("object")) {
 								String valueString = c.getString(i);
-								TreeMap<String, Object> obj = DataModelDatabaseHelper.mapper
-										.readValue(valueString, TreeMap.class);
+								HashMap<String, Object> obj = DataModelDatabaseHelper.mapper
+										.readValue(valueString, HashMap.class);
 								putElementValue(values, defn, obj);
 							} else /* user-defined */{
+								Log.i(t, "user-defined element type: " + defn.elementType);
 								String valueString = c.getString(i);
-								TreeMap<String, Object> obj = DataModelDatabaseHelper.mapper
-										.readValue(valueString, TreeMap.class);
+								HashMap<String, Object> obj = DataModelDatabaseHelper.mapper
+										.readValue(valueString, HashMap.class);
 								putElementValue(values, defn, obj);
 							}
 
@@ -367,8 +391,18 @@ public class SubmissionProvider extends ContentProvider {
 
 						// Need to get Form definition in order to get info on
 						// XML structure...
-						String formSelection = FormsColumns.FORM_PATH + "=?";
-						String[] formSelectionArgs = { formPath };
+						String formSelection = FormsColumns.FORM_ID + "=?" +
+								((formVersion == null) ? (" AND " + FormsColumns.FORM_VERSION + " IS NULL")
+														: (" AND " + FormsColumns.FORM_VERSION + "=?"));
+						String[] formSelectionArgs;
+						if ( formVersion == null ) {
+							String[] t = { formId };
+							formSelectionArgs = t;
+						} else {
+							String[] t = { formId, formVersion };
+							formSelectionArgs = t;
+						}
+
 						Cursor fc = null;
 						try {
 							fc = Survey
@@ -460,9 +494,11 @@ public class SubmissionProvider extends ContentProvider {
 										NEW_LINE);
 
 								idx = 3;
-								for (Map.Entry<String, Object> entry : values
-										.entrySet()) {
-									idx = generateXmlHelper(d, e, idx, entry);
+								ArrayList<String> entryNames = new ArrayList<String>();
+								entryNames.addAll(values.keySet());
+								Collections.sort(entryNames);
+								for ( String name : entryNames ) {
+									idx = generateXmlHelper(d, e, idx, name, values);
 								}
 
 								KXmlSerializer serializer = new KXmlSerializer();
@@ -568,17 +604,17 @@ public class SubmissionProvider extends ContentProvider {
 
 						// For JSON, we construct the model, then emit model +
 						// meta + data
-						TreeMap<String, Object> wrapper = new TreeMap<String, Object>();
+						HashMap<String, Object> wrapper = new HashMap<String, Object>();
 						wrapper.put("tableId", tableId);
 						wrapper.put("instanceId", instanceId);
-						TreeMap<String, Object> formDef = new TreeMap<String, Object>();
+						HashMap<String, Object> formDef = new HashMap<String, Object>();
 						formDef.put("table_id", tableId);
 						formDef.put("model",
 								DataModelDatabaseHelper.getDataModel(defns));
 						wrapper.put("formDef", formDef);
 						wrapper.put("data", values);
-						wrapper.put("metadata", new TreeMap<String, Object>());
-						TreeMap<String, Object> elem = (TreeMap<String, Object>) wrapper
+						wrapper.put("metadata", new HashMap<String, Object>());
+						HashMap<String, Object> elem = (HashMap<String, Object>) wrapper
 								.get("metadata");
 						elem.put("instanceName", instanceName);
 						elem.put("saved", "COMPLETE");
@@ -627,7 +663,7 @@ public class SubmissionProvider extends ContentProvider {
 		FileOutputStream os = null;
 		OutputStreamWriter osw = null;
 		try {
-			os = new FileOutputStream(outputFilePath);
+			os = new FileOutputStream(outputFilePath, false);
 			osw = new OutputStreamWriter(os, "UTF-8");
 			osw.write(payload);
 			osw.flush();
@@ -637,14 +673,13 @@ public class SubmissionProvider extends ContentProvider {
 		} catch (IOException e) {
 			Log.e(t, "Error writing file");
 			e.printStackTrace();
-			return false;
-		} finally {
 			try {
 				osw.close();
 				os.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+			} catch (IOException ex) {
+				ex.printStackTrace();
 			}
+			return false;
 		}
 	}
 

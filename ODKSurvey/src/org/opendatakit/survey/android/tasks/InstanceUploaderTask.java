@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -366,7 +367,9 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     private FileSet constructSubmissionFiles(FormInfo fi, String instanceId) throws JsonParseException, JsonMappingException, IOException {
 
     	Uri manifest =  Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX + "/" +
-    			StringEscapeUtils.escapeHtml4(fi.tableId) + "/" + StringEscapeUtils.escapeHtml4(instanceId) );
+    			URLEncoder.encode(fi.tableId, "UTF-8") + "/" + URLEncoder.encode(instanceId, "UTF-8") +
+    			"?formId=" + URLEncoder.encode(fi.formId, "UTF-8") +
+    			((fi.formVersion == null) ? "" : "&formVersion=" + URLEncoder.encode(fi.formVersion, "UTF-8")) );
 
     	InputStream is = Survey.getInstance().getContentResolver().openInputStream(manifest);
 
@@ -403,8 +406,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
         	Uri toUpdate = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
         			uploadingForm.tableId +
-        			"/" + StringEscapeUtils.escapeHtml4(toUpload[i]) +
-        			"/" + StringEscapeUtils.escapeHtml4(uploadingForm.formPath) );
+        			"/" + StringEscapeUtils.escapeHtml4(toUpload[i]) );
         	Cursor c = null;
         	try {
         		c = Survey.getInstance().getContentResolver().query(toUpdate, null, null, null, null);

@@ -46,12 +46,17 @@ the License.
             android:textSize="16sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/listholder"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/buttonholder"
+        android:layout_alignParentTop="true" >
+
     <ListView
         android:id="@android:id/list"
         android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_above="@+id/buttonholder"
-        android:layout_alignParentTop="true" />
+        android:layout_height="fill_parent" />
 
     <TextView
         android:id="@android:id/empty"
@@ -60,5 +65,7 @@ the License.
         android:gravity="center"
         android:text="@string/no_items_display_instances"
         android:textSize="21sp" />
+
+    </LinearLayout>
 
 </RelativeLayout>

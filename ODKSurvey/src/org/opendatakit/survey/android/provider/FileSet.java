@@ -68,7 +68,8 @@ public class FileSet {
 			str.add(map);
 		}
 
-		return DataModelDatabaseHelper.mapper.writeValueAsString(str);
+		String serializedString = DataModelDatabaseHelper.mapper.writeValueAsString(str);
+		return serializedString;
 	}
 
 	public static final FileSet parse(InputStream src) throws JsonParseException, JsonMappingException, IOException {
@@ -80,7 +81,7 @@ public class FileSet {
 		map = (Map<String,String>) str.get(0);
 		fs.instanceFile = FileProvider.getAsFile(map.get(URI));
 		for ( int i = 1 ; i < str.size() ; ++i ) {
-			map = (Map<String,String>) str.get(0);
+			map = (Map<String,String>) str.get(i);
 			MimeFile f = new MimeFile();
 			f.file = FileProvider.getAsFile(map.get(URI));
 			f.contentType = map.get(CONTENT_TYPE);
