@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.Date;
 
+import android.net.Uri;
+
 /**
  * Basic definitions of the current form being processed.
  *
@@ -30,6 +32,7 @@ public class FormIdStruct implements Serializable {
 	 */
 	private static final long serialVersionUID = -525417323683147800L;
 
+	public final Uri formUri;
 	public final File formDefFile;
 	public final String formPath;
 	public final String formId;
@@ -37,7 +40,8 @@ public class FormIdStruct implements Serializable {
 	public final String formVersion;
 	public final Date lastDownloadDate;
 
-	public FormIdStruct(File formDefFile, String formPath, String formId, String formVersion, String tableId, Date lastModifiedDate) {
+	public FormIdStruct(Uri formUri, File formDefFile, String formPath, String formId, String formVersion, String tableId, Date lastModifiedDate) {
+		this.formUri = formUri;
 		this.formDefFile = formDefFile;
 		this.formPath = formPath;
 		this.formId = formId;
@@ -47,6 +51,7 @@ public class FormIdStruct implements Serializable {
 	}
 
 	public FormIdStruct(FormIdStruct original) {
+		this.formUri = original.formUri;
 		this.formDefFile = original.formDefFile;
 		this.formPath = original.formPath;
 		this.formId = original.formId;

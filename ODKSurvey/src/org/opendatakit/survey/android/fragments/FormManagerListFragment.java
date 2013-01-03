@@ -182,10 +182,10 @@ public class FormManagerListFragment extends ListFragment implements
 	 * Create the form delete dialog
 	 */
 	private void createDeleteFormsDialog() {
-		mAlertDialog = new AlertDialog.Builder(getActivity()).create();
-		mAlertDialog.setTitle(getString(R.string.delete_file));
-		mAlertDialog.setMessage(getString(R.string.delete_confirm,
-				mSelected.size()));
+		if ( mAlertDialog != null && mAlertDialog.isShowing() ) {
+			mAlertDialog.dismiss();
+		}
+
 		DialogInterface.OnClickListener dialogYesNoListener = new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int i) {
@@ -198,11 +198,13 @@ public class FormManagerListFragment extends ListFragment implements
 				}
 			}
 		};
-		mAlertDialog.setCancelable(false);
-		mAlertDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.delete_yes),
-				dialogYesNoListener);
-		mAlertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.delete_no),
-				dialogYesNoListener);
+
+		mAlertDialog = new AlertDialog.Builder(getActivity())
+				.setTitle(getString(R.string.delete_file))
+				.setMessage(getString(R.string.delete_confirm, mSelected.size()))
+				.setCancelable(false)
+				.setPositiveButton(getString(R.string.delete_yes), dialogYesNoListener)
+				.setNegativeButton(getString(R.string.delete_no), dialogYesNoListener).create();
 		mAlertDialog.show();
 	}
 

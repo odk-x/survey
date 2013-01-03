@@ -28,7 +28,6 @@ import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -467,9 +466,10 @@ public class FormDownloadListFragment extends ListFragment implements
 	 * @param shouldExit
 	 */
 	private void createAlertDialog(String title, String message) {
-		mAlertDialog = new AlertDialog.Builder(getActivity()).create();
-		mAlertDialog.setTitle(title);
-		mAlertDialog.setMessage(message);
+		if ( mAlertDialog != null && mAlertDialog.isShowing() ) {
+			mAlertDialog.dismiss();
+		}
+
 		DialogInterface.OnClickListener quitListener = new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int i) {
@@ -481,9 +481,13 @@ public class FormDownloadListFragment extends ListFragment implements
 				}
 			}
 		};
-		mAlertDialog.setCancelable(false);
-		mAlertDialog.setButton(Dialog.BUTTON_POSITIVE, getString(R.string.ok), quitListener);
-		mAlertDialog.setIcon(android.R.drawable.ic_dialog_info);
+
+		mAlertDialog = new AlertDialog.Builder(getActivity())
+			.setTitle(title)
+			.setMessage(message)
+			.setCancelable(false)
+			.setPositiveButton(getString(R.string.ok), quitListener)
+			.setIcon(android.R.drawable.ic_dialog_info).create();
 		mAlertMsg = message;
 		mAlertTitle = title;
 		mAlertShowing = true;

@@ -100,7 +100,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
-		log.d(t,"Video error");
+		log.w(t,"Video error");
 		onHideCustomView();
 		return true;
 	}
@@ -138,7 +138,19 @@ public class ODKWebChromeClient extends WebChromeClient implements
 					+ consoleMessage.message());
 			return true;
 		} else {
-			log.e(t,consoleMessage.message());
+			if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG ) {
+				log.d(t,  consoleMessage.message());
+			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR ) {
+				log.e(t,  consoleMessage.message());
+			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG ) {
+				log.i(t,  consoleMessage.message());
+			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP ) {
+				log.t(t,  consoleMessage.message());
+			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING ) {
+				log.w(t,  consoleMessage.message());
+			} else {
+				log.e(t,consoleMessage.message());
+			}
 			return true;
 		}
 	}

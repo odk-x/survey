@@ -46,6 +46,7 @@ public class WebLogger {
 	public static final int WARN = 5;
 	public static final int ERROR = 6;
 	public static final int SUCCESS = 7;
+	public static final int TIP = 8;
 
 	public WebLogger() {
 		long now = System.currentTimeMillis();
@@ -100,6 +101,9 @@ public class WebLogger {
 			case VERBOSE:
 				logMsg = "V/" + logMsg;
 				break;
+			case TIP:
+				logMsg = "T/" + logMsg;
+				break;
 			case WARN:
 				Log.w(t, logMsg);
 				logMsg = "W/" + logMsg;
@@ -113,6 +117,14 @@ public class WebLogger {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public void t(String t, String logMsg) {
+		log(TIP, t, logMsg);
+	}
+
+	public void v(String t, String logMsg) {
+		log(VERBOSE, t, logMsg);
 	}
 
 	public void d(String t, String logMsg) {

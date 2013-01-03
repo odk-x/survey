@@ -46,7 +46,6 @@ import org.opendatakit.httpclientandroidlib.entity.mime.content.FileBody;
 import org.opendatakit.httpclientandroidlib.entity.mime.content.StringBody;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
