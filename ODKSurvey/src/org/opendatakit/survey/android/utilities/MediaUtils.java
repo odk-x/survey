@@ -409,4 +409,29 @@ public class MediaUtils {
         }
         return count;
 	}
+
+	public static String getPathFromUri(Uri uri, String pathKey) {
+	    if (uri.toString().startsWith("file")) {
+	        return uri.toString().substring(7);
+	    } else {
+	        String[] projection = {
+	        		pathKey
+	            };
+	        Cursor c = null;
+	        try {
+	        	c = Survey.getInstance().getContentResolver().query(uri, projection, null, null, null);
+	        	int column_index = c.getColumnIndexOrThrow(pathKey);
+	        	String path = null;
+	            if (c.getCount() > 0) {
+	                c.moveToFirst();
+	                path = c.getString(column_index);
+	            }
+	            return path;
+	        } finally {
+	        	if ( c != null ) {
+	        		c.close();
+	        	}
+	        }
+	    }
+	}
 }

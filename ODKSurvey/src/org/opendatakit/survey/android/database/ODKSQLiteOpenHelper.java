@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -56,7 +56,7 @@ public abstract class ODKSQLiteOpenHelper {
      * Create a helper object to create, open, and/or manage a database. The database is not
      * actually created or opened until one of {@link #getWritableDatabase} or
      * {@link #getReadableDatabase} is called.
-     * 
+     *
      * @param path to the file
      * @param name of the database file, or null for an in-memory database
      * @param factory to use for creating cursor objects, or null for the default
@@ -82,11 +82,33 @@ public abstract class ODKSQLiteOpenHelper {
      * Errors such as bad permissions or a full disk may cause this operation to fail, but future
      * attempts may succeed if the problem is fixed.
      * </p>
-     * 
+     *
      * @throws SQLiteException if the database cannot be opened for writing
      * @return a read/write database object valid until {@link #close} is called
      */
-    public synchronized SQLiteDatabase getWritableDatabase() {
+    public SQLiteDatabase getWritableDatabase() {
+        int attempts = 1;
+        for (;;++attempts) {
+        	try {
+        		SQLiteDatabase db = getPrivateWritableDatabase();
+	        	return db;
+	        } catch ( SQLiteException ex ) {
+	        	ex.printStackTrace();
+	        	Log.i(t, "unable to access database");
+	        	if ( attempts > 3 ) {
+	        		throw ex;
+	        	}
+	        	try {
+					Thread.sleep(50L);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+		        	Log.i(t, "resuming sleep after unable to access database");
+				}
+	        }
+        }
+    }
+
+    private synchronized SQLiteDatabase getPrivateWritableDatabase() {
         if (mDatabase != null && mDatabase.isOpen() && !mDatabase.isReadOnly()) {
             return mDatabase; // The database is already open for business
         }
@@ -159,7 +181,7 @@ public abstract class ODKSQLiteOpenHelper {
      * problem is fixed, a future call to {@link #getWritableDatabase} may succeed, in which case
      * the read-only database object will be closed and the read/write object will be returned in
      * the future.
-     * 
+     *
      * @throws SQLiteException if the database cannot be opened
      * @return a database object valid until {@link #getWritableDatabase} or {@link #close} is
      *         called.
@@ -221,7 +243,7 @@ public abstract class ODKSQLiteOpenHelper {
     /**
      * Called when the database is created for the first time. This is where the creation of tables
      * and the initial population of the tables should happen.
-     * 
+     *
      * @param db The database.
      */
     public abstract void onCreate(SQLiteDatabase db);
@@ -236,7 +258,7 @@ public abstract class ODKSQLiteOpenHelper {
      * ALTER TABLE to insert them into a live table. If you rename or remove columns you can use
      * ALTER TABLE to rename the old table, then create the new table and then populate the new
      * table with the contents of the old table.
-     * 
+     *
      * @param db The database.
      * @param oldVersion The old database version.
      * @param newVersion The new database version.
@@ -247,7 +269,7 @@ public abstract class ODKSQLiteOpenHelper {
     /**
      * Called when the database has been opened. Override method should check
      * {@link SQLiteDatabase#isReadOnly} before updating the database.
-     * 
+     *
      * @param db The database.
      */
     public void onOpen(SQLiteDatabase db) {

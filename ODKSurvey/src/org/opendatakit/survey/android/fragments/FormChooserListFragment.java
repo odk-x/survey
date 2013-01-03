@@ -21,7 +21,6 @@ import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
 import android.content.ContentUris;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -85,9 +84,9 @@ public class FormChooserListFragment extends ListFragment implements
 		mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION,
 				this.getActivity(), R.layout.two_item, data, viewParams);
 		setListAdapter(mInstances);
+//    	getListView().setBackgroundColor(Color.WHITE);
 
-    	getListView().setBackgroundColor(Color.WHITE);
-		getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
+    	getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
 	}
 
 	@Override

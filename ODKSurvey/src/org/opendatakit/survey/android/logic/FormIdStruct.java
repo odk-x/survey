@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.logic;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.Date;
 
 /**
@@ -23,7 +24,12 @@ import java.util.Date;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormIdStruct {
+public class FormIdStruct implements Serializable {
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = -525417323683147800L;
+
 	public final File formDefFile;
 	public final String formPath;
 	public final String formId;

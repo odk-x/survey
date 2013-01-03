@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.provider.FileProvider;
+import org.opendatakit.survey.android.utilities.MediaUtils;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -81,7 +82,7 @@ public class MediaChooseImageActivity extends Activity {
 
         // get gp of chosen file
         Uri selectedMedia = intent.getData();
-        String sourceMediaPath = MainMenuActivity.getPathFromUri(selectedMedia, Images.Media.DATA);
+        String sourceMediaPath = MediaUtils.getPathFromUri(selectedMedia, Images.Media.DATA);
         File sourceMedia = new File(sourceMediaPath);
         String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
@@ -117,7 +118,7 @@ public class MediaChooseImageActivity extends Activity {
 
 			// if you are replacing an answer. delete the previous image using the
 	        // content provider.
-	        String binarypath = MainMenuActivity.getPathFromUri(mediaURI, Images.Media.DATA);
+	        String binarypath = MediaUtils.getPathFromUri(mediaURI, Images.Media.DATA);
 	        File newMediaFromCP = new File(binarypath);
 
 	        Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());

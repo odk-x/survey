@@ -35,13 +35,13 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.provider.DataModelDatabaseHelper.ColumnDefinition;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.utilities.EncryptionUtils;
 import org.opendatakit.survey.android.utilities.EncryptionUtils.EncryptedFormInformation;
+import org.opendatakit.survey.android.utilities.ODKFileUtils;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -185,9 +185,7 @@ public class SubmissionProvider extends ContentProvider {
 			throw new IllegalArgumentException("Only read access is supported");
 		}
 
-		// URI == ..../tableId/instanceId/formPath for XML (NOTE: formPath must
-		// be escaped)
-		// URI == ..../tableId/instanceId for Json
+		// URI == ..../tableId/instanceId?formId=&formVersion=
 
 		List<String> segments = uri.getPathSegments();
 
@@ -199,15 +197,8 @@ public class SubmissionProvider extends ContentProvider {
 		final String tableId = segments.get(0);
 		final String instanceId = (segments.size() >= 2 ? segments.get(1)
 				: null);
-		final String formId;
-		final String formVersion;
-		if ( asXml ) {
-			formId = uri.getQueryParameter("formId");
-			formVersion = uri.getQueryParameter("formVersion");
-		} else {
-			formId = null;
-			formVersion = null;
-		}
+		final String formId = uri.getQueryParameter("formId");
+		final String formVersion = uri.getQueryParameter("formVersion");
 
 		final SQLiteDatabase db = mDbHelper.getReadableDatabase();
 
@@ -312,10 +303,10 @@ public class SubmissionProvider extends ContentProvider {
 					// contents
 					b.setLength(0);
 					File submissionXml = new File(
-							MainMenuActivity.getInstanceFolder(instanceId),
+							ODKFileUtils.getInstanceFolder(tableId,instanceId),
 							(asXml ? "submission.xml" : "submission.json"));
 					File manifest = new File(
-							MainMenuActivity.getInstanceFolder(instanceId),
+							ODKFileUtils.getInstanceFolder(tableId,instanceId),
 							"manifest.json");
 					submissionXml.delete();
 					manifest.delete();

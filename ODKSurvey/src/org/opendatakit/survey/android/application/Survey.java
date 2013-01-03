@@ -22,6 +22,7 @@ import org.opendatakit.httpclientandroidlib.client.protocol.ClientContext;
 import org.opendatakit.httpclientandroidlib.impl.client.BasicCookieStore;
 import org.opendatakit.httpclientandroidlib.protocol.BasicHttpContext;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
+import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.PropertyManager;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.utilities.AgingCredentialsProvider;
@@ -58,6 +59,11 @@ public class Survey extends Application {
     public static final String WEBDB_PATH = METADATA_PATH + File.separator + "webDb";
     public static final String DEFAULT_FONTSIZE = "21";
 
+    // shared state
+    private FormIdStruct currentForm = null;
+    private String instanceId = null;
+    private String pageRef = null;
+    private String auxilllaryHash = null;
 
     // share all session cookies across all sessions...
     private CookieStore cookieStore = new BasicCookieStore();
@@ -81,6 +87,38 @@ public class Survey extends Application {
                 settings.getString(PreferencesActivity.KEY_FONT_SIZE, Survey.DEFAULT_FONTSIZE);
         int questionFontsize = Integer.valueOf(question_font);
         return questionFontsize;
+    }
+
+    public void setCurrentForm(FormIdStruct currentForm) {
+    	this.currentForm = currentForm;
+    }
+
+    public FormIdStruct getCurrentForm() {
+    	return this.currentForm;
+    }
+
+    public void setInstanceId(String instanceId) {
+    	this.instanceId = instanceId;
+    }
+
+    public String getInstanceId() {
+    	return this.instanceId;
+    }
+
+    public void setPageRef(String pageRef) {
+    	this.pageRef = pageRef;
+    }
+
+    public String getPageRef() {
+    	return this.pageRef;
+    }
+
+    public void setAuxillaryHash(String auxillaryHash) {
+    	this.auxilllaryHash = auxillaryHash;
+    }
+
+    public String getAuxillaryHash() {
+    	return this.auxilllaryHash;
     }
 
     public String getVersionedAppName() {

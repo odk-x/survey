@@ -19,11 +19,10 @@ import java.io.File;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.WebDbDatabaseHelper;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.WebDbDatabaseHelper;
 import org.opendatakit.survey.android.utilities.WebLogger;
 
 import android.database.Cursor;
@@ -133,7 +132,16 @@ public class JQueryJavascriptCallback {
 	}
 
 	public void setInstanceId(String instanceId) {
-		MainMenuActivity.instanceId = instanceId;
+		mActivity.setInstanceId(instanceId);
+	}
+
+	public void setPageRef(String pageRef) {
+		mActivity.setPageRef(pageRef);
+	}
+
+	public void setAuxillaryHash(String auxillaryHash) {
+		// NOTE: not currently used...
+		mActivity.setAuxillaryHash(auxillaryHash);
 	}
 
 	public void ignoreAllChangesCompleted(String formId, String instanceId) {

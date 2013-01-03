@@ -16,6 +16,9 @@ package org.opendatakit.survey.android.activities;
 
 import org.json.JSONObject;
 
+import android.graphics.Bitmap;
+import android.view.View;
+
 /**
  * Interface that implements some of the shim.js callbacks from the WebKit.
  *
@@ -23,6 +26,12 @@ import org.json.JSONObject;
  *
  */
 public interface ODKActivity {
+
+	public void setInstanceId(String instanceId);
+
+	public void setPageRef(String pageRef);
+
+	public void setAuxillaryHash(String hash);
 
 	public void saveAllChangesCompleted(String tableId, String instanceId, boolean asComplete);
 
@@ -33,6 +42,14 @@ public interface ODKActivity {
 	public void ignoreAllChangesFailed(String tableId, String instanceId);
 
 	public String doAction( String page, String path, String action, JSONObject valueMap );
+
+	public void swapToCustomView(View view);
+
+	public void swapOffCustomView();
+
+	public View getVideoLoadingProgressView();
+
+	public Bitmap getDefaultVideoPoster();
 
 	/**
 	 * Use the Activity implementation of this.

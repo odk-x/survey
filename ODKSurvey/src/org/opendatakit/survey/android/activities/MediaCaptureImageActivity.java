@@ -73,6 +73,11 @@ public class MediaCaptureImageActivity extends Activity {
             mediaPath = MainMenuActivity.getInstanceFilePath(EXTENSION);
             afterResult = false;
     	}
+    }
+
+	@Override
+	protected void onResume() {
+		super.onResume();
 
     	if ( !hasLaunched && !afterResult ) {
 	        Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
@@ -114,7 +119,7 @@ public class MediaCaptureImageActivity extends Activity {
 	        }
     	}
     	afterResult = false;
-    }
+	}
 
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {

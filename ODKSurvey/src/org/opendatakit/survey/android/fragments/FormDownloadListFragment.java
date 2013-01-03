@@ -33,7 +33,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -114,10 +113,10 @@ public class FormDownloadListFragment extends ListFragment implements
 		int[] view = new int[] { R.id.text1, R.id.text2 };
 
 		mFormListAdapter = new SimpleAdapter(getActivity(), mFormList, R.layout.two_item_multiple_choice, data, view);
-		// need white background before load
-		getListView().setBackgroundColor(Color.WHITE);
-		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-		getListView().setItemsCanFocus(false);
+//		// need white background before load
+//		getListView().setBackgroundColor(Color.WHITE);
+//		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+//		getListView().setItemsCanFocus(false);
 
 		setListAdapter(mFormListAdapter);
 
@@ -307,6 +306,9 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	@Override
 	public void onResume() {
+
+		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		getListView().setItemsCanFocus(false);
 
 		FragmentManager mgr = getFragmentManager();
 		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
@@ -503,6 +505,9 @@ public class FormDownloadListFragment extends ListFragment implements
 			Log.i(t,
 					"Attempting to close a dialog that was not previously opened");
 		}
+
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		f.clearDownloadFormsTask();
 
 		StringBuilder b = new StringBuilder();
 		Set<String> keys = result.keySet();

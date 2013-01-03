@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
@@ -93,6 +92,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	private ArrayList<String> mSelected = new ArrayList<String>();
 	private boolean mToggled = false;
 
+	private FormIdStruct currentForm = null;
 	private View view;
 
 	@Override
@@ -112,8 +112,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		mInstances = new SimpleCursorAdapter(getActivity(),
 				R.layout.two_item_multiple_choice, null, data, view, 0);
 		setListAdapter(mInstances);
-		getLoaderManager()
-				.initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
+
+    	getLoaderManager().initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
 	}
 
 	@Override
@@ -217,6 +217,16 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		mUploadButton.setEnabled(false);
 	}
 
+	public void changeForm(FormIdStruct form) {
+		currentForm = form;
+		if ( getActivity() != null ) {
+			// if we are already attached to an activity, restart the loader.
+			// otherwise, we will eventually be attached.
+			getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null,
+				this);
+		}
+	}
+
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
@@ -236,7 +246,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	}
 
 	private void uploadSelectedFiles() {
-		if (mSelected.size() > 0) {
+		if (mSelected.size() > 0 && currentForm != null) {
 			// show dialog box
 			mAlertMsg = getString(R.string.please_wait);
 			showProgressDialog();
@@ -244,7 +254,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 					.findFragmentByTag("background");
 			String[] str = new String[mSelected.size()];
-			f.uploadInstances(this, mSelected.toArray(str));
+			f.uploadInstances(this, currentForm, mSelected.toArray(str));
 		}
 	}
 
@@ -371,7 +381,10 @@ public class InstanceUploaderListFragment extends ListFragment implements
 					"Attempting to close a dialog that was not previously opened");
 		}
 
-		if (outcome.mAuthRequestingServer == null) {
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		f.clearUploadInstancesTask();
+
+		if (outcome.mAuthRequestingServer == null && currentForm != null) {
 			StringBuilder message = new StringBuilder();
 
 			Set<String> keys = outcome.mResults.keySet();
@@ -380,7 +393,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 				Cursor results = null;
 				try {
 					Uri uri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-							MainMenuActivity.currentForm.tableId + "/"
+							currentForm.tableId + "/"
 									+ StringEscapeUtils.escapeHtml4(id));
 					results = Survey.getInstance().getContentResolver()
 							.query(uri, null, null, null, null);
@@ -482,15 +495,21 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		return true;
 	}
 
+	CursorLoader loader = null;
+
 	@Override
 	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
 		// This is called when a new Loader needs to be created. This
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		FormIdStruct fs = MainMenuActivity.currentForm;
-		Uri baseUri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-				fs.tableId);
+		Uri baseUri;
+		if (currentForm != null) {
+			baseUri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+											currentForm.tableId);
+		} else {
+			baseUri = InstanceColumns.CONTENT_URI;
+		}
 
 		String selection;
 		String selectionArgs[];
@@ -511,8 +530,9 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.
-		return new CursorLoader(getActivity(), baseUri, null, selection,
+		loader = new CursorLoader(getActivity(), baseUri, null, selection,
 				selectionArgs, sortOrder);
+		return loader;
 	}
 
 	@Override

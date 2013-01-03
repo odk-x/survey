@@ -14,7 +14,7 @@
 
 package org.opendatakit.survey.android.views;
 
-import org.opendatakit.survey.android.activities.MainMenuActivity;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.utilities.WebLogger;
 
@@ -62,18 +62,18 @@ public class ODKWebChromeClient extends WebChromeClient implements
 				video = (VideoView) frame.getFocusedChild();
 				video.setOnCompletionListener(this);
 				video.setOnErrorListener(this);
-				((MainMenuActivity) a).swapToCustomView(view);
+				((ODKActivity) a).swapToCustomView(view);
 				super.onShowCustomView(view, callback);
 //				video.seekTo(0);// reset to start of video...
 //				video.start();
 			} else {
 				log.i(t,"onShowCustomView: FrameLayout not Video " + frame.getFocusedChild().getClass().getCanonicalName());
-				((MainMenuActivity) a).swapToCustomView(view);
+				((ODKActivity) a).swapToCustomView(view);
 				super.onShowCustomView(view, callback);
 			}
 		} else {
 			log.i(t,"onShowCustomView: not FrameLayout " + view.getClass().getCanonicalName());
-			((MainMenuActivity) a).swapToCustomView(view);
+			((ODKActivity) a).swapToCustomView(view);
 			super.onShowCustomView(view, callback);
 		}
 	}
@@ -81,7 +81,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
     @Override
     public void onHideCustomView() {
     	log.d(t,"onHideCustomView");
-    	((MainMenuActivity) a).swapOffCustomView();
+    	((ODKActivity) a).swapOffCustomView();
     	if ( video != null ) {
     		video.stopPlayback();
     	}
@@ -112,7 +112,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
      */
     @Override
     public Bitmap getDefaultVideoPoster() {
-    	return ((MainMenuActivity) a).getDefaultVideoPoster();
+    	return ((ODKActivity) a).getDefaultVideoPoster();
     }
 
     /**
@@ -122,7 +122,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
      */
     @Override
     public View getVideoLoadingProgressView() {
-    	return ((MainMenuActivity) a).getVideoLoadingProgressView();
+    	return ((ODKActivity) a).getVideoLoadingProgressView();
     }
 
 	@Override

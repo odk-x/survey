@@ -23,6 +23,7 @@ import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
+import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.tasks.DeleteFormsTask;
 import org.opendatakit.survey.android.tasks.DiskSyncTask;
@@ -229,7 +230,7 @@ public class BackgroundTaskFragment extends Fragment
 		executeTask(mBackgroundTasks.mDownloadFormsTask, filesToDownload);
 	}
 
-	public void uploadInstances(InstanceUploaderListener listener, String[] instancesToUpload) {
+	public void uploadInstances(InstanceUploaderListener listener, FormIdStruct form, String[] instancesToUpload) {
 		if ( mBackgroundTasks.mInstanceUploaderTask != null &&
 				mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED ) {
 			Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),
@@ -239,24 +240,17 @@ public class BackgroundTaskFragment extends Fragment
 		}
 
 		mInstanceUploaderListener = listener;
-		mBackgroundTasks.mInstanceUploaderTask = new InstanceUploaderTask();
+		mBackgroundTasks.mInstanceUploaderTask = new InstanceUploaderTask(form);
 		mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(this);
 		executeTask(mBackgroundTasks.mInstanceUploaderTask, instancesToUpload);
 	}
 
 	///////////////////////////////////////////////////////////////////////////
 	// clearing tasks
-
-	public void clearDeleteSelectedFormsTask() {
-		mDeleteFormsListener = null;
-		if ( mBackgroundTasks.mDeleteFormsTask != null ) {
-			mBackgroundTasks.mDeleteFormsTask.setDeleteListener(null);
-			if ( mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED ) {
-				mBackgroundTasks.mDeleteFormsTask.cancel(true);
-			}
-		}
-		mBackgroundTasks.mDeleteFormsTask = null;
-	}
+	// 
+	// NOTE: clearing any of these does not entirely cancel their actions,
+	// so they may still be operating in parallel with whatever new actions
+	// the user may initiate.
 
 	public void clearDownloadFormListTask() {
 		mFormListDownloaderListener = null;
@@ -266,6 +260,7 @@ public class BackgroundTaskFragment extends Fragment
 				mBackgroundTasks.mDownloadFormListTask.cancel(true);
 			}
 		}
+		mBackgroundTasks.mDownloadFormListTask = null;
 	}
 
 	public void clearDownloadFormsTask() {
@@ -276,6 +271,7 @@ public class BackgroundTaskFragment extends Fragment
 				mBackgroundTasks.mDownloadFormsTask.cancel(true);
 			}
 		}
+		mBackgroundTasks.mDownloadFormsTask = null;
 	}
 
 	public void clearUploadInstancesTask() {
@@ -286,6 +282,7 @@ public class BackgroundTaskFragment extends Fragment
 				mBackgroundTasks.mInstanceUploaderTask.cancel(true);
 			}
 		}
+		mBackgroundTasks.mInstanceUploaderTask = null;
 	}
 
 	///////////////////////////////////////////////////////////////////////////

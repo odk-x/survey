@@ -35,6 +35,7 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.views.JQueryJavascriptCallback;
 import org.opendatakit.survey.android.views.JQueryODKView;
 
@@ -84,12 +85,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     public static enum ScreenList { MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW };
 
-    // TODO: can this go away?
     // Extra returned from gp activity
+    // TODO: move to Survey???
     public static final String LOCATION_LATITUDE_RESULT = "latitude";
     public static final String LOCATION_LONGITUDE_RESULT = "longitude";
     public static final String LOCATION_ALTITUDE_RESULT = "altitude";
     public static final String LOCATION_ACCURACY_RESULT = "accuracy";
+
+    // tags for persisted context
+    private static final String PAGE_WAITING_FOR_DATA = "pageWaitingForData";
+    private static final String PATH_WAITING_FOR_DATA = "pathWaitingForData";
+    private static final String ACTION_WAITING_FOR_DATA = "actionWaitingForData";
+
+    private static final String CURRENT_SCREEN = "currentScreen";
+    private static final String NESTED_SCREEN = "nestedScreen";
 
     // menu options
 
@@ -102,40 +111,40 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     private static final int MENU_PUSH_INSTANCES = Menu.FIRST+6;
 
     // activity callback codes
-    public static final int HANDLER_ACTIVITY_CODE = 20;
+    private static final int HANDLER_ACTIVITY_CODE = 20;
 
     private static final boolean EXIT = true;
 
-    /*package*/ static final FrameLayout.LayoutParams COVER_SCREEN_PARAMS =
-            new FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT);
-
-    /*package*/ static final FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER =
+    private static final FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER =
             new FrameLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.MATCH_PARENT,
             Gravity.CENTER);
 
-
-    public static FormIdStruct currentForm = null;
-    public static String instanceId = null;
+    /**
+     * Member variables that are saved and restored across orientation changes.
+     */
 
     private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
-    private ScreenList nestScreen = ScreenList.WEBKIT;
+    private ScreenList nestedScreen = ScreenList.FORM_CHOOSER;
 
     private String pageWaitingForData = null;
 	private String pathWaitingForData = null;
 	private String actionWaitingForData = null;
 
-    private AlertDialog mAlertDialog;
+	/**
+	 * Member variables that do not need to be perserved across orientation changes, etc.
+	 */
+
+    private AlertDialog mAlertDialog; // no need to preserve
 
     private JQueryJavascriptCallback mJSCallback = null; // cached for efficiency only -- no need to preserve
+
     private SharedPreferences mAdminPreferences; // cached for efficiency only -- no need to preserve
 
-    Bitmap mDefaultVideoPoster = null; // cached for efficiency only -- no need to preserve
+    private Bitmap mDefaultVideoPoster = null; // cached for efficiency only -- no need to preserve
 
-    View mVideoProgressView = null; // cached for efficiency only -- no need to preserve
+    private View mVideoProgressView = null; // cached for efficiency only -- no need to preserve
 
     @Override
     protected void onPause() {
@@ -149,44 +158,49 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	protected void onSaveInstanceState(Bundle outState) {
 		// TODO Auto-generated method stub
 		super.onSaveInstanceState(outState);
+
+		if ( pageWaitingForData != null ) {
+			outState.putString(PAGE_WAITING_FOR_DATA, pageWaitingForData);
+		}
+		if ( pathWaitingForData != null ) {
+			outState.putString(PATH_WAITING_FOR_DATA, pathWaitingForData);
+		}
+		if ( actionWaitingForData != null ) {
+			outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
+		}
+		outState.putString(CURRENT_SCREEN, currentScreen.name());
+		outState.putString(NESTED_SCREEN, nestedScreen.name());
 	}
 
 	@Override
 	protected void onRestoreInstanceState(Bundle savedInstanceState) {
-		// TODO Auto-generated method stub
 		super.onRestoreInstanceState(savedInstanceState);
+
+		pageWaitingForData = savedInstanceState.containsKey(PAGE_WAITING_FOR_DATA) ?
+				(String) savedInstanceState.get(PAGE_WAITING_FOR_DATA) : null;
+		pathWaitingForData = savedInstanceState.containsKey(PATH_WAITING_FOR_DATA) ?
+				(String) savedInstanceState.get(PATH_WAITING_FOR_DATA) : null;
+		actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ?
+				(String) savedInstanceState.get(ACTION_WAITING_FOR_DATA) : null;
+
+		currentScreen = ScreenList.valueOf(savedInstanceState.containsKey(CURRENT_SCREEN) ?
+				(String) savedInstanceState.get(CURRENT_SCREEN) : ScreenList.MAIN_SCREEN.name());
+		nestedScreen = ScreenList.valueOf(savedInstanceState.containsKey(NESTED_SCREEN) ?
+				(String) savedInstanceState.get(NESTED_SCREEN) : ScreenList.FORM_CHOOSER.name());
 	}
 
 	@Override
 	protected void onResume() {
-		// TODO Auto-generated method stub
 		super.onResume();
+		swapToFragmentView(nestedScreen);
 	}
 
     public static String getInstanceFolder(String instanceId) {
-    	if ( instanceId == null || currentForm == null ) {
-    		return Survey.INSTANCES_PATH + File.separator + "bogus";
-    	} else {
-    		String instanceFolder = instanceId.replaceAll("[\\p{Punct}\\p{Space}]", "_");
-    		String tableFolder = currentForm.tableId.replaceAll("[\\p{Punct}\\p{Space}]", "_");
-
-    		File f = new File(new File(new File(Survey.INSTANCES_PATH), tableFolder), instanceFolder);
-    		f.mkdirs();
-        	return f.getAbsolutePath();
-    	}
+    	return ODKFileUtils.getInstanceFolder(Survey.getInstance().getCurrentForm().tableId, instanceId);
     }
 
     public static String getInstanceFolder() {
-    	if ( instanceId == null && currentForm == null ) {
-    		return Survey.INSTANCES_PATH + File.separator + "bogus";
-    	} else {
-    		String instanceFolder = instanceId.replaceAll("[\\p{Punct}\\p{Space}]", "_");
-    		String tableFolder = currentForm.tableId.replaceAll("[\\p{Punct}\\p{Space}]", "_");
-
-    		File f = new File(new File(new File(Survey.INSTANCES_PATH), tableFolder), instanceFolder);
-    		f.mkdirs();
-        	return f.getAbsolutePath();
-    	}
+    	return ODKFileUtils.getInstanceFolder(Survey.getInstance().getCurrentForm().tableId, Survey.getInstance().getInstanceId());
     }
 
     public static String getInstanceFilePath(String extension) {
@@ -194,8 +208,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 				+ System.currentTimeMillis() + extension;
     	return mediaPath;
     }
-    // private static boolean DO_NOT_EXIT = false;
-
 
     public static class TabListener<T extends Fragment> implements ActionBar.TabListener {
         private Fragment mFragment;
@@ -256,14 +268,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         mAdminPreferences = this.getSharedPreferences(
 				AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
 
-//        String instanceId = "uuid:" + UUID.randomUUID().toString();
-//
-//        // set paths to /sdcard/odk/forms/formfilename/
-//        String formFileName = "json";
-//
-//        FormController fc = new FormController(new File(Survey.FORMS_PATH, formFileName), instanceId);
-//        Survey.getInstance().setFormController(fc);
-
         mJSCallback = new JQueryJavascriptCallback(this);
 
         setContentView(R.layout.main_screen);
@@ -271,7 +275,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         {
         	JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
         	view.setJavascriptCallback(mJSCallback);
-        	view.loadPage(null);
+        	view.loadPage(Survey.getInstance().getCurrentForm(),
+        			Survey.getInstance().getInstanceId(),
+        			Survey.getInstance().getPageRef(),
+        			Survey.getInstance().getAuxillaryHash());
         }
 
         // ensure we have the background task fragment available before any actions are taken...
@@ -293,42 +300,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		actionBar.setDisplayShowTitleEnabled(false);
 		actionBar.setDisplayShowHomeEnabled(false);
 		actionBar.setDisplayHomeAsUpEnabled(false);
-
-
-		Fragment f = mgr.findFragmentById(FormChooserListFragment.ID);
-		if ( f == null ) {
-			f = new FormChooserListFragment();
-			((FormChooserListFragment) f).setFormChooserListListener(this);
-			mgr.beginTransaction().add(R.id.main_content, f).commit();
-		} else {
-			((FormChooserListFragment) f).setFormChooserListListener(this);
-			mgr.beginTransaction().show(f).commit();
-		}
-
-//		{
-//			MainMenuFragment f = (MainMenuFragment) mgr.findFragmentById(MainMenuFragment.ID);
-//			if ( f == null ) {
-//				f = new MainMenuFragment();
-//				mgr.beginTransaction().add(R.id.main_content, f).commit();
-//			}
-//		}
-
-        /////////////////////////
-        // TODO: DataManagerListFragment -- for deleting individual instances -- not used (enter form, delete from instances page).
-        //
     }
 
     @Override
 	public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
+        boolean formIsLoaded = (Survey.getInstance().getInstanceId() != null &&
+        						Survey.getInstance().getCurrentForm() != null);
 
         MenuItem item;
         item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE,
 				 getString(R.string.enter_data_button));
         item.setIcon(R.drawable.forms)
         	.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM|MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-
-        if (  currentScreen == ScreenList.WEBKIT || (currentForm != null && instanceId != null) ) {
+        if (  currentScreen == ScreenList.WEBKIT || formIsLoaded ) {
         	// we are editing something...
 	        item = menu.add(Menu.NONE, MENU_EDIT_INSTANCE, Menu.NONE,
 					 getString(R.string.review_data));
@@ -384,57 +369,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		FragmentManager mgr = getSupportFragmentManager();
-		// Fragment currentFragment = mgr.findFragmentById(fragmentId);
-
-		Fragment f;
 		if ( item.getItemId() == MENU_FILL_FORM ) {
-			f = mgr.findFragmentById(FormChooserListFragment.ID);
-			if ( f == null ) {
-				f = new FormChooserListFragment();
-				((FormChooserListFragment) f).setFormChooserListListener(this);
-			}
-			mgr.beginTransaction().replace(R.id.main_content, f).commit();
-			currentScreen = ScreenList.MAIN_SCREEN;
-			swapToFragmentView();
+			swapToFragmentView(ScreenList.FORM_CHOOSER);
 			return true;
 		} else if ( item.getItemId() == MENU_PULL_FORMS ) {
-			f = this.getSupportFragmentManager().findFragmentById(FormDownloadListFragment.ID);
-			if ( f == null ) {
-				f = new FormDownloadListFragment();
-			}
-			mgr.beginTransaction().replace(R.id.main_content, f).commit();
-			currentScreen = ScreenList.MAIN_SCREEN;
-			swapToFragmentView();
+			swapToFragmentView(ScreenList.FORM_DOWNLOADER);
 			return true;
 		} else if ( item.getItemId() == MENU_MANAGE_FORMS ) {
-			f = this.getSupportFragmentManager().findFragmentById(FormManagerListFragment.ID);
-			if ( f == null ) {
-				f = new FormManagerListFragment();
-			}
-			mgr.beginTransaction().replace(R.id.main_content, f).commit();
-			currentScreen = ScreenList.MAIN_SCREEN;
-			swapToFragmentView();
+			swapToFragmentView(ScreenList.FORM_DELETER);
 			return true;
 		} else if ( item.getItemId() == MENU_EDIT_INSTANCE ) {
-			f = mgr.findFragmentById(WebViewFragment.ID);
-			if ( f == null ) {
-				f = new WebViewFragment();
-			}
-			mgr.beginTransaction().replace(R.id.main_content, f).commit();
-			currentScreen = ScreenList.WEBKIT;
-			nestScreen = ScreenList.WEBKIT;
-			swapToWebKitView();
+			swapToFragmentView(ScreenList.WEBKIT);
 			return true;
 		} else if ( item.getItemId() == MENU_PUSH_INSTANCES ) {
-			f = this.getSupportFragmentManager().findFragmentById(InstanceUploaderListFragment.ID);
-			if ( f == null ) {
-				f = new InstanceUploaderListFragment();
-			}
-			mgr.beginTransaction().replace(R.id.main_content, f).commit();
-			currentScreen = ScreenList.WEBKIT;
-			nestScreen = ScreenList.INSTANCE_UPLOADER;
-			swapToFragmentView();
+			swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
 			return true;
 		} else if ( item.getItemId() == MENU_PREFERENCES ) {
 			// PreferenceFragment missing from support library...
@@ -469,19 +417,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		}
 		*/
 
-		nestScreen = ScreenList.WEBKIT;
-		currentScreen = ScreenList.WEBKIT;
-
+		boolean success = false;
     	FragmentManager mgr = getSupportFragmentManager();
-    	// TODO: get the webkit fragment
-    	WebViewFragment f = (WebViewFragment) mgr.findFragmentById(WebViewFragment.ID);
-		if ( f == null ) {
-			f = new WebViewFragment();
-		}
-		FragmentTransaction tr = mgr.beginTransaction();
-		tr.replace(R.id.main_content, f);
-		tr.addToBackStack(null);
-		tr.commit();
+
+		InstanceUploaderListFragment lf = (InstanceUploaderListFragment) mgr.findFragmentById(InstanceUploaderListFragment.ID);
 
 		JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
 		//webkitView.setActivity(this);
@@ -501,13 +440,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 						new File(c.getString(formMedia), "formDef.json"),
 						c.getString(formPath), c.getString(formId), c.getString(formVersion),
 						c.getString(tableId), new Date(c.getLong(date)));
-				if ( currentForm != null && newForm.formPath.equals(currentForm.formPath) ) {
-					// keep the same instance...
+				FormIdStruct oldForm = Survey.getInstance().getCurrentForm();
+				if ( oldForm != null && newForm.formPath.equals(oldForm.formPath) ) {
+					// keep the same instance... just switch back to the WebKit view
 				} else {
-					currentForm = newForm;
-					instanceId = null;
-					webkitView.loadPage(null);
+					Survey.getInstance().setCurrentForm(newForm);
+					if ( lf != null ) {
+						lf.changeForm(newForm);
+					}
+					Survey.getInstance().setInstanceId(null);
+					Survey.getInstance().setPageRef(null);
+					Survey.getInstance().setAuxillaryHash(null);
+					webkitView.loadPage(newForm, null, null, null);
 				}
+				success = true;
 			}
 		} finally {
 			if ( c != null ) {
@@ -515,13 +461,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			}
 		}
 
-		swapToWebKitView();
+		if ( success ) {
+			swapToFragmentView(ScreenList.WEBKIT);
+		} else {
+			Toast.makeText(this, getString(R.string.form_load_error),
+							Toast.LENGTH_SHORT).show();
+		}
 	}
 
 
 	@Override
 	public void onBackPressed() {
-		if ( currentScreen == ScreenList.WEBKIT && nestScreen == ScreenList.WEBKIT && instanceId != null ) {
+		String instanceId = Survey.getInstance().getInstanceId();
+		if ( currentScreen == ScreenList.WEBKIT && nestedScreen == ScreenList.WEBKIT && instanceId != null ) {
         	JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
         	view.goBack();
 		} else {
@@ -536,15 +488,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
 		FragmentManager mgr = getSupportFragmentManager();
 		if (  mgr.getBackStackEntryCount() == 0 ) {
-			currentScreen = ScreenList.MAIN_SCREEN;
-			swapToFragmentView();
-		} else {
-			currentScreen = ScreenList.WEBKIT;
-			if ( nestScreen == ScreenList.WEBKIT ) {
-				swapToWebKitView();
-			} else {
-				swapToFragmentView();
-			}
+			swapToFragmentView(ScreenList.FORM_CHOOSER);
 		}
 	}
 
@@ -623,6 +567,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         mAlertDialog.show();
     }
 
+    @Override
     public synchronized Bitmap getDefaultVideoPoster() {
         if (mDefaultVideoPoster == null) {
             mDefaultVideoPoster = BitmapFactory.decodeResource(
@@ -631,6 +576,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         return mDefaultVideoPoster;
     }
 
+    @Override
     public synchronized View getVideoLoadingProgressView() {
         if (mVideoProgressView == null) {
             LayoutInflater inflater = LayoutInflater.from(this);
@@ -649,23 +595,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			public void run() {
 		    	// In the fragment UI, we want to return to not having any instanceId defined.
 		    	JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
-		    	instanceId = null;
-		    	webkitView.loadPage(null);
+		    	Survey.getInstance().setInstanceId(null);
+		    	Survey.getInstance().setPageRef(null);
+		    	Survey.getInstance().setAuxillaryHash(null);
+		    	webkitView.loadPage(Survey.getInstance().getCurrentForm(), null, null, null);
 				invalidateOptionsMenu();
 			}});
     }
 
-    public void swapToWebKitView() {
-    	FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
-		View frags = findViewById(R.id.main_content);
-		View wkt = findViewById(R.id.webkit_view);
-		shadow.setVisibility(View.GONE);
-    	shadow.removeAllViews();
-		frags.setVisibility(View.GONE);
-		wkt.setVisibility(View.VISIBLE);
-		invalidateOptionsMenu();
-    }
-
+    @Override
     public void swapToCustomView(View customView) {
     	FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
 		View frags = findViewById(R.id.main_content);
@@ -675,8 +613,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		frags.setVisibility(View.GONE);
 		wkt.setVisibility(View.GONE);
 		shadow.setVisibility(View.VISIBLE);
+		currentScreen = ScreenList.WEBKIT;
+		nestedScreen = ScreenList.CUSTOM_VIEW;
     }
 
+    @Override
     public void swapOffCustomView() {
     	FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
 		View frags = findViewById(R.id.main_content);
@@ -686,6 +627,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     	if (currentScreen == ScreenList.WEBKIT ) {
     		frags.setVisibility(View.GONE);
     		wkt.setVisibility(View.VISIBLE);
+    		nestedScreen = ScreenList.WEBKIT;
     	} else {
     		frags.setVisibility(View.VISIBLE);
     		wkt.setVisibility(View.GONE);
@@ -693,16 +635,90 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		invalidateOptionsMenu();
     }
 
-    public void swapToFragmentView() {
+    public void swapToFragmentView(ScreenList newNestedView) {
+    	Log.i(t, "swapToFragmentView: " + newNestedView.toString());
+    	ScreenList newCurrentView;
+    	FragmentManager mgr = getSupportFragmentManager();
+    	Fragment f;
+    	if ( newNestedView == ScreenList.MAIN_SCREEN ) {
+    		throw new IllegalStateException("unexpected reference to generic main screen");
+    	} else if ( newNestedView == ScreenList.CUSTOM_VIEW ) {
+        	Log.w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
+    		f = mgr.findFragmentById(WebViewFragment.ID);
+			if ( f == null ) {
+				f = new WebViewFragment();
+			}
+			newNestedView = ScreenList.WEBKIT;
+			newCurrentView = ScreenList.WEBKIT;
+    	} else if ( newNestedView == ScreenList.FORM_CHOOSER ) {
+    		f = mgr.findFragmentById(FormChooserListFragment.ID);
+			if ( f == null ) {
+				f = new FormChooserListFragment();
+				((FormChooserListFragment) f).setFormChooserListListener(this);
+			}
+			newCurrentView = ScreenList.MAIN_SCREEN;
+    	} else if ( newNestedView == ScreenList.FORM_DELETER ) {
+    		f = mgr.findFragmentById(FormManagerListFragment.ID);
+			if ( f == null ) {
+				f = new FormManagerListFragment();
+			}
+			newCurrentView = ScreenList.MAIN_SCREEN;
+    	} else if ( newNestedView == ScreenList.FORM_DOWNLOADER ) {
+    		f = mgr.findFragmentById(FormDownloadListFragment.ID);
+			if ( f == null ) {
+				f = new FormDownloadListFragment();
+			}
+			newCurrentView = ScreenList.MAIN_SCREEN;
+    	} else if ( newNestedView == ScreenList.INSTANCE_UPLOADER ) {
+    		f = mgr.findFragmentById(InstanceUploaderListFragment.ID);
+			if ( f == null ) {
+				f = new InstanceUploaderListFragment();
+			}
+			((InstanceUploaderListFragment) f).changeForm(Survey.getInstance().getCurrentForm());
+			newCurrentView = ScreenList.WEBKIT;
+    	} else if ( newNestedView == ScreenList.WEBKIT ) {
+    		f = mgr.findFragmentById(WebViewFragment.ID);
+			if ( f == null ) {
+				f = new WebViewFragment();
+			}
+			newCurrentView = ScreenList.WEBKIT;
+    	} else {
+    		throw new IllegalStateException("Unrecognized ScreenList type");
+    	}
+
     	FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
 		View frags = findViewById(R.id.main_content);
 		View wkt = findViewById(R.id.webkit_view);
 		shadow.setVisibility(View.GONE);
     	shadow.removeAllViews();
-		wkt.setVisibility(View.GONE);
-		frags.setVisibility(View.VISIBLE);
+    	if ( newNestedView == ScreenList.WEBKIT ) {
+    		frags.setVisibility(View.GONE);
+    		wkt.setVisibility(View.VISIBLE);
+    	} else {
+    		wkt.setVisibility(View.GONE);
+    		frags.setVisibility(View.VISIBLE);
+    	}
+		currentScreen = newCurrentView;
+		nestedScreen = newNestedView;
+		FragmentTransaction trans = mgr.beginTransaction().replace(R.id.main_content, f);
+		if ( nestedScreen == ScreenList.WEBKIT ) {
+			trans.addToBackStack(null);
+		}
+		trans.commit();
 		invalidateOptionsMenu();
     }
+
+	public void setInstanceId(String instanceId) {
+		Survey.getInstance().setInstanceId(instanceId);
+	}
+
+	public void setPageRef(String pageRef) {
+		Survey.getInstance().setPageRef(pageRef);
+	}
+
+	public void setAuxillaryHash(String auxillaryHash) {
+		Survey.getInstance().setAuxillaryHash(auxillaryHash);
+	}
 
 	@Override
 	public void saveAllChangesCompleted(String tableId, String instanceId, final boolean asComplete) {
@@ -811,6 +827,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
 	public static Bundle convertToBundle(JSONObject valueMap) throws JSONException {
 		Bundle b = new Bundle();
+		@SuppressWarnings("unchecked")
 		Iterator<String> cur = valueMap.keys();
 		while ( cur.hasNext() ) {
 			String key = cur.next();
@@ -912,32 +929,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		return b;
 	}
 
-    public static String getPathFromUri(Uri uri, String pathKey) {
-        if (uri.toString().startsWith("file")) {
-            return uri.toString().substring(7);
-        } else {
-            String[] projection = {
-            		pathKey
-                };
-            Cursor c = null;
-            try {
-            	c = Survey.getInstance().getContentResolver().query(uri, projection, null, null, null);
-            	int column_index = c.getColumnIndexOrThrow(pathKey);
-            	String path = null;
-	            if (c.getCount() > 0) {
-	                c.moveToFirst();
-	                path = c.getString(column_index);
-	            }
-	            return path;
-            } finally {
-            	if ( c != null ) {
-            		c.close();
-            	}
-            }
-        }
-    }
-
-	public boolean isWaitingForBinaryData() {
+    public boolean isWaitingForBinaryData() {
 		return actionWaitingForData != null;
 	}
 

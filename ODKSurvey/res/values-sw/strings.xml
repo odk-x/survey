@@ -273,4 +273,5 @@
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
 <string name="shortcut_name">ODK Survey Form</string>
+<string name="form_load_error">Sorry, unable to load form.</string>
 </resources>

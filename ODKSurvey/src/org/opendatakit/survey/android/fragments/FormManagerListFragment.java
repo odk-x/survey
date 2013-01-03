@@ -25,7 +25,6 @@ import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.database.Cursor;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -146,7 +145,6 @@ public class FormManagerListFragment extends ListFragment implements
 	public void onResume() {
 		super.onResume();
 
-		getListView().setBackgroundColor(Color.WHITE);
 		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
 		getListView().setItemsCanFocus(false);
 

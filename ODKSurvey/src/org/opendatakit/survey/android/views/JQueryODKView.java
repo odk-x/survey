@@ -17,7 +17,6 @@ package org.opendatakit.survey.android.views;
 import java.io.File;
 
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.provider.FileProvider;
@@ -131,20 +130,22 @@ public class JQueryODKView extends FrameLayout {
     	mWebView.loadUrl(javascriptUrl);
     }
 
-	public void loadPage(String pageRef) {
-		String url = getHtmlUrl(pageRef);
+	public void loadPage(FormIdStruct s, String instanceID, String pageRef, String auxillaryHash) {
+
+		String url = getHtmlUrl(s, instanceID, pageRef, auxillaryHash);
 		if ( url == null ) return;
     	log.i(t, "loadUrl: " + url);
 		mWebView.loadUrl(url);
 		mWebView.requestFocus();
 	}
 
-	public static String getHtmlUrl(String pageRef) {
-		FormIdStruct s = MainMenuActivity.currentForm;
+	private static String getHtmlUrl(FormIdStruct s, String instanceID, String pageRef, String auxillaryHash) {
 
 		// Find the formPath for the default form with the most recent version...
-		Cursor c = null;
+		// we need this so that we can load the index.html and main javascript code
 		String formPath = null;
+
+		Cursor c = null;
 		try {
             //
             // the default form is named 'default' ...
@@ -171,7 +172,6 @@ public class JQueryODKView extends FrameLayout {
 
 		// formPath always begins ../ -- strip that off to get explicit path suffix...
 		File mediaFolder = new File(new File(Survey.FORMS_PATH), formPath.substring(3));
-		String instanceID = MainMenuActivity.instanceId;
 
 		// File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
         File htmlFile = new File(mediaFolder, "index.html");
@@ -182,7 +182,8 @@ public class JQueryODKView extends FrameLayout {
         String htmlUrl = fullPath +
         		"#formPath=" + StringEscapeUtils.escapeHtml4((s == null) ? formPath : s.formPath) +
 		        ((instanceID == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceID)) +
-		        ((pageRef == null) ? "" : "&pageRef=" + StringEscapeUtils.escapeHtml4(pageRef));
+		        ((pageRef == null) ? "" : "&pageRef=" + StringEscapeUtils.escapeHtml4(pageRef)) +
+		        ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
         return htmlUrl;
 	}

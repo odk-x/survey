@@ -41,6 +41,7 @@ import android.widget.Toast;
  *
  */
 public class MediaCaptureVideoActivity extends Activity {
+
 	private static final String t = "MediaCaptureVideoActivity";
 
 	private static final int ACTION_CODE = 1;
@@ -68,6 +69,12 @@ public class MediaCaptureVideoActivity extends Activity {
 		if (mediaPath == null) {
 			mediaPath = MainMenuActivity.getInstanceFilePath(EXTENSION);
 		}
+
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
 
 		if (!hasLaunched) {
 			Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);

@@ -85,7 +85,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
     private InstanceUploadOutcome mOutcome = new InstanceUploadOutcome();
 
-    private void setAuth(String auth) {
+    private FormIdStruct uploadingForm;
+
+    public InstanceUploaderTask(FormIdStruct form) {
+    	super();
+		this.uploadingForm = form;
+	}
+
+	private void setAuth(String auth) {
         this.mAuth = auth;
     }
 
@@ -384,7 +391,6 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     protected InstanceUploadOutcome doInBackground(String... toUpload) {
     	mOutcome.mResults = new HashMap<String, String>();
     	mOutcome.mAuthRequestingServer = null;
-    	FormIdStruct uploadingForm = MainMenuActivity.currentForm;
 
     	SharedPreferences settings =
                 PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());

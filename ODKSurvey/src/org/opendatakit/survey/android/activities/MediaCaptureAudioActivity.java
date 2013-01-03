@@ -67,6 +67,11 @@ public class MediaCaptureAudioActivity extends Activity {
 		if (mediaPath == null) {
 			mediaPath = MainMenuActivity.getInstanceFilePath(EXTENSION);
 		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
 
 		if (!hasLaunched) {
 			Intent i = new Intent(Audio.Media.RECORD_SOUND_ACTION);
