@@ -95,12 +95,20 @@ public class ODKWebChromeClient extends WebChromeClient implements
 	@Override
 	public void onCompletion(MediaPlayer mp) {
 		log.d(t,"Video ended");
+		if ( mp.isPlaying() ) {
+			mp.stop();
+		}
+		mp.reset();
 		onHideCustomView();
 	}
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
 		log.w(t,"Video error");
+		if ( mp.isPlaying() ) {
+			mp.stop();
+		}
+		mp.reset();
 		onHideCustomView();
 		return true;
 	}

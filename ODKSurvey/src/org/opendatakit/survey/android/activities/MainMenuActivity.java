@@ -220,7 +220,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     public void setCurrentForm(FormIdStruct currentForm) {
-    	Survey.getInstance().getLogger().i(t,"setCurrentForm: " + currentForm.formPath);
+    	Survey.getInstance().getLogger().i(t,"setCurrentForm: " + ((currentForm == null) ? "null" : currentForm.formPath));
     	this.currentForm = currentForm;
     }
 
