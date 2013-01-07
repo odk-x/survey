@@ -4,3 +4,7 @@ ODKSurvey/bin/*
 actionbarsherlock/bin/*
 ODKSurvey/gen/*
 actionbarsherlock/gen/*
+downloader_library/bin/*
+downloader_library/gen/*
+play_licensing/bin/*
+play_licensing/gen/*
