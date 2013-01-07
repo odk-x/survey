@@ -15,8 +15,10 @@
 package org.opendatakit.survey.android.activities;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -53,6 +55,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentManager.BackStackEntry;
 import android.support.v4.app.FragmentManager.OnBackStackChangedListener;
 import android.support.v4.app.FragmentTransaction;
 import android.text.InputType;
@@ -306,7 +309,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         // must be at the beginning of any activity that can be called from an external intent
         Log.i(t, "Starting up, creating directories");
         try {
-            Survey.createODKDirs();
+            if ( !Survey.createODKDirs() ) {
+            	// no form files -- see if we can explode an APK Expansion file
+            	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
+            	if ( files != null ) {
+            		// see if we have them all...
+            	}
+            }
         } catch (RuntimeException e) {
             createErrorDialog(e.getMessage(), EXIT);
             return;
@@ -489,7 +498,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
 				c.moveToFirst();
 				FormIdStruct newForm = new FormIdStruct(formUri,
-						new File(c.getString(formMedia), "formDef.json"),
+						new File(c.getString(formMedia), Survey.FORMDEF_JSON_FILENAME),
 						c.getString(formPath), c.getString(formId), c.getString(formVersion),
 						c.getString(tableId), new Date(c.getLong(date)));
 				return newForm;
@@ -778,11 +787,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     	}
 		currentScreen = newCurrentView;
 		nestedScreen = newNestedView;
-		FragmentTransaction trans = mgr.beginTransaction().replace(R.id.main_content, f);
-		if ( nestedScreen == ScreenList.WEBKIT ) {
-			trans.addToBackStack(null);
+		BackStackEntry entry= null;
+		for ( int i = 0; i < mgr.getBackStackEntryCount() ; ++i ) {
+			BackStackEntry e = mgr.getBackStackEntryAt(i);
+			if ( e.getName().equals(nestedScreen.name()) ) {
+				entry = e;
+				break;
+			}
 		}
-		trans.commit();
+		if ( entry != null ) {
+			// restore to the prior display of this screen
+			mgr.popBackStack(nestedScreen.name(), 0);
+		} else {
+			// add transaction to this screen
+			FragmentTransaction trans = mgr.beginTransaction();
+			trans.replace(R.id.main_content, f);
+			trans.addToBackStack(nestedScreen.name());
+			trans.commit();
+		}
 		invalidateOptionsMenu();
     }
 

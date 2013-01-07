@@ -65,7 +65,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 		Uri uri = null;
     	Cursor c = null;
     	try {
-    		File formDef = new File(mediaPath, "formDef.json");
+    		File formDef = new File(mediaPath, Survey.FORMDEF_JSON_FILENAME);
 
         	String selection = FormsColumns.FORM_MEDIA_PATH + "=?";
     		String[] selectionArgs = { mediaPath.getAbsolutePath() };
@@ -246,7 +246,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 			@Override
 			public boolean accept(File pathname) {
 				if ( !pathname.isDirectory() ) return false;
-				File f = new File(pathname, "formDef.json");
+				File f = new File(pathname, Survey.FORMDEF_JSON_FILENAME);
 				return (f.exists() && f.isFile());
 			}});
 

@@ -169,7 +169,7 @@ public class FormInfo {
     	formMediaPath = c.getString(c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH));
     	formFilePath = c.getString(c.getColumnIndex(FormsColumns.FORM_FILE_PATH));
 
-    	formDefFile = new File(formMediaPath + File.separator + "formDef.json");
+    	formDefFile = new File(formMediaPath + File.separator + Survey.FORMDEF_JSON_FILENAME);
 
     	lastModificationDate = c.getLong(c.getColumnIndex(FormsColumns.DATE));
     	formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));

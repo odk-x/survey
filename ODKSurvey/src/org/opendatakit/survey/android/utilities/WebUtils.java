@@ -36,6 +36,7 @@ import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.auth.AuthScope;
 import org.opendatakit.httpclientandroidlib.auth.Credentials;
 import org.opendatakit.httpclientandroidlib.auth.UsernamePasswordCredentials;
+import org.opendatakit.httpclientandroidlib.client.CookieStore;
 import org.opendatakit.httpclientandroidlib.client.CredentialsProvider;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
@@ -46,12 +47,13 @@ import org.opendatakit.httpclientandroidlib.client.params.ClientPNames;
 import org.opendatakit.httpclientandroidlib.client.params.HttpClientParams;
 import org.opendatakit.httpclientandroidlib.client.protocol.ClientContext;
 import org.opendatakit.httpclientandroidlib.conn.ClientConnectionManager;
+import org.opendatakit.httpclientandroidlib.impl.client.BasicCookieStore;
 import org.opendatakit.httpclientandroidlib.impl.client.DefaultHttpClient;
 import org.opendatakit.httpclientandroidlib.params.BasicHttpParams;
 import org.opendatakit.httpclientandroidlib.params.HttpConnectionParams;
 import org.opendatakit.httpclientandroidlib.params.HttpParams;
+import org.opendatakit.httpclientandroidlib.protocol.BasicHttpContext;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
-import org.opendatakit.survey.android.application.Survey;
 import org.xmlpull.v1.XmlPullParser;
 
 import android.text.format.DateFormat;
@@ -75,6 +77,11 @@ public final class WebUtils {
 
     private static final GregorianCalendar g = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
 
+    // share all session cookies across all sessions...
+    private static CookieStore cookieStore = new BasicCookieStore();
+    // retain credentials for 7 minutes...
+    private static CredentialsProvider credsProvider = new AgingCredentialsProvider(7 * 60 * 1000);
+
     private static ClientConnectionManager httpConnectionManager = null;
 
     public static final List<AuthScope> buildAuthScopes(String host) {
@@ -95,7 +102,7 @@ public final class WebUtils {
 
 
     public static final void clearAllCredentials() {
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = getHttpContext();
         CredentialsProvider credsProvider =
             (CredentialsProvider) localContext.getAttribute(ClientContext.CREDS_PROVIDER);
         Log.i(t, "clearAllCredentials");
@@ -104,7 +111,7 @@ public final class WebUtils {
 
 
     public static final boolean hasCredentials(String userEmail, String host) {
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = getHttpContext();
         CredentialsProvider credsProvider =
             (CredentialsProvider) localContext.getAttribute(ClientContext.CREDS_PROVIDER);
 
@@ -126,7 +133,7 @@ public final class WebUtils {
      * @param host
      */
     private static final void clearHostCredentials(String host) {
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = getHttpContext();
         CredentialsProvider credsProvider =
             (CredentialsProvider) localContext.getAttribute(ClientContext.CREDS_PROVIDER);
         Log.i(t, "clearHostCredentials: " + host);
@@ -146,7 +153,7 @@ public final class WebUtils {
      * @param host
      */
     public static final void addCredentials(String username, String password, String host) {
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = getHttpContext();
         // to ensure that this is the only authentication available for this host...
         clearHostCredentials(host);
         if ( username != null && username.trim().length() != 0 ) {
@@ -212,6 +219,22 @@ public final class WebUtils {
         setOpenRosaHeaders(req);
         setGoogleHeaders(req, auth);
         return req;
+    }
+
+    /**
+     * Shared HttpContext so a user doesn't have to re-enter login information
+     * @return
+     */
+    public static synchronized HttpContext getHttpContext() {
+
+        // context holds authentication state machine, so it cannot be
+        // shared across independent activities.
+        HttpContext localContext = new BasicHttpContext();
+
+        localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
+        localContext.setAttribute(ClientContext.CREDS_PROVIDER, credsProvider);
+
+        return localContext;
     }
 
     /**

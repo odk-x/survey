@@ -45,8 +45,10 @@ public class InstanceProvider extends ContentProvider {
 	static final String UPLOADS_TABLE_NAME = "uploads";
 
 	private static final String DATA_TABLE_ID_COLUMN = InstanceColumns.DATA_TABLE_INSTANCE_ID;
-	private static final String DATA_TABLE_TIMESTAMP_COLUMN = "timestamp";
-	private static final String DATA_TABLE_INSTANCE_NAME_COLUMN = "instance_name";
+	private static final String DATA_TABLE_TIMESTAMP_COLUMN = DataModelDatabaseHelper.DATA_TABLE_TIMESTAMP_COLUMN;
+	private static final String DATA_TABLE_INSTANCE_NAME_COLUMN = DataModelDatabaseHelper.DATA_TABLE_INSTANCE_NAME_COLUMN;
+	private static final String DATA_TABLE_SAVED_COLUMN = DataModelDatabaseHelper.DATA_TABLE_SAVED_COLUMN;
+	private static final String SAVED_AS_COMPLETE = "COMPLETE";
 
 	private static HashMap<String, String> sInstancesProjectionMap;
 
@@ -152,8 +154,15 @@ public class InstanceProvider extends ContentProvider {
 				.append(InstanceColumns.DISPLAY_SUBTEXT).append(",");
 		b.append(DATA_TABLE_INSTANCE_NAME_COLUMN).append(" as ")
 				.append(InstanceColumns.DISPLAY_NAME);
-		b.append(" FROM ").append(dbTableName);
-		b.append(" LEFT JOIN ").append(UPLOADS_TABLE_NAME).append(" ON ")
+		b.append(" FROM ");
+		b.append("( SELECT * FROM ").append(dbTableName)
+				.append(" GROUP BY ").append(DATA_TABLE_ID_COLUMN)
+				.append(" HAVING ").append(DATA_TABLE_TIMESTAMP_COLUMN)
+					.append(" = MAX(").append(DATA_TABLE_TIMESTAMP_COLUMN).append(")")
+				.append(" AND ").append(DATA_TABLE_SAVED_COLUMN)
+					.append("= '").append(SAVED_AS_COMPLETE).append("'")
+				.append(") as ").append(dbTableName);
+		b.append(" JOIN ").append(UPLOADS_TABLE_NAME).append(" ON ")
 				.append(dbTableName).append(".").append(DATA_TABLE_ID_COLUMN)
 				.append("=").append(UPLOADS_TABLE_NAME).append(".")
 				.append(InstanceColumns.DATA_TABLE_INSTANCE_ID);

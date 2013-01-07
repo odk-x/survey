@@ -1,11 +1,11 @@
 /*
  * Copyright (C) 2011 University of Washington
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the License
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
@@ -46,6 +46,11 @@ public class PreferencesActivity extends PreferenceActivity implements
 
     protected static final int IMAGE_CHOOSER = 0;
 
+    // these keys are used in Survey to manage Google play licensing and APK Expansion files
+    public static final String KEY_SALT = "licenseSalt";
+    public static final String KEY_APK_EXPANSIONS = "apkExpansions";
+
+    // keys available for user configuration
     public static final String KEY_INFO = "info";
     public static final String KEY_LAST_VERSION = "lastVersion";
     public static final String KEY_FIRST_RUN = "firstRun";
@@ -414,7 +419,7 @@ public class PreferencesActivity extends PreferenceActivity implements
 
     /**
      * Disallows whitespace from user entry
-     * 
+     *
      * @return
      */
     private InputFilter getWhitespaceFilter() {
@@ -434,7 +439,7 @@ public class PreferencesActivity extends PreferenceActivity implements
 
     /**
      * Disallows carriage returns from user entry
-     * 
+     *
      * @return
      */
     private InputFilter getReturnFilter() {

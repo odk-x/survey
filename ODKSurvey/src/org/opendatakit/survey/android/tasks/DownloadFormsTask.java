@@ -265,11 +265,11 @@ public class DownloadFormsTask extends
 	            // OK. Everything is downloaded and present in the tempMediaPath directory...
 	            if (message.equals("")) {
 	            	try {
-	                	File formDef = new File(tempMediaPath, FormsProviderAPI.FILENAME_FORM_DEF_JSON);
+	                	File formDef = new File(tempMediaPath, Survey.FORMDEF_JSON_FILENAME);
 
 	                	if ( !formDef.exists()) {
 		        			message = Survey.getInstance().getString(R.string.no_formdef_json, fd.formName);
-    	                    Log.e(t, FormsProviderAPI.FILENAME_FORM_DEF_JSON + " was not found in exploded download of " + fd.formName);
+    	                    Log.e(t, Survey.FORMDEF_JSON_FILENAME + " was not found in exploded download of " + fd.formName);
 		        		} else {
 	                		// move the current directory to the stale tree.
 	                		// move the temp directory to the current location.
@@ -450,7 +450,7 @@ public class DownloadFormsTask extends
         	}
 
 	        // get shared HttpContext so that authentication and cookies are retained.
-	        HttpContext localContext = Survey.getInstance().getHttpContext();
+	        HttpContext localContext = WebUtils.getHttpContext();
 
 	        HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
@@ -541,7 +541,7 @@ public class DownloadFormsTask extends
 
         List<MediaFile> files = new ArrayList<MediaFile>();
         // get shared HttpContext so that authentication and cookies are retained.
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = WebUtils.getHttpContext();
 
         HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 

@@ -24,7 +24,6 @@ import android.provider.BaseColumns;
  */
 public final class FormsProviderAPI {
     public static final String AUTHORITY = "org.opendatakit.survey.android.provider.forms";
-	public static final String FILENAME_FORM_DEF_JSON = "formDef.json";
 	public static final String FILENAME_XFORMS_XML = "xforms.xml";
 	public static final String MD5_COLON_PREFIX = "md5:";
 

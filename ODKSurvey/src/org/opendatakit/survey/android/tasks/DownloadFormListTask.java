@@ -77,7 +77,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
         HashMap<String, FormDetails> formList = new HashMap<String, FormDetails>();
 
         // get shared HttpContext so that authentication and cookies are retained.
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = WebUtils.getHttpContext();
         HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
         DocumentFetchResult result =

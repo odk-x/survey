@@ -63,15 +63,16 @@ public class MediaCaptureImageActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
     	super.onCreate(savedInstanceState);
 
-    	if ( savedInstanceState != null ) {
+    	if (savedInstanceState != null) {
 	    	mediaPath = savedInstanceState.getString(URI);
 	    	hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
 	    	afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
     	}
 
-    	if ( mediaPath == null ) {
+    	if (mediaPath == null) {
             mediaPath = MainMenuActivity.getInstanceFilePath(EXTENSION);
             afterResult = false;
+            hasLaunched = false;
     	}
     }
 
@@ -79,7 +80,10 @@ public class MediaCaptureImageActivity extends Activity {
 	protected void onResume() {
 		super.onResume();
 
-    	if ( !hasLaunched && !afterResult ) {
+		if (afterResult) {
+			// this occurs if we re-orient the phone during the save-recording action
+			returnResult();
+		} else if (!hasLaunched && !afterResult) {
 	        Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 	        // workaround for image capture bug
 	        // create an empty file and pass filename to Camera app.
@@ -97,28 +101,30 @@ public class MediaCaptureImageActivity extends Activity {
 					if ( !success ) {
 			        	String err = getString(R.string.media_save_failed);
 			        	Log.e(t,err + errorString);
+			            deleteMedia();
 			            Toast.makeText(this,err,Toast.LENGTH_SHORT).show();
 			            setResult(Activity.RESULT_CANCELED);
 			            finish();
+			            return;
 					}
 				}
 	        }
 		    i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT,
 		        Uri.fromFile(new File(mediaPath)));
 
-	        try {
+		    try {
 	        	hasLaunched = true;
 	            startActivityForResult(i, ACTION_CODE);
 	        } catch (ActivityNotFoundException e) {
 	        	String err = getString(R.string.activity_not_found,
             			android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
 	        	Log.e(t,err);
+	            deleteMedia();
 	            Toast.makeText(this,err,Toast.LENGTH_SHORT).show();
 	            setResult(Activity.RESULT_CANCELED);
 	            finish();
 	        }
     	}
-    	afterResult = false;
 	}
 
 	@Override
@@ -127,14 +133,11 @@ public class MediaCaptureImageActivity extends Activity {
 		outState.putString(URI, mediaPath);
 		outState.putBoolean(HAS_LAUNCHED, hasLaunched);
     	outState.putBoolean(AFTER_RESULT, afterResult);
-
 	}
 
 	private void deleteMedia() {
 		// get the file path and delete the file
 		String path = mediaPath;
-		// clean up variables
-		mediaPath = null;
 		// delete from media provider
 		int del = MediaUtils.deleteImageFileFromMediaProvider(path);
 		Log.i(t, "Deleted " + del + " rows from image media content provider");
@@ -166,12 +169,21 @@ public class MediaCaptureImageActivity extends Activity {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-		if (resultCode == Activity.RESULT_CANCELED) {
+
+    	if (resultCode == Activity.RESULT_CANCELED) {
             // request was canceled -- propagate
 			setResult(Activity.RESULT_CANCELED);
 			finish();
             return;
         }
+
+		if ( mediaPath == null ) {
+			// we are in trouble
+			Log.e(t, "Unexpectedly null mediaPath!");
+			setResult(Activity.RESULT_CANCELED);
+			finish();
+			return;
+		}
 
 		Uri mediaUri = Uri.fromFile(new File(mediaPath));
 		// we never have to deal with deleting, as the Camera is overwriting this...
@@ -217,6 +229,7 @@ public class MediaCaptureImageActivity extends Activity {
 			if ( mediaPath != null ) {
 				deleteMedia();
 			}
+			mediaPath = null;
 			Log.e(t, "Inserting Image file FAILED");
 		}
 
@@ -224,29 +237,29 @@ public class MediaCaptureImageActivity extends Activity {
 		 * We saved the image to the instance directory. Verify that it is
 		 * there...
 		 */
+		returnResult();
+		return;
+    }
 
-		if (!sourceMedia.exists()) {
-			Log.e(t, ERROR_NO_FILE + sourceMedia.getAbsolutePath());
-			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
-					.show();
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-		} else {
+	private void returnResult() {
+		File sourceMedia = (mediaPath != null) ? new File(mediaPath) : null;
+		if ( sourceMedia != null && sourceMedia.exists() ) {
 			Intent i = new Intent();
 			i.putExtra(URI, FileProvider.getAsUrl(sourceMedia));
 			String name = sourceMedia.getName();
 			i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
 			setResult(Activity.RESULT_OK, i);
 			finish();
+		} else {
+			Log.e(t, ERROR_NO_FILE + ((mediaPath != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
+			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+			setResult(Activity.RESULT_CANCELED);
+			finish();
 		}
-
-		return;
-
-    }
+	}
 
 	@Override
 	public void finish() {
-	    mediaPath = null;
 	    hasLaunched = false;
 	    afterResult = true;
 		super.finish();

@@ -48,11 +48,13 @@ public class MediaCaptureAudioActivity extends Activity {
 	private static final String CONTENT_TYPE = "contentType";
 
 	private static final String HAS_LAUNCHED = "hasLaunched";
+	private static final String AFTER_RESULT = "afterResult";
 	private static final String EXTENSION = ".3gpp";
 	private static final String ERROR_NO_FILE = "Media file does not exist! ";
 	private static final String ERROR_COPY_FILE = "Media file copy failed! ";
 
 	private String mediaPath = null;
+    private boolean afterResult = false;
 	private boolean hasLaunched = false;
 
 	@Override
@@ -62,10 +64,13 @@ public class MediaCaptureAudioActivity extends Activity {
 		if (savedInstanceState != null) {
 			mediaPath = savedInstanceState.getString(URI);
 			hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
+	    	afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
 		}
 
 		if (mediaPath == null) {
 			mediaPath = MainMenuActivity.getInstanceFilePath(EXTENSION);
+			afterResult = false;
+			hasLaunched = false;
 		}
 	}
 
@@ -73,8 +78,14 @@ public class MediaCaptureAudioActivity extends Activity {
 	protected void onResume() {
 		super.onResume();
 
-		if (!hasLaunched) {
+		if (afterResult) {
+			// this occurs if we re-orient the phone during the save-recording action
+			returnResult();
+		} else if (!hasLaunched && !afterResult) {
 			Intent i = new Intent(Audio.Media.RECORD_SOUND_ACTION);
+			// to make the name unique...
+			File f = new File(mediaPath);
+			i.putExtra(Audio.Media.DISPLAY_NAME, f.getName().substring(0,f.getName().lastIndexOf('.')));
 
 			try {
 				hasLaunched = true;
@@ -95,13 +106,12 @@ public class MediaCaptureAudioActivity extends Activity {
 		super.onSaveInstanceState(outState);
 		outState.putString(URI, mediaPath);
 		outState.putBoolean(HAS_LAUNCHED, hasLaunched);
+    	outState.putBoolean(AFTER_RESULT, afterResult);
 	}
 
 	private void deleteMedia() {
 		// get the file path and delete the file
 		String path = mediaPath;
-		// clean up variables
-		mediaPath = null;
 		// delete from media provider
 		int del = MediaUtils.deleteAudioFileFromMediaProvider(path);
 		Log.i(t, "Deleted " + del + " rows from audio media content provider");
@@ -141,26 +151,53 @@ public class MediaCaptureAudioActivity extends Activity {
 			return;
 		}
 
+		if ( mediaPath == null ) {
+			// we are in trouble
+			Log.e(t, "Unexpectedly null mediaPath!");
+			setResult(Activity.RESULT_CANCELED);
+			finish();
+			return;
+		}
+
 		Uri mediaUri = intent.getData();
 
-		// when replacing an answer. remove the current media.
-		if (mediaPath != null) {
-			deleteMedia();
+		// it is unclear whether getData() always returns a value or if getDataString() does...
+		String str = intent.getDataString();
+		if ( mediaUri == null && str != null ) {
+			Log.w(t, "Attempting to work around null mediaUri");
+			mediaUri = Uri.parse(str);
 		}
+
+		if ( mediaUri == null ) {
+			// we are in trouble
+			Log.e(t, "No uri returned from RECORD_SOUND_ACTION!");
+			setResult(Activity.RESULT_CANCELED);
+			finish();
+			return;
+		}
+
+		// Remove the current media.
+		deleteMedia();
 
 		// get the file path and create a copy in the instance folder
 		String binaryPath = getPathFromUri((Uri) mediaUri);
-		String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
-		String destAudioPath = MainMenuActivity.getInstanceFilePath(extension);
-
 		File source = new File(binaryPath);
-		File sourceMedia = new File(destAudioPath);
+		String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
+
+		// adjust the mediaPath (destination) to have the same extension
+		// and delete any existing file.
+		File f = new File(mediaPath);
+		File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,f.getName().lastIndexOf('.')) + extension);
+		mediaPath = sourceMedia.getAbsolutePath();
+		deleteMedia();
+
 		try {
 			FileUtils.copyFile(source, sourceMedia);
 		} catch (IOException e) {
 			Log.e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
 			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
 					.show();
+			deleteMedia();
 			setResult(Activity.RESULT_CANCELED);
 			finish();
 			return;
@@ -195,29 +232,31 @@ public class MediaCaptureAudioActivity extends Activity {
 		 * We saved the audio to the instance directory. Verify that it is
 		 * there...
 		 */
+		returnResult();
+		return;
+	}
 
-		if (!sourceMedia.exists()) {
-			Log.e(t, ERROR_NO_FILE + sourceMedia.getAbsolutePath());
-			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
-					.show();
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-		} else {
+	private void returnResult() {
+		File sourceMedia = (mediaPath != null) ? new File(mediaPath) : null;
+		if ( sourceMedia != null && sourceMedia.exists() ) {
 			Intent i = new Intent();
 			i.putExtra(URI, FileProvider.getAsUrl(sourceMedia));
 			String name = sourceMedia.getName();
 			i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
 			setResult(Activity.RESULT_OK, i);
 			finish();
+		} else {
+			Log.e(t, ERROR_NO_FILE + ((mediaPath != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
+			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+			setResult(Activity.RESULT_CANCELED);
+			finish();
 		}
-
-		return;
 	}
 
 	@Override
 	public void finish() {
-		mediaPath = null;
 		hasLaunched = false;
+		afterResult = true;
 		super.finish();
 	}
 

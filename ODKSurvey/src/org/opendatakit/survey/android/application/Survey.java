@@ -14,17 +14,20 @@
 package org.opendatakit.survey.android.application;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.opendatakit.httpclientandroidlib.client.CookieStore;
-import org.opendatakit.httpclientandroidlib.client.CredentialsProvider;
-import org.opendatakit.httpclientandroidlib.client.protocol.ClientContext;
-import org.opendatakit.httpclientandroidlib.impl.client.BasicCookieStore;
-import org.opendatakit.httpclientandroidlib.protocol.BasicHttpContext;
-import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertyManager;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.utilities.AgingCredentialsProvider;
 import org.opendatakit.survey.android.utilities.WebLogger;
 
 import android.app.Application;
@@ -36,14 +39,26 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.android.vending.licensing.AESObfuscator;
+import com.google.android.vending.licensing.APKExpansionPolicy;
+import com.google.android.vending.licensing.LicenseChecker;
+import com.google.android.vending.licensing.LicenseCheckerCallback;
+import com.google.android.vending.licensing.util.Base64;
+import com.google.android.vending.licensing.util.Base64DecoderException;
+
 /**
  * Extends the Application class to implement
  * @author carlhartung
  *
  */
-public class Survey extends Application {
+public class Survey extends Application implements LicenseCheckerCallback {
 
+	private static final String BASE64_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo93+Dgn3iDleC9XMTDH7ez1MOm/BOt287DgkldNkdvrtdC4oUegx3N8Say9tq47k2EOzeLYkezVnKdtserx+g/+R6pDIOS66bwbH+HoslDEUaZRZ47EipSGC1JhtOp/nQGQCsdVc5q/fPvw8d2rLLi+PQUZPBOiBxUo9h/CFc41hl/quUELmylSdL4O06OAP8OCEDA+tl0C2Ik+uCYMDJLD4m7YVbkV7jJXjtILj+GW+noLriFMRsgg7WKQe2j9fw5+v46nzhokOnDnHh+yGwQMfs/B0jfFAgXllLNjIPlXQf2UVzuxEax6wLCyqUXMIjCPSNfnzDRgFB4Qw3QbJCwIDAQAB"; //truncated for this example
 	public static final String t = "Survey";
+
+
+	// special filename
+    public static final String FORMDEF_JSON_FILENAME = "formDef.json";
 
 	// Storage paths
     public static final String ODK_ROOT = Environment.getExternalStorageDirectory() + File.separator + "odk" + File.separator + "js";
@@ -56,13 +71,16 @@ public class Survey extends Application {
     public static final String APPCACHE_PATH = METADATA_PATH + File.separator + "appCache";
     public static final String GEOCACHE_PATH = METADATA_PATH + File.separator + "geoCache";
     public static final String WEBDB_PATH = METADATA_PATH + File.separator + "webDb";
-    public static final String DEFAULT_FONTSIZE = "21";
+    private static final String DEFAULT_FONTSIZE = "21";
+	private static final ObjectMapper mapper = new ObjectMapper();
 
-    // share all session cookies across all sessions...
-    private CookieStore cookieStore = new BasicCookieStore();
-    // retain credentials for 7 minutes...
-    private CredentialsProvider credsProvider = new AgingCredentialsProvider(7 * 60 * 1000);
     private PropertyManager mPropertyManager;
+
+    private int versionCode;
+    private byte[] mSalt;
+    private LicenseChecker mLicenseChecker;
+    private APKExpansionPolicy mAPKExpansionPolicy;
+    private boolean mLicenseWasApproved = false;
 
     private WebLogger logger = null;
 
@@ -97,9 +115,10 @@ public class Survey extends Application {
     }
     /**
      * Creates required directories on the SDCard (or other external storage)
+     * @return true if there are forms present
      * @throws RuntimeException if there is no SDCard or the directory exists as a non directory
      */
-    public static void createODKDirs() throws RuntimeException {
+    public static boolean createODKDirs() throws RuntimeException {
         String cardstatus = Environment.getExternalStorageState();
         if (cardstatus.equals(Environment.MEDIA_REMOVED)
                 || cardstatus.equals(Environment.MEDIA_UNMOUNTABLE)
@@ -134,30 +153,15 @@ public class Survey extends Application {
                 }
             }
         }
-    }
 
-    /**
-     * Shared HttpContext so a user doesn't have to re-enter login information
-     * @return
-     */
-    public synchronized HttpContext getHttpContext() {
+        File[] files = new File(FORMS_PATH).listFiles(new FileFilter() {
 
-        // context holds authentication state machine, so it cannot be
-        // shared across independent activities.
-        HttpContext localContext = new BasicHttpContext();
+			@Override
+			public boolean accept(File pathname) {
+				return pathname.isDirectory() && new File(pathname, FORMDEF_JSON_FILENAME).exists();
+			}});
 
-        localContext.setAttribute(ClientContext.COOKIE_STORE, cookieStore);
-        localContext.setAttribute(ClientContext.CREDS_PROVIDER, credsProvider);
-
-        return localContext;
-    }
-
-    public CredentialsProvider getCredentialsProvider() {
-    	return credsProvider;
-    }
-
-    public CookieStore getCookieStore() {
-    	return cookieStore;
+        return (files.length != 0);
     }
 
     public PropertyManager getPropertyManager() {
@@ -179,6 +183,57 @@ public class Survey extends Application {
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         PreferenceManager.setDefaultValues(this, R.xml.admin_preferences, false);
         super.onCreate();
+
+        SharedPreferences settings =
+                PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());
+        String saltString = settings.getString(PreferencesActivity.KEY_SALT, null);
+        do {
+	        if ( saltString == null ) {
+	            SecureRandom random = new SecureRandom();
+	            mSalt = new byte[20];
+	            random.nextBytes(mSalt);
+	            saltString = Base64.encode(mSalt);
+	            settings.edit().putString(PreferencesActivity.KEY_SALT, saltString).commit();
+	        } else {
+	        	try {
+					mSalt = Base64.decode(saltString);
+				} catch (Base64DecoderException e) {
+					Log.e(t, "Unable to decode saved salt string -- regenerating");
+					saltString = null;
+					e.printStackTrace();
+				}
+	        }
+        } while ( saltString == null );
+
+ 		try {
+	        PackageInfo pinfo;
+			pinfo = getPackageManager().getPackageInfo(getPackageName(), 0);
+			versionCode = pinfo.versionCode;
+	        mSalt[0] = (byte) (versionCode % 251);
+		} catch (NameNotFoundException e) {
+			versionCode = 0;
+			e.printStackTrace();
+		}
+
+        String deviceId = mPropertyManager.getSingularProperty(PropertyManager.OR_DEVICE_ID_PROPERTY);
+
+        // Construct the LicenseChecker with a Policy.
+        mAPKExpansionPolicy = new APKExpansionPolicy(this,
+                new AESObfuscator(mSalt, getPackageName(), deviceId));
+        mLicenseChecker = new LicenseChecker(
+            this, mAPKExpansionPolicy,
+            BASE64_PUBLIC_KEY  // Your public licensing key.
+            );
+
+        mLicenseChecker.checkAccess(this);
+    }
+
+    public byte[] getSalt() {
+    	return mSalt;
+    }
+
+    public String getBase64PublicKey() {
+    	return BASE64_PUBLIC_KEY;
     }
 
     @Override
@@ -189,8 +244,97 @@ public class Survey extends Application {
 
 	@Override
 	public void onTerminate() {
+		mLicenseChecker.onDestroy();
 		super.onTerminate();
 		Log.i(t, "onTerminate");
+	}
+
+	@Override
+	public void allow(int reason) {
+		Log.i(t, "allow: license check succeeded: " + Integer.toString(reason));
+		mLicenseWasApproved = true;
+
+		if ( mAPKExpansionPolicy.isUpdatedFromServer() ) {
+			// we got a response from the server, as opposed to a cached entry
+			// (a cached entry does not have the expansion info).
+			// Gather and persist the expansion file info into the user preferences.
+			File f = new File( new File(new
+					File(Environment.getExternalStorageDirectory(), "Android"), "obb"), getPackageName());
+			f.mkdirs();
+
+			ArrayList<Map<String,Object>> expansions = new ArrayList<Map<String,Object>>();
+			int exps = mAPKExpansionPolicy.getExpansionURLCount();
+			for ( int i = 0 ; i < exps ; ++i ) {
+				String name = mAPKExpansionPolicy.getExpansionFileName(i);
+				String url = mAPKExpansionPolicy.getExpansionURL(i);
+				long len = mAPKExpansionPolicy.getExpansionFileSize(i);
+				File ext = new File(f, name);
+
+				Map<String,Object> ex = new HashMap<String,Object>();
+				ex.put("path", ext.getAbsoluteFile());
+				ex.put("url", url);
+				ex.put("length", Long.valueOf(len));
+				expansions.add(ex);
+			}
+
+			String expansionDefs;
+			try {
+				expansionDefs = mapper.writeValueAsString(expansions);
+
+				SharedPreferences settings =
+		                PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());
+
+				settings.edit().putString(PreferencesActivity.KEY_APK_EXPANSIONS, expansionDefs).commit();
+				Log.i(t, "persisted the expansion file list (" + expansions.size() + " expansion files)");
+			} catch (JsonGenerationException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to persist expected APK Expansion information");
+			} catch (JsonMappingException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to persist expected APK Expansion information");
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to persist expected APK Expansion information");
+			}
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	public ArrayList<Map<String,Object>> expansionFiles() {
+		File f = new File( new File(new
+				File(Environment.getExternalStorageDirectory(), "Android"), "obb"), getPackageName());
+		f.mkdirs();
+
+		SharedPreferences settings =
+                PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());
+		String expansionDefs = settings.getString(PreferencesActivity.KEY_APK_EXPANSIONS, null);
+		if ( expansionDefs != null ) {
+			try {
+				return mapper.readValue(expansionDefs, ArrayList.class);
+			} catch (JsonParseException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to retrieve expected APK Expansion information");
+			} catch (JsonMappingException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to retrieve expected APK Expansion information");
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.e(t,"unable to retrieve expected APK Expansion information");
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void dontAllow(int reason) {
+		Log.e(t, "dontAllow: license check FAILED: " + Integer.toString(reason));
+		mLicenseWasApproved = false;
+	}
+
+	@Override
+	public void applicationError(int errorCode) {
+		Log.e(t, "applicationError: license check ERROR: " + Integer.toString(errorCode));
+		mLicenseWasApproved = false;
 	}
 
 }

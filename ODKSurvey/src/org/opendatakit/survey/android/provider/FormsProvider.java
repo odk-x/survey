@@ -160,9 +160,9 @@ public class FormsProvider extends ContentProvider {
         values.put(FormsColumns.DATE, now);
 
         // require that it contain a formDef file
-        File formDefFile = new File(mediaPath, FormsProviderAPI.FILENAME_FORM_DEF_JSON);
+        File formDefFile = new File(mediaPath, Survey.FORMDEF_JSON_FILENAME);
         if ( !formDefFile.exists() ) {
-        	throw new IllegalArgumentException( FormsProviderAPI.FILENAME_FORM_DEF_JSON + " does not exist in: " + mediaPath.getAbsolutePath());
+        	throw new IllegalArgumentException( Survey.FORMDEF_JSON_FILENAME + " does not exist in: " + mediaPath.getAbsolutePath());
         }
 
         // ODK2: FILENAME_XFORMS_XML may not exist if non-ODK1 fetch path...

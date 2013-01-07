@@ -398,7 +398,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
         FormInfo fi = new FormInfo(uploadingForm.formDefFile);
         // get shared HttpContext so that authentication and cookies are retained.
-        HttpContext localContext = Survey.getInstance().getHttpContext();
+        HttpContext localContext = WebUtils.getHttpContext();
         HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
 
         Map<URI, URI> uriRemap = new HashMap<URI, URI>();
