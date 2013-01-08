@@ -26,7 +26,6 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
 import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment.FormChooserListListener;
@@ -57,7 +56,6 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentManager.BackStackEntry;
-import android.support.v4.app.FragmentManager.OnBackStackChangedListener;
 import android.support.v4.app.FragmentTransaction;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
@@ -84,7 +82,7 @@ import com.actionbarsherlock.view.MenuItem;
  * @author Carl Hartung (carlhartung@gmail.com)
  * @author Yaw Anokwa (yanokwa@gmail.com)
  */
-public class MainMenuActivity extends SherlockFragmentActivity implements ODKActivity, FormChooserListListener, OnBackStackChangedListener {
+public class MainMenuActivity extends SherlockFragmentActivity implements ODKActivity, FormChooserListListener {
 
 	private static final String t = "MainMenuActivity";
 
@@ -109,6 +107,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     private static final String CURRENT_SCREEN = "currentScreen";
     private static final String NESTED_SCREEN = "nestedScreen";
+    private static final String PROCESS_APK_EXPANSION_FILES = "processAPKExpansionFiles";
 
     // menu options
 
@@ -144,6 +143,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
     private ScreenList nestedScreen = ScreenList.FORM_CHOOSER;
 
+    private boolean mProcessAPKExpansionFiles = false;
+
     private String pageWaitingForData = null;
 	private String pathWaitingForData = null;
 	private String actionWaitingForData = null;
@@ -156,8 +157,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	/**
 	 * Member variables that do not need to be perserved across orientation changes, etc.
 	 */
-
-    private boolean mNoFormsPresent = false;
 
     private AlertDialog mAlertDialog; // no need to preserve
 
@@ -193,6 +192,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		}
 		outState.putString(CURRENT_SCREEN, currentScreen.name());
 		outState.putString(NESTED_SCREEN, nestedScreen.name());
+		outState.putBoolean(PROCESS_APK_EXPANSION_FILES, mProcessAPKExpansionFiles);
 
 		if ( getCurrentForm() != null ) {
 			outState.putString(FORM_URI, getCurrentForm().formUri.toString());
@@ -209,40 +209,66 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	}
 
 	@Override
-	public void expansionFilesCopied() {
-		mNoFormsPresent = true;
-		swapToFragmentView(ScreenList.FORM_CHOOSER);
+	public void expansionFilesCopied(String fragmentToShowNext) {
+		// whether we have can cancelled or completed update,
+		// remember to not do the expansion files check next time through
+		mProcessAPKExpansionFiles = false;
+		nestedScreen = ScreenList.valueOf(fragmentToShowNext);
+		swapToFragmentView(nestedScreen);
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-    	if ( mNoFormsPresent ) {
-        	// no form files -- see if we can explode an APK Expansion file
-        	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
-        	File local = Survey.getInstance().localExpansionFile();
-        	if ( files != null  || local.exists() ) {
-        		// double-check that we have no forms...
-                try {
-                	mNoFormsPresent = !Survey.createODKDirs();
-                } catch (RuntimeException e) {
-                    createErrorDialog(e.getMessage(), EXIT);
-                    return;
-                }
-                if ( mNoFormsPresent ) {
-                	// OK we should swap to the CopyExpansionFiles view
-                	swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
-                } else {
-                	swapToFragmentView(nestedScreen);
-                }
-        	} else {
-        		// no expansion files, so just display a blank screen
-        		swapToFragmentView(nestedScreen);
-        	}
-        } else {
-    		swapToFragmentView(nestedScreen);
-        }
+    	FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
+		View frags = findViewById(R.id.main_content);
+		View wkt = findViewById(R.id.webkit_view);
+
+		if ( nestedScreen == ScreenList.FORM_CHOOSER ||
+				nestedScreen == ScreenList.FORM_DOWNLOADER ||
+				nestedScreen == ScreenList.FORM_DELETER ||
+				nestedScreen == ScreenList.INSTANCE_UPLOADER ||
+				nestedScreen == ScreenList.COPY_EXPANSION_FILES ) {
+			shadow.setVisibility(View.GONE);
+	    	shadow.removeAllViews();
+    		wkt.setVisibility(View.GONE);
+    		frags.setVisibility(View.VISIBLE);
+		} else if ( nestedScreen == ScreenList.WEBKIT ) {
+			shadow.setVisibility(View.GONE);
+	    	shadow.removeAllViews();
+    		wkt.setVisibility(View.VISIBLE);
+    		frags.setVisibility(View.GONE);
+		} else if ( nestedScreen == ScreenList.CUSTOM_VIEW ) {
+			shadow.setVisibility(View.VISIBLE);
+//	    	shadow.removeAllViews();
+    		wkt.setVisibility(View.GONE);
+    		frags.setVisibility(View.GONE);
+		}
+
+		FragmentManager mgr = this.getSupportFragmentManager();
+		if ( mgr.getBackStackEntryCount() == 0 ) {
+			swapToFragmentView(nestedScreen);
+			// we are not recovering...
+	    	if ( (nestedScreen != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles ) {
+	        	// no form files -- see if we can explode an APK Expansion file
+	        	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
+	        	File local = Survey.getInstance().localExpansionFile();
+	        	if ( files != null  || local.exists() ) {
+	        		// double-check that we have no forms...
+	                try {
+	                	mProcessAPKExpansionFiles = !Survey.createODKDirs();
+	                } catch (RuntimeException e) {
+	                    createErrorDialog(e.getMessage(), EXIT);
+	                    return;
+	                }
+	                if ( mProcessAPKExpansionFiles ) {
+	                	// OK we should swap to the CopyExpansionFiles view
+	                	swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
+	                }
+	        	}
+	        }
+		}
 	}
 
     public static synchronized String getInstanceFilePath(String extension) {
@@ -343,7 +369,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         // must be at the beginning of any activity that can be called from an external intent
         Log.i(t, "Starting up, creating directories");
         try {
-        	mNoFormsPresent = !Survey.createODKDirs();
+        	mProcessAPKExpansionFiles = !Survey.createODKDirs();
         } catch (RuntimeException e) {
             createErrorDialog(e.getMessage(), EXIT);
             return;
@@ -351,25 +377,28 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
         if ( savedInstanceState != null ) {
 			pageWaitingForData = savedInstanceState.containsKey(PAGE_WAITING_FOR_DATA) ?
-					(String) savedInstanceState.get(PAGE_WAITING_FOR_DATA) : null;
+					savedInstanceState.getString(PAGE_WAITING_FOR_DATA) : null;
 			pathWaitingForData = savedInstanceState.containsKey(PATH_WAITING_FOR_DATA) ?
-					(String) savedInstanceState.get(PATH_WAITING_FOR_DATA) : null;
+					savedInstanceState.getString(PATH_WAITING_FOR_DATA) : null;
 			actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ?
-					(String) savedInstanceState.get(ACTION_WAITING_FOR_DATA) : null;
+					savedInstanceState.getString(ACTION_WAITING_FOR_DATA) : null;
 
 			currentScreen = ScreenList.valueOf(savedInstanceState.containsKey(CURRENT_SCREEN) ?
-					(String) savedInstanceState.get(CURRENT_SCREEN) : ScreenList.MAIN_SCREEN.name());
+					savedInstanceState.getString(CURRENT_SCREEN) : ScreenList.MAIN_SCREEN.name());
 			nestedScreen = ScreenList.valueOf(savedInstanceState.containsKey(NESTED_SCREEN) ?
-					(String) savedInstanceState.get(NESTED_SCREEN) : ScreenList.FORM_CHOOSER.name());
+					savedInstanceState.getString(NESTED_SCREEN) : ScreenList.FORM_CHOOSER.name());
+			if ( savedInstanceState.containsKey(PROCESS_APK_EXPANSION_FILES) ) {
+				mProcessAPKExpansionFiles = savedInstanceState.getBoolean(PROCESS_APK_EXPANSION_FILES);
+			}
 
 			setCurrentForm( savedInstanceState.containsKey(FORM_URI) ?
-					retrieveFormIdStruct(Uri.parse((String) savedInstanceState.get(FORM_URI))) : null);
+					retrieveFormIdStruct(Uri.parse(savedInstanceState.getString(FORM_URI))) : null);
 			setInstanceId( savedInstanceState.containsKey(INSTANCE_ID) ?
-					(String) savedInstanceState.get(INSTANCE_ID) : null);
+					savedInstanceState.getString(INSTANCE_ID) : null);
 			setPageRef( savedInstanceState.containsKey(PAGE_REF) ?
-					(String) savedInstanceState.get(PAGE_REF) : null);
+					savedInstanceState.getString(PAGE_REF) : null);
 			setAuxillaryHash( savedInstanceState.containsKey(AUXILLARY_HASH) ?
-					(String) savedInstanceState.get(AUXILLARY_HASH) : null);
+					savedInstanceState.getString(AUXILLARY_HASH) : null);
         }
 
         mAdminPreferences = this.getSharedPreferences(
@@ -387,20 +416,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         			getPageRef(),
         			getAuxillaryHash());
         }
-
-        // ensure we have the background task fragment available before any actions are taken...
-		FragmentManager mgr = getSupportFragmentManager();
-		mgr.addOnBackStackChangedListener(this);
-
-		{
-			BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
-					.findFragmentByTag("background");
-
-			if ( f == null ) {
-				f = (BackgroundTaskFragment) Fragment.instantiate(this, BackgroundTaskFragment.class.getName());
-				mgr.beginTransaction().add(f, "background").commit();
-			}
-		}
 
 		ActionBar actionBar = getSupportActionBar();
 		actionBar.setIcon(R.drawable.odk_logo);
@@ -595,17 +610,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 		}
 	}
 
-	@Override
-	public void onBackStackChanged() {
-		//View frags = findViewById(R.id.main_content);
-		//View wkt = findViewById(R.id.webkit_view);
-
-		FragmentManager mgr = getSupportFragmentManager();
-		if (  mgr.getBackStackEntryCount() == 0 ) {
-			swapToFragmentView(ScreenList.FORM_CHOOSER);
-		}
-	}
-
     private void createErrorDialog(String errorMsg, final boolean shouldExit) {
     	if ( mAlertDialog != null ) {
     		mAlertDialog.dismiss();
@@ -777,6 +781,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			if ( f == null ) {
 				f = new CopyExpansionFilesFragment();
 			}
+			((CopyExpansionFilesFragment) f).setFragmentToShowNext(nestedScreen.name());
 			newCurrentView = ScreenList.MAIN_SCREEN;
     	} else if ( newNestedView == ScreenList.FORM_DELETER ) {
     		f = mgr.findFragmentById(FormManagerListFragment.ID);
@@ -836,7 +841,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			// add transaction to this screen
 			FragmentTransaction trans = mgr.beginTransaction();
 			trans.replace(R.id.main_content, f);
-			trans.addToBackStack(nestedScreen.name());
+			// never put the copy-expansion-files fragment on the
+			// back stack it is always a transient screen.
+			if ( nestedScreen != ScreenList.COPY_EXPANSION_FILES ) {
+				trans.addToBackStack(nestedScreen.name());
+			} else {
+				trans.disallowAddToBackStack();
+			}
 			trans.commit();
 		}
 		invalidateOptionsMenu();

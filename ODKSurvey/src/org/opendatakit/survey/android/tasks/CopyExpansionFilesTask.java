@@ -17,7 +17,6 @@ package org.opendatakit.survey.android.tasks;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,33 +29,20 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.apache.commons.io.FileUtils;
-import org.kxml2.kdom.Element;
-import org.opendatakit.survey.android.R;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
+import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.CopyExpansionFilesListener;
-import org.opendatakit.survey.android.listeners.FormDownloaderListener;
-import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
-import org.opendatakit.survey.android.utilities.DocumentFetchResult;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.utilities.WebUtils;
 
-import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -70,7 +56,7 @@ import android.util.Log;
 public class CopyExpansionFilesTask extends
         AsyncTask<Void, String, ArrayList<String>> {
 
-    private static final String t = "DownloadFormsTask";
+    private static final String t = "CopyExpansionFilesTask";
 
     private CopyExpansionFilesListener mStateListener;
     private ArrayList<String> mResult = new ArrayList<String>();
@@ -87,7 +73,7 @@ public class CopyExpansionFilesTask extends
         	expansionFiles = new ArrayList<Map<String,Object>>();
         	// use the local copy of the main expansion file if there is one
         	File f = Survey.getInstance().localExpansionFile();
-        	if ( f != null && f.exists()) {
+        	if (f.exists()) {
 	        	Map<String,Object> expansionFile = new HashMap<String,Object>();
 	        	expansionFile.put(Survey.EXPANSION_FILE_PATH, f.getAbsolutePath());
 	        	expansionFile.put(Survey.EXPANSION_FILE_LENGTH, f.length());
@@ -109,8 +95,8 @@ public class CopyExpansionFilesTask extends
         		return result;
         	}
 
-            publishProgress(f.getName(), Integer.valueOf(count).toString(), Integer.valueOf(total)
-                    .toString());
+            publishProgress(Survey.getInstance().getString(R.string.expanding_file, f.getName()),
+            		Integer.valueOf(count).toString(), Integer.valueOf(total).toString());
 
             String message = "";
 
@@ -171,13 +157,15 @@ public class CopyExpansionFilesTask extends
             try {
 				f = new ZipFile(zipfile, ZipFile.OPEN_READ);
 				Enumeration<? extends ZipEntry> entries = f.entries();
+				int nFiles = 0;
 				while ( entries.hasMoreElements() ) {
+					++nFiles;
 					ZipEntry entry = entries.nextElement();
 					File tempFile = new File(Survey.ODK_ROOT, entry.getName());
 		        	String formattedString = Survey.getInstance().getString(R.string.expansion_unzipping,
 		        			zipfile.getName(), entry.getName());
 		            publishProgress(formattedString,
-		            		Integer.valueOf(count).toString(), Integer.valueOf(total).toString());
+		            		Integer.valueOf(nFiles).toString(), Integer.valueOf(f.size()).toString());
 					if ( entry.isDirectory() ) {
 						tempFile.mkdirs();
 					} else {

@@ -362,6 +362,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			.setCancelable(false)
 			.setPositiveButton(getString(R.string.ok), quitListener)
 			.setIcon(android.R.drawable.ic_dialog_info).create();
+		mAlertDialog.setCanceledOnTouchOutside(false);
 		mAlertMsg = message;
 		mAlertTitle = title;
 		mAlertShowing = true;

@@ -85,7 +85,7 @@ public class AuthDialogFragment extends DialogFragment {
 				PreferencesActivity.KEY_PASSWORD, null);
 		password.setText(storedPassword);
 
-		return new AlertDialog.Builder(getActivity())
+		AlertDialog dlg = new AlertDialog.Builder(getActivity())
 			.setTitle(title)
 			.setMessage(message)
 			.setView(dialogView)
@@ -117,5 +117,7 @@ public class AuthDialogFragment extends DialogFragment {
 					}
 				})
 			.create();
+		dlg.setCanceledOnTouchOutside(false);
+		return dlg;
     }
 }

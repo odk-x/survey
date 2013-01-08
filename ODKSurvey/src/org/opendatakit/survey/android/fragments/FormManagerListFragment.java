@@ -205,6 +205,7 @@ public class FormManagerListFragment extends ListFragment implements
 				.setCancelable(false)
 				.setPositiveButton(getString(R.string.delete_yes), dialogYesNoListener)
 				.setNegativeButton(getString(R.string.delete_no), dialogYesNoListener).create();
+		mAlertDialog.setCanceledOnTouchOutside(false);
 		mAlertDialog.show();
 	}
 

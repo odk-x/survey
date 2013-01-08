@@ -55,27 +55,25 @@ public class ProgressDialogFragment extends DialogFragment {
         String title = getArguments().getString("title");
         String message = getArguments().getString("message");
 
-        Integer fragmentId = getArguments().getInt("fragmentId");
-        FragmentManager mgr = getFragmentManager();
-    	Fragment f = mgr.findFragmentById(fragmentId);
+        final Integer fragmentId = getArguments().getInt("fragmentId");
 
-    	setTargetFragment(f, RequestCodes.PROGRESS_DIALOG.ordinal());
-
-    	ProgressDialog mProgressDialog = new ProgressDialog(getActivity());
 		DialogInterface.OnClickListener loadingButtonListener = new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
-				Fragment f = getTargetFragment();
+		        FragmentManager mgr = getFragmentManager();
+		    	Fragment f = mgr.findFragmentById(fragmentId);
 
 				((CancelProgressDialog) f).cancelProgressDialog();
 				dialog.dismiss();
 			}
 		};
+    	ProgressDialog mProgressDialog = new ProgressDialog(getActivity());
 		mProgressDialog.setTitle(title);
 		mProgressDialog.setMessage(message);
 		mProgressDialog.setIcon(android.R.drawable.ic_dialog_info);
 		mProgressDialog.setIndeterminate(true);
 		mProgressDialog.setCancelable(false);
+		mProgressDialog.setCanceledOnTouchOutside(false);
 		mProgressDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.cancel),
 				loadingButtonListener);
 		return mProgressDialog;
