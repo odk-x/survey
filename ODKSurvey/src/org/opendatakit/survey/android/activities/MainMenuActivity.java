@@ -27,6 +27,7 @@ import org.json.JSONObject;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
+import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment.FormChooserListListener;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
@@ -87,7 +88,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
 	private static final String t = "MainMenuActivity";
 
-    public static enum ScreenList { MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW };
+    public static enum ScreenList { MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES };
 
     // Extra returned from gp activity
     // TODO: move to Survey???
@@ -156,6 +157,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	 * Member variables that do not need to be perserved across orientation changes, etc.
 	 */
 
+    private boolean mNoFormsPresent = false;
+
     private AlertDialog mAlertDialog; // no need to preserve
 
     private JQueryJavascriptCallback mJSCallback = null; // cached for efficiency only -- no need to preserve
@@ -206,9 +209,40 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	}
 
 	@Override
+	public void expansionFilesCopied() {
+		mNoFormsPresent = true;
+		swapToFragmentView(ScreenList.FORM_CHOOSER);
+	}
+
+	@Override
 	protected void onResume() {
 		super.onResume();
-		swapToFragmentView(nestedScreen);
+
+    	if ( mNoFormsPresent ) {
+        	// no form files -- see if we can explode an APK Expansion file
+        	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
+        	File local = Survey.getInstance().localExpansionFile();
+        	if ( files != null  || local.exists() ) {
+        		// double-check that we have no forms...
+                try {
+                	mNoFormsPresent = !Survey.createODKDirs();
+                } catch (RuntimeException e) {
+                    createErrorDialog(e.getMessage(), EXIT);
+                    return;
+                }
+                if ( mNoFormsPresent ) {
+                	// OK we should swap to the CopyExpansionFiles view
+                	swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
+                } else {
+                	swapToFragmentView(nestedScreen);
+                }
+        	} else {
+        		// no expansion files, so just display a blank screen
+        		swapToFragmentView(nestedScreen);
+        	}
+        } else {
+    		swapToFragmentView(nestedScreen);
+        }
 	}
 
     public static synchronized String getInstanceFilePath(String extension) {
@@ -309,13 +343,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         // must be at the beginning of any activity that can be called from an external intent
         Log.i(t, "Starting up, creating directories");
         try {
-            if ( !Survey.createODKDirs() ) {
-            	// no form files -- see if we can explode an APK Expansion file
-            	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
-            	if ( files != null ) {
-            		// see if we have them all...
-            	}
-            }
+        	mNoFormsPresent = !Survey.createODKDirs();
         } catch (RuntimeException e) {
             createErrorDialog(e.getMessage(), EXIT);
             return;
@@ -742,6 +770,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 			if ( f == null ) {
 				f = new FormChooserListFragment();
 				((FormChooserListFragment) f).setFormChooserListListener(this);
+			}
+			newCurrentView = ScreenList.MAIN_SCREEN;
+    	} else if ( newNestedView == ScreenList.COPY_EXPANSION_FILES ) {
+    		f = mgr.findFragmentById(CopyExpansionFilesFragment.ID);
+			if ( f == null ) {
+				f = new CopyExpansionFilesFragment();
 			}
 			newCurrentView = ScreenList.MAIN_SCREEN;
     	} else if ( newNestedView == ScreenList.FORM_DELETER ) {

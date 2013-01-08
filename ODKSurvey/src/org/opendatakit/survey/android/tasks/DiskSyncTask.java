@@ -55,9 +55,44 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
     	StringBuilder errors = new StringBuilder();
     	int value = ++counter; // roughly track the scan # we're on... logging use only
     	Log.i(t, "["+value+"] doInBackground begins!");
-        updateFormInfo(errors, mediaPath, value);
+    	updateFormInfo(errors, mediaPath, value);
         return errors.toString();
     }
+
+	private static final void removeStaleFormInfo(StringBuilder errors, int instance) {
+		ArrayList<Uri> badEntries = new ArrayList<Uri>();
+		Cursor c = null;
+        try {
+        	c = Survey.getInstance().getContentResolver().query(FormsColumns.CONTENT_URI, null, null, null, null);
+
+    		if ( c.moveToFirst() ) {
+    			do {
+        			String id = Integer.toString(c.getInt(c.getColumnIndex(FormsColumns._ID)));
+                    Uri otherUri = Uri.withAppendedPath(FormsColumns.CONTENT_URI, id);
+
+                    String formMediaPath = c.getString(c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH));
+                    File f = new File(formMediaPath);
+                    if ( !f.exists() || !f.isDirectory() ) {
+                    	// the form definition does not exist
+                    	badEntries.add(otherUri);
+                    }
+    			} while ( c.moveToNext() );
+    		}
+        } catch ( SQLiteException e ) {
+        	e.printStackTrace();
+        	errors.append(e.toString()).append("\r\n");
+        	return;
+        } finally {
+        	if ( c != null && !c.isClosed() ) {
+        		c.close();
+        	}
+        }
+
+        // delete the other entries (and directories)
+        for ( Uri badUri : badEntries ) {
+			Survey.getInstance().getContentResolver().delete(badUri, null, null);
+        }
+	}
 
     private static final void updateFormInfo(StringBuilder errors, File mediaPath, int instance) {
     	FormInfo fi = null;
@@ -282,6 +317,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 	    	// Process everything then report what didn't work.
     		StringBuilder errors = new StringBuilder();
 
+        	removeStaleFormInfo(errors, instance);
 	    	updateFormInfo(errors, instance);
 
 	        if ( errors.length() != 0 ) {

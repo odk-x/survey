@@ -39,6 +39,7 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
+import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.APKExpansionPolicy;
 import com.google.android.vending.licensing.LicenseChecker;
@@ -56,6 +57,10 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	private static final String BASE64_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo93+Dgn3iDleC9XMTDH7ez1MOm/BOt287DgkldNkdvrtdC4oUegx3N8Say9tq47k2EOzeLYkezVnKdtserx+g/+R6pDIOS66bwbH+HoslDEUaZRZ47EipSGC1JhtOp/nQGQCsdVc5q/fPvw8d2rLLi+PQUZPBOiBxUo9h/CFc41hl/quUELmylSdL4O06OAP8OCEDA+tl0C2Ik+uCYMDJLD4m7YVbkV7jJXjtILj+GW+noLriFMRsgg7WKQe2j9fw5+v46nzhokOnDnHh+yGwQMfs/B0jfFAgXllLNjIPlXQf2UVzuxEax6wLCyqUXMIjCPSNfnzDRgFB4Qw3QbJCwIDAQAB"; //truncated for this example
 	public static final String t = "Survey";
 
+	// keys for expansion files
+	public static final String EXPANSION_FILE_PATH = "path";
+	public static final String EXPANSION_FILE_LENGTH = "length";
+	public static final String EXPANSION_FILE_URL = "url";
 
 	// special filename
     public static final String FORMDEF_JSON_FILENAME = "formDef.json";
@@ -71,6 +76,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
     public static final String APPCACHE_PATH = METADATA_PATH + File.separator + "appCache";
     public static final String GEOCACHE_PATH = METADATA_PATH + File.separator + "geoCache";
     public static final String WEBDB_PATH = METADATA_PATH + File.separator + "webDb";
+
+    // private values
     private static final String DEFAULT_FONTSIZE = "21";
 	private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -271,9 +278,9 @@ public class Survey extends Application implements LicenseCheckerCallback {
 				File ext = new File(f, name);
 
 				Map<String,Object> ex = new HashMap<String,Object>();
-				ex.put("path", ext.getAbsoluteFile());
-				ex.put("url", url);
-				ex.put("length", Long.valueOf(len));
+				ex.put(EXPANSION_FILE_PATH, ext.getAbsoluteFile());
+				ex.put(EXPANSION_FILE_URL, url);
+				ex.put(EXPANSION_FILE_LENGTH, Long.valueOf(len));
 				expansions.add(ex);
 			}
 
@@ -323,6 +330,16 @@ public class Survey extends Application implements LicenseCheckerCallback {
 			}
 		}
 		return null;
+	}
+
+	public File localExpansionFile() {
+		File f = new File( new File(new
+				File(Environment.getExternalStorageDirectory(), "Android"), "obb"), getPackageName());
+		f.mkdirs();
+
+		String name = Helpers.getExpansionAPKFileName(this, true, versionCode);
+
+		return new File(f, name);
 	}
 
 	@Override

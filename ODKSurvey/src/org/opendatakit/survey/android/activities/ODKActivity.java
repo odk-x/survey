@@ -51,6 +51,8 @@ public interface ODKActivity {
 
 	public Bitmap getDefaultVideoPoster();
 
+	public void expansionFilesCopied();
+
 	/**
 	 * Use the Activity implementation of this.
 	 *

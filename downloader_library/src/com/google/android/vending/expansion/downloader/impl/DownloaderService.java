@@ -16,18 +16,7 @@
 
 package com.google.android.vending.expansion.downloader.impl;
 
-import com.google.android.vending.expansion.downloader.Constants;
-import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
-import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
-import com.google.android.vending.expansion.downloader.Helpers;
-import com.google.android.vending.expansion.downloader.IDownloaderClient;
-import com.google.android.vending.expansion.downloader.IDownloaderService;
-import com.google.android.vending.expansion.downloader.IStub;
-import com.google.android.vending.licensing.AESObfuscator;
-import com.google.android.vending.licensing.APKExpansionPolicy;
-import com.google.android.vending.licensing.LicenseChecker;
-import com.google.android.vending.licensing.LicenseCheckerCallback;
-import com.google.android.vending.licensing.Policy;
+import java.io.File;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -50,7 +39,18 @@ import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.util.Log;
 
-import java.io.File;
+import com.google.android.vending.expansion.downloader.Constants;
+import com.google.android.vending.expansion.downloader.DownloadProgressInfo;
+import com.google.android.vending.expansion.downloader.DownloaderServiceMarshaller;
+import com.google.android.vending.expansion.downloader.Helpers;
+import com.google.android.vending.expansion.downloader.IDownloaderClient;
+import com.google.android.vending.expansion.downloader.IDownloaderService;
+import com.google.android.vending.expansion.downloader.IStub;
+import com.google.android.vending.licensing.AESObfuscator;
+import com.google.android.vending.licensing.APKExpansionPolicy;
+import com.google.android.vending.licensing.LicenseChecker;
+import com.google.android.vending.licensing.LicenseCheckerCallback;
+import com.google.android.vending.licensing.Policy;
 
 /**
  * Performs the background downloads requested by applications that use the

@@ -495,7 +495,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	}
 
 	@Override
-	public void progressUpdate(String currentFile, int progress, int total) {
+	public void formDownloadProgressUpdate(String currentFile, int progress, int total) {
 		mAlertMsg = getString(R.string.fetching_file, currentFile, progress,
 				total);
 		updateProgressDialogMessage(mAlertMsg);

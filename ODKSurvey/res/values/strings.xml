@@ -274,4 +274,9 @@
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
 <string name="shortcut_name">ODK Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
+<string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
+<string name="searching_for_expansion_files">Searching for APK expansion files</string>
+<string name="expansion_unzipping">Unzipping: %1$s. Destination: %2$s</string>
+<string name="expanding_file">%1$s.\n\nExpansion file %2$s of %3$s expansion file(s).</string>
+<string name="expansion_in_progress">Sorry, an expansion of the APK expansion files is already in progress!</string>
 </resources>
