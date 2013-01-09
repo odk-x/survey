@@ -76,8 +76,8 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	// keys for the data being persisted
 
-	private static final String BUNDLE_TOGGLED_KEY = "toggled";
-	private static final String BUNDLE_SELECTED_COUNT = "selectedcount";
+	private static final String TOGGLED_KEY = "toggled";
+	private static final String DOWNLOAD_ENABLED = "downloadEnabled";
 	private static final String BUNDLE_FORM_MAP = "formmap";
 	private static final String DIALOG_TITLE = "dialogtitle";
 	private static final String DIALOG_MSG = "dialogmsg";
@@ -87,7 +87,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	// data to persist across orientation changes
 
 	private boolean mToggled = false;
-	private int mSelectedCount = 0;
+	private boolean mDownloadEnabled = false;
 	private HashMap<String, FormDetails> mFormNamesAndURLs;
 	private String mAlertTitle;
 	private String mAlertMsg;
@@ -139,7 +139,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		mAlertMsg = getString(R.string.please_wait);
 
 		mDownloadButton = (Button) view.findViewById(R.id.add_button);
-		mDownloadButton.setEnabled(false);
+		mDownloadButton.setEnabled(mDownloadEnabled);
 		mDownloadButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -160,8 +160,8 @@ public class FormDownloadListFragment extends ListFragment implements
 				for (int pos = 0; pos < ls.getCount(); pos++) {
 					ls.setItemChecked(pos, mToggled);
 				}
-
-				mDownloadButton.setEnabled(!(selectedItemCount() == 0));
+				mDownloadEnabled = !(selectedItemCount() == 0);
+				mDownloadButton.setEnabled(mDownloadEnabled);
 			}
 		});
 
@@ -185,16 +185,15 @@ public class FormDownloadListFragment extends ListFragment implements
 			}
 
 			// indicating whether or not select-all is on or off.
-			if (savedInstanceState.containsKey(BUNDLE_TOGGLED_KEY)) {
-				mToggled = savedInstanceState.getBoolean(BUNDLE_TOGGLED_KEY);
+			if (savedInstanceState.containsKey(TOGGLED_KEY)) {
+				mToggled = savedInstanceState.getBoolean(TOGGLED_KEY);
 			}
 
 			// how many items we've selected
 			// Android should keep track of this, but broken on rotate...
-			if (savedInstanceState.containsKey(BUNDLE_SELECTED_COUNT)) {
-				mSelectedCount = savedInstanceState
-						.getInt(BUNDLE_SELECTED_COUNT);
-				mDownloadButton.setEnabled(!(mSelectedCount == 0));
+			if (savedInstanceState.containsKey(DOWNLOAD_ENABLED)) {
+				mDownloadEnabled = savedInstanceState.getBoolean(DOWNLOAD_ENABLED);
+				mDownloadButton.setEnabled(mDownloadEnabled);
 			}
 
 			// to restore alert dialog.
@@ -222,13 +221,15 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	private void clearChoices() {
 		getListView().clearChoices();
-		mDownloadButton.setEnabled(false);
+		mDownloadEnabled = false;
+		mDownloadButton.setEnabled(mDownloadEnabled);
 	}
 
 	@Override
 	public void onListItemClick(ListView l, View v, int position, long id) {
 		super.onListItemClick(l, v, position, id);
-		mDownloadButton.setEnabled(!(selectedItemCount() == 0));
+		mDownloadEnabled = !(selectedItemCount() == 0);
+		mDownloadButton.setEnabled(mDownloadEnabled);
 	}
 
 	/**
@@ -256,8 +257,8 @@ public class FormDownloadListFragment extends ListFragment implements
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		outState.putBoolean(BUNDLE_TOGGLED_KEY, mToggled);
-		outState.putInt(BUNDLE_SELECTED_COUNT, selectedItemCount());
+		outState.putBoolean(TOGGLED_KEY, mToggled);
+		outState.putBoolean(DOWNLOAD_ENABLED, mDownloadEnabled);
 		outState.putSerializable(BUNDLE_FORM_MAP, mFormNamesAndURLs);
 		outState.putString(DIALOG_TITLE, mAlertTitle);
 		outState.putString(DIALOG_MSG, mAlertMsg);

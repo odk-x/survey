@@ -40,16 +40,12 @@ public class AdminPreferencesActivity extends PreferenceActivity {
 	public static String KEY_CHANGE_GOOGLE_ACCOUNT = "change_google_account";
 	// client
 	public static String KEY_CHANGE_FONT_SIZE = "change_font_size";
-	public static String KEY_DEFAULT_TO_FINALIZED = "default_to_finalized";
 	public static String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
 	public static String KEY_SELECT_SPLASH_SCREEN = "select_splash_screen";
 	// form entry
-	public static String KEY_SAVE_MID = "save_mid";
-	public static String KEY_JUMP_TO = "jump_to";
-	public static String KEY_CHANGE_LANGUAGE = "change_language";
 	public static String KEY_ACCESS_SETTINGS = "access_settings";
-	public static String KEY_SAVE_AS = "save_as";
-	public static String KEY_MARK_AS_FINALIZED = "mark_as_finalized";
+	public static String KEY_CHANGE_LANGUAGE = "change_language";
+	public static String KEY_JUMP_TO = "jump_to";
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

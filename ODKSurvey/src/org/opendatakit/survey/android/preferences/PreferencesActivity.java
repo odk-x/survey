@@ -59,7 +59,6 @@ public class PreferencesActivity extends PreferenceActivity implements
 	public static final String KEY_SPLASH_PATH = "splashPath";
 	public static final String KEY_FONT_SIZE = "font_size";
 	public static final String KEY_SELECTED_GOOGLE_ACCOUNT = "selected_google_account";
-	public static final String KEY_GOOGLE_SUBMISSION = "google_submission_id";
 
 	public static final String KEY_SERVER_URL = "server_url";
 	public static final String KEY_USERNAME = "username";
@@ -68,18 +67,13 @@ public class PreferencesActivity extends PreferenceActivity implements
 	public static final String KEY_PROTOCOL = "protocol";
 
 	public static final String PROTOCOL_ODK_DEFAULT = "odk_default";
-	public static final String PROTOCOL_GOOGLE = "google";
 	public static final String PROTOCOL_OTHER = "";
 
 	public static final String KEY_FORMLIST_URL = "formlist_url";
 	public static final String KEY_SUBMISSION_URL = "submission_url";
 
-	public static final String KEY_COMPLETED_DEFAULT = "default_completed";
-
 	public static final String KEY_AUTH = "auth";
 	public static final String KEY_ACCOUNT = "account";
-
-	public static final String googleServerBaseUrl = "https://gather.apis.google.com/odk/n/";
 
 	private PreferenceScreen mSplashPathPreference;
 	private EditTextPreference mSubmissionUrlPreference;
@@ -143,11 +137,6 @@ public class PreferencesActivity extends PreferenceActivity implements
 			Preference protocol = findPreference(KEY_PROTOCOL);
 			serverCategory.removePreference(protocol);
 			serverCategory.removePreference(mServerUrlPreference);
-
-		} else {
-			// this just removes the value from protocol, but protocol doesn't
-			// exist if we take away access
-			disableFeaturesInDevelopment();
 		}
 
 		mUsernamePreference = (EditTextPreference) findPreference(KEY_USERNAME);
@@ -258,14 +247,6 @@ public class PreferencesActivity extends PreferenceActivity implements
 			clientCategory.removePreference(mFontSizePreference);
 		}
 
-		boolean defaultAvailable = adminPreferences.getBoolean(
-				AdminPreferencesActivity.KEY_DEFAULT_TO_FINALIZED, true);
-
-		Preference defaultFinalized = findPreference(KEY_COMPLETED_DEFAULT);
-		if (!(defaultAvailable || adminMode)) {
-			clientCategory.removePreference(defaultFinalized);
-		}
-
 		boolean splashAvailable = adminPreferences.getBoolean(
 				AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN, true);
 		mSplashPathPreference = (PreferenceScreen) findPreference(KEY_SPLASH_PATH);
@@ -338,34 +319,11 @@ public class PreferencesActivity extends PreferenceActivity implements
 			clientCategory.removePreference(showSplashPreference);
 		}
 
-		if (!(fontAvailable || defaultAvailable || splashAvailable
+		if (!(fontAvailable || splashAvailable
 				|| showSplashAvailable || adminMode)) {
 			getPreferenceScreen().removePreference(clientCategory);
 		}
 
-	}
-
-	private void disableFeaturesInDevelopment() {
-		// remove Google Collections from protocol choices in preferences
-		ListPreference protocols = (ListPreference) findPreference(KEY_PROTOCOL);
-		int i = protocols.findIndexOfValue(PROTOCOL_GOOGLE);
-		if (i != -1) {
-			CharSequence[] entries = protocols.getEntries();
-			CharSequence[] entryValues = protocols.getEntryValues();
-
-			CharSequence[] newEntries = new CharSequence[entryValues.length - 1];
-			CharSequence[] newEntryValues = new CharSequence[entryValues.length - 1];
-			for (int k = 0, j = 0; j < entryValues.length; ++j) {
-				if (j == i)
-					continue;
-				newEntries[k] = entries[j];
-				newEntryValues[k] = entries[j];
-				++k;
-			}
-
-			protocols.setEntries(newEntries);
-			protocols.setEntryValues(newEntryValues);
-		}
 	}
 
 	private void setSplashPath(String path) {
