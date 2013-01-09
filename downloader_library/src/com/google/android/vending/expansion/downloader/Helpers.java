@@ -180,7 +180,7 @@ public class Helpers {
     }
 
     public static String getSpeedString(float bytesPerMillisecond) {
-        return String.format("%.2f", bytesPerMillisecond * 1000 / 1024);
+        return String.format(Locale.ENGLISH, "%.2f", bytesPerMillisecond * 1000 / 1024);
     }
 
     public static String getTimeRemaining(long durationInMilliseconds) {

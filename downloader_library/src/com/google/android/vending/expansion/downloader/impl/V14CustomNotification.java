@@ -19,10 +19,13 @@ package com.google.android.vending.expansion.downloader.impl;
 import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.expansion.downloader.R;
 
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.os.Build;
 
+@TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class V14CustomNotification implements DownloadNotification.ICustomNotification {
 
     CharSequence mTitle;

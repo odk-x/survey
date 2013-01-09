@@ -54,7 +54,10 @@ import com.google.android.vending.licensing.util.Base64DecoderException;
  */
 public class Survey extends Application implements LicenseCheckerCallback {
 
-	private static final String BASE64_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAo93+Dgn3iDleC9XMTDH7ez1MOm/BOt287DgkldNkdvrtdC4oUegx3N8Say9tq47k2EOzeLYkezVnKdtserx+g/+R6pDIOS66bwbH+HoslDEUaZRZ47EipSGC1JhtOp/nQGQCsdVc5q/fPvw8d2rLLi+PQUZPBOiBxUo9h/CFc41hl/quUELmylSdL4O06OAP8OCEDA+tl0C2Ik+uCYMDJLD4m7YVbkV7jJXjtILj+GW+noLriFMRsgg7WKQe2j9fw5+v46nzhokOnDnHh+yGwQMfs/B0jfFAgXllLNjIPlXQf2UVzuxEax6wLCyqUXMIjCPSNfnzDRgFB4Qw3QbJCwIDAQAB"; //truncated for this example
+	private static final String BASE64_PUBLIC_KEY = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzvIdMy97S9QLTp/gBxp7WUPM" +
+			"QWdXu2IDQJbZ3is95cx+WYuLXIdjNyok+VCZo8CxIHb2kuIeDmFYCwagqw9Uclnh2WDWagT+BB4dfyBD3V4IetGNdSZFKh2Y+9KHnysmsY7w" +
+			"E4z6NcrGlYbPWyboORjODBRNZ4rWPnLNix8WaNlHDW05uahGnSmto0lNCkdSC2PvmTUE3BimUScoiS+6LxQR/THqnR1RqA1IimjG2JsP58Oo" +
+			"n5NjWN4maX08IroXWDBGjhPtdngWOnoR8GoJ96M8k0eAM1LJ84eB/v9LnQZlrZjBdtUEhXlGKVudo41vmp1sC1OpRLYMbshhst7dzQIDAQAB";
 	public static final String t = "Survey";
 
 	// keys for expansion files
@@ -87,7 +90,6 @@ public class Survey extends Application implements LicenseCheckerCallback {
     private byte[] mSalt;
     private LicenseChecker mLicenseChecker;
     private APKExpansionPolicy mAPKExpansionPolicy;
-    private boolean mLicenseWasApproved = false;
 
     private WebLogger logger = null;
 
@@ -259,7 +261,6 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	@Override
 	public void allow(int reason) {
 		Log.i(t, "allow: license check succeeded: " + Integer.toString(reason));
-		mLicenseWasApproved = true;
 
 		if ( mAPKExpansionPolicy.isUpdatedFromServer() ) {
 			// we got a response from the server, as opposed to a cached entry
@@ -345,13 +346,11 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	@Override
 	public void dontAllow(int reason) {
 		Log.e(t, "dontAllow: license check FAILED: " + Integer.toString(reason));
-		mLicenseWasApproved = false;
 	}
 
 	@Override
 	public void applicationError(int errorCode) {
 		Log.e(t, "applicationError: license check ERROR: " + Integer.toString(errorCode));
-		mLicenseWasApproved = false;
 	}
 
 }

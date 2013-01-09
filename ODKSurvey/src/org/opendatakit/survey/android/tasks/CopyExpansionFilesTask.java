@@ -58,10 +58,43 @@ public class CopyExpansionFilesTask extends
 
     private static final String t = "CopyExpansionFilesTask";
 
+    private static final boolean debugAPKExpansion = false;
+
     private CopyExpansionFilesListener mStateListener;
     private ArrayList<String> mResult = new ArrayList<String>();
 
-    @Override
+    /**
+     * For debugging APK expansion, we check for the existence and
+     * process the local file without also confirming that it matches
+     * that on the Google Play site.
+     *
+     * @return true if there is a test APK Expansion file present.
+     */
+    @SuppressWarnings("unused")
+	public static boolean debugAPKExpansionFileProcessing() {
+    	File f = Survey.getInstance().localExpansionFile();
+    	return (debugAPKExpansion && f.exists());
+    }
+
+    /**
+     * For debugging APK expansion, we check for the existence and process
+     * the local file without also confirming that it matches that on the
+     * Google Play site.
+     *
+     * @param expansionFiles
+     */
+    @SuppressWarnings("unused")
+	private void addLocalAPKExpansionFile(ArrayList<Map<String,Object>> expansionFiles) {
+    	File f = Survey.getInstance().localExpansionFile();
+    	if (debugAPKExpansion && f.exists()) {
+        	Map<String,Object> expansionFile = new HashMap<String,Object>();
+        	expansionFile.put(Survey.EXPANSION_FILE_PATH, f.getAbsolutePath());
+        	expansionFile.put(Survey.EXPANSION_FILE_LENGTH, f.length());
+        	expansionFiles.add(expansionFile);
+    	}
+    }
+
+	@Override
     protected ArrayList<String> doInBackground(Void... values) {
 
         mResult.clear();
@@ -71,14 +104,7 @@ public class CopyExpansionFilesTask extends
         ArrayList<Map<String,Object>> expansionFiles = Survey.getInstance().expansionFiles();
         if ( expansionFiles == null ) {
         	expansionFiles = new ArrayList<Map<String,Object>>();
-        	// use the local copy of the main expansion file if there is one
-        	File f = Survey.getInstance().localExpansionFile();
-        	if (f.exists()) {
-	        	Map<String,Object> expansionFile = new HashMap<String,Object>();
-	        	expansionFile.put(Survey.EXPANSION_FILE_PATH, f.getAbsolutePath());
-	        	expansionFile.put(Survey.EXPANSION_FILE_LENGTH, f.length());
-	        	expansionFiles.add(expansionFile);
-        	}
+        	addLocalAPKExpansionFile(expansionFiles);
         }
         int total = expansionFiles.size();
 

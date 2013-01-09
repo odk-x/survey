@@ -37,6 +37,7 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.tasks.CopyExpansionFilesTask;
 import org.opendatakit.survey.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.utilities.WebLogger;
 import org.opendatakit.survey.android.views.JQueryJavascriptCallback;
@@ -253,8 +254,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	    	if ( (nestedScreen != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles ) {
 	        	// no form files -- see if we can explode an APK Expansion file
 	        	ArrayList<Map<String,Object>> files = Survey.getInstance().expansionFiles();
-	        	File local = Survey.getInstance().localExpansionFile();
-	        	if ( files != null  || local.exists() ) {
+	        	if ( files != null  || CopyExpansionFilesTask.debugAPKExpansionFileProcessing() ) {
 	        		// double-check that we have no forms...
 	                try {
 	                	mProcessAPKExpansionFiles = !Survey.createODKDirs();

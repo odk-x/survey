@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opendatakit.survey.android"
-    android:versionCode="1014"
+    android:versionCode="100"
     android:versionName="2.0" >
 
     <uses-sdk
