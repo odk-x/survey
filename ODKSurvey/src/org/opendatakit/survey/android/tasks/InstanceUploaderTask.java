@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 University of Washington
+ * Copyright (C) 2009-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -73,422 +73,484 @@ import android.util.Log;
  *
  * @author Carl Hartung (carlhartung@gmail.com)
  */
-public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUploadOutcome> {
+public class InstanceUploaderTask extends
+		AsyncTask<String, Integer, InstanceUploadOutcome> {
 
-    private static String t = "InstanceUploaderTask";
-    private InstanceUploaderListener mStateListener;
-    // it can take up to 27 seconds to spin up Aggregate
-    private static final int CONNECTION_TIMEOUT = 45000;
-    private static final String fail = "Error: ";
-    private String mAuth = "";
+	private static String t = "InstanceUploaderTask";
+	private InstanceUploaderListener mStateListener;
+	// it can take up to 27 seconds to spin up Aggregate
+	private static final int CONNECTION_TIMEOUT = 45000;
+	private static final String fail = "Error: ";
+	private String mAuth = "";
 
-    private InstanceUploadOutcome mOutcome = new InstanceUploadOutcome();
+	private InstanceUploadOutcome mOutcome = new InstanceUploadOutcome();
 
-    private FormIdStruct uploadingForm;
+	private FormIdStruct uploadingForm;
 
-    public InstanceUploaderTask(FormIdStruct form) {
-    	super();
+	public InstanceUploaderTask(FormIdStruct form) {
+		super();
 		this.uploadingForm = form;
 	}
 
 	private void setAuth(String auth) {
-        this.mAuth = auth;
-    }
+		this.mAuth = auth;
+	}
 
-    /**
-     * Uploads to urlString the submission identified by id with filepath of instance
-     * @param urlString destination URL
-     * @param id
-     * @param instanceFilePath
-     * @param httpclient - client connection
-     * @param localContext - context (e.g., credentials, cookies) for client connection
-     * @param uriRemap - mapping of Uris to avoid redirects on subsequent invocations
-     * @return false if credentials are required and we should terminate immediately.
-     */
-    private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id, FileSet instanceFiles,
-    			HttpClient httpclient, HttpContext localContext, Map<URI, URI> uriRemap) {
+	/**
+	 * Uploads to urlString the submission identified by id with filepath of
+	 * instance
+	 *
+	 * @param urlString
+	 *            destination URL
+	 * @param id
+	 * @param instanceFilePath
+	 * @param httpclient
+	 *            - client connection
+	 * @param localContext
+	 *            - context (e.g., credentials, cookies) for client connection
+	 * @param uriRemap
+	 *            - mapping of Uris to avoid redirects on subsequent invocations
+	 * @return false if credentials are required and we should terminate
+	 *         immediately.
+	 */
+	private boolean uploadOneSubmission(String urlString, Uri toUpdate,
+			String id, FileSet instanceFiles, HttpClient httpclient,
+			HttpContext localContext, Map<URI, URI> uriRemap) {
 
-        ContentValues cv = new ContentValues();
-        URI u = null;
-        try {
-            URL url = new URL(URLDecoder.decode(urlString, "utf-8"));
-            u = url.toURI();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            mOutcome.mResults.put(id,
-                fail + "invalid url: " + urlString + " :: details: " + e.getMessage());
-            cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-            Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-            return true;
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
-            mOutcome.mResults.put(id,
-                fail + "invalid uri: " + urlString + " :: details: " + e.getMessage());
-            cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-            Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-            return true;
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-            mOutcome.mResults.put(id,
-                fail + "invalid url: " + urlString + " :: details: " + e.getMessage());
-            cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-            Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-            return true;
-        }
+		ContentValues cv = new ContentValues();
+		URI u = null;
+		try {
+			URL url = new URL(URLDecoder.decode(urlString, "utf-8"));
+			u = url.toURI();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+			mOutcome.mResults.put(id, fail + "invalid url: " + urlString
+					+ " :: details: " + e.getMessage());
+			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+			Survey.getInstance().getContentResolver()
+					.update(toUpdate, cv, null, null);
+			return true;
+		} catch (URISyntaxException e) {
+			e.printStackTrace();
+			mOutcome.mResults.put(id, fail + "invalid uri: " + urlString
+					+ " :: details: " + e.getMessage());
+			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+			Survey.getInstance().getContentResolver()
+					.update(toUpdate, cv, null, null);
+			return true;
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+			mOutcome.mResults.put(id, fail + "invalid url: " + urlString
+					+ " :: details: " + e.getMessage());
+			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+			Survey.getInstance().getContentResolver()
+					.update(toUpdate, cv, null, null);
+			return true;
+		}
 
-        // NOTE: ODK Survey assumes you are interfacing with an OpenRosa-compliant server
+		// NOTE: ODK Survey assumes you are interfacing with an
+		// OpenRosa-compliant server
 
-        if (uriRemap.containsKey(u)) {
-            // we already issued a head request and got a response,
-            // so we know the proper URL to send the submission to
-            // and the proper scheme. We also know that it was an
-            // OpenRosa compliant server.
-            u = uriRemap.get(u);
-        } else {
-            // we need to issue a head request
-            HttpHead httpHead = WebUtils.createOpenRosaHttpHead(u);
+		if (uriRemap.containsKey(u)) {
+			// we already issued a head request and got a response,
+			// so we know the proper URL to send the submission to
+			// and the proper scheme. We also know that it was an
+			// OpenRosa compliant server.
+			u = uriRemap.get(u);
+		} else {
+			// we need to issue a head request
+			HttpHead httpHead = WebUtils.createOpenRosaHttpHead(u);
 
-            // prepare response
-            HttpResponse response = null;
-            try {
-                response = httpclient.execute(httpHead, localContext);
-                int statusCode = response.getStatusLine().getStatusCode();
-                if (statusCode == 401) {
-                	WebUtils.discardEntityBytes(response);
-                    // we need authentication, so stop and return what we've
-                    // done so far.
-                	mOutcome.mAuthRequestingServer = u;
-                    return false;
-                } else if (statusCode == 204) {
-                	Header[] locations = response.getHeaders("Location");
-                	WebUtils.discardEntityBytes(response);
-                    if (locations != null && locations.length == 1) {
-                        try {
-                            URL url =
-                                new URL(URLDecoder.decode(locations[0].getValue(), "utf-8"));
-                            URI uNew = url.toURI();
-                            if (u.getHost().equalsIgnoreCase(uNew.getHost())) {
-                                // trust the server to tell us a new location
-                                // ... and possibly to use https instead.
-                                uriRemap.put(u, uNew);
-                                u = uNew;
-                            } else {
-                                // Don't follow a redirection attempt to a different host.
-                                // We can't tell if this is a spoof or not.
-                            	mOutcome.mResults.put(
-                                    id,
-                                    fail
-                                            + "Unexpected redirection attempt to a different host: "
-                                            + uNew.toString());
-                                cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-                                    InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                                Survey.getInstance().getContentResolver()
-                                        .update(toUpdate, cv, null, null);
-                                return true;
-                            }
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            mOutcome.mResults.put(id, fail + urlString + " " + e.getMessage());
-                            cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-                                InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                            Survey.getInstance().getContentResolver()
-                                    .update(toUpdate, cv, null, null);
-                            return true;
-                        }
-                    }
-                } else {
-                    // may be a server that does not handle
-                	WebUtils.discardEntityBytes(response);
+			// prepare response
+			HttpResponse response = null;
+			try {
+				response = httpclient.execute(httpHead, localContext);
+				int statusCode = response.getStatusLine().getStatusCode();
+				if (statusCode == 401) {
+					WebUtils.discardEntityBytes(response);
+					// we need authentication, so stop and return what we've
+					// done so far.
+					mOutcome.mAuthRequestingServer = u;
+					return false;
+				} else if (statusCode == 204) {
+					Header[] locations = response.getHeaders("Location");
+					WebUtils.discardEntityBytes(response);
+					if (locations != null && locations.length == 1) {
+						try {
+							URL url = new URL(URLDecoder.decode(
+									locations[0].getValue(), "utf-8"));
+							URI uNew = url.toURI();
+							if (u.getHost().equalsIgnoreCase(uNew.getHost())) {
+								// trust the server to tell us a new location
+								// ... and possibly to use https instead.
+								uriRemap.put(u, uNew);
+								u = uNew;
+							} else {
+								// Don't follow a redirection attempt to a
+								// different host.
+								// We can't tell if this is a spoof or not.
+								mOutcome.mResults
+										.put(id,
+												fail
+														+ "Unexpected redirection attempt to a different host: "
+														+ uNew.toString());
+								cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+										InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+								Survey.getInstance().getContentResolver()
+										.update(toUpdate, cv, null, null);
+								return true;
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+							mOutcome.mResults.put(id, fail + urlString + " "
+									+ e.getMessage());
+							cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+									InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+							Survey.getInstance().getContentResolver()
+									.update(toUpdate, cv, null, null);
+							return true;
+						}
+					}
+				} else {
+					// may be a server that does not handle
+					WebUtils.discardEntityBytes(response);
 
-                    Log.w(t, "Status code on Head request: " + statusCode);
-                    if (statusCode >= 200 && statusCode <= 299) {
-                    	mOutcome.mResults.put(
-                            id,
-                            fail
-                                    + "Invalid status code on Head request.  If you have a web proxy, you may need to login to your network. ");
-                        cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-                            InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                        Survey.getInstance().getContentResolver()
-                                .update(toUpdate, cv, null, null);
-                        return true;
-                    }
-                }
-            } catch (ClientProtocolException e) {
-                e.printStackTrace();
-                Log.e(t, e.getMessage());
-                mOutcome.mResults.put(id, fail + "Client Protocol Exception");
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            } catch (ConnectTimeoutException e) {
-                e.printStackTrace();
-                Log.e(t, e.getMessage());
-                mOutcome.mResults.put(id, fail + "Connection Timeout");
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-                mOutcome.mResults.put(id, fail + e.getMessage() + " :: Network Connection Failed");
-                Log.e(t, e.getMessage());
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            } catch (SocketTimeoutException e) {
-                e.printStackTrace();
-                Log.e(t, e.getMessage());
-                mOutcome.mResults.put(id, fail + "Connection Timeout");
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            } catch (Exception e) {
-                e.printStackTrace();
-                mOutcome.mResults.put(id, fail + "Generic Exception");
-                Log.e(t, e.getMessage());
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            }
-        }
+					Log.w(t, "Status code on Head request: " + statusCode);
+					if (statusCode >= 200 && statusCode <= 299) {
+						mOutcome.mResults
+								.put(id,
+										fail
+												+ "Invalid status code on Head request.  If you have a web proxy, you may need to login to your network. ");
+						cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+								InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						Survey.getInstance().getContentResolver()
+								.update(toUpdate, cv, null, null);
+						return true;
+					}
+				}
+			} catch (ClientProtocolException e) {
+				e.printStackTrace();
+				Log.e(t, e.getMessage());
+				mOutcome.mResults.put(id, fail + "Client Protocol Exception");
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			} catch (ConnectTimeoutException e) {
+				e.printStackTrace();
+				Log.e(t, e.getMessage());
+				mOutcome.mResults.put(id, fail + "Connection Timeout");
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			} catch (UnknownHostException e) {
+				e.printStackTrace();
+				mOutcome.mResults.put(id, fail + e.getMessage()
+						+ " :: Network Connection Failed");
+				Log.e(t, e.getMessage());
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			} catch (SocketTimeoutException e) {
+				e.printStackTrace();
+				Log.e(t, e.getMessage());
+				mOutcome.mResults.put(id, fail + "Connection Timeout");
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			} catch (Exception e) {
+				e.printStackTrace();
+				mOutcome.mResults.put(id, fail + "Generic Exception");
+				Log.e(t, e.getMessage());
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			}
+		}
 
-        // At this point, we may have updated the uri to use https.
-        // This occurs only if the Location header keeps the host name
-        // the same. If it specifies a different host name, we error
-        // out.
-        //
-        // And we may have set authentication cookies in our
-        // cookiestore (referenced by localContext) that will enable
-        // authenticated publication to the server.
-        //
-        // get instance file
-        File instanceFile = instanceFiles.instanceFile;
+		// At this point, we may have updated the uri to use https.
+		// This occurs only if the Location header keeps the host name
+		// the same. If it specifies a different host name, we error
+		// out.
+		//
+		// And we may have set authentication cookies in our
+		// cookiestore (referenced by localContext) that will enable
+		// authenticated publication to the server.
+		//
+		// get instance file
+		File instanceFile = instanceFiles.instanceFile;
 
-        if (!instanceFile.exists()) {
-        	mOutcome.mResults.put(id, fail + "instance XML file does not exist!");
-            cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-            Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-            return true;
-        }
+		if (!instanceFile.exists()) {
+			mOutcome.mResults.put(id, fail
+					+ "instance XML file does not exist!");
+			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+			Survey.getInstance().getContentResolver()
+					.update(toUpdate, cv, null, null);
+			return true;
+		}
 
-        List<MimeFile> files = instanceFiles.attachmentFiles;
-        boolean first = true;
-        int j = 0;
-        int lastJ;
-        while (j < files.size() || first) {
-        	lastJ = j;
-            first = false;
+		List<MimeFile> files = instanceFiles.attachmentFiles;
+		boolean first = true;
+		int j = 0;
+		int lastJ;
+		while (j < files.size() || first) {
+			lastJ = j;
+			first = false;
 
-            HttpPost httppost = WebUtils.createOpenRosaHttpPost(u, mAuth);
+			HttpPost httppost = WebUtils.createOpenRosaHttpPost(u, mAuth);
 
-            long byteCount = 0L;
+			long byteCount = 0L;
 
-            // mime post
-            MultipartEntity entity = new MultipartEntity();
+			// mime post
+			MultipartEntity entity = new MultipartEntity();
 
-            // add the submission file first...
-            FileBody fb = new FileBody(instanceFile, "text/xml");
-            entity.addPart("xml_submission_file", fb);
-            Log.i(t, "added xml_submission_file: " + instanceFile.getName());
-            byteCount += instanceFile.length();
+			// add the submission file first...
+			FileBody fb = new FileBody(instanceFile, "text/xml");
+			entity.addPart("xml_submission_file", fb);
+			Log.i(t, "added xml_submission_file: " + instanceFile.getName());
+			byteCount += instanceFile.length();
 
-            for (; j < files.size(); j++) {
-                MimeFile mf = files.get(j);
-                File f = mf.file;
-                String contentType = mf.contentType;
+			for (; j < files.size(); j++) {
+				MimeFile mf = files.get(j);
+				File f = mf.file;
+				String contentType = mf.contentType;
 
-                fb = new FileBody(f, contentType);
-                entity.addPart(f.getName(), fb);
-                byteCount += f.length();
-                Log.i(t, "added " + contentType + " file " + f.getName());
+				fb = new FileBody(f, contentType);
+				entity.addPart(f.getName(), fb);
+				byteCount += f.length();
+				Log.i(t, "added " + contentType + " file " + f.getName());
 
-                // we've added at least one attachment to the request...
-                if (j + 1 < files.size()) {
-                    long nextFileLength = (files.get(j+1).file.length());
-                    if ((j-lastJ+1 > 100) || (byteCount + nextFileLength > 10000000L)) {
-                        // the next file would exceed the 10MB threshold...
-                        Log.i(t, "Extremely long post is being split into multiple posts");
-                        try {
-                            StringBody sb = new StringBody("yes", Charset.forName("UTF-8"));
-                            entity.addPart("*isIncomplete*", sb);
-                        } catch (Exception e) {
-                            e.printStackTrace(); // never happens...
-                        }
-                        ++j; // advance over the last attachment added...
-                        break;
-                    }
-                }
-            }
+				// we've added at least one attachment to the request...
+				if (j + 1 < files.size()) {
+					long nextFileLength = (files.get(j + 1).file.length());
+					if ((j - lastJ + 1 > 100)
+							|| (byteCount + nextFileLength > 10000000L)) {
+						// the next file would exceed the 10MB threshold...
+						Log.i(t,
+								"Extremely long post is being split into multiple posts");
+						try {
+							StringBody sb = new StringBody("yes",
+									Charset.forName("UTF-8"));
+							entity.addPart("*isIncomplete*", sb);
+						} catch (Exception e) {
+							e.printStackTrace(); // never happens...
+						}
+						++j; // advance over the last attachment added...
+						break;
+					}
+				}
+			}
 
-            httppost.setEntity(entity);
+			httppost.setEntity(entity);
 
-            // prepare response and return uploaded
-            HttpResponse response = null;
-            try {
-                response = httpclient.execute(httppost, localContext);
-                int responseCode = response.getStatusLine().getStatusCode();
-                WebUtils.discardEntityBytes(response);
+			// prepare response and return uploaded
+			HttpResponse response = null;
+			try {
+				response = httpclient.execute(httppost, localContext);
+				int responseCode = response.getStatusLine().getStatusCode();
+				WebUtils.discardEntityBytes(response);
 
-                Log.i(t, "Response code:" + responseCode);
-                // verify that the response was a 201 or 202.
-                // If it wasn't, the submission has failed.
-                if (responseCode != 201 && responseCode != 202) {
-                    if (responseCode == 200) {
-                        mOutcome.mResults.put(id, fail + "Network login failure? Again?");
-                    } else {
-                    	mOutcome.mResults.put(id, fail + response.getStatusLine().getReasonPhrase()
-                                + " (" + responseCode + ") at " + urlString);
-                    }
-                    cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-                        InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                    Survey.getInstance().getContentResolver()
-                            .update(toUpdate, cv, null, null);
-                    return true;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                mOutcome.mResults.put(id, fail + "Generic Exception. " + e.getMessage());
-                cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
-                Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-                return true;
-            }
-        }
+				Log.i(t, "Response code:" + responseCode);
+				// verify that the response was a 201 or 202.
+				// If it wasn't, the submission has failed.
+				if (responseCode != 201 && responseCode != 202) {
+					if (responseCode == 200) {
+						mOutcome.mResults.put(id, fail
+								+ "Network login failure? Again?");
+					} else {
+						mOutcome.mResults.put(id, fail
+								+ response.getStatusLine().getReasonPhrase()
+								+ " (" + responseCode + ") at " + urlString);
+					}
+					cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+							InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+					Survey.getInstance().getContentResolver()
+							.update(toUpdate, cv, null, null);
+					return true;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				mOutcome.mResults.put(id,
+						fail + "Generic Exception. " + e.getMessage());
+				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+				Survey.getInstance().getContentResolver()
+						.update(toUpdate, cv, null, null);
+				return true;
+			}
+		}
 
-        // if it got here, it must have worked
-        mOutcome.mResults.put(id, Survey.getInstance().getString(R.string.success));
-        cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceProviderAPI.STATUS_SUBMITTED);
-        Survey.getInstance().getContentResolver().update(toUpdate, cv, null, null);
-        return true;
-    }
+		// if it got here, it must have worked
+		mOutcome.mResults.put(id,
+				Survey.getInstance().getString(R.string.success));
+		cv.put(InstanceColumns.XML_PUBLISH_STATUS,
+				InstanceProviderAPI.STATUS_SUBMITTED);
+		Survey.getInstance().getContentResolver()
+				.update(toUpdate, cv, null, null);
+		return true;
+	}
 
-    /**
-     * Write's the data to the sdcard, and updates the instances content provider.
-     * In theory we don't have to write to disk, and this is where you'd add
-     * other methods.
-     * @param markCompleted
-     * @return
-     * @throws IOException
-     * @throws JsonMappingException
-     * @throws JsonParseException
-     */
-    private FileSet constructSubmissionFiles(FormInfo fi, String instanceId) throws JsonParseException, JsonMappingException, IOException {
+	/**
+	 * Write's the data to the sdcard, and updates the instances content
+	 * provider. In theory we don't have to write to disk, and this is where
+	 * you'd add other methods.
+	 *
+	 * @param markCompleted
+	 * @return
+	 * @throws IOException
+	 * @throws JsonMappingException
+	 * @throws JsonParseException
+	 */
+	private FileSet constructSubmissionFiles(FormInfo fi, String instanceId)
+			throws JsonParseException, JsonMappingException, IOException {
 
-    	Uri manifest =  Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX + "/" +
-    			URLEncoder.encode(fi.tableId, "UTF-8") + "/" + URLEncoder.encode(instanceId, "UTF-8") +
-    			"?formId=" + URLEncoder.encode(fi.formId, "UTF-8") +
-    			((fi.formVersion == null) ? "" : "&formVersion=" + URLEncoder.encode(fi.formVersion, "UTF-8")) );
+		Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
+				+ "/"
+				+ URLEncoder.encode(fi.tableId, "UTF-8")
+				+ "/"
+				+ URLEncoder.encode(instanceId, "UTF-8")
+				+ "?formId="
+				+ URLEncoder.encode(fi.formId, "UTF-8")
+				+ ((fi.formVersion == null) ? "" : "&formVersion="
+						+ URLEncoder.encode(fi.formVersion, "UTF-8")));
 
-    	InputStream is = Survey.getInstance().getContentResolver().openInputStream(manifest);
+		InputStream is = Survey.getInstance().getContentResolver()
+				.openInputStream(manifest);
 
-    	FileSet f = FileSet.parse(is);
-        return f;
-    }
+		FileSet f = FileSet.parse(is);
+		return f;
+	}
 
+	// TODO: This method is like 350 lines long, down from 400.
+	// still. ridiculous. make it smaller.
+	@Override
+	protected InstanceUploadOutcome doInBackground(String... toUpload) {
+		mOutcome.mResults = new HashMap<String, String>();
+		mOutcome.mAuthRequestingServer = null;
 
-    // TODO: This method is like 350 lines long, down from 400.
-    // still. ridiculous. make it smaller.
-    @Override
-    protected InstanceUploadOutcome doInBackground(String... toUpload) {
-    	mOutcome.mResults = new HashMap<String, String>();
-    	mOutcome.mAuthRequestingServer = null;
+		SharedPreferences settings = PreferenceManager
+				.getDefaultSharedPreferences(Survey.getInstance());
+		String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
+		setAuth(auth);
 
-    	SharedPreferences settings =
-                PreferenceManager.getDefaultSharedPreferences(Survey.getInstance());
-        String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
-        setAuth(auth);
+		FormInfo fi = new FormInfo(uploadingForm.formDefFile);
+		// get shared HttpContext so that authentication and cookies are
+		// retained.
+		HttpContext localContext = WebUtils.getHttpContext();
+		HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
 
-        FormInfo fi = new FormInfo(uploadingForm.formDefFile);
-        // get shared HttpContext so that authentication and cookies are retained.
-        HttpContext localContext = WebUtils.getHttpContext();
-        HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
+		Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 
-        Map<URI, URI> uriRemap = new HashMap<URI, URI>();
+		for (int i = 0; i < toUpload.length; ++i) {
+			if (isCancelled()) {
+				return mOutcome;
+			}
+			publishProgress(i + 1, toUpload.length);
 
-        for ( int i = 0 ; i < toUpload.length ; ++i ) {
-            if (isCancelled()) {
-                return mOutcome;
-            }
-            publishProgress(i + 1, toUpload.length);
+			Uri toUpdate = Uri.withAppendedPath(
+					InstanceColumns.CONTENT_URI,
+					uploadingForm.tableId + "/"
+							+ StringEscapeUtils.escapeHtml4(toUpload[i]));
+			Cursor c = null;
+			try {
+				c = Survey.getInstance().getContentResolver()
+						.query(toUpdate, null, null, null, null);
+				if (c.getCount() == 1 && c.moveToFirst()) {
 
-        	Uri toUpdate = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-        			uploadingForm.tableId +
-        			"/" + StringEscapeUtils.escapeHtml4(toUpload[i]) );
-        	Cursor c = null;
-        	try {
-        		c = Survey.getInstance().getContentResolver().query(toUpdate, null, null, null, null);
-        		if ( c.getCount() == 1 && c.moveToFirst() ) {
+					String id = c
+							.getString(c
+									.getColumnIndex(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN));
+					c.close();
 
-                    String id = c.getString(c.getColumnIndex(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN));
-                    c.close();
+					FileSet instanceFiles;
+					try {
+						instanceFiles = constructSubmissionFiles(fi, id);
+						String urlString = fi.xmlSubmissionUrl;
+						if (urlString == null) {
+							urlString = settings.getString(
+									PreferencesActivity.KEY_SERVER_URL, null);
+							// NOTE: /submission must not be translated! It is
+							// the well-known path on the server.
+							String submissionUrl = settings.getString(
+									PreferencesActivity.KEY_SUBMISSION_URL,
+									"/submission");
+							urlString = urlString + submissionUrl;
+						}
 
-                    FileSet instanceFiles;
-        			try {
-        				instanceFiles = constructSubmissionFiles(fi, id);
-        	            String urlString = fi.xmlSubmissionUrl;
-        	            if (urlString == null) {
-        	                urlString = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
-        	                // NOTE: /submission must not be translated! It is the well-known path on the server.
-        	                String submissionUrl =
-        	                    settings.getString(PreferencesActivity.KEY_SUBMISSION_URL, "/submission");
-        	                urlString = urlString + submissionUrl;
-        	            }
+						if (!uploadOneSubmission(urlString, toUpdate, id,
+								instanceFiles, httpclient, localContext,
+								uriRemap)) {
+							return null; // get credentials...
+						}
+					} catch (JsonParseException e) {
+						e.printStackTrace();
+						mOutcome.mResults.put(id, fail
+								+ "unable to obtain manifest: " + id
+								+ " :: details: " + e.toString());
+					} catch (JsonMappingException e) {
+						e.printStackTrace();
+						mOutcome.mResults.put(id, fail
+								+ "unable to obtain manifest: " + id
+								+ " :: details: " + e.toString());
+					} catch (IOException e) {
+						e.printStackTrace();
+						mOutcome.mResults.put(id, fail
+								+ "unable to obtain manifest: " + id
+								+ " :: details: " + e.toString());
+					}
+				} else {
+					mOutcome.mResults.put("unknown", fail
+							+ "unable to retrieve instance information via: "
+							+ toUpdate.toString());
+				}
+			} finally {
+				if (c != null && !c.isClosed()) {
+					c.close();
+				}
+			}
+		}
 
-        	            if ( !uploadOneSubmission(urlString, toUpdate, id, instanceFiles, httpclient, localContext, uriRemap) ) {
-        	            	return null; // get credentials...
-        	            }
-        			} catch (JsonParseException e) {
-        				e.printStackTrace();
-        	            mOutcome.mResults.put(id,
-        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
-        			} catch (JsonMappingException e) {
-        				e.printStackTrace();
-        	            mOutcome.mResults.put(id,
-        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
-        			} catch (IOException e) {
-        				e.printStackTrace();
-        	            mOutcome.mResults.put(id,
-        	                    fail + "unable to obtain manifest: " + id + " :: details: " + e.toString());
-        			}
-        		} else {
-    	            mOutcome.mResults.put("unknown",
-    	                    fail + "unable to retrieve instance information via: " + toUpdate.toString());
-        		}
-        	} finally {
-        		if ( c != null && !c.isClosed() ) {
-        			c.close();
-        		}
-        	}
-        }
+		return mOutcome;
+	}
 
-        return mOutcome;
-    }
+	@Override
+	protected void onPostExecute(InstanceUploadOutcome outcome) {
+		synchronized (this) {
+			if (mStateListener != null) {
+				mStateListener.uploadingComplete(mOutcome);
+			}
+		}
+	}
 
+	@Override
+	protected void onProgressUpdate(Integer... values) {
+		synchronized (this) {
+			if (mStateListener != null) {
+				// update progress and total
+				mStateListener.progressUpdate(values[0].intValue(),
+						values[1].intValue());
+			}
+		}
+	}
 
-    @Override
-    protected void onPostExecute(InstanceUploadOutcome outcome) {
-        synchronized (this) {
-            if (mStateListener != null) {
-                mStateListener.uploadingComplete(mOutcome);
-            }
-        }
-    }
-
-
-    @Override
-    protected void onProgressUpdate(Integer... values) {
-        synchronized (this) {
-            if (mStateListener != null) {
-                // update progress and total
-                mStateListener.progressUpdate(values[0].intValue(), values[1].intValue());
-            }
-        }
-    }
-
-
-    public void setUploaderListener(InstanceUploaderListener sl) {
-        synchronized (this) {
-            mStateListener = sl;
-        }
-    }
+	public void setUploaderListener(InstanceUploaderListener sl) {
+		synchronized (this) {
+			mStateListener = sl;
+		}
+	}
 
 	public InstanceUploadOutcome getResult() {
 		return mOutcome;

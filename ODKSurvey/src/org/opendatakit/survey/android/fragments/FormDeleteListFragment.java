@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,16 +17,16 @@ package org.opendatakit.survey.android.fragments;
 import java.util.ArrayList;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.fragments.ConfirmationDialogFragment.ConfirmConfirmationDialog;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.DiskSyncListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
@@ -49,23 +49,36 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormManagerListFragment extends ListFragment implements
-		DiskSyncListener, DeleteFormsListener,
+public class FormDeleteListFragment extends ListFragment implements
+		DiskSyncListener, DeleteFormsListener, ConfirmConfirmationDialog,
 		LoaderManager.LoaderCallbacks<Cursor> {
 
-	private static String t = "FormManagerListFragment";
-	private static int FORM_MANAGER_LIST_LOADER = 0x01;
+	private static final String t = "FormDeleteListFragment";
+	private static final int FORM_DELETE_LIST_LOADER = 0x01;
 
-	public static int ID = R.layout.form_manage_list;
+	public static final int ID = R.layout.form_delete_list;
 
-	private AlertDialog mAlertDialog;
+	private static enum DialogState {
+		Confirmation, None
+	};
+
+	// keys for the data being persisted
+
+	private static final String DIALOG_STATE = "dialogState";
+	private static final String SYNC_MSG_KEY = "syncMsgKey";
+	private static final String SELECTED = "selected";
+
+	// data to persist across orientation changes
+
+	private String mSyncStatusText = "";
+	private DialogState mDialogState = DialogState.None;
+	private ArrayList<Long> mSelected = new ArrayList<Long>();
+
+	// data that is not persisted
+
 	private Button mDeleteButton;
 
 	private CursorAdapter mInstances;
-	private ArrayList<Long> mSelected = new ArrayList<Long>();
-	private final String SELECTED = "selected";
-
-	private final String syncMsgKey = "syncmsgkey";
 
 	private View view;
 
@@ -88,7 +101,7 @@ public class FormManagerListFragment extends ListFragment implements
 				viewParams);
 		setListAdapter(mInstances);
 
-		getLoaderManager().initLoader(FORM_MANAGER_LIST_LOADER, null, this);
+		getLoaderManager().initLoader(FORM_DELETE_LIST_LOADER, null, this);
 	}
 
 	@Override
@@ -111,19 +124,29 @@ public class FormManagerListFragment extends ListFragment implements
 			}
 		});
 
-		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(syncMsgKey)) {
-			TextView tv = (TextView) view.findViewById(R.id.status_text);
-			tv.setText(savedInstanceState.getString(syncMsgKey));
-		}
+		if (savedInstanceState != null) {
+			if (savedInstanceState.containsKey(SYNC_MSG_KEY)) {
+				mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
+			}
 
-		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(SELECTED)) {
-			long[] selectedArray = savedInstanceState.getLongArray(SELECTED);
-			for (int i = 0; i < selectedArray.length; i++) {
-				mSelected.add(selectedArray[i]);
+			// to restore alert dialog.
+			if (savedInstanceState.containsKey(DIALOG_STATE)) {
+				mDialogState = DialogState.valueOf(savedInstanceState
+						.getString(DIALOG_STATE));
+			}
+
+			if (savedInstanceState.containsKey(SELECTED)) {
+				long[] selectedArray = savedInstanceState
+						.getLongArray(SELECTED);
+				for (int i = 0; i < selectedArray.length; i++) {
+					mSelected.add(selectedArray[i]);
+				}
 			}
 		}
+
+		TextView tv = (TextView) view.findViewById(R.id.status_text);
+		tv.setText(mSyncStatusText);
+
 		mDeleteButton.setEnabled(!(mSelected.size() == 0));
 
 		return view;
@@ -137,8 +160,8 @@ public class FormManagerListFragment extends ListFragment implements
 			selectedArray[i] = mSelected.get(i);
 		}
 		outState.putLongArray(SELECTED, selectedArray);
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		outState.putString(syncMsgKey, tv.getText().toString());
+		outState.putString(SYNC_MSG_KEY, mSyncStatusText);
+		outState.putString(DIALOG_STATE, mDialogState.name());
 	}
 
 	@Override
@@ -167,46 +190,72 @@ public class FormManagerListFragment extends ListFragment implements
 
 		f.establishDiskSyncListener(this);
 		f.establishDeleteFormsListener(this);
+
+		TextView tv = (TextView) view.findViewById(R.id.status_text);
+		tv.setText(mSyncStatusText);
+
+		if (mDialogState == DialogState.Confirmation) {
+			restoreConfirmationDialog();
+		}
 	}
 
 	@Override
 	public void onPause() {
-		if (mAlertDialog != null && mAlertDialog.isShowing()) {
-			mAlertDialog.dismiss();
-		}
+		FragmentManager mgr = getFragmentManager();
 
+		// dismiss dialogs...
+		ConfirmationDialogFragment dialog = (ConfirmationDialogFragment) mgr
+				.findFragmentByTag("confirmationDialog");
+		if (dialog != null) {
+			dialog.dismiss();
+		}
 		super.onPause();
+	}
+
+	private void restoreConfirmationDialog() {
+		Fragment dialog = getFragmentManager().findFragmentByTag(
+				"confirmationDialog");
+		String alertMsg = getString(R.string.delete_confirm, mSelected.size());
+
+		if (dialog != null
+				&& ((ConfirmationDialogFragment) dialog).getDialog() != null) {
+			mDialogState = DialogState.Confirmation;
+			((ConfirmationDialogFragment) dialog).getDialog().setTitle(
+					getString(R.string.delete_file));
+			((ConfirmationDialogFragment) dialog).setMessage(alertMsg);
+			// TODO: may need to set the ok/cancel button text if this is ever
+			// reused?
+		} else {
+
+			ConfirmationDialogFragment f = ConfirmationDialogFragment
+					.newInstance(getId(), getString(R.string.delete_file),
+							alertMsg, getString(R.string.delete_yes),
+							getString(R.string.delete_no));
+
+			mDialogState = DialogState.Confirmation;
+			f.show(getFragmentManager(), "confirmationDialog");
+		}
+	}
+
+	@Override
+	public void okConfirmationDialog() {
+		Log.i(t, "ok (delete) selected files");
+		mDialogState = DialogState.None;
+		deleteSelectedForms();
+	}
+
+	@Override
+	public void cancelConfirmationDialog() {
+		// no-op
+		mDialogState = DialogState.None;
+		Log.i(t, "cancel (do not delete) selected files");
 	}
 
 	/**
 	 * Create the form delete dialog
 	 */
 	private void createDeleteFormsDialog() {
-		if ( mAlertDialog != null && mAlertDialog.isShowing() ) {
-			mAlertDialog.dismiss();
-		}
-
-		DialogInterface.OnClickListener dialogYesNoListener = new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int i) {
-				switch (i) {
-				case DialogInterface.BUTTON_POSITIVE: // delete
-					deleteSelectedForms();
-					break;
-				case DialogInterface.BUTTON_NEGATIVE: // do nothing
-					break;
-				}
-			}
-		};
-
-		mAlertDialog = new AlertDialog.Builder(getActivity())
-				.setTitle(getString(R.string.delete_file))
-				.setMessage(getString(R.string.delete_confirm, mSelected.size()))
-				.setCancelable(false)
-				.setPositiveButton(getString(R.string.delete_yes), dialogYesNoListener)
-				.setNegativeButton(getString(R.string.delete_no), dialogYesNoListener).create();
-		mAlertDialog.setCanceledOnTouchOutside(false);
-		mAlertDialog.show();
+		restoreConfirmationDialog();
 	}
 
 	/**
@@ -243,8 +292,9 @@ public class FormManagerListFragment extends ListFragment implements
 	@Override
 	public void SyncComplete(String result) {
 		Log.i(t, "Disk scan complete");
+		mSyncStatusText = result;
 		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(result);
+		tv.setText(mSyncStatusText);
 	}
 
 	@Override

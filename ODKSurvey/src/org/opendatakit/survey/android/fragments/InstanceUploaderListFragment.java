@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
@@ -63,35 +64,46 @@ import android.widget.Toast;
  */
 public class InstanceUploaderListFragment extends ListFragment implements
 		OnLongClickListener, LoaderManager.LoaderCallbacks<Cursor>,
-		InstanceUploaderListener, CancelProgressDialog {
+		InstanceUploaderListener, ConfirmAlertDialog, CancelProgressDialog {
 	private static final String t = "InstanceUploaderListFragment";
 
-	private static int INSTANCE_UPLOADER_LIST_LOADER = 0x03;
+	private static final int INSTANCE_UPLOADER_LIST_LOADER = 0x03;
 
-	public static int ID = R.layout.instance_uploader_list;
+	public static final int ID = R.layout.instance_uploader_list;
+
+	private static enum DialogState {
+		Progress, Alert, None
+	};
+
+	// keys for the data being persisted
 
 	private static final String BUNDLE_SELECTED_ITEMS_KEY = "selected_items";
 	private static final String BUNDLE_TOGGLED_KEY = "toggled";
 	private static final String DIALOG_TITLE = "dialogtitle";
 	private static final String DIALOG_MSG = "dialogmsg";
-	private static final String DIALOG_SHOWING = "dialogshowing";
+	private static final String DIALOG_STATE = "dialogState";
+	private static final String SHOW_UNSENT = "showUnsent";
+	private static final String URL = "url";
+	private static final String CURRENT_FORM = "currentForm";
 
-	private String mAlertMsg;
-	private boolean mAlertShowing = false;
+	// data to persist across orientation changes
+
+	private ArrayList<String> mSelected = new ArrayList<String>();
+	private boolean mToggled = false;
 	private String mAlertTitle;
-
-	private AlertDialog mAlertDialog;
+	private String mAlertMsg;
+	private DialogState mDialogState = DialogState.None;
+	private boolean mShowUnsent = true;
 	private URI mUrl;
+	private FormIdStruct currentForm = null;
+
+	// data that is not persisted
 
 	private Button mUploadButton;
 	private Button mToggleButton;
 
-	private boolean mShowUnsent = true;
 	private SimpleCursorAdapter mInstances;
-	private ArrayList<String> mSelected = new ArrayList<String>();
-	private boolean mToggled = false;
 
-	private FormIdStruct currentForm = null;
 	private View view;
 
 	@Override
@@ -112,7 +124,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 				R.layout.two_item_multiple_choice, null, data, view, 0);
 		setListAdapter(mInstances);
 
-    	getLoaderManager().initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
+		getLoaderManager()
+				.initLoader(INSTANCE_UPLOADER_LIST_LOADER, null, this);
 	}
 
 	@Override
@@ -175,7 +188,6 @@ public class InstanceUploaderListFragment extends ListFragment implements
 					.getStringArray(BUNDLE_SELECTED_ITEMS_KEY);
 			for (int i = 0; i < selectedArray.length; i++)
 				mSelected.add(selectedArray[i]);
-			mToggled = savedInstanceState.getBoolean(BUNDLE_TOGGLED_KEY);
 
 			// indicating whether or not select-all is on or off.
 			if (savedInstanceState.containsKey(BUNDLE_TOGGLED_KEY)) {
@@ -189,8 +201,22 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			if (savedInstanceState.containsKey(DIALOG_MSG)) {
 				mAlertMsg = savedInstanceState.getString(DIALOG_MSG);
 			}
-			if (savedInstanceState.containsKey(DIALOG_SHOWING)) {
-				mAlertShowing = savedInstanceState.getBoolean(DIALOG_SHOWING);
+			if (savedInstanceState.containsKey(DIALOG_STATE)) {
+				mDialogState = DialogState.valueOf(savedInstanceState
+						.getString(DIALOG_STATE));
+			}
+
+			if (savedInstanceState.containsKey(SHOW_UNSENT)) {
+				mShowUnsent = savedInstanceState.getBoolean(SHOW_UNSENT);
+			}
+
+			if (savedInstanceState.containsKey(URL)) {
+				mUrl = URI.create(savedInstanceState.getString(URL));
+			}
+
+			if (savedInstanceState.containsKey(CURRENT_FORM)) {
+				currentForm = (FormIdStruct) savedInstanceState
+						.getSerializable(CURRENT_FORM);
 			}
 		}
 		mUploadButton.setEnabled(!(mSelected.size() == 0));
@@ -208,7 +234,14 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		outState.putBoolean(BUNDLE_TOGGLED_KEY, mToggled);
 		outState.putString(DIALOG_TITLE, mAlertTitle);
 		outState.putString(DIALOG_MSG, mAlertMsg);
-		outState.putBoolean(DIALOG_SHOWING, mAlertShowing);
+		outState.putString(DIALOG_STATE, mDialogState.name());
+		outState.putBoolean(SHOW_UNSENT, mShowUnsent);
+		if (mUrl != null) {
+			outState.putString(URL, mUrl.toString());
+		}
+		if (currentForm != null) {
+			outState.putSerializable(CURRENT_FORM, currentForm);
+		}
 	}
 
 	private void clearChoices() {
@@ -218,11 +251,11 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 	public void changeForm(FormIdStruct form) {
 		currentForm = form;
-		if ( getActivity() != null ) {
+		if (getActivity() != null) {
 			// if we are already attached to an activity, restart the loader.
 			// otherwise, we will eventually be attached.
-			getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER, null,
-				this);
+			getLoaderManager().restartLoader(INSTANCE_UPLOADER_LIST_LOADER,
+					null, this);
 		}
 	}
 
@@ -247,7 +280,6 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	private void uploadSelectedFiles() {
 		if (mSelected.size() > 0 && currentForm != null) {
 			// show dialog box
-			mAlertMsg = getString(R.string.please_wait);
 			showProgressDialog();
 
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
@@ -286,15 +318,27 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 		f.establishInstanceUploaderListener(this);
 
-		if (mAlertShowing) {
-			createAlertDialog(mAlertTitle, mAlertMsg);
+		if (mDialogState == DialogState.Progress) {
+			restoreProgressDialog();
+		} else if (mDialogState == DialogState.Alert) {
+			restoreAlertDialog();
 		}
 	}
 
 	@Override
 	public void onPause() {
-		if (mAlertDialog != null && mAlertDialog.isShowing()) {
-			mAlertDialog.dismiss();
+		FragmentManager mgr = getFragmentManager();
+
+		// dismiss dialogs...
+		AlertDialogFragment alertDialog = (AlertDialogFragment) mgr
+				.findFragmentByTag("alertDialog");
+		if (alertDialog != null) {
+			alertDialog.dismiss();
+		}
+		ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
+				.findFragmentByTag("progressDialog");
+		if (progressDialog != null) {
+			progressDialog.dismiss();
 		}
 		super.onPause();
 	}
@@ -308,19 +352,42 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		f.show(getFragmentManager(), "authDialog");
 	}
 
-	private void showProgressDialog() {
-		ProgressDialogFragment f = ProgressDialogFragment.newInstance(getId(),
-				getString(R.string.uploading_data), mAlertMsg);
+	private void restoreProgressDialog() {
+		Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
+		if (alert != null) {
+			((AlertDialogFragment) alert).dismiss();
+		}
 
-		f.show(getFragmentManager(), "progressDialog");
-	}
-
-	private void updateProgressDialogMessage(String message) {
 		Fragment dialog = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 
-		if (dialog != null) {
-			((ProgressDialogFragment) dialog).setMessage(message);
+		if (dialog != null
+				&& ((ProgressDialogFragment) dialog).getDialog() != null) {
+			mDialogState = DialogState.Progress;
+			((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+			((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
+
+		} else {
+
+			ProgressDialogFragment f = ProgressDialogFragment.newInstance(
+					getId(), mAlertTitle, mAlertMsg);
+
+			mDialogState = DialogState.Progress;
+			f.show(getFragmentManager(), "progressDialog");
+		}
+	}
+
+	private void showProgressDialog() {
+		mAlertTitle = getString(R.string.uploading_data);
+		mAlertMsg = getString(R.string.please_wait);
+		restoreProgressDialog();
+	}
+
+	private void updateProgressDialogMessage(String message) {
+		if (mDialogState == DialogState.Progress) {
+			mAlertTitle = getString(R.string.uploading_data);
+			mAlertMsg = message;
+			restoreProgressDialog();
 		}
 	}
 
@@ -328,8 +395,39 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		Fragment dialog = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 		if (dialog != null) {
+			mDialogState = DialogState.None;
 			((ProgressDialogFragment) dialog).dismiss();
 		}
+	}
+
+	private void restoreAlertDialog() {
+		Fragment progress = getFragmentManager().findFragmentByTag(
+				"progressDialog");
+		if (progress != null) {
+			((ProgressDialogFragment) progress).dismiss();
+		}
+
+		Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
+
+		if (dialog != null
+				&& ((AlertDialogFragment) dialog).getDialog() != null) {
+			mDialogState = DialogState.Alert;
+			((AlertDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+			((AlertDialogFragment) dialog).setMessage(mAlertMsg);
+
+		} else {
+
+			AlertDialogFragment f = AlertDialogFragment.newInstance(getId(),
+					mAlertTitle, mAlertMsg);
+
+			mDialogState = DialogState.Alert;
+			f.show(getFragmentManager(), "alertDialog");
+		}
+	}
+
+	@Override
+	public void okAlertDialog() {
+		mDialogState = DialogState.None;
 	}
 
 	/**
@@ -340,39 +438,15 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	 * @param shouldExit
 	 */
 	private void createAlertDialog(String title, String message) {
-		if ( mAlertDialog != null && mAlertDialog.isShowing() ) {
-			mAlertDialog.dismiss();
-		}
-
-		DialogInterface.OnClickListener quitListener = new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int i) {
-				switch (i) {
-				case DialogInterface.BUTTON_POSITIVE: // ok
-					// just close the dialog
-					mAlertShowing = false;
-					break;
-				}
-			}
-		};
-
-		mAlertDialog = new AlertDialog.Builder(getActivity())
-			.setTitle(title)
-			.setMessage(message)
-			.setCancelable(false)
-			.setPositiveButton(getString(R.string.ok), quitListener)
-			.setIcon(android.R.drawable.ic_dialog_info).create();
-		mAlertDialog.setCanceledOnTouchOutside(false);
-		mAlertMsg = message;
 		mAlertTitle = title;
-		mAlertShowing = true;
-		mAlertDialog.show();
+		mAlertMsg = message;
+		restoreAlertDialog();
 	}
 
 	@Override
 	public void progressUpdate(int progress, int total) {
-		mAlertMsg = getString(R.string.sending_items, progress, total);
-		updateProgressDialogMessage(mAlertMsg);
+		String msg = getString(R.string.sending_items, progress, total);
+		updateProgressDialogMessage(msg);
 	}
 
 	@Override
@@ -385,7 +459,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 					"Attempting to close a dialog that was not previously opened");
 		}
 
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+				.findFragmentByTag("background");
 		f.clearUploadInstancesTask();
 
 		if (outcome.mAuthRequestingServer == null && currentForm != null) {
@@ -396,7 +471,8 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 				Cursor results = null;
 				try {
-					Uri uri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+					Uri uri = Uri.withAppendedPath(
+							InstanceColumns.CONTENT_URI,
 							currentForm.tableId + "/"
 									+ StringEscapeUtils.escapeHtml4(id));
 					results = Survey.getInstance().getContentResolver()
@@ -510,7 +586,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		Uri baseUri;
 		if (currentForm != null) {
 			baseUri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
-											currentForm.tableId);
+					currentForm.tableId);
 		} else {
 			baseUri = InstanceColumns.CONTENT_URI;
 		}

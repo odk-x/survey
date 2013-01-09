@@ -68,15 +68,6 @@
         <activity
             android:name=".activities.AccountInfo"
             android:label="@string/app_name" />
-        <intent-filter>
-            <action android:name="android.intent.action.VIEW" />
-            <action android:name="android.intent.action.EDIT" />
-
-            <category android:name="android.intent.category.DEFAULT" />
-
-            <data android:mimeType="vnd.android.cursor.dir/vnd.opendatakit.instance" />
-        </intent-filter>
-
         <activity
             android:name=".preferences.PreferencesActivity"
             android:label="@string/app_name" />

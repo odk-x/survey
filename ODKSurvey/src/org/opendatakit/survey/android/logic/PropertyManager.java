@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 University of Washington
+ * Copyright (C) 2009-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,6 +32,7 @@ import android.util.Log;
  * Used to return device properties to JavaRosa
  *
  * @author Yaw Anokwa (yanokwa@gmail.com)
+ * @author mitchellsundt@gmail.com
  */
 
 public class PropertyManager {

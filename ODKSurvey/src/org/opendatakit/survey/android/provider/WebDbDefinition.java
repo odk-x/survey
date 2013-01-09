@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,7 +27,9 @@ class WebDbDefinition {
 	final String displayName;
 	final Integer estimatedSize;
 	final File dbFile;
-	WebDbDefinition(String shortName, String displayName, Integer estimatedSize, File dbFile ) {
+
+	WebDbDefinition(String shortName, String displayName,
+			Integer estimatedSize, File dbFile) {
 		this.shortName = shortName;
 		this.displayName = displayName;
 		this.estimatedSize = estimatedSize;

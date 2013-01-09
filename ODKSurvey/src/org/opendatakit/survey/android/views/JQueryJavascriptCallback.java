@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -47,32 +47,46 @@ public class JQueryJavascriptCallback {
 
 	public String getBaseUrl() {
 
-		// Find the formPath for the default form with the most recent version...
+		// Find the formPath for the default form with the most recent
+		// version...
 		Cursor c = null;
 		String formPath = null;
 		try {
-            //
-            // find if there is already a form definition with the same formId and formVersion...
-        	String selection = FormsColumns.FORM_ID + "=?";
-    		String[] selectionArgs = { "default" };
-    		String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the most recently created of the matches (in case DB corrupted)
-            c = Survey.getInstance()
-                    .getContentResolver()
-                    .query(FormsColumns.CONTENT_URI, null, selection, selectionArgs, orderBy);
+			//
+			// find if there is already a form definition with the same formId
+			// and formVersion...
+			String selection = FormsColumns.FORM_ID + "=?";
+			String[] selectionArgs = { "default" };
+			String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the
+																	// most
+																	// recently
+																	// created
+																	// of the
+																	// matches
+																	// (in case
+																	// DB
+																	// corrupted)
+			c = Survey
+					.getInstance()
+					.getContentResolver()
+					.query(FormsColumns.CONTENT_URI, null, selection,
+							selectionArgs, orderBy);
 
-            if (c.getCount() > 0) {
-        		// we found a match...
-            	c.moveToFirst();
-        		formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
-            }
+			if (c.getCount() > 0) {
+				// we found a match...
+				c.moveToFirst();
+				formPath = c
+						.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
+			}
 
 		} finally {
-			if ( c != null && !c.isClosed() ) {
+			if (c != null && !c.isClosed()) {
 				c.close();
 			}
 		}
 
-		return (formPath == null) ? "" : formPath.substring(0, formPath.length()-1);
+		return (formPath == null) ? "" : formPath.substring(0,
+				formPath.length() - 1);
 	}
 
 	/**
@@ -124,11 +138,14 @@ public class JQueryJavascriptCallback {
 	 */
 	public String getDatabaseSettings() {
 		// maxSize is in bytes
-		return "{\"shortName\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME
-				+ "\",\"version\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_VERSION
-				+ "\",\"displayName\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_DISPLAY_NAME
-				+ "\",\"maxSize\":" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_ESTIMATED_SIZE
-				+ "}";
+		return "{\"shortName\":\""
+				+ WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME
+				+ "\",\"version\":\""
+				+ WebDbDatabaseHelper.WEBDB_INSTANCE_DB_VERSION
+				+ "\",\"displayName\":\""
+				+ WebDbDatabaseHelper.WEBDB_INSTANCE_DB_DISPLAY_NAME
+				+ "\",\"maxSize\":"
+				+ WebDbDatabaseHelper.WEBDB_INSTANCE_DB_ESTIMATED_SIZE + "}";
 	}
 
 	public void setInstanceId(String instanceId) {

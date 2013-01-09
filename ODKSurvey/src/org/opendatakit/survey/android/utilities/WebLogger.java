@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -50,26 +50,29 @@ public class WebLogger {
 
 	public WebLogger() {
 		long now = System.currentTimeMillis();
-		final long distantPast = now - 30L*86400000L; // thirty days ago...
+		final long distantPast = now - 30L * 86400000L; // thirty days ago...
 		File loggingDirectory = new File(Survey.LOGGING_PATH);
 
 		File[] stale = loggingDirectory.listFiles(new FileFilter() {
 			@Override
 			public boolean accept(File pathname) {
-				return ( pathname.lastModified() < distantPast );
-			}});
+				return (pathname.lastModified() < distantPast);
+			}
+		});
 
-		if ( stale != null ) {
-			for ( File f : stale ) {
+		if (stale != null) {
+			for (File f : stale) {
 				f.delete();
 			}
 		}
 
-		String datestamp = (new SimpleDateFormat("yyyy-MM-dd_HH", Locale.ENGLISH)).format(new Date());
-		File f = new File(Survey.LOGGING_PATH + File.separator	+ datestamp + ".log");
+		String datestamp = (new SimpleDateFormat("yyyy-MM-dd_HH",
+				Locale.ENGLISH)).format(new Date());
+		File f = new File(Survey.LOGGING_PATH + File.separator + datestamp
+				+ ".log");
 		try {
 			FileOutputStream fo = new FileOutputStream(f, true);
-			logFile = new OutputStreamWriter(fo,"UTF-8");
+			logFile = new OutputStreamWriter(fo, "UTF-8");
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 			throw new IllegalStateException(e.toString());
@@ -81,7 +84,7 @@ public class WebLogger {
 
 	public synchronized void log(int severity, String t, String logMsg) {
 		try {
-			switch(severity) {
+			switch (severity) {
 			case ASSERT:
 				logMsg = "A/" + logMsg;
 				break;

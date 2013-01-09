@@ -23,8 +23,8 @@
         android:id="@+id/main_content"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@android:color/black"
-        android:visibility="visible" />
+        android:background="@android:color/white"
+        android:visibility="visible"/>
 
     <fragment
         android:name="org.opendatakit.survey.android.fragments.BackgroundTaskFragment"

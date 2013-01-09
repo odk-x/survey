@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,20 +32,21 @@ public class MediaDeleteVideoActivity extends Activity {
 	private static final String t = "MediaDeleteVideoActivity";
 	private static final String MEDIA_PATH = "mediaPath";
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-    	super.onCreate(savedInstanceState);
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
 
-    	String binaryName = savedInstanceState.getString(MEDIA_PATH);
-   		int del = MediaUtils.deleteVideoFileFromMediaProvider(
-   				FileProvider.getAsFile(binaryName).getAbsolutePath());
-        Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH + ": " + binaryName);
+		String binaryName = savedInstanceState.getString(MEDIA_PATH);
+		int del = MediaUtils.deleteVideoFileFromMediaProvider(FileProvider
+				.getAsFile(binaryName).getAbsolutePath());
+		Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH
+				+ ": " + binaryName);
 
-        Intent i = new Intent();
+		Intent i = new Intent();
 
-        i.putExtra(MEDIA_PATH, binaryName);
-        i.putExtra("deleteCount", del);
-        setResult(Activity.RESULT_OK, i);
-        finish();
-    }
+		i.putExtra(MEDIA_PATH, binaryName);
+		i.putExtra("deleteCount", del);
+		setResult(Activity.RESULT_OK, i);
+		finish();
+	}
 }

@@ -30,103 +30,104 @@ import android.os.Bundle;
 import android.os.Parcelable;
 
 /**
- * Allows the user to create desktop shortcuts to any form currently avaiable to Survey
+ * Allows the user to create desktop shortcuts to any form currently avaiable to
+ * Survey
  *
  * @author ctsims
  * @author carlhartung (modified for ODK)
  */
 public class AndroidShortcuts extends Activity {
 
-    private Uri[] mCommands;
-    private String[] mNames;
+	private Uri[] mCommands;
+	private String[] mNames;
 
+	@Override
+	public void onCreate(Bundle bundle) {
+		super.onCreate(bundle);
 
-    @Override
-    public void onCreate(Bundle bundle) {
-        super.onCreate(bundle);
+		final Intent intent = getIntent();
+		final String action = intent.getAction();
 
-        final Intent intent = getIntent();
-        final String action = intent.getAction();
+		// The Android needs to know what shortcuts are available, generate the
+		// list
+		if (Intent.ACTION_CREATE_SHORTCUT.equals(action)) {
+			buildMenuList();
+		}
+	}
 
-        // The Android needs to know what shortcuts are available, generate the list
-        if (Intent.ACTION_CREATE_SHORTCUT.equals(action)) {
-            buildMenuList();
-        }
-    }
+	/**
+	 * Builds a list of shortcuts
+	 */
+	private void buildMenuList() {
+		ArrayList<String> names = new ArrayList<String>();
+		ArrayList<Uri> commands = new ArrayList<Uri>();
 
+		AlertDialog.Builder builder = new AlertDialog.Builder(this);
+		builder.setTitle("Select ODK Shortcut");
 
-    /**
-     * Builds a list of shortcuts
-     */
-    private void buildMenuList() {
-        ArrayList<String> names = new ArrayList<String>();
-        ArrayList<Uri> commands = new ArrayList<Uri>();
+		Cursor c = null;
+		try {
+			c = getContentResolver().query(FormsColumns.CONTENT_URI, null,
+					null, null, null);
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Select ODK Shortcut");
+			if (c.getCount() > 0) {
+				c.moveToPosition(-1);
+				while (c.moveToNext()) {
+					String formName = c.getString(c
+							.getColumnIndex(FormsColumns.DISPLAY_NAME));
+					names.add(formName);
+					Uri uri = Uri.withAppendedPath(FormsColumns.CONTENT_URI,
+							c.getString(c.getColumnIndex(FormsColumns._ID)));
+					commands.add(uri);
+				}
+			}
+		} finally {
+			if (c != null) {
+				c.close();
+			}
+		}
 
-        Cursor c = null;
-        try {
-        	c = getContentResolver().query(FormsColumns.CONTENT_URI, null, null, null, null);
+		mNames = names.toArray(new String[0]);
+		mCommands = commands.toArray(new Uri[0]);
 
-	        if (c.getCount() > 0) {
-	            c.moveToPosition(-1);
-	            while (c.moveToNext()) {
-	                String formName = c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-	                names.add(formName);
-	                Uri uri =
-	                    Uri.withAppendedPath(FormsColumns.CONTENT_URI,
-	                        c.getString(c.getColumnIndex(FormsColumns._ID)));
-	                commands.add(uri);
-	            }
-	        }
-        } finally {
-        	if ( c != null ) {
-        		c.close();
-        	}
-        }
+		builder.setItems(this.mNames, new DialogInterface.OnClickListener() {
+			public void onClick(DialogInterface dialog, int item) {
+				returnShortcut(mNames[item], mCommands[item]);
+			}
+		});
 
-        mNames = names.toArray(new String[0]);
-        mCommands = commands.toArray(new Uri[0]);
+		builder.setOnCancelListener(new OnCancelListener() {
+			public void onCancel(DialogInterface dialog) {
+				AndroidShortcuts sc = AndroidShortcuts.this;
+				sc.setResult(RESULT_CANCELED);
+				sc.finish();
+				return;
+			}
+		});
 
-        builder.setItems(this.mNames, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int item) {
-                returnShortcut(mNames[item], mCommands[item]);
-            }
-        });
+		AlertDialog alert = builder.create();
+		alert.show();
+	}
 
-        builder.setOnCancelListener(new OnCancelListener() {
-            public void onCancel(DialogInterface dialog) {
-                AndroidShortcuts sc = AndroidShortcuts.this;
-                sc.setResult(RESULT_CANCELED);
-                sc.finish();
-                return;
-            }
-        });
+	/**
+	 * Returns the results to the calling intent.
+	 */
+	private void returnShortcut(String name, Uri command) {
+		Intent shortcutIntent = new Intent(Intent.ACTION_VIEW);
+		shortcutIntent.setData(command);
 
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
+		Intent intent = new Intent();
+		intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+		intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+		Parcelable iconResource = Intent.ShortcutIconResource.fromContext(this,
+				R.drawable.snotes);
+		intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
 
+		// Now, return the result to the launcher
 
-    /**
-     * Returns the results to the calling intent.
-     */
-    private void returnShortcut(String name, Uri command) {
-        Intent shortcutIntent = new Intent(Intent.ACTION_VIEW);
-        shortcutIntent.setData(command);
-
-        Intent intent = new Intent();
-        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
-        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-        Parcelable iconResource = Intent.ShortcutIconResource.fromContext(this, R.drawable.snotes);
-        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, iconResource);
-
-        // Now, return the result to the launcher
-
-        setResult(RESULT_OK, intent);
-        finish();
-        return;
-    }
+		setResult(RESULT_OK, intent);
+		finish();
+		return;
+	}
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -42,32 +42,33 @@ import android.widget.EditText;
  */
 public class AuthDialogFragment extends DialogFragment {
 
-    public static AuthDialogFragment newInstance(int fragmentId, String title, String message, String url) {
-    	AuthDialogFragment frag = new AuthDialogFragment();
-        Bundle args = new Bundle();
-        args.putInt("fragmentId", fragmentId);
-        args.putString("title", title);
-        args.putString("message", message);
-        args.putString("url", url);
-        frag.setArguments(args);
-        return frag;
-    }
+	public static AuthDialogFragment newInstance(int fragmentId, String title,
+			String message, String url) {
+		AuthDialogFragment frag = new AuthDialogFragment();
+		Bundle args = new Bundle();
+		args.putInt("fragmentId", fragmentId);
+		args.putString("title", title);
+		args.putString("message", message);
+		args.putString("url", url);
+		frag.setArguments(args);
+		return frag;
+	}
 
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        String title = getArguments().getString("title");
-        String message = getArguments().getString("message");
-        final String url = getArguments().getString("url");
+	@Override
+	public Dialog onCreateDialog(Bundle savedInstanceState) {
+		String title = getArguments().getString("title");
+		String message = getArguments().getString("message");
+		final String url = getArguments().getString("url");
 
-        Integer fragmentId = getArguments().getInt("fragmentId");
-        FragmentManager mgr = getFragmentManager();
-    	Fragment f = mgr.findFragmentById(fragmentId);
+		Integer fragmentId = getArguments().getInt("fragmentId");
+		FragmentManager mgr = getFragmentManager();
+		Fragment f = mgr.findFragmentById(fragmentId);
 
-    	setTargetFragment(f, RequestCodes.AUTH_DIALOG.ordinal());
+		setTargetFragment(f, RequestCodes.AUTH_DIALOG.ordinal());
 
 		LayoutInflater factory = LayoutInflater.from(getActivity());
-		final View dialogView = factory.inflate(
-				R.layout.server_auth_dialog, null);
+		final View dialogView = factory.inflate(R.layout.server_auth_dialog,
+				null);
 
 		// Get the server, username, and password from the settings
 		SharedPreferences settings = PreferenceManager
@@ -86,38 +87,40 @@ public class AuthDialogFragment extends DialogFragment {
 		password.setText(storedPassword);
 
 		AlertDialog dlg = new AlertDialog.Builder(getActivity())
-			.setTitle(title)
-			.setMessage(message)
-			.setView(dialogView)
-			.setCancelable(false)
-			.setPositiveButton(getString(R.string.ok),
-				new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						EditText username = (EditText) dialogView
-								.findViewById(R.id.username_edit);
-						EditText password = (EditText) dialogView
-								.findViewById(R.id.password_edit);
+				.setTitle(title)
+				.setMessage(message)
+				.setView(dialogView)
+				.setCancelable(false)
+				.setPositiveButton(getString(R.string.ok),
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								EditText username = (EditText) dialogView
+										.findViewById(R.id.username_edit);
+								EditText password = (EditText) dialogView
+										.findViewById(R.id.password_edit);
 
-						Uri u = Uri.parse(url);
+								Uri u = Uri.parse(url);
 
-						WebUtils.addCredentials(username.getText()
-								.toString(), password.getText().toString(),
-								u.getHost());
-						// return and trigger resumption of actions...
-						getActivity().finish();
-					}
-				})
-			.setNegativeButton(getString(R.string.cancel),
-				new DialogInterface.OnClickListener() {
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						getActivity().setResult(Activity.RESULT_CANCELED);
-						getActivity().finish();
-					}
-				})
-			.create();
+								WebUtils.addCredentials(username.getText()
+										.toString(), password.getText()
+										.toString(), u.getHost());
+								// return and trigger resumption of actions...
+								getActivity().finish();
+							}
+						})
+				.setNegativeButton(getString(R.string.cancel),
+						new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog,
+									int which) {
+								getActivity().setResult(
+										Activity.RESULT_CANCELED);
+								getActivity().finish();
+							}
+						}).create();
 		dlg.setCanceledOnTouchOutside(false);
 		return dlg;
-    }
+	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,51 +51,53 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
 	@Override
 	public void onShowCustomView(View view, CustomViewCallback callback) {
-    	if ( this.callback != null ) {
-    		this.callback.onCustomViewHidden();
-    	}
+		if (this.callback != null) {
+			this.callback.onCustomViewHidden();
+		}
 		this.callback = callback;
 		if (view instanceof FrameLayout) {
 			FrameLayout frame = (FrameLayout) view;
 			if (frame.getFocusedChild() instanceof VideoView) {
-				log.i(t,"onShowCustomView: FrameLayout Video");
+				log.i(t, "onShowCustomView: FrameLayout Video");
 				video = (VideoView) frame.getFocusedChild();
 				video.setOnCompletionListener(this);
 				video.setOnErrorListener(this);
 				((ODKActivity) a).swapToCustomView(view);
 				super.onShowCustomView(view, callback);
-//				video.seekTo(0);// reset to start of video...
-//				video.start();
+				// video.seekTo(0);// reset to start of video...
+				// video.start();
 			} else {
-				log.i(t,"onShowCustomView: FrameLayout not Video " + frame.getFocusedChild().getClass().getCanonicalName());
+				log.i(t, "onShowCustomView: FrameLayout not Video "
+						+ frame.getFocusedChild().getClass().getCanonicalName());
 				((ODKActivity) a).swapToCustomView(view);
 				super.onShowCustomView(view, callback);
 			}
 		} else {
-			log.i(t,"onShowCustomView: not FrameLayout " + view.getClass().getCanonicalName());
+			log.i(t, "onShowCustomView: not FrameLayout "
+					+ view.getClass().getCanonicalName());
 			((ODKActivity) a).swapToCustomView(view);
 			super.onShowCustomView(view, callback);
 		}
 	}
 
-    @Override
-    public void onHideCustomView() {
-    	log.d(t,"onHideCustomView");
-    	((ODKActivity) a).swapOffCustomView();
-    	if ( video != null ) {
-    		video.stopPlayback();
-    	}
-    	video = null;
-    	if ( callback != null ) {
-    		callback.onCustomViewHidden();
-    		callback = null;
-    	}
-    }
+	@Override
+	public void onHideCustomView() {
+		log.d(t, "onHideCustomView");
+		((ODKActivity) a).swapOffCustomView();
+		if (video != null) {
+			video.stopPlayback();
+		}
+		video = null;
+		if (callback != null) {
+			callback.onCustomViewHidden();
+			callback = null;
+		}
+	}
 
 	@Override
 	public void onCompletion(MediaPlayer mp) {
-		log.d(t,"Video ended");
-		if ( mp.isPlaying() ) {
+		log.d(t, "Video ended");
+		if (mp.isPlaying()) {
 			mp.stop();
 		}
 		mp.reset();
@@ -104,8 +106,8 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
 	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
-		log.w(t,"Video error");
-		if ( mp.isPlaying() ) {
+		log.w(t, "Video error");
+		if (mp.isPlaying()) {
 			mp.stop();
 		}
 		mp.reset();
@@ -113,25 +115,27 @@ public class ODKWebChromeClient extends WebChromeClient implements
 		return true;
 	}
 
-    /**
-     * Ask the browser for an icon to represent a <video> element.
-     * This icon will be used if the Web page did not specify a poster attribute.
-     * @return Bitmap The icon or null if no such icon is available.
-     */
-    @Override
-    public Bitmap getDefaultVideoPoster() {
-    	return ((ODKActivity) a).getDefaultVideoPoster();
-    }
+	/**
+	 * Ask the browser for an icon to represent a <video> element. This icon
+	 * will be used if the Web page did not specify a poster attribute.
+	 *
+	 * @return Bitmap The icon or null if no such icon is available.
+	 */
+	@Override
+	public Bitmap getDefaultVideoPoster() {
+		return ((ODKActivity) a).getDefaultVideoPoster();
+	}
 
-    /**
-     * Ask the host application for a custom progress view to show while
-     * a <video> is loading.
-     * @return View The progress view.
-     */
-    @Override
-    public View getVideoLoadingProgressView() {
-    	return ((ODKActivity) a).getVideoLoadingProgressView();
-    }
+	/**
+	 * Ask the host application for a custom progress view to show while a
+	 * <video> is loading.
+	 *
+	 * @return View The progress view.
+	 */
+	@Override
+	public View getVideoLoadingProgressView() {
+		return ((ODKActivity) a).getVideoLoadingProgressView();
+	}
 
 	@Override
 	public void getVisitedHistory(ValueCallback<String[]> callback) {
@@ -142,22 +146,22 @@ public class ODKWebChromeClient extends WebChromeClient implements
 	public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
 		if (consoleMessage.sourceId() == null
 				|| consoleMessage.sourceId().length() == 0) {
-			log.e(t,"onConsoleMessage: Javascript exception: "
+			log.e(t, "onConsoleMessage: Javascript exception: "
 					+ consoleMessage.message());
 			return true;
 		} else {
-			if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG ) {
-				log.d(t,  consoleMessage.message());
-			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR ) {
-				log.e(t,  consoleMessage.message());
-			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG ) {
-				log.i(t,  consoleMessage.message());
-			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP ) {
-				log.t(t,  consoleMessage.message());
-			} else if ( consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING ) {
-				log.w(t,  consoleMessage.message());
+			if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG) {
+				log.d(t, consoleMessage.message());
+			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+				log.e(t, consoleMessage.message());
+			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG) {
+				log.i(t, consoleMessage.message());
+			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP) {
+				log.t(t, consoleMessage.message());
+			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
+				log.w(t, consoleMessage.message());
 			} else {
-				log.e(t,consoleMessage.message());
+				log.e(t, consoleMessage.message());
 			}
 			return true;
 		}
@@ -168,7 +172,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
 			long currentQuota, long estimatedSize, long totalUsedQuota,
 			QuotaUpdater quotaUpdater) {
 		long space = (4 + (currentQuota / 65536L)) * 65536L;
-		log.i(t,"Extending Database quota to: " + Long.toString(space));
+		log.i(t, "Extending Database quota to: " + Long.toString(space));
 		quotaUpdater.updateQuota(space);
 	}
 
@@ -176,19 +180,19 @@ public class ODKWebChromeClient extends WebChromeClient implements
 	public void onReachedMaxAppCacheSize(long spaceNeeded, long totalUsedQuota,
 			QuotaUpdater quotaUpdater) {
 		long space = (4 + (spaceNeeded / 65536L)) * 65536L;
-		log.i(t,"Extending AppCache quota to: " + Long.toString(space));
+		log.i(t, "Extending AppCache quota to: " + Long.toString(space));
 		quotaUpdater.updateQuota(space);
 	}
 
 	@Override
 	public void onConsoleMessage(String message, int lineNumber, String sourceID) {
-		log.i(t,sourceID + "[" + lineNumber + "]: " + message);
+		log.i(t, sourceID + "[" + lineNumber + "]: " + message);
 	}
 
 	@Override
 	public boolean onJsAlert(WebView view, String url, String message,
 			JsResult result) {
-		log.w(t,url + ": " + message);
+		log.w(t, url + ": " + message);
 		return false;
 	}
 

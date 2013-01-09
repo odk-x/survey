@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 University of Washington
+ * Copyright (C) 2011-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -64,7 +64,8 @@ public class EncryptionUtils {
 	private static final String APPLICATION_OCTET_STREAM = "application/octet-stream";
 	private static final String t = "EncryptionUtils";
 	public static final String RSA_ALGORITHM = "RSA";
-	// the symmetric key we are encrypting with RSA is only 256 bits... use SHA-256
+	// the symmetric key we are encrypting with RSA is only 256 bits... use
+	// SHA-256
 	public static final String ASYMMETRIC_ALGORITHM = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
 	public static final String SYMMETRIC_ALGORITHM = "AES/CFB/PKCS5Padding";
 	public static final String UTF_8 = "UTF-8";
@@ -116,29 +117,29 @@ public class EncryptionUtils {
 			// generate the symmetric key from random bits...
 
 			SecureRandom r = new SecureRandom();
-			byte[] key = new byte[SYMMETRIC_KEY_LENGTH/8];
+			byte[] key = new byte[SYMMETRIC_KEY_LENGTH / 8];
 			r.nextBytes(key);
 			SecretKeySpec sk = new SecretKeySpec(key, SYMMETRIC_ALGORITHM);
 			symmetricKey = sk;
 
 			// construct the fixed portion of the iv -- the ivSeedArray
 			// this is the md5 hash of the instanceID and the symmetric key
-	        try {
-	            MessageDigest md = MessageDigest.getInstance("MD5");
-	            md.update(instanceId.getBytes(UTF_8));
-	            md.update(key);
-	            byte[] messageDigest = md.digest();
-	            ivSeedArray = new byte[IV_BYTE_LENGTH];
-	            for ( int i = 0 ; i < IV_BYTE_LENGTH ; ++i ) {
-	            	ivSeedArray[i] = messageDigest[(i % messageDigest.length)];
-	            }
-	        } catch (NoSuchAlgorithmException e) {
-	            Log.e(t, e.toString());
-	            e.printStackTrace();
+			try {
+				MessageDigest md = MessageDigest.getInstance("MD5");
+				md.update(instanceId.getBytes(UTF_8));
+				md.update(key);
+				byte[] messageDigest = md.digest();
+				ivSeedArray = new byte[IV_BYTE_LENGTH];
+				for (int i = 0; i < IV_BYTE_LENGTH; ++i) {
+					ivSeedArray[i] = messageDigest[(i % messageDigest.length)];
+				}
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(t, e.toString());
+				e.printStackTrace();
 				throw new IllegalArgumentException(e.getMessage());
-	        } catch (UnsupportedEncodingException e) {
-	            Log.e(t, e.toString());
-	            e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				Log.e(t, e.toString());
+				e.printStackTrace();
 				throw new IllegalArgumentException(e.getMessage());
 			}
 
@@ -178,61 +179,63 @@ public class EncryptionUtils {
 
 			// start building elementSignatureSource...
 			appendElementSignatureSource(formId);
-			if ( formVersion != null ) {
+			if (formVersion != null) {
 				appendElementSignatureSource(formVersion.toString());
 			}
 			appendElementSignatureSource(base64RsaEncryptedSymmetricKey);
 
-			appendElementSignatureSource( instanceId );
+			appendElementSignatureSource(instanceId);
 		}
 
 		public void appendElementSignatureSource(String value) {
 			elementSignatureSource.append(value).append("\n");
 		}
 
-		public void appendSubmissionFileSignatureSource(String contents, File file) {
+		public void appendSubmissionFileSignatureSource(String contents,
+				File file) {
 			String md5Hash = ODKFileUtils.getMd5Hash(contents);
-			appendElementSignatureSource(file.getName()+"::"+md5Hash);
+			appendElementSignatureSource(file.getName() + "::" + md5Hash);
 		}
 
 		public void appendFileSignatureSource(File file) {
 			String md5Hash = ODKFileUtils.getMd5Hash(file);
-			appendElementSignatureSource(file.getName()+"::"+md5Hash);
+			appendElementSignatureSource(file.getName() + "::" + md5Hash);
 		}
 
 		public String getBase64EncryptedElementSignature() {
-			// Step 0: construct the text of the elements in elementSignatureSource (done)
-			// 		Where...
-			//      * Elements are separated by newline characters.
-			//      * Filename is the unencrypted filename (no .enc suffix).
-			//      * Md5 hashes of the unencrypted files' contents are converted
-			//        to zero-padded 32-character strings before concatenation.
-			//      Assumes this is in the order:
-			//			formId
-			//			version   (omitted if null)
-			//			base64RsaEncryptedSymmetricKey
-			//			instanceId
-			//          for each media file { filename "::" md5Hash }
-			//          submission.xml "::" md5Hash
+			// Step 0: construct the text of the elements in
+			// elementSignatureSource (done)
+			// Where...
+			// * Elements are separated by newline characters.
+			// * Filename is the unencrypted filename (no .enc suffix).
+			// * Md5 hashes of the unencrypted files' contents are converted
+			// to zero-padded 32-character strings before concatenation.
+			// Assumes this is in the order:
+			// formId
+			// version (omitted if null)
+			// base64RsaEncryptedSymmetricKey
+			// instanceId
+			// for each media file { filename "::" md5Hash }
+			// submission.xml "::" md5Hash
 
 			// Step 1: construct the (raw) md5 hash of Step 0.
 			byte[] messageDigest;
-	        try {
-	            MessageDigest md = MessageDigest.getInstance("MD5");
-	            md.update(elementSignatureSource.toString().getBytes(UTF_8));
-	            messageDigest = md.digest();
-	        } catch (NoSuchAlgorithmException e) {
-	            Log.e(t, e.toString());
-	            e.printStackTrace();
+			try {
+				MessageDigest md = MessageDigest.getInstance("MD5");
+				md.update(elementSignatureSource.toString().getBytes(UTF_8));
+				messageDigest = md.digest();
+			} catch (NoSuchAlgorithmException e) {
+				Log.e(t, e.toString());
+				e.printStackTrace();
 				throw new IllegalArgumentException(e.getMessage());
-	        } catch (UnsupportedEncodingException e) {
-	            Log.e(t, e.toString());
-	            e.printStackTrace();
+			} catch (UnsupportedEncodingException e) {
+				Log.e(t, e.toString());
+				e.printStackTrace();
 				throw new IllegalArgumentException(e.getMessage());
 			}
 
 			// Step 2: construct the base64-encoded RSA-encrypted md5
-	        try {
+			try {
 				Cipher pkCipher;
 				pkCipher = Cipher.getInstance(ASYMMETRIC_ALGORITHM);
 				// write AES key
@@ -264,7 +267,8 @@ public class EncryptionUtils {
 		}
 
 		public Cipher getCipher() throws InvalidKeyException,
-				InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchPaddingException {
+				InvalidAlgorithmParameterException, NoSuchAlgorithmException,
+				NoSuchPaddingException {
 			++ivSeedArray[ivCounter % ivSeedArray.length];
 			++ivCounter;
 			IvParameterSpec baseIv = new IvParameterSpec(ivSeedArray);
@@ -277,11 +281,13 @@ public class EncryptionUtils {
 	/**
 	 * Retrieve the encryption information for this uri.
 	 *
-	 * @param mUri either an instance URI (if previously saved) or a form URI
+	 * @param mUri
+	 *            either an instance URI (if previously saved) or a form URI
 	 * @param instanceMetadata
 	 * @return
 	 */
-	public static EncryptedFormInformation getEncryptedFormInformation(FormInfo fi, String instanceId) {
+	public static EncryptedFormInformation getEncryptedFormInformation(
+			FormInfo fi, String instanceId) {
 
 		// fetch the form information
 		String base64RsaPublicKey = fi.xmlBase64RsaPublicKey;
@@ -295,7 +301,8 @@ public class EncryptionUtils {
 		// submission must have an OpenRosa metadata block with a non-null
 		// instanceID value.
 		if (instanceId == null) {
-			Log.e(t, "No OpenRosa metadata block or no instanceId defined in that block");
+			Log.e(t,
+					"No OpenRosa metadata block or no instanceId defined in that block");
 			return null;
 		}
 
@@ -337,10 +344,10 @@ public class EncryptionUtils {
 		return new EncryptedFormInformation(fi, instanceId, pk, wrapper);
 	}
 
-	private static void encryptFile(File file, File encryptedFile, EncryptedFormInformation formInfo)
-			throws IOException, NoSuchAlgorithmException,
-			NoSuchPaddingException, InvalidKeyException,
-			InvalidAlgorithmParameterException {
+	private static void encryptFile(File file, File encryptedFile,
+			EncryptedFormInformation formInfo) throws IOException,
+			NoSuchAlgorithmException, NoSuchPaddingException,
+			InvalidKeyException, InvalidAlgorithmParameterException {
 
 		// add elementSignatureSource for this file...
 		formInfo.appendFileSignatureSource(file);
@@ -393,7 +400,8 @@ public class EncryptionUtils {
 		}
 	}
 
-	private static void encryptIntoFile(String contents, File submissionFile, File encryptedFile, EncryptedFormInformation formInfo)
+	private static void encryptIntoFile(String contents, File submissionFile,
+			File encryptedFile, EncryptedFormInformation formInfo)
 			throws IOException, NoSuchAlgorithmException,
 			NoSuchPaddingException, InvalidKeyException,
 			InvalidAlgorithmParameterException {
@@ -418,32 +426,25 @@ public class EncryptionUtils {
 			fin.close();
 			fout.flush();
 			fout.close();
-			Log.i(t,
-					"Encrpyted: content -> "
-							+ encryptedFile.getName());
+			Log.i(t, "Encrpyted: content -> " + encryptedFile.getName());
 		} catch (IOException e) {
-			Log.e(t, "Error encrypting: content -> "
-					+ encryptedFile.getName());
+			Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
 			e.printStackTrace();
 			throw e;
 		} catch (NoSuchAlgorithmException e) {
-			Log.e(t, "Error encrypting: content -> "
-					+ encryptedFile.getName());
+			Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
 			e.printStackTrace();
 			throw e;
 		} catch (NoSuchPaddingException e) {
-			Log.e(t, "Error encrypting: content -> "
-					+ encryptedFile.getName());
+			Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
 			e.printStackTrace();
 			throw e;
 		} catch (InvalidKeyException e) {
-			Log.e(t, "Error encrypting: content -> "
-					+ encryptedFile.getName());
+			Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
 			e.printStackTrace();
 			throw e;
 		} catch (InvalidAlgorithmParameterException e) {
-			Log.e(t, "Error encrypting: content -> "
-					+ encryptedFile.getName());
+			Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
 			e.printStackTrace();
 			throw e;
 		}
@@ -473,7 +474,8 @@ public class EncryptionUtils {
 	}
 
 	private static List<MimeFile> encryptSubmissionFiles(FileSet fileSet,
-			String submission, File submissionXml, File submissionXmlEnc, EncryptedFormInformation formInfo) {
+			String submission, File submissionXml, File submissionXmlEnc,
+			EncryptedFormInformation formInfo) {
 
 		// encrypt files that do not end with ".enc"
 		List<MimeFile> filesToProcess = new ArrayList<MimeFile>();
@@ -487,8 +489,8 @@ public class EncryptionUtils {
 		// encrypt here...
 		for (MimeFile f : filesToProcess) {
 			try {
-				File encryptedFile = new File(f.file.getParentFile(), f.file.getName()
-						+ ".enc");
+				File encryptedFile = new File(f.file.getParentFile(),
+						f.file.getName() + ".enc");
 				encryptFile(f.file, encryptedFile, formInfo);
 				f.file = encryptedFile;
 				f.contentType = APPLICATION_OCTET_STREAM;
@@ -507,9 +509,12 @@ public class EncryptionUtils {
 
 		// encrypt the submission.xml as the last file...
 		try {
-			encryptIntoFile(submission, submissionXml, submissionXmlEnc, formInfo);
-            // TODO: attachments remain in plaintext on the sdcard until instance is deleted
-            fileSet.addAttachmentFile(submissionXmlEnc, APPLICATION_OCTET_STREAM);
+			encryptIntoFile(submission, submissionXml, submissionXmlEnc,
+					formInfo);
+			// TODO: attachments remain in plaintext on the sdcard until
+			// instance is deleted
+			fileSet.addAttachmentFile(submissionXmlEnc,
+					APPLICATION_OCTET_STREAM);
 		} catch (IOException e) {
 			return null;
 		} catch (InvalidKeyException e) {
@@ -537,19 +542,21 @@ public class EncryptionUtils {
 	 * @param formInfo
 	 * @return
 	 */
-	public static boolean generateEncryptedSubmission(FileSet fileSet, String submission,
-			File submissionXml, File submissionXmlEnc, EncryptedFormInformation formInfo) {
+	public static boolean generateEncryptedSubmission(FileSet fileSet,
+			String submission, File submissionXml, File submissionXmlEnc,
+			EncryptedFormInformation formInfo) {
 
 		// Step 1: encrypt the submission and all the media files...
-		List<MimeFile> mediaFiles = encryptSubmissionFiles(fileSet, submission, submissionXml,
-				submissionXmlEnc, formInfo);
+		List<MimeFile> mediaFiles = encryptSubmissionFiles(fileSet, submission,
+				submissionXml, submissionXmlEnc, formInfo);
 		if (mediaFiles == null) {
 			return false; // something failed...
 		}
 
 		// Step 2: build the encrypted-submission manifest (overwrites
 		// submission.xml)...
-		if (!writeSubmissionManifest(formInfo, submissionXml, submissionXmlEnc, mediaFiles)) {
+		if (!writeSubmissionManifest(formInfo, submissionXml, submissionXmlEnc,
+				mediaFiles)) {
 			return false;
 		}
 		fileSet.instanceFile = submissionXml;
@@ -557,8 +564,8 @@ public class EncryptionUtils {
 	}
 
 	private static boolean writeSubmissionManifest(
-			EncryptedFormInformation formInfo,
-			File submissionXml, File submissionXmlEnc, List<MimeFile> mediaFiles) {
+			EncryptedFormInformation formInfo, File submissionXml,
+			File submissionXmlEnc, List<MimeFile> mediaFiles) {
 
 		Document d = new Document();
 		d.setStandalone(true);
@@ -566,10 +573,10 @@ public class EncryptionUtils {
 		Element e = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, DATA);
 		e.setPrefix(null, XML_ENCRYPTED_TAG_NAMESPACE);
 		e.setAttribute(null, ID, formInfo.formId);
-		if ( formInfo.formVersion != null ) {
+		if (formInfo.formVersion != null) {
 			e.setAttribute(null, VERSION, formInfo.formVersion);
 		}
-		e.setAttribute(null,  ENCRYPTED, "yes");
+		e.setAttribute(null, ENCRYPTED, "yes");
 		d.addChild(0, Node.ELEMENT, e);
 
 		int idx = 0;
@@ -581,7 +588,8 @@ public class EncryptionUtils {
 		c = d.createElement(XML_OPENROSA_NAMESPACE, META);
 		c.setPrefix("orx", XML_OPENROSA_NAMESPACE);
 		{
-			Element instanceTag = d.createElement(XML_OPENROSA_NAMESPACE, INSTANCE_ID);
+			Element instanceTag = d.createElement(XML_OPENROSA_NAMESPACE,
+					INSTANCE_ID);
 			instanceTag.addChild(0, Node.TEXT, formInfo.instanceId);
 			c.addChild(0, Node.ELEMENT, instanceTag);
 		}
@@ -589,9 +597,10 @@ public class EncryptionUtils {
 		e.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
 		for (MimeFile file : mediaFiles) {
-			c = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE,  MEDIA);
-			Element fileTag = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE,  FILE);
-			fileTag.addChild(0,  Node.TEXT, file.file.getName());
+			c = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, MEDIA);
+			Element fileTag = d
+					.createElement(XML_ENCRYPTED_TAG_NAMESPACE, FILE);
+			fileTag.addChild(0, Node.TEXT, file.file.getName());
 			c.addChild(0, Node.ELEMENT, fileTag);
 			e.addChild(idx++, Node.ELEMENT, c);
 			e.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
@@ -601,7 +610,8 @@ public class EncryptionUtils {
 		c.addChild(0, Node.TEXT, submissionXmlEnc.getName());
 		e.addChild(idx++, Node.ELEMENT, c);
 
-		c = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, BASE64_ENCRYPTED_ELEMENT_SIGNATURE);
+		c = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE,
+				BASE64_ENCRYPTED_ELEMENT_SIGNATURE);
 		c.addChild(0, Node.TEXT, formInfo.getBase64EncryptedElementSignature());
 		e.addChild(idx++, Node.ELEMENT, c);
 

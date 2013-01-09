@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,9 +19,9 @@ import java.util.HashMap;
 
 public class InstanceUploadOutcome {
 
-    public URI mAuthRequestingServer = null;
-    public HashMap<String,String> mResults = null;
+	public URI mAuthRequestingServer = null;
+	public HashMap<String, String> mResults = null;
 
-    public InstanceUploadOutcome() {
-    };
+	public InstanceUploadOutcome() {
+	};
 }

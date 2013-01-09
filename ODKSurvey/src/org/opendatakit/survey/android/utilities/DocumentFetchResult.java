@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,30 +17,29 @@ package org.opendatakit.survey.android.utilities;
 import org.kxml2.kdom.Document;
 
 /**
- * Result object for managing OpenRosa (old-style) ODK Aggregate form lists, manifests and form definitions.
+ * Result object for managing OpenRosa (old-style) ODK Aggregate form lists,
+ * manifests and form definitions.
  *
  * @author mitchellsundt@gmail.com
  *
  */
 public class DocumentFetchResult {
-        public final String errorMessage;
-        public final int responseCode;
-        public final Document doc;
-        public final boolean isOpenRosaResponse;
+	public final String errorMessage;
+	public final int responseCode;
+	public final Document doc;
+	public final boolean isOpenRosaResponse;
 
+	public DocumentFetchResult(String msg, int response) {
+		responseCode = response;
+		errorMessage = msg;
+		doc = null;
+		isOpenRosaResponse = false;
+	}
 
-        public DocumentFetchResult(String msg, int response) {
-            responseCode = response;
-            errorMessage = msg;
-            doc = null;
-            isOpenRosaResponse = false;
-        }
-
-
-        public DocumentFetchResult(Document doc, boolean isOpenRosaResponse) {
-            responseCode = 0;
-            errorMessage = null;
-            this.doc = doc;
-            this.isOpenRosaResponse = isOpenRosaResponse;
-        }
-    }
+	public DocumentFetchResult(Document doc, boolean isOpenRosaResponse) {
+		responseCode = 0;
+		errorMessage = null;
+		this.doc = doc;
+		this.isOpenRosaResponse = isOpenRosaResponse;
+	}
+}

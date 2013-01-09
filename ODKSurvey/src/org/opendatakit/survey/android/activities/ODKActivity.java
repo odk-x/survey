@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ package org.opendatakit.survey.android.activities;
 import org.json.JSONObject;
 
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.view.View;
 
 /**
@@ -33,15 +34,17 @@ public interface ODKActivity {
 
 	public void setAuxillaryHash(String hash);
 
-	public void saveAllChangesCompleted(String tableId, String instanceId, boolean asComplete);
+	public void saveAllChangesCompleted(String tableId, String instanceId,
+			boolean asComplete);
 
-	public void saveAllChangesFailed(String tableId, String instanceId );
+	public void saveAllChangesFailed(String tableId, String instanceId);
 
 	public void ignoreAllChangesCompleted(String tableId, String instanceId);
 
 	public void ignoreAllChangesFailed(String tableId, String instanceId);
 
-	public String doAction( String page, String path, String action, JSONObject valueMap );
+	public String doAction(String page, String path, String action,
+			JSONObject valueMap);
 
 	public void swapToCustomView(View view);
 
@@ -51,7 +54,11 @@ public interface ODKActivity {
 
 	public Bitmap getDefaultVideoPoster();
 
+	// for CopyExpansionFilesFragment
 	public void expansionFilesCopied(String fragmentToShowNext);
+
+	// for FormChooserListFragment
+	void chooseForm(Uri formUri);
 
 	/**
 	 * Use the Activity implementation of this.

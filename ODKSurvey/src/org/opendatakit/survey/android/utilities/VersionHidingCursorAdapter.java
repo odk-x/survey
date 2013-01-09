@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,12 +18,13 @@ import org.opendatakit.survey.android.R;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.view.View;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.view.View;
 import android.widget.TextView;
 
 /**
- * Implementation of cursor adapter that displays the version of a form if a form has a version.
+ * Implementation of cursor adapter that displays the version of a form if a
+ * form has a version.
  *
  * @author mitchellsundt@gmail.com
  *
@@ -34,27 +35,31 @@ public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
 	private final String versionColumnName;
 	private final ViewBinder originalBinder;
 
-	public VersionHidingCursorAdapter(String versionColumnName, Context context, int layout, String[] from, int[] to) {
+	public VersionHidingCursorAdapter(String versionColumnName,
+			Context context, int layout, String[] from, int[] to) {
 		super(context, layout, null, from, to, 0);
 		this.versionColumnName = versionColumnName;
-		ctxt =  context;
+		ctxt = context;
 		originalBinder = getViewBinder();
-		setViewBinder( new ViewBinder(){
+		setViewBinder(new ViewBinder() {
 
 			@Override
 			public boolean setViewValue(View view, Cursor cursor,
 					int columnIndex) {
 				String columnName = cursor.getColumnName(columnIndex);
-				if ( !columnName.equals(VersionHidingCursorAdapter.this.versionColumnName) ) {
-					if ( originalBinder != null ) {
-						return originalBinder.setViewValue(view, cursor, columnIndex);
+				if (!columnName
+						.equals(VersionHidingCursorAdapter.this.versionColumnName)) {
+					if (originalBinder != null) {
+						return originalBinder.setViewValue(view, cursor,
+								columnIndex);
 					}
 					return false;
 				} else {
 					String version = cursor.getString(columnIndex);
 					TextView v = (TextView) view;
-					if ( version != null ) {
-						v.setText(ctxt.getString(R.string.version) + " " + version);
+					if (version != null) {
+						v.setText(ctxt.getString(R.string.version) + " "
+								+ version);
 						v.setVisibility(View.VISIBLE);
 					} else {
 						v.setText(null);
@@ -62,7 +67,8 @@ public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
 					}
 				}
 				return true;
-			}} );
+			}
+		});
 	}
 
 }

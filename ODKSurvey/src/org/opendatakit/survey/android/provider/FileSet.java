@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,9 +25,9 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 
-
 /**
- * Holds the files required for a submission to the ODK Aggregate legacy interface
+ * Holds the files required for a submission to the ODK Aggregate legacy
+ * interface
  *
  * @author mitchellsundt@gmail.com
  */
@@ -36,6 +36,7 @@ public class FileSet {
 	private static final String URI = "uri";
 	private static final String CONTENT_TYPE = "contentType";
 	public File instanceFile = null;
+
 	public static class MimeFile {
 		public File file;
 		public String contentType;
@@ -53,35 +54,39 @@ public class FileSet {
 		attachmentFiles.add(f);
 	}
 
-	public String serialize() throws JsonGenerationException, JsonMappingException, IOException {
-		ArrayList<HashMap<String,String>> str = new ArrayList<HashMap<String,String>>();
+	public String serialize() throws JsonGenerationException,
+			JsonMappingException, IOException {
+		ArrayList<HashMap<String, String>> str = new ArrayList<HashMap<String, String>>();
 
-		HashMap<String,String> map;
-		map = new HashMap<String,String>();
+		HashMap<String, String> map;
+		map = new HashMap<String, String>();
 		map.put(URI, FileProvider.getAsUrl(instanceFile));
 		map.put(CONTENT_TYPE, APPLICATION_XML);
-		str.add( map);
-		for ( MimeFile f : attachmentFiles ) {
-			map = new HashMap<String,String>();
+		str.add(map);
+		for (MimeFile f : attachmentFiles) {
+			map = new HashMap<String, String>();
 			map.put(URI, FileProvider.getAsUrl(f.file));
 			map.put(CONTENT_TYPE, f.contentType);
 			str.add(map);
 		}
 
-		String serializedString = DataModelDatabaseHelper.mapper.writeValueAsString(str);
+		String serializedString = DataModelDatabaseHelper.mapper
+				.writeValueAsString(str);
 		return serializedString;
 	}
 
-	public static final FileSet parse(InputStream src) throws JsonParseException, JsonMappingException, IOException {
+	public static final FileSet parse(InputStream src)
+			throws JsonParseException, JsonMappingException, IOException {
 		@SuppressWarnings("unchecked")
-		ArrayList<Map<String,String>> str = DataModelDatabaseHelper.mapper.readValue(src, ArrayList.class);
+		ArrayList<Map<String, String>> str = DataModelDatabaseHelper.mapper
+				.readValue(src, ArrayList.class);
 
 		FileSet fs = new FileSet();
-		Map<String,String> map;
-		map = (Map<String,String>) str.get(0);
+		Map<String, String> map;
+		map = (Map<String, String>) str.get(0);
 		fs.instanceFile = FileProvider.getAsFile(map.get(URI));
-		for ( int i = 1 ; i < str.size() ; ++i ) {
-			map = (Map<String,String>) str.get(i);
+		for (int i = 1; i < str.size(); ++i) {
+			map = (Map<String, String>) str.get(i);
 			MimeFile f = new MimeFile();
 			f.file = FileProvider.getAsFile(map.get(URI));
 			f.contentType = map.get(CONTENT_TYPE);

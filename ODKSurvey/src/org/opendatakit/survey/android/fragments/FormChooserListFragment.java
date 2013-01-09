@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.listeners.DiskSyncListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
@@ -44,28 +45,25 @@ import android.widget.TextView;
  *
  */
 public class FormChooserListFragment extends ListFragment implements
-		DiskSyncListener,
-		LoaderManager.LoaderCallbacks<Cursor> {
+		DiskSyncListener, LoaderManager.LoaderCallbacks<Cursor> {
 
-	public interface FormChooserListListener {
-		void chooseForm(Uri formUri);
-	};
+	private static final String t = "FormChooserListFragment";
+	private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
 
-	private static String t = "FormChooserListFragment";
-	private static int FORM_CHOOSER_LIST_LOADER = 0x02;
+	public static final int ID = R.layout.form_chooser_list;
 
-	public static int ID = R.layout.chooser_list_layout;
+	// keys for the data being persisted
+
+	private static final String SYNC_MSG_KEY = "syncMsgKey";
+
+	// data to persist across orientation changes
+
+	private String mSyncStatusText = "";
+
+	// data that is not persisted
 
 	private CursorAdapter mInstances;
-
-	private final String syncMsgKey = "syncmsgkey";
-
 	private View view;
-	private FormChooserListListener listener;
-
-	public void setFormChooserListListener(FormChooserListListener listener) {
-		this.listener = listener;
-	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -84,9 +82,9 @@ public class FormChooserListFragment extends ListFragment implements
 		mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION,
 				this.getActivity(), R.layout.two_item, data, viewParams);
 		setListAdapter(mInstances);
-//    	getListView().setBackgroundColor(Color.WHITE);
+		// getListView().setBackgroundColor(Color.WHITE);
 
-    	getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
+		getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
 	}
 
 	@Override
@@ -95,10 +93,11 @@ public class FormChooserListFragment extends ListFragment implements
 		view = inflater.inflate(ID, container, false);
 
 		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(syncMsgKey)) {
-			TextView tv = (TextView) view.findViewById(R.id.status_text);
-			tv.setText(savedInstanceState.getString(syncMsgKey));
+				&& savedInstanceState.containsKey(SYNC_MSG_KEY)) {
+			mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
 		}
+		TextView tv = (TextView) view.findViewById(R.id.status_text);
+		tv.setText(mSyncStatusText);
 
 		return view;
 	}
@@ -106,10 +105,7 @@ public class FormChooserListFragment extends ListFragment implements
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		if ( view != null ) {
-			TextView tv = (TextView) view.findViewById(R.id.status_text);
-			outState.putString(syncMsgKey, tv.getText().toString());
-		}
+		outState.putString(SYNC_MSG_KEY, mSyncStatusText);
 	}
 
 	@Override
@@ -121,6 +117,9 @@ public class FormChooserListFragment extends ListFragment implements
 				.findFragmentByTag("background");
 
 		f.establishDiskSyncListener(this);
+
+		TextView tv = (TextView) view.findViewById(R.id.status_text);
+		tv.setText(mSyncStatusText);
 	}
 
 	@Override
@@ -138,16 +137,15 @@ public class FormChooserListFragment extends ListFragment implements
 		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI,
 				idFormsTable);
 
-		if ( listener != null ) {
-			listener.chooseForm(formUri);
-		}
+		((ODKActivity) getActivity()).chooseForm(formUri);
 	}
 
 	@Override
 	public void SyncComplete(String result) {
 		Log.i(t, "Disk scan complete");
+		mSyncStatusText = result;
 		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(result);
+		tv.setText(mSyncStatusText);
 	}
 
 	@Override

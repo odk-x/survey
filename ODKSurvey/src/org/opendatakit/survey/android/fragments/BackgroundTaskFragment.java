@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -44,15 +44,16 @@ import android.view.ViewGroup;
 import android.widget.Toast;
 
 /**
- * Wrapper that holds all the background tasks that might be in-progress at any time.
+ * Wrapper that holds all the background tasks that might be in-progress at any
+ * time.
  *
  * @author mitchellsundt@gmail.com
  *
  */
-public class BackgroundTaskFragment extends Fragment
-	implements DeleteFormsListener, DiskSyncListener,
-				FormListDownloaderListener, FormDownloaderListener,
-				InstanceUploaderListener, CopyExpansionFilesListener {
+public class BackgroundTaskFragment extends Fragment implements
+		DeleteFormsListener, DiskSyncListener, FormListDownloaderListener,
+		FormDownloaderListener, InstanceUploaderListener,
+		CopyExpansionFilesListener {
 
 	static public class BackgroundTasks {
 		DiskSyncTask mDiskSyncTask = null;
@@ -66,7 +67,8 @@ public class BackgroundTaskFragment extends Fragment
 		};
 	}
 
-	public BackgroundTasks mBackgroundTasks; // handed across orientation changes
+	public BackgroundTasks mBackgroundTasks; // handed across orientation
+												// changes
 
 	public DiskSyncListener mDiskSyncListener = null;
 	public DeleteFormsListener mDeleteFormsListener = null;
@@ -106,7 +108,7 @@ public class BackgroundTaskFragment extends Fragment
 		super.onDestroy();
 	}
 
-	private <T> void executeTask( AsyncTask<T,?,?> task, T... args) {
+	private <T> void executeTask(AsyncTask<T, ?, ?> task, T... args) {
 
 		int androidVersion = android.os.Build.VERSION.SDK_INT;
 		if (androidVersion < 11) {
@@ -118,6 +120,7 @@ public class BackgroundTaskFragment extends Fragment
 		}
 
 	}
+
 	@Override
 	public void onStart() {
 		super.onStart();
@@ -148,7 +151,8 @@ public class BackgroundTaskFragment extends Fragment
 			mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(null);
 		}
 		if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-			mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(null);
+			mBackgroundTasks.mCopyExpansionFilesTask
+					.setCopyExpansionFilesListener(null);
 		}
 		super.onPause();
 	}
@@ -172,19 +176,21 @@ public class BackgroundTaskFragment extends Fragment
 			mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(this);
 		}
 		if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-			mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(this);
+			mBackgroundTasks.mCopyExpansionFilesTask
+					.setCopyExpansionFilesListener(this);
 		}
 	}
 
-	///////////////////////////////////////////////////////////////////////////
+	// /////////////////////////////////////////////////////////////////////////
 	// registrations
 
 	public void establishDeleteFormsListener(DeleteFormsListener listener) {
 		mDeleteFormsListener = listener;
 		// async task may have completed while we were reorienting...
-		if (mBackgroundTasks.mDeleteFormsTask != null &&
-			mBackgroundTasks.mDeleteFormsTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.deleteFormsComplete(mBackgroundTasks.mDeleteFormsTask.getDeleteCount());
+		if (mBackgroundTasks.mDeleteFormsTask != null
+				&& mBackgroundTasks.mDeleteFormsTask.getStatus() == AsyncTask.Status.FINISHED) {
+			this.deleteFormsComplete(mBackgroundTasks.mDeleteFormsTask
+					.getDeleteCount());
 		}
 	}
 
@@ -196,51 +202,59 @@ public class BackgroundTaskFragment extends Fragment
 		}
 	}
 
-	public void establishFormListDownloaderListener(FormListDownloaderListener listener) {
+	public void establishFormListDownloaderListener(
+			FormListDownloaderListener listener) {
 		mFormListDownloaderListener = listener;
 		// async task may have completed while we were reorienting...
-		if (mBackgroundTasks.mDownloadFormListTask != null &&
-			mBackgroundTasks.mDownloadFormListTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.formListDownloadingComplete(mBackgroundTasks.mDownloadFormListTask.getFormList());
+		if (mBackgroundTasks.mDownloadFormListTask != null
+				&& mBackgroundTasks.mDownloadFormListTask.getStatus() == AsyncTask.Status.FINISHED) {
+			this.formListDownloadingComplete(mBackgroundTasks.mDownloadFormListTask
+					.getFormList());
 		}
 	}
 
 	public void establishFormDownloaderListener(FormDownloaderListener listener) {
 		mFormDownloaderListener = listener;
 		// async task may have completed while we were reorienting...
-		if (mBackgroundTasks.mDownloadFormsTask != null &&
-			mBackgroundTasks.mDownloadFormsTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.formsDownloadingComplete(mBackgroundTasks.mDownloadFormsTask.getResult());
+		if (mBackgroundTasks.mDownloadFormsTask != null
+				&& mBackgroundTasks.mDownloadFormsTask.getStatus() == AsyncTask.Status.FINISHED) {
+			this.formsDownloadingComplete(mBackgroundTasks.mDownloadFormsTask
+					.getResult());
 		}
 	}
 
-	public void establishInstanceUploaderListener(InstanceUploaderListener listener) {
+	public void establishInstanceUploaderListener(
+			InstanceUploaderListener listener) {
 		mInstanceUploaderListener = listener;
 		// async task may have completed while we were reorienting...
-		if (mBackgroundTasks.mInstanceUploaderTask != null &&
-			mBackgroundTasks.mInstanceUploaderTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.uploadingComplete(mBackgroundTasks.mInstanceUploaderTask.getResult());
+		if (mBackgroundTasks.mInstanceUploaderTask != null
+				&& mBackgroundTasks.mInstanceUploaderTask.getStatus() == AsyncTask.Status.FINISHED) {
+			this.uploadingComplete(mBackgroundTasks.mInstanceUploaderTask
+					.getResult());
 		}
 	}
 
-	public void establishCopyExpansionFilesListener(CopyExpansionFilesListener listener) {
+	public void establishCopyExpansionFilesListener(
+			CopyExpansionFilesListener listener) {
 		mCopyExpansionFilesListener = listener;
 		// async task may have completed while we were reorienting...
-		if (mBackgroundTasks.mCopyExpansionFilesTask != null &&
-			mBackgroundTasks.mCopyExpansionFilesTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.copyExpansionFilesComplete(mBackgroundTasks.mCopyExpansionFilesTask.getResult());
+		if (mBackgroundTasks.mCopyExpansionFilesTask != null
+				&& mBackgroundTasks.mCopyExpansionFilesTask.getStatus() == AsyncTask.Status.FINISHED) {
+			this.copyExpansionFilesComplete(mBackgroundTasks.mCopyExpansionFilesTask
+					.getResult());
 		}
 	}
 
-	/////////////////////////////////////////////////////
+	// ///////////////////////////////////////////////////
 	// actions
 
 	public void startDiskSyncListener(DiskSyncListener listener) {
 		mDiskSyncListener = listener;
-		if ( mBackgroundTasks.mDiskSyncTask != null &&
-				mBackgroundTasks.mDiskSyncTask.getStatus() != AsyncTask.Status.FINISHED ) {
-			Toast.makeText(this.getActivity(), getString(R.string.disksync_in_progress),
-					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mDiskSyncTask != null
+				&& mBackgroundTasks.mDiskSyncTask.getStatus() != AsyncTask.Status.FINISHED) {
+			Toast.makeText(this.getActivity(),
+					getString(R.string.disksync_in_progress), Toast.LENGTH_LONG)
+					.show();
 		} else {
 			mBackgroundTasks.mDiskSyncTask = new DiskSyncTask();
 			mBackgroundTasks.mDiskSyncTask.setDiskSyncListener(this);
@@ -249,10 +263,11 @@ public class BackgroundTaskFragment extends Fragment
 	}
 
 	private void restartDiskSync() {
-		if ( mBackgroundTasks.mDiskSyncTask != null &&
-				mBackgroundTasks.mDiskSyncTask.getStatus() != AsyncTask.Status.FINISHED ) {
-//			Toast.makeText(this.getActivity(), getString(R.string.disksync_in_progress),
-//					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mDiskSyncTask != null
+				&& mBackgroundTasks.mDiskSyncTask.getStatus() != AsyncTask.Status.FINISHED) {
+			// Toast.makeText(this.getActivity(),
+			// getString(R.string.disksync_in_progress),
+			// Toast.LENGTH_LONG).show();
 			mBackgroundTasks.mDiskSyncTask.cancel(true);
 			mBackgroundTasks.mDiskSyncTask.setDiskSyncListener(null);
 		}
@@ -262,16 +277,18 @@ public class BackgroundTaskFragment extends Fragment
 		executeTask(mBackgroundTasks.mDiskSyncTask, (Void[]) null);
 	}
 
-	public void deleteSelectedForms(DeleteFormsListener listener, Long[] toDelete) {
+	public void deleteSelectedForms(DeleteFormsListener listener,
+			Long[] toDelete) {
 		mDeleteFormsListener = listener;
-		if ( mBackgroundTasks.mDeleteFormsTask != null &&
-				mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED ) {
-			Toast.makeText(this.getActivity(), getString(R.string.file_delete_in_progress),
+		if (mBackgroundTasks.mDeleteFormsTask != null
+				&& mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
+			Toast.makeText(this.getActivity(),
+					getString(R.string.file_delete_in_progress),
 					Toast.LENGTH_LONG).show();
 		} else {
 			mBackgroundTasks.mDeleteFormsTask = new DeleteFormsTask();
-			mBackgroundTasks.mDeleteFormsTask
-					.setContentResolver(getActivity().getContentResolver());
+			mBackgroundTasks.mDeleteFormsTask.setContentResolver(getActivity()
+					.getContentResolver());
 			mBackgroundTasks.mDeleteFormsTask.setDeleteListener(this);
 			executeTask(mBackgroundTasks.mDeleteFormsTask, toDelete);
 		}
@@ -279,10 +296,11 @@ public class BackgroundTaskFragment extends Fragment
 
 	public void downloadFormList(FormListDownloaderListener listener) {
 		mFormListDownloaderListener = listener;
-		if ( mBackgroundTasks.mDownloadFormListTask != null &&
-				mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED ) {
-			Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),
-					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mDownloadFormListTask != null
+				&& mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
+			Toast.makeText(this.getActivity(),
+					getString(R.string.download_in_progress), Toast.LENGTH_LONG)
+					.show();
 		} else {
 			mBackgroundTasks.mDownloadFormListTask = new DownloadFormListTask();
 			mBackgroundTasks.mDownloadFormListTask.setDownloaderListener(this);
@@ -290,12 +308,14 @@ public class BackgroundTaskFragment extends Fragment
 		}
 	}
 
-	public void downloadForms(FormDownloaderListener listener, FormDetails[] filesToDownload) {
+	public void downloadForms(FormDownloaderListener listener,
+			FormDetails[] filesToDownload) {
 		mFormDownloaderListener = listener;
-		if ( mBackgroundTasks.mDownloadFormsTask != null &&
-				mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED ) {
-			Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),
-					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mDownloadFormsTask != null
+				&& mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
+			Toast.makeText(this.getActivity(),
+					getString(R.string.download_in_progress), Toast.LENGTH_LONG)
+					.show();
 		} else {
 			mBackgroundTasks.mDownloadFormsTask = new DownloadFormsTask();
 			mBackgroundTasks.mDownloadFormsTask.setDownloaderListener(this);
@@ -303,33 +323,39 @@ public class BackgroundTaskFragment extends Fragment
 		}
 	}
 
-	public void uploadInstances(InstanceUploaderListener listener, FormIdStruct form, String[] instancesToUpload) {
+	public void uploadInstances(InstanceUploaderListener listener,
+			FormIdStruct form, String[] instancesToUpload) {
 		mInstanceUploaderListener = listener;
-		if ( mBackgroundTasks.mInstanceUploaderTask != null &&
-				mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED ) {
-			Toast.makeText(this.getActivity(), getString(R.string.upload_in_progress),
-					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mInstanceUploaderTask != null
+				&& mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED) {
+			Toast.makeText(this.getActivity(),
+					getString(R.string.upload_in_progress), Toast.LENGTH_LONG)
+					.show();
 		} else {
-			mBackgroundTasks.mInstanceUploaderTask = new InstanceUploaderTask(form);
+			mBackgroundTasks.mInstanceUploaderTask = new InstanceUploaderTask(
+					form);
 			mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(this);
-			executeTask(mBackgroundTasks.mInstanceUploaderTask, instancesToUpload);
+			executeTask(mBackgroundTasks.mInstanceUploaderTask,
+					instancesToUpload);
 		}
 	}
 
 	public void copyExpansionFiles(CopyExpansionFilesListener listener) {
 		mCopyExpansionFilesListener = listener;
-		if ( mBackgroundTasks.mCopyExpansionFilesTask != null &&
-				mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED ) {
-//			Toast.makeText(this.getActivity(), getString(R.string.expansion_in_progress),
-//					Toast.LENGTH_LONG).show();
+		if (mBackgroundTasks.mCopyExpansionFilesTask != null
+				&& mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
+			// Toast.makeText(this.getActivity(),
+			// getString(R.string.expansion_in_progress),
+			// Toast.LENGTH_LONG).show();
 		} else {
 			mBackgroundTasks.mCopyExpansionFilesTask = new CopyExpansionFilesTask();
-			mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(this);
+			mBackgroundTasks.mCopyExpansionFilesTask
+					.setCopyExpansionFilesListener(this);
 			executeTask(mBackgroundTasks.mCopyExpansionFilesTask, (Void) null);
 		}
 	}
 
-	///////////////////////////////////////////////////////////////////////////
+	// /////////////////////////////////////////////////////////////////////////
 	// clearing tasks
 	//
 	// NOTE: clearing any of these does not entirely cancel their actions,
@@ -338,9 +364,9 @@ public class BackgroundTaskFragment extends Fragment
 
 	public void clearDownloadFormListTask() {
 		mFormListDownloaderListener = null;
-		if ( mBackgroundTasks.mDownloadFormListTask != null ) {
+		if (mBackgroundTasks.mDownloadFormListTask != null) {
 			mBackgroundTasks.mDownloadFormListTask.setDownloaderListener(null);
-			if ( mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED ) {
+			if (mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
 				mBackgroundTasks.mDownloadFormListTask.cancel(true);
 			}
 		}
@@ -349,9 +375,9 @@ public class BackgroundTaskFragment extends Fragment
 
 	public void clearDownloadFormsTask() {
 		mFormDownloaderListener = null;
-		if ( mBackgroundTasks.mDownloadFormsTask != null ) {
+		if (mBackgroundTasks.mDownloadFormsTask != null) {
 			mBackgroundTasks.mDownloadFormsTask.setDownloaderListener(null);
-			if ( mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED ) {
+			if (mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
 				mBackgroundTasks.mDownloadFormsTask.cancel(true);
 			}
 		}
@@ -360,9 +386,9 @@ public class BackgroundTaskFragment extends Fragment
 
 	public void clearUploadInstancesTask() {
 		mInstanceUploaderListener = null;
-		if ( mBackgroundTasks.mInstanceUploaderTask != null ) {
+		if (mBackgroundTasks.mInstanceUploaderTask != null) {
 			mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(null);
-			if ( mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED ) {
+			if (mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED) {
 				mBackgroundTasks.mInstanceUploaderTask.cancel(true);
 			}
 		}
@@ -371,22 +397,23 @@ public class BackgroundTaskFragment extends Fragment
 
 	public void clearCopyExpansionFilesTask() {
 		mCopyExpansionFilesListener = null;
-		if ( mBackgroundTasks.mCopyExpansionFilesTask != null ) {
-			mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(null);
-			if ( mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED ) {
+		if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
+			mBackgroundTasks.mCopyExpansionFilesTask
+					.setCopyExpansionFilesListener(null);
+			if (mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
 				mBackgroundTasks.mCopyExpansionFilesTask.cancel(true);
 			}
 		}
 		mBackgroundTasks.mCopyExpansionFilesTask = null;
 	}
 
-	///////////////////////////////////////////////////////////////////////////
+	// /////////////////////////////////////////////////////////////////////////
 	// callbacks
 
 	@Override
 	public void deleteFormsComplete(int deletedForms) {
 		restartDiskSync();
-		if ( mDeleteFormsListener != null ) {
+		if (mDeleteFormsListener != null) {
 			mDeleteFormsListener.deleteFormsComplete(deletedForms);
 		}
 		mBackgroundTasks.mDeleteFormsTask = null;
@@ -394,14 +421,14 @@ public class BackgroundTaskFragment extends Fragment
 
 	@Override
 	public void SyncComplete(String result) {
-		if ( mDiskSyncListener != null ) {
+		if (mDiskSyncListener != null) {
 			mDiskSyncListener.SyncComplete(result);
 		}
 	}
 
 	@Override
 	public void formListDownloadingComplete(HashMap<String, FormDetails> value) {
-		if ( mFormListDownloaderListener != null ) {
+		if (mFormListDownloaderListener != null) {
 			mFormListDownloaderListener.formListDownloadingComplete(value);
 		}
 	}
@@ -409,28 +436,30 @@ public class BackgroundTaskFragment extends Fragment
 	@Override
 	public void formsDownloadingComplete(HashMap<String, String> result) {
 		restartDiskSync();
-		if ( mFormDownloaderListener != null ) {
+		if (mFormDownloaderListener != null) {
 			mFormDownloaderListener.formsDownloadingComplete(result);
 		}
 	}
 
 	@Override
-	public void formDownloadProgressUpdate(String currentFile, int progress, int total) {
-		if ( mFormDownloaderListener != null ) {
-			mFormDownloaderListener.formDownloadProgressUpdate(currentFile, progress, total);
+	public void formDownloadProgressUpdate(String currentFile, int progress,
+			int total) {
+		if (mFormDownloaderListener != null) {
+			mFormDownloaderListener.formDownloadProgressUpdate(currentFile,
+					progress, total);
 		}
 	}
 
 	@Override
 	public void uploadingComplete(InstanceUploadOutcome result) {
-		if ( mInstanceUploaderListener != null ) {
+		if (mInstanceUploaderListener != null) {
 			mInstanceUploaderListener.uploadingComplete(result);
 		}
 	}
 
 	@Override
 	public void progressUpdate(int progress, int total) {
-		if ( mInstanceUploaderListener != null ) {
+		if (mInstanceUploaderListener != null) {
 			mInstanceUploaderListener.progressUpdate(progress, total);
 		}
 	}
@@ -438,15 +467,16 @@ public class BackgroundTaskFragment extends Fragment
 	@Override
 	public void copyExpansionFilesComplete(ArrayList<String> result) {
 		restartDiskSync();
-		if ( mCopyExpansionFilesListener != null ) {
+		if (mCopyExpansionFilesListener != null) {
 			mCopyExpansionFilesListener.copyExpansionFilesComplete(result);
 		}
 	}
 
 	@Override
 	public void copyProgressUpdate(String status, int progress, int total) {
-		if ( mCopyExpansionFilesListener != null ) {
-			mCopyExpansionFilesListener.copyProgressUpdate(status, progress, total);
+		if (mCopyExpansionFilesListener != null) {
+			mCopyExpansionFilesListener.copyProgressUpdate(status, progress,
+					total);
 		}
 	}
 }

@@ -14,8 +14,6 @@
 
 package org.opendatakit.survey.android.fragments;
 
-import org.opendatakit.survey.android.R;
-
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.DialogInterface;
@@ -30,19 +28,23 @@ import android.support.v4.app.FragmentManager;
  * @author mitchellsundt@gmail.com
  *
  */
-public class AlertDialogFragment extends DialogFragment {
+public class ConfirmationDialogFragment extends DialogFragment {
 
-	public static interface ConfirmAlertDialog {
-		public void okAlertDialog();
+	public static interface ConfirmConfirmationDialog {
+		public void okConfirmationDialog();
+
+		public void cancelConfirmationDialog();
 	};
 
-	public static AlertDialogFragment newInstance(int fragmentId, String title,
-			String message) {
-		AlertDialogFragment frag = new AlertDialogFragment();
+	public static ConfirmationDialogFragment newInstance(int fragmentId,
+			String title, String message, String okButton, String cancelButton) {
+		ConfirmationDialogFragment frag = new ConfirmationDialogFragment();
 		Bundle args = new Bundle();
 		args.putInt("fragmentId", fragmentId);
 		args.putString("title", title);
 		args.putString("message", message);
+		args.putString("okButton", okButton);
+		args.putString("cancelButton", cancelButton);
 		frag.setArguments(args);
 		return frag;
 	}
@@ -55,18 +57,23 @@ public class AlertDialogFragment extends DialogFragment {
 	public Dialog onCreateDialog(Bundle savedInstanceState) {
 		String title = getArguments().getString("title");
 		String message = getArguments().getString("message");
+		String okButton = getArguments().getString("okButton");
+		String cancelButton = getArguments().getString("cancelButton");
 
 		final Integer fragmentId = getArguments().getInt("fragmentId");
 
-		DialogInterface.OnClickListener quitListener = new DialogInterface.OnClickListener() {
+		DialogInterface.OnClickListener dialogYesNoListener = new DialogInterface.OnClickListener() {
 			@Override
 			public void onClick(DialogInterface dialog, int i) {
+				FragmentManager mgr = getFragmentManager();
+				Fragment f = mgr.findFragmentById(fragmentId);
 				switch (i) {
-				case DialogInterface.BUTTON_POSITIVE: // ok
-					FragmentManager mgr = getFragmentManager();
-					Fragment f = mgr.findFragmentById(fragmentId);
-
-					((ConfirmAlertDialog) f).okAlertDialog();
+				case DialogInterface.BUTTON_POSITIVE: // delete
+					((ConfirmConfirmationDialog) f).okConfirmationDialog();
+					dialog.dismiss();
+					break;
+				case DialogInterface.BUTTON_NEGATIVE: // do nothing
+					((ConfirmConfirmationDialog) f).cancelConfirmationDialog();
 					dialog.dismiss();
 					break;
 				}
@@ -76,8 +83,8 @@ public class AlertDialogFragment extends DialogFragment {
 		AlertDialog dlg = new AlertDialog.Builder(getActivity())
 				.setIcon(android.R.drawable.ic_dialog_info).setTitle(title)
 				.setMessage(message).setCancelable(false)
-				.setPositiveButton(getString(R.string.ok), quitListener)
-				.create();
+				.setPositiveButton(okButton, dialogYesNoListener)
+				.setNegativeButton(cancelButton, dialogYesNoListener).create();
 		dlg.setCanceledOnTouchOutside(false);
 		return dlg;
 	}

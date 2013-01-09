@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -82,8 +82,8 @@ public class MediaChooseAudioActivity extends Activity {
 
 		// get gp of chosen file
 		Uri selectedMedia = intent.getData();
-		String sourceMediaPath = MediaUtils.getPathFromUri(
-				selectedMedia, Audio.Media.DATA);
+		String sourceMediaPath = MediaUtils.getPathFromUri(selectedMedia,
+				Audio.Media.DATA);
 		File sourceMedia = new File(sourceMediaPath);
 		String extension = sourceMediaPath.substring(sourceMediaPath
 				.lastIndexOf("."));
@@ -103,8 +103,9 @@ public class MediaChooseAudioActivity extends Activity {
 			return;
 		}
 
-		Log.i(t, "copied " + sourceMedia.getAbsolutePath() + " to "
-				+ newMedia.getAbsolutePath());
+		Log.i(t,
+				"copied " + sourceMedia.getAbsolutePath() + " to "
+						+ newMedia.getAbsolutePath());
 
 		Uri mediaURI = null;
 		if (newMedia.exists()) {
@@ -135,7 +136,8 @@ public class MediaChooseAudioActivity extends Activity {
 			Intent i = new Intent();
 			i.putExtra(URI, FileProvider.getAsUrl(newMediaFromCP));
 			String name = newMediaFromCP.getName();
-			i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+			i.putExtra(CONTENT_TYPE,
+					MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
 			setResult(Activity.RESULT_OK, i);
 			finish();
 		} else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
@@ -27,9 +28,7 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
@@ -51,49 +50,57 @@ import android.widget.SimpleAdapter;
 import android.widget.Toast;
 
 /**
- * Interface to the legacy OpenRosa compliant Form Discovery API
- * (e.g., ODK Aggregate forms listing).
+ * Interface to the legacy OpenRosa compliant Form Discovery API (e.g., ODK
+ * Aggregate forms listing).
  *
  * @author mitchellsundt@gmail.com
  *
  */
 public class FormDownloadListFragment extends ListFragment implements
-		FormListDownloaderListener, FormDownloaderListener, CancelProgressDialog {
+		FormListDownloaderListener, FormDownloaderListener, ConfirmAlertDialog,
+		CancelProgressDialog {
 
 	private static final String t = "FormDownloadListFragment";
 
-	public static int ID = R.layout.remote_file_manage_list;
+	public static final int ID = R.layout.form_download_list;
+
+	private static enum DialogState {
+		Progress, Alert, None
+	};
+
+	// value fields in available-forms list
+
+	private static final String FORMNAME = "formname";
+	private static final String FORMDETAIL_KEY = "formdetailkey";
+	private static final String FORMID_DISPLAY = "formiddisplay";
+
+	// keys for the data being persisted
 
 	private static final String BUNDLE_TOGGLED_KEY = "toggled";
 	private static final String BUNDLE_SELECTED_COUNT = "selectedcount";
 	private static final String BUNDLE_FORM_MAP = "formmap";
 	private static final String DIALOG_TITLE = "dialogtitle";
 	private static final String DIALOG_MSG = "dialogmsg";
-	private static final String DIALOG_SHOWING = "dialogshowing";
+	private static final String DIALOG_STATE = "dialogState";
 	private static final String FORMLIST = "formlist";
 
-	public static final String LIST_URL = "listurl";
-
-	private static final String FORMNAME = "formname";
-	private static final String FORMDETAIL_KEY = "formdetailkey";
-	private static final String FORMID_DISPLAY = "formiddisplay";
-
-	private String mAlertMsg;
-	private boolean mAlertShowing = false;
-	private String mAlertTitle;
-
-	private AlertDialog mAlertDialog;
-	private Button mDownloadButton;
-
-	private Button mToggleButton;
-	private Button mRefreshButton;
-
-	private HashMap<String, FormDetails> mFormNamesAndURLs;
-	private SimpleAdapter mFormListAdapter;
-	private ArrayList<HashMap<String, String>> mFormList = new ArrayList<HashMap<String, String>>();
+	// data to persist across orientation changes
 
 	private boolean mToggled = false;
 	private int mSelectedCount = 0;
+	private HashMap<String, FormDetails> mFormNamesAndURLs;
+	private String mAlertTitle;
+	private String mAlertMsg;
+	private DialogState mDialogState = DialogState.None;
+	private ArrayList<HashMap<String, String>> mFormList = new ArrayList<HashMap<String, String>>();
+
+	// data that is not persisted
+
+	private Button mDownloadButton;
+	private Button mToggleButton;
+	private Button mRefreshButton;
+
+	private SimpleAdapter mFormListAdapter;
 
 	private View view;
 
@@ -102,24 +109,23 @@ public class FormDownloadListFragment extends ListFragment implements
 		super.onCreate(savedInstanceState);
 	}
 
-
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 
-
 		String[] data = new String[] { FORMNAME, FORMID_DISPLAY, FORMDETAIL_KEY };
 		int[] view = new int[] { R.id.text1, R.id.text2 };
 
-		mFormListAdapter = new SimpleAdapter(getActivity(), mFormList, R.layout.two_item_multiple_choice, data, view);
-//		// need white background before load
-//		getListView().setBackgroundColor(Color.WHITE);
-//		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-//		getListView().setItemsCanFocus(false);
+		mFormListAdapter = new SimpleAdapter(getActivity(), mFormList,
+				R.layout.two_item_multiple_choice, data, view);
+		// // need white background before load
+		// getListView().setBackgroundColor(Color.WHITE);
+		// getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+		// getListView().setItemsCanFocus(false);
 
 		setListAdapter(mFormListAdapter);
 
-		if ( savedInstanceState == null ) {
+		if (savedInstanceState == null) {
 			// first time, so get the formlist
 			downloadFormList();
 		}
@@ -128,7 +134,8 @@ public class FormDownloadListFragment extends ListFragment implements
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container,
 			Bundle savedInstanceState) {
-		view = inflater.inflate(R.layout.remote_file_manage_list, container, false);
+		view = inflater.inflate(ID, container,
+				false);
 		mAlertMsg = getString(R.string.please_wait);
 
 		mDownloadButton = (Button) view.findViewById(R.id.add_button);
@@ -197,13 +204,14 @@ public class FormDownloadListFragment extends ListFragment implements
 			if (savedInstanceState.containsKey(DIALOG_MSG)) {
 				mAlertMsg = savedInstanceState.getString(DIALOG_MSG);
 			}
-			if (savedInstanceState.containsKey(DIALOG_SHOWING)) {
-				mAlertShowing = savedInstanceState.getBoolean(DIALOG_SHOWING);
+			if (savedInstanceState.containsKey(DIALOG_STATE)) {
+				mDialogState = DialogState.valueOf(savedInstanceState
+						.getString(DIALOG_STATE));
 			}
 
 			if (savedInstanceState.containsKey(FORMLIST)) {
-			mFormList = (ArrayList<HashMap<String, String>>) savedInstanceState
-					.getSerializable(FORMLIST);
+				mFormList = (ArrayList<HashMap<String, String>>) savedInstanceState
+						.getSerializable(FORMLIST);
 			}
 		} else {
 			mFormList.clear();
@@ -227,19 +235,20 @@ public class FormDownloadListFragment extends ListFragment implements
 	 * Starts the download task and shows the progress dialog.
 	 */
 	private void downloadFormList() {
-		ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+		ConnectivityManager connectivityManager = (ConnectivityManager) getActivity()
+				.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo ni = connectivityManager.getActiveNetworkInfo();
 
 		if (ni == null || !ni.isConnected()) {
-			Toast.makeText(getActivity(), R.string.no_connection, Toast.LENGTH_SHORT)
-					.show();
+			Toast.makeText(getActivity(), R.string.no_connection,
+					Toast.LENGTH_SHORT).show();
 		} else {
 
 			mFormNamesAndURLs = new HashMap<String, FormDetails>();
-			mAlertMsg = getString(R.string.please_wait);
 			showProgressDialog();
 
-			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+					.findFragmentByTag("background");
 			f.downloadFormList(this);
 		}
 	}
@@ -252,7 +261,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		outState.putSerializable(BUNDLE_FORM_MAP, mFormNamesAndURLs);
 		outState.putString(DIALOG_TITLE, mAlertTitle);
 		outState.putString(DIALOG_MSG, mAlertMsg);
-		outState.putBoolean(DIALOG_SHOWING, mAlertShowing);
+		outState.putString(DIALOG_STATE, mDialogState.name());
 		outState.putSerializable(FORMLIST, mFormList);
 	}
 
@@ -295,8 +304,10 @@ public class FormDownloadListFragment extends ListFragment implements
 		if (totalCount > 0) {
 			// show dialog box
 			showProgressDialog();
-			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
-			f.downloadForms(this, filesToDownload.toArray(new FormDetails[filesToDownload.size()]));
+			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+					.findFragmentByTag("background");
+			f.downloadForms(this, filesToDownload
+					.toArray(new FormDetails[filesToDownload.size()]));
 		} else {
 			Toast.makeText(getActivity(), R.string.noselect_error,
 					Toast.LENGTH_SHORT).show();
@@ -316,16 +327,29 @@ public class FormDownloadListFragment extends ListFragment implements
 		f.establishFormListDownloaderListener(this);
 		f.establishFormDownloaderListener(this);
 
-		if (mAlertShowing) {
-			createAlertDialog(mAlertTitle, mAlertMsg);
-		}
 		super.onResume();
+
+		if (mDialogState == DialogState.Progress) {
+			restoreProgressDialog();
+		} else if (mDialogState == DialogState.Alert) {
+			restoreAlertDialog();
+		}
 	}
 
 	@Override
 	public void onPause() {
-		if (mAlertDialog != null && mAlertDialog.isShowing()) {
-			mAlertDialog.dismiss();
+		FragmentManager mgr = getFragmentManager();
+
+		// dismiss dialogs...
+		AlertDialogFragment alertDialog = (AlertDialogFragment) mgr
+				.findFragmentByTag("alertDialog");
+		if (alertDialog != null) {
+			alertDialog.dismiss();
+		}
+		ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
+				.findFragmentByTag("progressDialog");
+		if (progressDialog != null) {
+			progressDialog.dismiss();
 		}
 		super.onPause();
 	}
@@ -345,7 +369,8 @@ public class FormDownloadListFragment extends ListFragment implements
 					"Attempting to close a dialog that was not previously opened");
 		}
 
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+				.findFragmentByTag("background");
 		f.clearDownloadFormListTask();
 
 		if (result == null) {
@@ -408,8 +433,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	private void showAuthDialog() {
 		SharedPreferences settings = PreferenceManager
 				.getDefaultSharedPreferences(getActivity().getBaseContext());
-		String server = settings.getString(
-				PreferencesActivity.KEY_SERVER_URL,
+		String server = settings.getString(PreferencesActivity.KEY_SERVER_URL,
 				getString(R.string.default_server_url));
 
 		final String url = server
@@ -423,39 +447,93 @@ public class FormDownloadListFragment extends ListFragment implements
 		f.show(getFragmentManager(), "authDialog");
 	}
 
-	private void showProgressDialog() {
-		ProgressDialogFragment f = ProgressDialogFragment.newInstance(getId(),
-				getString(R.string.downloading_data),
-				mAlertMsg);
+	private void restoreProgressDialog() {
+		Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
+		if (alert != null) {
+			((AlertDialogFragment) alert).dismiss();
+		}
 
-		f.show(getFragmentManager(), "progressDialog");
+		Fragment dialog = getFragmentManager().findFragmentByTag(
+				"progressDialog");
+
+		if (dialog != null
+				&& ((ProgressDialogFragment) dialog).getDialog() != null) {
+			mDialogState = DialogState.Progress;
+			((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+			((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
+
+		} else {
+
+			ProgressDialogFragment f = ProgressDialogFragment.newInstance(
+					getId(), mAlertTitle, mAlertMsg);
+
+			mDialogState = DialogState.Progress;
+			f.show(getFragmentManager(), "progressDialog");
+		}
+	}
+
+	private void showProgressDialog() {
+		mAlertTitle = getString(R.string.downloading_data);
+		mAlertMsg = getString(R.string.please_wait);
+		restoreProgressDialog();
 	}
 
 	private void updateProgressDialogMessage(String message) {
-		Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
-
-		if ( dialog != null ) {
-			((ProgressDialogFragment) dialog).setMessage(message);
+		if (mDialogState == DialogState.Progress) {
+			mAlertTitle = getString(R.string.downloading_data);
+			mAlertMsg = message;
+			restoreProgressDialog();
 		}
 	}
 
 	private void dismissProgressDialog() {
-		Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
-		if ( dialog != null ) {
+		Fragment dialog = getFragmentManager().findFragmentByTag(
+				"progressDialog");
+		if (dialog != null) {
+			mDialogState = DialogState.None;
 			((ProgressDialogFragment) dialog).dismiss();
 		}
 	}
 
-
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if ( requestCode == RequestCodes.AUTH_DIALOG.ordinal()) {
-			if ( resultCode == Activity.RESULT_OK ) {
+		if (requestCode == RequestCodes.AUTH_DIALOG.ordinal()) {
+			if (resultCode == Activity.RESULT_OK) {
 				downloadFormList();
 			}
 		} else {
 			super.onActivityResult(requestCode, resultCode, data);
 		}
+	}
+
+	private void restoreAlertDialog() {
+		Fragment progress = getFragmentManager().findFragmentByTag(
+				"progressDialog");
+		if (progress != null) {
+			((ProgressDialogFragment) progress).dismiss();
+		}
+
+		Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
+
+		if (dialog != null
+				&& ((AlertDialogFragment) dialog).getDialog() != null) {
+			mDialogState = DialogState.Alert;
+			((AlertDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+			((AlertDialogFragment) dialog).setMessage(mAlertMsg);
+
+		} else {
+
+			AlertDialogFragment f = AlertDialogFragment.newInstance(getId(),
+					mAlertTitle, mAlertMsg);
+
+			mDialogState = DialogState.Alert;
+			f.show(getFragmentManager(), "alertDialog");
+		}
+	}
+
+	@Override
+	public void okAlertDialog() {
+		mDialogState = DialogState.None;
 	}
 
 	/**
@@ -466,37 +544,14 @@ public class FormDownloadListFragment extends ListFragment implements
 	 * @param shouldExit
 	 */
 	private void createAlertDialog(String title, String message) {
-		if ( mAlertDialog != null && mAlertDialog.isShowing() ) {
-			mAlertDialog.dismiss();
-		}
-
-		DialogInterface.OnClickListener quitListener = new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int i) {
-				switch (i) {
-				case DialogInterface.BUTTON_POSITIVE: // ok
-					// just close the dialog
-					mAlertShowing = false;
-					break;
-				}
-			}
-		};
-
-		mAlertDialog = new AlertDialog.Builder(getActivity())
-			.setTitle(title)
-			.setMessage(message)
-			.setCancelable(false)
-			.setPositiveButton(getString(R.string.ok), quitListener)
-			.setIcon(android.R.drawable.ic_dialog_info).create();
-		mAlertDialog.setCanceledOnTouchOutside(false);
-		mAlertMsg = message;
 		mAlertTitle = title;
-		mAlertShowing = true;
-		mAlertDialog.show();
+		mAlertMsg = message;
+		restoreAlertDialog();
 	}
 
 	@Override
-	public void formDownloadProgressUpdate(String currentFile, int progress, int total) {
+	public void formDownloadProgressUpdate(String currentFile, int progress,
+			int total) {
 		mAlertMsg = getString(R.string.fetching_file, currentFile, progress,
 				total);
 		updateProgressDialogMessage(mAlertMsg);
@@ -511,7 +566,8 @@ public class FormDownloadListFragment extends ListFragment implements
 					"Attempting to close a dialog that was not previously opened");
 		}
 
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+				.findFragmentByTag("background");
 		f.clearDownloadFormsTask();
 
 		StringBuilder b = new StringBuilder();
@@ -521,14 +577,15 @@ public class FormDownloadListFragment extends ListFragment implements
 			b.append("\n\n");
 		}
 
-		createAlertDialog(getString(R.string.download_forms_result), b.toString().trim());
+		createAlertDialog(getString(R.string.download_forms_result), b
+				.toString().trim());
 	}
-
 
 	@Override
 	public void cancelProgressDialog() {
 
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag("background");
+		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
+				.findFragmentByTag("background");
 		f.clearDownloadFormListTask();
 		f.clearDownloadFormsTask();
 	}

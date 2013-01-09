@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -39,23 +39,34 @@ public class WebSqlDatabaseHelper {
 		Cursor c = null;
 		try {
 			db = mWebDb.getWritableDatabase();
-			c = db.query(WebDbDatabaseHelper.WEBDB_DATABASES_TABLE, null, null, null, null, null, null);
+			c = db.query(WebDbDatabaseHelper.WEBDB_DATABASES_TABLE, null, null,
+					null, null, null, null);
 
-			if ( c.moveToFirst() ) {
+			if (c.moveToFirst()) {
 				do {
-					String shortName = c.getString(c.getColumnIndex(WebDbDatabaseHelper.DATABASES_NAME));
-					String displayName = c.getString(c.getColumnIndex(WebDbDatabaseHelper.DATABASES_DISPLAY_NAME));
-					String relPath = c.getString(c.getColumnIndex(WebDbDatabaseHelper.COMMON_ORIGIN));
-					String dbName = c.getString(c.getColumnIndex(WebDbDatabaseHelper.DATABASES_PATH));
-					Integer estimatedSize = c.getInt(c.getColumnIndex(WebDbDatabaseHelper.DATABASES_ESTIMATED_SIZE));
+					String shortName = c
+							.getString(c
+									.getColumnIndex(WebDbDatabaseHelper.DATABASES_NAME));
+					String displayName = c
+							.getString(c
+									.getColumnIndex(WebDbDatabaseHelper.DATABASES_DISPLAY_NAME));
+					String relPath = c.getString(c
+							.getColumnIndex(WebDbDatabaseHelper.COMMON_ORIGIN));
+					String dbName = c
+							.getString(c
+									.getColumnIndex(WebDbDatabaseHelper.DATABASES_PATH));
+					Integer estimatedSize = c
+							.getInt(c
+									.getColumnIndex(WebDbDatabaseHelper.DATABASES_ESTIMATED_SIZE));
 
-					dbCandidates.add(new WebDbDefinition( shortName, displayName,
-							estimatedSize, new File(Survey.WEBDB_PATH +
-									File.separator + relPath + File.separator + dbName)));
-				} while ( c.moveToNext());
+					dbCandidates.add(new WebDbDefinition(shortName,
+							displayName, estimatedSize,
+							new File(Survey.WEBDB_PATH + File.separator
+									+ relPath + File.separator + dbName)));
+				} while (c.moveToNext());
 			}
 		} finally {
-			if ( c != null ) {
+			if (c != null) {
 				c.close();
 			}
 		}
@@ -65,8 +76,9 @@ public class WebSqlDatabaseHelper {
 	}
 
 	public WebDbDefinition getWebKitDatabaseInfoHelper() {
-		for ( WebDbDefinition defn : webDatabasePaths ) {
-			if ( defn.shortName.equalsIgnoreCase(WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME)) {
+		for (WebDbDefinition defn : webDatabasePaths) {
+			if (defn.shortName
+					.equalsIgnoreCase(WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME)) {
 				return defn;
 			}
 		}

@@ -15,10 +15,42 @@ License for the specific language governing permissions and limitations under
 the License.
 
 -->
+
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
     android:layout_alignParentTop="true" >
+
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_above="@+id/buttonholder"
+        android:orientation="vertical" >
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#DDDDDD"
+            android:padding="5dp"
+            android:paddingTop="0dp"
+            android:text="@string/form_scan_starting"
+            android:textSize="14sp" />
+
+        <ListView
+            android:id="@android:id/list"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent" />
+
+        <TextView
+            android:id="@android:id/empty"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:gravity="center"
+            android:text="@string/no_items_display"
+            android:textSize="21sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/buttonholder"
@@ -27,7 +59,7 @@ the License.
         android:layout_alignParentBottom="true"
         android:orientation="horizontal" >
 
-    <Button
+        <Button
             android:id="@+id/delete_button"
             android:layout_width="0dip"
             android:layout_height="wrap_content"
@@ -36,20 +68,5 @@ the License.
             android:text="@string/delete_file"
             android:textSize="16sp" />
     </LinearLayout>
-
-    <ListView
-        android:id="@android:id/list"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:layout_above="@+id/buttonholder"
-        android:layout_alignParentTop="true" />
-
-    <TextView
-        android:id="@android:id/empty"
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent"
-        android:gravity="center"
-        android:text="@string/no_items_display"
-        android:textSize="21sp" />
 
 </RelativeLayout>

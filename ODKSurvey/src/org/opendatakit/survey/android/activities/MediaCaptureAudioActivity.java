@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -54,7 +54,7 @@ public class MediaCaptureAudioActivity extends Activity {
 	private static final String ERROR_COPY_FILE = "Media file copy failed! ";
 
 	private String mediaPath = null;
-    private boolean afterResult = false;
+	private boolean afterResult = false;
 	private boolean hasLaunched = false;
 
 	@Override
@@ -64,7 +64,7 @@ public class MediaCaptureAudioActivity extends Activity {
 		if (savedInstanceState != null) {
 			mediaPath = savedInstanceState.getString(URI);
 			hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
-	    	afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
+			afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
 		}
 
 		if (mediaPath == null) {
@@ -79,13 +79,15 @@ public class MediaCaptureAudioActivity extends Activity {
 		super.onResume();
 
 		if (afterResult) {
-			// this occurs if we re-orient the phone during the save-recording action
+			// this occurs if we re-orient the phone during the save-recording
+			// action
 			returnResult();
 		} else if (!hasLaunched && !afterResult) {
 			Intent i = new Intent(Audio.Media.RECORD_SOUND_ACTION);
 			// to make the name unique...
 			File f = new File(mediaPath);
-			i.putExtra(Audio.Media.DISPLAY_NAME, f.getName().substring(0,f.getName().lastIndexOf('.')));
+			i.putExtra(Audio.Media.DISPLAY_NAME,
+					f.getName().substring(0, f.getName().lastIndexOf('.')));
 
 			try {
 				hasLaunched = true;
@@ -106,7 +108,7 @@ public class MediaCaptureAudioActivity extends Activity {
 		super.onSaveInstanceState(outState);
 		outState.putString(URI, mediaPath);
 		outState.putBoolean(HAS_LAUNCHED, hasLaunched);
-    	outState.putBoolean(AFTER_RESULT, afterResult);
+		outState.putBoolean(AFTER_RESULT, afterResult);
 	}
 
 	private void deleteMedia() {
@@ -151,7 +153,7 @@ public class MediaCaptureAudioActivity extends Activity {
 			return;
 		}
 
-		if ( mediaPath == null ) {
+		if (mediaPath == null) {
 			// we are in trouble
 			Log.e(t, "Unexpectedly null mediaPath!");
 			setResult(Activity.RESULT_CANCELED);
@@ -161,14 +163,15 @@ public class MediaCaptureAudioActivity extends Activity {
 
 		Uri mediaUri = intent.getData();
 
-		// it is unclear whether getData() always returns a value or if getDataString() does...
+		// it is unclear whether getData() always returns a value or if
+		// getDataString() does...
 		String str = intent.getDataString();
-		if ( mediaUri == null && str != null ) {
+		if (mediaUri == null && str != null) {
 			Log.w(t, "Attempting to work around null mediaUri");
 			mediaUri = Uri.parse(str);
 		}
 
-		if ( mediaUri == null ) {
+		if (mediaUri == null) {
 			// we are in trouble
 			Log.e(t, "No uri returned from RECORD_SOUND_ACTION!");
 			setResult(Activity.RESULT_CANCELED);
@@ -187,7 +190,9 @@ public class MediaCaptureAudioActivity extends Activity {
 		// adjust the mediaPath (destination) to have the same extension
 		// and delete any existing file.
 		File f = new File(mediaPath);
-		File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,f.getName().lastIndexOf('.')) + extension);
+		File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
+				f.getName().lastIndexOf('.'))
+				+ extension);
 		mediaPath = sourceMedia.getAbsolutePath();
 		deleteMedia();
 
@@ -238,16 +243,21 @@ public class MediaCaptureAudioActivity extends Activity {
 
 	private void returnResult() {
 		File sourceMedia = (mediaPath != null) ? new File(mediaPath) : null;
-		if ( sourceMedia != null && sourceMedia.exists() ) {
+		if (sourceMedia != null && sourceMedia.exists()) {
 			Intent i = new Intent();
 			i.putExtra(URI, FileProvider.getAsUrl(sourceMedia));
 			String name = sourceMedia.getName();
-			i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+			i.putExtra(CONTENT_TYPE,
+					MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
 			setResult(Activity.RESULT_OK, i);
 			finish();
 		} else {
-			Log.e(t, ERROR_NO_FILE + ((mediaPath != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
-			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+			Log.e(t,
+					ERROR_NO_FILE
+							+ ((mediaPath != null) ? sourceMedia
+									.getAbsolutePath() : "null mediaPath"));
+			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
+					.show();
 			setResult(Activity.RESULT_CANCELED);
 			finish();
 		}

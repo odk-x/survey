@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2009 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,12 +16,11 @@ package org.opendatakit.survey.android.listeners;
 
 import java.util.ArrayList;
 
-
-
 /**
- * @author Carl Hartung (carlhartung@gmail.com)
+ * @author mitchellsundt@gmail.com
  */
 public interface CopyExpansionFilesListener {
-    void copyExpansionFilesComplete(ArrayList<String> result);
-    void copyProgressUpdate(String currentFile, int progress, int total);
+	void copyExpansionFilesComplete(ArrayList<String> result);
+
+	void copyProgressUpdate(String currentFile, int progress, int total);
 }

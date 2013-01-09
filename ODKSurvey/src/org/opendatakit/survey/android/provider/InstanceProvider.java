@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
+ * Copyright (C) 2011-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -66,7 +67,7 @@ public class InstanceProvider extends ContentProvider {
 		h = new WebSqlDatabaseHelper();
 		WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
 		if (defn != null) {
-    		defn.dbFile.getParentFile().mkdirs();
+			defn.dbFile.getParentFile().mkdirs();
 			mDbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(),
 					defn.dbFile.getName());
 		}
@@ -155,13 +156,13 @@ public class InstanceProvider extends ContentProvider {
 		b.append(DATA_TABLE_INSTANCE_NAME_COLUMN).append(" as ")
 				.append(InstanceColumns.DISPLAY_NAME);
 		b.append(" FROM ");
-		b.append("( SELECT * FROM ").append(dbTableName)
-				.append(" GROUP BY ").append(DATA_TABLE_ID_COLUMN)
-				.append(" HAVING ").append(DATA_TABLE_TIMESTAMP_COLUMN)
-					.append(" = MAX(").append(DATA_TABLE_TIMESTAMP_COLUMN).append(")")
-				.append(" AND ").append(DATA_TABLE_SAVED_COLUMN)
-					.append("= '").append(SAVED_AS_COMPLETE).append("'")
-				.append(") as ").append(dbTableName);
+		b.append("( SELECT * FROM ").append(dbTableName).append(" GROUP BY ")
+				.append(DATA_TABLE_ID_COLUMN).append(" HAVING ")
+				.append(DATA_TABLE_TIMESTAMP_COLUMN).append(" = MAX(")
+				.append(DATA_TABLE_TIMESTAMP_COLUMN).append(")")
+				.append(" AND ").append(DATA_TABLE_SAVED_COLUMN).append("= '")
+				.append(SAVED_AS_COMPLETE).append("'").append(") as ")
+				.append(dbTableName);
 		b.append(" JOIN ").append(UPLOADS_TABLE_NAME).append(" ON ")
 				.append(dbTableName).append(".").append(DATA_TABLE_ID_COLUMN)
 				.append("=").append(UPLOADS_TABLE_NAME).append(".")

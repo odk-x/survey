@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -40,7 +40,9 @@ public class FormIdStruct implements Serializable {
 	public final String formVersion;
 	public final Date lastDownloadDate;
 
-	public FormIdStruct(Uri formUri, File formDefFile, String formPath, String formId, String formVersion, String tableId, Date lastModifiedDate) {
+	public FormIdStruct(Uri formUri, File formDefFile, String formPath,
+			String formId, String formVersion, String tableId,
+			Date lastModifiedDate) {
 		this.formUri = formUri;
 		this.formDefFile = formDefFile;
 		this.formPath = formPath;

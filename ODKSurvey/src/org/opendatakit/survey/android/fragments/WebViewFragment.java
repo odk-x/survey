@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 University of Washington
+ * Copyright (C) 2012-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,8 +23,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 /**
- * Fragment that doesn't actually render -- the activity will make the WebKit view visible or gone
- * based upon which of these fragments is 'chosen'.
+ * Fragment that doesn't actually render -- the activity will make the WebKit
+ * view visible or gone based upon which of these fragments is 'chosen'.
  *
  * @author mitchellsundt@gmail.com
  *
