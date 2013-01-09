@@ -16,7 +16,6 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -35,7 +34,6 @@ import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.tasks.CopyExpansionFilesTask;
 import org.opendatakit.survey.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.utilities.WebLogger;
@@ -48,7 +46,6 @@ import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -421,8 +418,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements
 						.getBoolean(PROCESS_APK_EXPANSION_FILES);
 			}
 
-			setCurrentForm(savedInstanceState.containsKey(FORM_URI) ? retrieveFormIdStruct(Uri
-					.parse(savedInstanceState.getString(FORM_URI))) : null);
+			setCurrentForm(savedInstanceState.containsKey(FORM_URI) ?
+					FormIdStruct.retrieveFormIdStruct(getContentResolver(),
+							Uri.parse(savedInstanceState.getString(FORM_URI))) : null);
 			setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
 					.getString(INSTANCE_ID) : null);
 			setPageRef(savedInstanceState.containsKey(PAGE_REF) ? savedInstanceState
@@ -564,36 +562,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements
 		return super.onOptionsItemSelected(item);
 	}
 
-	private FormIdStruct retrieveFormIdStruct(Uri formUri) {
-		if (formUri == null)
-			return null;
-		Cursor c = null;
-		try {
-			c = getContentResolver().query(formUri, null, null, null, null);
-			if (c.getCount() == 1) {
-				int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
-				int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
-				int formId = c.getColumnIndex(FormsColumns.FORM_ID);
-				int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
-				int tableId = c.getColumnIndex(FormsColumns.TABLE_ID);
-				int date = c.getColumnIndex(FormsColumns.DATE);
-
-				c.moveToFirst();
-				FormIdStruct newForm = new FormIdStruct(formUri, new File(
-						c.getString(formMedia), Survey.FORMDEF_JSON_FILENAME),
-						c.getString(formPath), c.getString(formId),
-						c.getString(formVersion), c.getString(tableId),
-						new Date(c.getLong(date)));
-				return newForm;
-			}
-		} finally {
-			if (c != null) {
-				c.close();
-			}
-		}
-		return null;
-	}
-
 	@Override
 	public void chooseForm(Uri formUri) {
 		/*
@@ -612,7 +580,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements
 
 		JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
 		// webkitView.setActivity(this);
-		FormIdStruct newForm = retrieveFormIdStruct(formUri); // create this
+		FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri); // create this
 																// from the
 																// datastore
 		FormIdStruct oldForm = getCurrentForm();

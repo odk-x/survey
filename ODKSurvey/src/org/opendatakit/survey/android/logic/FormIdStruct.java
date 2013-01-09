@@ -15,9 +15,13 @@
 package org.opendatakit.survey.android.logic;
 
 import java.io.File;
-import java.io.Serializable;
 import java.util.Date;
 
+import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+
+import android.content.ContentResolver;
+import android.database.Cursor;
 import android.net.Uri;
 
 /**
@@ -26,12 +30,7 @@ import android.net.Uri;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormIdStruct implements Serializable {
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = -525417323683147800L;
-
+public class FormIdStruct {
 	public final Uri formUri;
 	public final File formDefFile;
 	public final String formPath;
@@ -60,5 +59,35 @@ public class FormIdStruct implements Serializable {
 		this.tableId = original.tableId;
 		this.formVersion = original.formVersion;
 		this.lastDownloadDate = original.lastDownloadDate;
+	}
+
+	public static final FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
+		if (formUri == null)
+			return null;
+		Cursor c = null;
+		try {
+			c = resolver.query(formUri, null, null, null, null);
+			if (c.getCount() == 1) {
+				int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
+				int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
+				int formId = c.getColumnIndex(FormsColumns.FORM_ID);
+				int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
+				int tableId = c.getColumnIndex(FormsColumns.TABLE_ID);
+				int date = c.getColumnIndex(FormsColumns.DATE);
+
+				c.moveToFirst();
+				FormIdStruct newForm = new FormIdStruct(formUri, new File(
+						c.getString(formMedia), Survey.FORMDEF_JSON_FILENAME),
+						c.getString(formPath), c.getString(formId),
+						c.getString(formVersion), c.getString(tableId),
+						new Date(c.getLong(date)));
+				return newForm;
+			}
+		} finally {
+			if (c != null) {
+				c.close();
+			}
+		}
+		return null;
 	}
 }

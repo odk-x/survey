@@ -84,7 +84,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	private static final String DIALOG_STATE = "dialogState";
 	private static final String SHOW_UNSENT = "showUnsent";
 	private static final String URL = "url";
-	private static final String CURRENT_FORM = "currentForm";
+	private static final String FORM_URI = "formUri";
 
 	// data to persist across orientation changes
 
@@ -95,7 +95,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	private DialogState mDialogState = DialogState.None;
 	private boolean mShowUnsent = true;
 	private URI mUrl;
-	private FormIdStruct currentForm = null;
+	private FormIdStruct currentForm = null; // via uri
 
 	// data that is not persisted
 
@@ -214,9 +214,9 @@ public class InstanceUploaderListFragment extends ListFragment implements
 				mUrl = URI.create(savedInstanceState.getString(URL));
 			}
 
-			if (savedInstanceState.containsKey(CURRENT_FORM)) {
-				currentForm = (FormIdStruct) savedInstanceState
-						.getSerializable(CURRENT_FORM);
+			if (savedInstanceState.containsKey(FORM_URI)) {
+				currentForm = FormIdStruct.retrieveFormIdStruct(getActivity().getContentResolver(),
+								Uri.parse(savedInstanceState.getString(FORM_URI)));
 			}
 		}
 		mUploadButton.setEnabled(!(mSelected.size() == 0));
@@ -240,7 +240,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			outState.putString(URL, mUrl.toString());
 		}
 		if (currentForm != null) {
-			outState.putSerializable(CURRENT_FORM, currentForm);
+			outState.putString(FORM_URI, currentForm.formUri.toString());
 		}
 	}
 
