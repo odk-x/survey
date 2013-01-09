@@ -33,9 +33,6 @@
         android:theme="@style/Survey"
         android:allowBackup="false" android:hardwareAccelerated="true">
 
-        <service android:name=".SurveyDownloaderService" />
-        <receiver android:name=".SurveyDownloaderAlarmReceiver" />
-
         <provider
             android:name="org.opendatakit.survey.android.provider.FileProvider"
             android:authorities="org.opendatakit.survey.android.provider.file.forms;org.opendatakit.survey.android.provider.file.instances" />
