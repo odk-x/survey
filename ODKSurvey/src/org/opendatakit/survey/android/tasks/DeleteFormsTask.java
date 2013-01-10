@@ -72,8 +72,12 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 	}
 
 	@Override
-	protected void onCancelled() {
+	protected void onCancelled(Integer result) {
 		cr = null;
+		// can be null if cancelled before task executes
+		if ( result == null ) {
+			successCount = 0;
+		}
 		if (dl != null) {
 			dl.deleteFormsComplete(successCount);
 		}

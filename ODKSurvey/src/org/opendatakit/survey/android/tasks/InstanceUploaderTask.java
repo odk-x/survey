@@ -534,7 +534,7 @@ public class InstanceUploaderTask extends
 		synchronized (this) {
 			mResultOutcome = result;
 			if (mStateListener != null) {
-				mStateListener.uploadingComplete(result);
+				mStateListener.uploadingComplete(mResultOutcome);
 			}
 		}
 	}
@@ -542,9 +542,16 @@ public class InstanceUploaderTask extends
 	@Override
 	protected void onCancelled(InstanceUploadOutcome result) {
 		synchronized (this) {
-			mResultOutcome = result;
+			if ( result == null ) {
+				mResultOutcome = new InstanceUploadOutcome();
+				mResultOutcome.mAuthRequestingServer = null;
+				mResultOutcome.mResults = new HashMap<String,String>();
+				mResultOutcome.mResults.put("unknown", "cancelled");
+			} else {
+				mResultOutcome = result;
+			}
 			if (mStateListener != null) {
-				mStateListener.uploadingComplete(result);
+				mStateListener.uploadingComplete(mResultOutcome);
 			}
 		}
 	}

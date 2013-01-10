@@ -62,8 +62,10 @@ public class CopyExpansionFilesTask extends
 
 	private CopyExpansionFilesListener mStateListener;
 	private boolean mSuccess = false;
-	private boolean mPendingSuccess = false;
 	private ArrayList<String> mResult = new ArrayList<String>();
+
+	private boolean mPendingSuccess = false;
+	private ArrayList<String> mPendingResult = new ArrayList<String>();
 
 	/**
 	 * For debugging APK expansion, we check for the existence and process the
@@ -99,8 +101,7 @@ public class CopyExpansionFilesTask extends
 
 	@Override
 	protected ArrayList<String> doInBackground(Void... values) {
-		mSuccess = false;
-		mResult.clear();
+		mPendingResult = new ArrayList<String>();
 		mPendingSuccess = true;
 		ArrayList<String> result = new ArrayList<String>();
 
@@ -299,7 +300,7 @@ public class CopyExpansionFilesTask extends
 			// Unlike the ODK Aggregate server, allow the Google Play servers
 			// to redirect us many times (255 for now).
 			HttpClient httpclient = WebUtils
-					.createHttpClient(WebUtils.CONNECTION_TIMEOUT, 1);
+					.createHttpClient(WebUtils.CONNECTION_TIMEOUT, 255);
 
 			// set up request...
 			HttpGet req = new HttpGet();
@@ -367,12 +368,12 @@ public class CopyExpansionFilesTask extends
 	}
 
 	@Override
-	protected void onPostExecute(ArrayList<String> value) {
+	protected void onPostExecute(ArrayList<String> result) {
 		synchronized (this) {
-			mResult = value;
+			mResult = result;
 			mSuccess = mPendingSuccess;
 			if (mStateListener != null) {
-				mStateListener.copyExpansionFilesComplete(mSuccess, value);
+				mStateListener.copyExpansionFilesComplete(mSuccess, mResult);
 			}
 		}
 	}
@@ -380,10 +381,11 @@ public class CopyExpansionFilesTask extends
 	@Override
 	protected void onCancelled(ArrayList<String> result) {
 		synchronized (this) {
-			mResult = result;
+			// can be null if cancelled before task executes
+			mResult = (result == null) ? new ArrayList<String>() : result;
 			mSuccess = false;
 			if (mStateListener != null) {
-				mStateListener.copyExpansionFilesComplete(mSuccess, result);
+				mStateListener.copyExpansionFilesComplete(mSuccess, mResult);
 			}
 		}
 	}

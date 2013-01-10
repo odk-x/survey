@@ -65,7 +65,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	public static final int ID = R.layout.form_download_list;
 
 	private static enum DialogState {
-		Progress, Alert, None
+		ProgressFormList, ProgressForms, Alert, None
 	};
 
 	// value fields in available-forms list
@@ -246,7 +246,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		} else {
 
 			mFormNamesAndURLs = new HashMap<String, FormDetails>();
-			showProgressDialog();
+			showProgressDialog(DialogState.ProgressFormList);
 
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 					.findFragmentByTag("background");
@@ -304,7 +304,7 @@ public class FormDownloadListFragment extends ListFragment implements
 
 		if (totalCount > 0) {
 			// show dialog box
-			showProgressDialog();
+			showProgressDialog(DialogState.ProgressForms);
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 					.findFragmentByTag("background");
 			f.downloadForms(this, filesToDownload
@@ -330,8 +330,9 @@ public class FormDownloadListFragment extends ListFragment implements
 
 		super.onResume();
 
-		if (mDialogState == DialogState.Progress) {
-			restoreProgressDialog();
+		if (mDialogState == DialogState.ProgressFormList ||
+				mDialogState == DialogState.ProgressForms) {
+			restoreProgressDialog(mDialogState);
 		} else if (mDialogState == DialogState.Alert) {
 			restoreAlertDialog();
 		}
@@ -448,7 +449,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		f.show(getFragmentManager(), "authDialog");
 	}
 
-	private void restoreProgressDialog() {
+	private void restoreProgressDialog(DialogState state) {
 		Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
 		if (alert != null) {
 			((AlertDialogFragment) alert).dismiss();
@@ -459,7 +460,7 @@ public class FormDownloadListFragment extends ListFragment implements
 
 		if (dialog != null
 				&& ((ProgressDialogFragment) dialog).getDialog() != null) {
-			mDialogState = DialogState.Progress;
+			mDialogState = state;
 			((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
 			((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
 
@@ -468,27 +469,29 @@ public class FormDownloadListFragment extends ListFragment implements
 			ProgressDialogFragment f = ProgressDialogFragment.newInstance(
 					getId(), mAlertTitle, mAlertMsg);
 
-			mDialogState = DialogState.Progress;
+			mDialogState = state;
 			f.show(getFragmentManager(), "progressDialog");
 		}
 	}
 
-	private void showProgressDialog() {
+	private void showProgressDialog(DialogState state) {
 		mAlertTitle = getString(R.string.downloading_data);
 		mAlertMsg = getString(R.string.please_wait);
-		restoreProgressDialog();
+		restoreProgressDialog(state);
 	}
 
 	private void updateProgressDialogMessage(String message) {
-		if (mDialogState == DialogState.Progress) {
+		if (mDialogState == DialogState.ProgressFormList ||
+				mDialogState == DialogState.ProgressForms) {
 			mAlertTitle = getString(R.string.downloading_data);
 			mAlertMsg = message;
-			restoreProgressDialog();
+			restoreProgressDialog(mDialogState);
 		}
 	}
 
 	private void dismissProgressDialog() {
-		if ( mDialogState == DialogState.Progress ) {
+		if ( mDialogState == DialogState.ProgressFormList ||
+				mDialogState == DialogState.ProgressForms ) {
 			mDialogState = DialogState.None;
 		}
 		Fragment dialog = getFragmentManager().findFragmentByTag(
@@ -593,8 +596,11 @@ public class FormDownloadListFragment extends ListFragment implements
 
 		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 				.findFragmentByTag("background");
-		f.cancelDownloadFormListTask();
-		f.cancelDownloadFormsTask();
+		if (  mDialogState == DialogState.ProgressFormList ) {
+			f.cancelDownloadFormListTask();
+		} else if ( mDialogState == DialogState.ProgressForms ) {
+			f.cancelDownloadFormsTask();
+		}
 	}
 
 }

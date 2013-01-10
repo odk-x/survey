@@ -228,11 +228,11 @@ public class DownloadFormListTask extends
 	}
 
 	@Override
-	protected void onPostExecute(HashMap<String, FormDetails> value) {
+	protected void onPostExecute(HashMap<String, FormDetails> result) {
 		synchronized (this) {
-			mFormList = value;
+			mFormList = result;
 			if (mStateListener != null) {
-				mStateListener.formListDownloadingComplete(value);
+				mStateListener.formListDownloadingComplete(mFormList);
 			}
 		}
 	}
@@ -240,9 +240,14 @@ public class DownloadFormListTask extends
 	@Override
 	protected void onCancelled(HashMap<String, FormDetails> result) {
 		synchronized (this) {
-			mFormList = result;
+			// can be null if cancelled before task executes
+			if ( result == null ) {
+				mFormList = new HashMap<String, FormDetails>();
+			} else {
+				mFormList = result;
+			}
 			if (mStateListener != null) {
-				mStateListener.formListDownloadingComplete(result);
+				mStateListener.formListDownloadingComplete(mFormList);
 			}
 		}
 	}

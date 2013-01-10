@@ -856,21 +856,21 @@ public class MainMenuActivity extends SherlockFragmentActivity implements
 			}
 		}
 		if (entry != null) {
-			// restore to the prior display of this screen
-			mgr.popBackStack(nestedScreen.name(), 0);
-		} else {
-			// add transaction to this screen
-			FragmentTransaction trans = mgr.beginTransaction();
-			trans.replace(R.id.main_content, f);
-			// never put the copy-expansion-files fragment on the
-			// back stack it is always a transient screen.
-			if (nestedScreen != ScreenList.COPY_EXPANSION_FILES) {
-				trans.addToBackStack(nestedScreen.name());
-			} else {
-				trans.disallowAddToBackStack();
-			}
-			trans.commit();
+			// flush backward, including the screen want to go back to
+			mgr.popBackStackImmediate(nestedScreen.name(), FragmentManager.POP_BACK_STACK_INCLUSIVE);
 		}
+
+		// add transaction to show the screen we want
+		FragmentTransaction trans = mgr.beginTransaction();
+		trans.replace(R.id.main_content, f);
+		// never put the copy-expansion-files fragment on the
+		// back stack it is always a transient screen.
+		if (nestedScreen != ScreenList.COPY_EXPANSION_FILES) {
+			trans.addToBackStack(nestedScreen.name());
+		} else {
+			trans.disallowAddToBackStack();
+		}
+		trans.commit();
 		invalidateOptionsMenu();
 	}
 

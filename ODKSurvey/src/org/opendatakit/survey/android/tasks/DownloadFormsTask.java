@@ -788,9 +788,14 @@ public class DownloadFormsTask extends
 	@Override
 	protected void onCancelled(HashMap<String, String> result) {
 		synchronized (this) {
-			mResult = result;
+			if ( result == null ) {
+				mResult = new HashMap<String,String>();
+				mResult.put("unknown", "cancelled");
+			} else {
+				mResult = result;
+			}
 			if (mStateListener != null) {
-				mStateListener.formsDownloadingComplete(result);
+				mStateListener.formsDownloadingComplete(mResult);
 			}
 		}
 	}
