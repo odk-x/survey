@@ -65,7 +65,9 @@ public class ProgressDialogFragment extends DialogFragment {
 				Fragment f = mgr.findFragmentById(fragmentId);
 
 				((CancelProgressDialog) f).cancelProgressDialog();
-				dialog.dismiss();
+				// user code should dismiss the dialog
+				// since this is a cancellation action...
+				// dialog.dismiss();
 			}
 		};
 		ProgressDialog mProgressDialog = new ProgressDialog(getActivity());
