@@ -392,10 +392,13 @@ public class InstanceUploaderListFragment extends ListFragment implements
 	}
 
 	private void dismissProgressDialog() {
+		if ( mDialogState == DialogState.Progress ) {
+			mDialogState = DialogState.None;
+		}
+
 		Fragment dialog = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 		if (dialog != null) {
-			mDialogState = DialogState.None;
 			((ProgressDialogFragment) dialog).dismiss();
 		}
 	}
@@ -632,10 +635,12 @@ public class InstanceUploaderListFragment extends ListFragment implements
 
 	@Override
 	public void cancelProgressDialog() {
-
+		// Notify the task that we want it to stop.
+		// The task will call back through its completion
+		// callbacks once it has halted, thereby updating the UI.
 		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 				.findFragmentByTag("background");
-		f.clearUploadInstancesTask();
+		f.cancelUploadInstancesTask();
 	}
 
 }

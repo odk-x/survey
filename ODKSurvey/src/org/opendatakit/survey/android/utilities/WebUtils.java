@@ -246,6 +246,10 @@ public final class WebUtils {
 	 * @return HttpClient properly configured.
 	 */
 	public static final synchronized HttpClient createHttpClient(int timeout) {
+		return createHttpClient(timeout, 1);
+	}
+
+	public static final synchronized HttpClient createHttpClient(int timeout, int maxRedirects) {
 		// configure connection
 		HttpParams params = new BasicHttpParams();
 		HttpConnectionParams.setConnectionTimeout(params, timeout);
@@ -275,7 +279,7 @@ public final class WebUtils {
 			httpclient = new DefaultHttpClient(httpConnectionManager, params);
 		}
 
-		httpclient.getParams().setParameter(ClientPNames.MAX_REDIRECTS, 1);
+		httpclient.getParams().setParameter(ClientPNames.MAX_REDIRECTS, maxRedirects);
 		httpclient.getParams().setParameter(
 				ClientPNames.ALLOW_CIRCULAR_REDIRECTS, true);
 

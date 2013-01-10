@@ -20,7 +20,7 @@ import java.util.ArrayList;
  * @author mitchellsundt@gmail.com
  */
 public interface CopyExpansionFilesListener {
-	void copyExpansionFilesComplete(ArrayList<String> result);
+	void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result);
 
 	void copyProgressUpdate(String currentFile, int progress, int total);
 }

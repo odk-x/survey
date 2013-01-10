@@ -240,8 +240,9 @@ public class BackgroundTaskFragment extends Fragment implements
 		// async task may have completed while we were reorienting...
 		if (mBackgroundTasks.mCopyExpansionFilesTask != null
 				&& mBackgroundTasks.mCopyExpansionFilesTask.getStatus() == AsyncTask.Status.FINISHED) {
-			this.copyExpansionFilesComplete(mBackgroundTasks.mCopyExpansionFilesTask
-					.getResult());
+			this.copyExpansionFilesComplete(
+					mBackgroundTasks.mCopyExpansionFilesTask.getOverallSuccess(),
+					mBackgroundTasks.mCopyExpansionFilesTask.getResult());
 		}
 	}
 
@@ -358,9 +359,9 @@ public class BackgroundTaskFragment extends Fragment implements
 	// /////////////////////////////////////////////////////////////////////////
 	// clearing tasks
 	//
-	// NOTE: clearing any of these does not entirely cancel their actions,
-	// so they may still be operating in parallel with whatever new actions
-	// the user may initiate.
+	// NOTE: clearing these makes us forget that they are running, but it is
+	// up to the task itself to eventually shutdown. i.e., we don't quite
+	// know when they actually stop.
 
 	public void clearDownloadFormListTask() {
 		mFormListDownloaderListener = null;
@@ -405,6 +406,44 @@ public class BackgroundTaskFragment extends Fragment implements
 			}
 		}
 		mBackgroundTasks.mCopyExpansionFilesTask = null;
+	}
+
+	// /////////////////////////////////////////////////////////////////////////
+	// cancel requests
+	//
+	// These maintain communications paths, so that we get a failure
+	// completion callback eventually.
+
+	public void cancelDownloadFormListTask() {
+		if (mBackgroundTasks.mDownloadFormListTask != null) {
+			if (mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
+				mBackgroundTasks.mDownloadFormListTask.cancel(true);
+			}
+		}
+	}
+
+	public void cancelDownloadFormsTask() {
+		if (mBackgroundTasks.mDownloadFormsTask != null) {
+			if (mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
+				mBackgroundTasks.mDownloadFormsTask.cancel(true);
+			}
+		}
+	}
+
+	public void cancelUploadInstancesTask() {
+		if (mBackgroundTasks.mInstanceUploaderTask != null) {
+			if (mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED) {
+				mBackgroundTasks.mInstanceUploaderTask.cancel(true);
+			}
+		}
+	}
+
+	public void cancelCopyExpansionFilesTask() {
+		if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
+			if (mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
+				mBackgroundTasks.mCopyExpansionFilesTask.cancel(true);
+			}
+		}
 	}
 
 	// /////////////////////////////////////////////////////////////////////////
@@ -465,10 +504,10 @@ public class BackgroundTaskFragment extends Fragment implements
 	}
 
 	@Override
-	public void copyExpansionFilesComplete(ArrayList<String> result) {
+	public void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result) {
 		restartDiskSync();
 		if (mCopyExpansionFilesListener != null) {
-			mCopyExpansionFilesListener.copyExpansionFilesComplete(result);
+			mCopyExpansionFilesListener.copyExpansionFilesComplete(overallSuccess, result);
 		}
 	}
 

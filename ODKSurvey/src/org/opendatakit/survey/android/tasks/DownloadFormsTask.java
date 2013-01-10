@@ -786,6 +786,16 @@ public class DownloadFormsTask extends
 	}
 
 	@Override
+	protected void onCancelled(HashMap<String, String> result) {
+		synchronized (this) {
+			mResult = result;
+			if (mStateListener != null) {
+				mStateListener.formsDownloadingComplete(result);
+			}
+		}
+	}
+
+	@Override
 	protected void onProgressUpdate(String... values) {
 		synchronized (this) {
 			if (mStateListener != null) {

@@ -85,6 +85,8 @@ public class InstanceUploaderTask extends
 
 	private InstanceUploadOutcome mOutcome = new InstanceUploadOutcome();
 
+	private InstanceUploadOutcome mResultOutcome = new InstanceUploadOutcome();
+
 	private FormIdStruct uploadingForm;
 
 	public InstanceUploaderTask(FormIdStruct form) {
@@ -438,6 +440,7 @@ public class InstanceUploaderTask extends
 	// still. ridiculous. make it smaller.
 	@Override
 	protected InstanceUploadOutcome doInBackground(String... toUpload) {
+		mOutcome = new InstanceUploadOutcome();
 		mOutcome.mResults = new HashMap<String, String>();
 		mOutcome.mAuthRequestingServer = null;
 
@@ -493,7 +496,7 @@ public class InstanceUploaderTask extends
 						if (!uploadOneSubmission(urlString, toUpdate, id,
 								instanceFiles, httpclient, localContext,
 								uriRemap)) {
-							return null; // get credentials...
+							return mOutcome; // get credentials...
 						}
 					} catch (JsonParseException e) {
 						e.printStackTrace();
@@ -527,10 +530,21 @@ public class InstanceUploaderTask extends
 	}
 
 	@Override
-	protected void onPostExecute(InstanceUploadOutcome outcome) {
+	protected void onPostExecute(InstanceUploadOutcome result) {
 		synchronized (this) {
+			mResultOutcome = result;
 			if (mStateListener != null) {
-				mStateListener.uploadingComplete(mOutcome);
+				mStateListener.uploadingComplete(result);
+			}
+		}
+	}
+
+	@Override
+	protected void onCancelled(InstanceUploadOutcome result) {
+		synchronized (this) {
+			mResultOutcome = result;
+			if (mStateListener != null) {
+				mStateListener.uploadingComplete(result);
 			}
 		}
 	}
@@ -553,6 +567,6 @@ public class InstanceUploaderTask extends
 	}
 
 	public InstanceUploadOutcome getResult() {
-		return mOutcome;
+		return mResultOutcome;
 	}
 }

@@ -304,7 +304,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 				Map<String, Object> ex = new HashMap<String, Object>();
 				ex.put(EXPANSION_FILE_PATH, ext.getAbsoluteFile());
 				ex.put(EXPANSION_FILE_URL, url);
-				ex.put(EXPANSION_FILE_LENGTH, Long.valueOf(len));
+				ex.put(EXPANSION_FILE_LENGTH, Long.valueOf(len).toString());
 				expansions.add(ex);
 			}
 

@@ -44,6 +44,7 @@ import android.util.Log;
  */
 public class DownloadFormListTask extends
 		AsyncTask<Void, String, HashMap<String, FormDetails>> {
+
 	private static final String t = "DownloadFormsTask";
 
 	// used to store error message if one occurs
@@ -232,6 +233,16 @@ public class DownloadFormListTask extends
 			mFormList = value;
 			if (mStateListener != null) {
 				mStateListener.formListDownloadingComplete(value);
+			}
+		}
+	}
+
+	@Override
+	protected void onCancelled(HashMap<String, FormDetails> result) {
+		synchronized (this) {
+			mFormList = result;
+			if (mStateListener != null) {
+				mStateListener.formListDownloadingComplete(result);
 			}
 		}
 	}

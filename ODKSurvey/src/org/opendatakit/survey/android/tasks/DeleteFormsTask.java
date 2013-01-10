@@ -69,7 +69,6 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 		if (dl != null) {
 			dl.deleteFormsComplete(result);
 		}
-		super.onPostExecute(result);
 	}
 
 	@Override

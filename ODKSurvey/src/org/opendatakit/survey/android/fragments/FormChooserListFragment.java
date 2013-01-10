@@ -116,7 +116,8 @@ public class FormChooserListFragment extends ListFragment implements
 		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
 				.findFragmentByTag("background");
 
-		f.establishDiskSyncListener(this);
+		Log.i(t, "onResume: starting a new disk sync listener");
+		f.startDiskSyncListener(this);
 
 		TextView tv = (TextView) view.findViewById(R.id.status_text);
 		tv.setText(mSyncStatusText);

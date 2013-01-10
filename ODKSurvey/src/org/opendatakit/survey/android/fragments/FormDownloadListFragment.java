@@ -488,10 +488,12 @@ public class FormDownloadListFragment extends ListFragment implements
 	}
 
 	private void dismissProgressDialog() {
+		if ( mDialogState == DialogState.Progress ) {
+			mDialogState = DialogState.None;
+		}
 		Fragment dialog = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 		if (dialog != null) {
-			mDialogState = DialogState.None;
 			((ProgressDialogFragment) dialog).dismiss();
 		}
 	}
@@ -585,10 +587,14 @@ public class FormDownloadListFragment extends ListFragment implements
 	@Override
 	public void cancelProgressDialog() {
 
+		// notify the task(s) that we want them to be cancelled.
+		// they will then report back through the completion
+		// callbacks once they are stopped (and the UI will be updated).
+
 		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 				.findFragmentByTag("background");
-		f.clearDownloadFormListTask();
-		f.clearDownloadFormsTask();
+		f.cancelDownloadFormListTask();
+		f.cancelDownloadFormsTask();
 	}
 
 }

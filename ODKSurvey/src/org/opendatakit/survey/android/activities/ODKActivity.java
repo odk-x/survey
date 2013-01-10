@@ -58,7 +58,7 @@ public interface ODKActivity {
 	public void expansionFilesCopied(String fragmentToShowNext);
 
 	// for FormChooserListFragment
-	void chooseForm(Uri formUri);
+	public void chooseForm(Uri formUri);
 
 	/**
 	 * Use the Activity implementation of this.

@@ -177,7 +177,8 @@ public class CopyExpansionFilesFragment extends Fragment implements
 	}
 
 	@Override
-	public void copyExpansionFilesComplete(ArrayList<String> result) {
+	public void copyExpansionFilesComplete(boolean overallSuccess,
+			ArrayList<String> result) {
 		try {
 			dismissProgressDialog();
 		} catch (IllegalArgumentException e) {
@@ -195,8 +196,10 @@ public class CopyExpansionFilesFragment extends Fragment implements
 			b.append("\n\n");
 		}
 
-		createAlertDialog(getString(R.string.expansion_complete), b.toString()
-				.trim());
+		createAlertDialog(
+				overallSuccess ? getString(R.string.expansion_complete)
+						: getString(R.string.expansion_failed), b.toString()
+						.trim());
 	}
 
 	private void restoreProgressDialog() {
@@ -233,10 +236,12 @@ public class CopyExpansionFilesFragment extends Fragment implements
 	}
 
 	private void dismissProgressDialog() {
+		if ( mDialogState == DialogState.Progress ) {
+			mDialogState = DialogState.None;
+		}
 		Fragment dialog = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 		if (dialog != null) {
-			mDialogState = DialogState.None;
 			((ProgressDialogFragment) dialog).dismiss();
 		}
 	}
@@ -293,10 +298,13 @@ public class CopyExpansionFilesFragment extends Fragment implements
 
 	@Override
 	public void cancelProgressDialog() {
-
 		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 				.findFragmentByTag("background");
-		f.clearCopyExpansionFilesTask();
+		// signal the task that we want it to be cancelled.
+		// but keep the notification path...
+		// the task will call back with a copyExpansionFilesComplete()
+		// to report status (cancelled).
+		f.cancelCopyExpansionFilesTask();
 	}
 
 }

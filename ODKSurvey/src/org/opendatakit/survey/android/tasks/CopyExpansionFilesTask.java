@@ -61,6 +61,8 @@ public class CopyExpansionFilesTask extends
 	private static final boolean debugAPKExpansion = false;
 
 	private CopyExpansionFilesListener mStateListener;
+	private boolean mSuccess = false;
+	private boolean mPendingSuccess = false;
 	private ArrayList<String> mResult = new ArrayList<String>();
 
 	/**
@@ -90,15 +92,16 @@ public class CopyExpansionFilesTask extends
 		if (debugAPKExpansion && f.exists()) {
 			Map<String, Object> expansionFile = new HashMap<String, Object>();
 			expansionFile.put(Survey.EXPANSION_FILE_PATH, f.getAbsolutePath());
-			expansionFile.put(Survey.EXPANSION_FILE_LENGTH, f.length());
+			expansionFile.put(Survey.EXPANSION_FILE_LENGTH, Long.valueOf(f.length()).toString());
 			expansionFiles.add(expansionFile);
 		}
 	}
 
 	@Override
 	protected ArrayList<String> doInBackground(Void... values) {
-
+		mSuccess = false;
 		mResult.clear();
+		mPendingSuccess = true;
 		ArrayList<String> result = new ArrayList<String>();
 
 		int count = 1;
@@ -114,13 +117,14 @@ public class CopyExpansionFilesTask extends
 			Map<String, Object> expansionFile = expansionFiles.get(i);
 			String name = (String) expansionFile
 					.get(Survey.EXPANSION_FILE_PATH);
-			Long length = (Long) expansionFile
-					.get(Survey.EXPANSION_FILE_LENGTH);
+			Object olen = expansionFile.get(Survey.EXPANSION_FILE_LENGTH);
+			Long length = Long.valueOf(olen.toString());
 			String url = (String) expansionFile.get(Survey.EXPANSION_FILE_URL);
 
 			File f = new File(name);
 
 			if (isCancelled()) {
+				mPendingSuccess = false;
 				result.add("Cancelled");
 				return result;
 			}
@@ -147,6 +151,7 @@ public class CopyExpansionFilesTask extends
 					// this always completes.
 					String error = explodeZips(f, count, total);
 					if (error != null) {
+						mPendingSuccess = false;
 						message += error;
 					}
 					// TODO: do additional configuration now -- e.g.,
@@ -154,8 +159,10 @@ public class CopyExpansionFilesTask extends
 					// preferences from the contents of the file.
 				} catch (SocketTimeoutException se) {
 					se.printStackTrace();
+					mPendingSuccess = false;
 					message += se.getMessage();
 				} catch (Exception e) {
+					mPendingSuccess = false;
 					e.printStackTrace();
 					if (e.getCause() != null) {
 						message += e.getCause().getMessage();
@@ -169,6 +176,7 @@ public class CopyExpansionFilesTask extends
 			} finally {
 				if (!message.equalsIgnoreCase("")) {
 					// failure...
+					mPendingSuccess = false;
 				} else {
 					message = Survey.getInstance().getString(R.string.success);
 				}
@@ -192,6 +200,10 @@ public class CopyExpansionFilesTask extends
 				Enumeration<? extends ZipEntry> entries = f.entries();
 				int nFiles = 0;
 				while (entries.hasMoreElements()) {
+					if (isCancelled()) {
+						message += "cancelled";
+						break;
+					}
 					++nFiles;
 					ZipEntry entry = entries.nextElement();
 					File tempFile = new File(Survey.ODK_ROOT, entry.getName());
@@ -266,6 +278,8 @@ public class CopyExpansionFilesTask extends
 			throw e;
 		}
 
+		f.getParentFile().mkdirs();
+
 		// WiFi network connections can be renegotiated during a large form
 		// download sequence.
 		// This will cause intermittent download failures. Silently retry once
@@ -282,8 +296,10 @@ public class CopyExpansionFilesTask extends
 			// retained.
 			HttpContext localContext = WebUtils.getHttpContext();
 
+			// Unlike the ODK Aggregate server, allow the Google Play servers
+			// to redirect us many times (255 for now).
 			HttpClient httpclient = WebUtils
-					.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+					.createHttpClient(WebUtils.CONNECTION_TIMEOUT, 1);
 
 			// set up request...
 			HttpGet req = new HttpGet();
@@ -354,8 +370,20 @@ public class CopyExpansionFilesTask extends
 	protected void onPostExecute(ArrayList<String> value) {
 		synchronized (this) {
 			mResult = value;
+			mSuccess = mPendingSuccess;
 			if (mStateListener != null) {
-				mStateListener.copyExpansionFilesComplete(value);
+				mStateListener.copyExpansionFilesComplete(mSuccess, value);
+			}
+		}
+	}
+
+	@Override
+	protected void onCancelled(ArrayList<String> result) {
+		synchronized (this) {
+			mResult = result;
+			mSuccess = false;
+			if (mStateListener != null) {
+				mStateListener.copyExpansionFilesComplete(mSuccess, result);
 			}
 		}
 	}
@@ -370,6 +398,10 @@ public class CopyExpansionFilesTask extends
 			}
 		}
 
+	}
+
+	public boolean getOverallSuccess() {
+		return mSuccess;
 	}
 
 	public ArrayList<String> getResult() {
