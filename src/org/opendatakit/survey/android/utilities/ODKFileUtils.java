@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2012 The Android Open Source Project
  * Copyright (C) 2009-2013 University of Washington
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
@@ -27,6 +28,7 @@ import java.security.NoSuchAlgorithmException;
 import org.kxml2.kdom.Node;
 import org.opendatakit.survey.android.application.Survey;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -296,4 +298,36 @@ public class ODKFileUtils {
 
 		return text;
 	}
+
+    /**
+	 * Copyright (C) 2012 The Android Open Source Project
+	 *
+	 * Licensed under the Apache License, Version 2.0 (the "License");
+	 * you may not use this file except in compliance with the License.
+	 * You may obtain a copy of the License at
+	 *
+	 *      http://www.apache.org/licenses/LICENSE-2.0
+	 *
+	 * Unless required by applicable law or agreed to in writing, software
+	 * distributed under the License is distributed on an "AS IS" BASIS,
+	 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+	 * See the License for the specific language governing permissions and
+	 * limitations under the License.
+     *
+     * Returns the file name (without full path) for an Expansion APK file from
+     * the given context.
+     *
+     * Taken verbatim from the Android SDK:
+     *  extras/google/play_apk_expansion/downloader_library/src
+     *    com.google.android.vending.expansion.downloader.Helpers.java
+     *
+     * @param c the context
+     * @param mainFile true for main file, false for patch file
+     * @param versionCode the version of the file
+     * @return String the file name of the expansion file
+     */
+    public static String getExpansionAPKFileName(Context c, boolean mainFile, int versionCode) {
+        return (mainFile ? "main." : "patch.") + versionCode + "." + c.getPackageName() + ".obb";
+    }
+
 }

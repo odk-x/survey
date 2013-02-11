@@ -28,6 +28,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertyManager;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.utilities.WebLogger;
 
 import android.app.Application;
@@ -39,7 +40,6 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
-import com.google.android.vending.expansion.downloader.Helpers;
 import com.google.android.vending.licensing.AESObfuscator;
 import com.google.android.vending.licensing.APKExpansionPolicy;
 import com.google.android.vending.licensing.LicenseChecker;
@@ -371,7 +371,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 				getPackageName());
 		f.mkdirs();
 
-		String name = Helpers.getExpansionAPKFileName(this, true, versionCode);
+		String name = ODKFileUtils.getExpansionAPKFileName(this, true, versionCode);
 
 		return new File(f, name);
 	}
