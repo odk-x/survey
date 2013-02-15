@@ -36,6 +36,10 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
 import org.kxml2.kdom.Element;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.DocumentFetchResult;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
@@ -46,10 +50,6 @@ import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
-import org.opendatakit.survey.android.utilities.DocumentFetchResult;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.utilities.WebUtils;
 
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -153,10 +153,10 @@ public class DownloadFormsTask extends
 
 							tempMediaPath = new File(tempMediaPathName);
 							tempFormPath = new File(tempMediaPath,
-									FormsProviderAPI.FILENAME_XFORMS_XML);
+									ODKFileUtils.FILENAME_XFORMS_XML);
 							mediaPath = new File(mediaPathName);
 							formPath = new File(mediaPath,
-									FormsProviderAPI.FILENAME_XFORMS_XML);
+									ODKFileUtils.FILENAME_XFORMS_XML);
 
 							while (tempMediaPath.exists() || mediaPath.exists()) {
 								try {
@@ -177,12 +177,12 @@ public class DownloadFormsTask extends
 										+ File.separator + rootName + "_" + rev;
 								tempMediaPath = new File(tempMediaPathName);
 								tempFormPath = new File(tempMediaPath,
-										FormsProviderAPI.FILENAME_XFORMS_XML);
+										ODKFileUtils.FILENAME_XFORMS_XML);
 								mediaPathName = Survey.FORMS_PATH
 										+ File.separator + rootName + "_" + rev;
 								mediaPath = new File(mediaPathName);
 								formPath = new File(mediaPath,
-										FormsProviderAPI.FILENAME_XFORMS_XML);
+										ODKFileUtils.FILENAME_XFORMS_XML);
 								rev++;
 							}
 						}
@@ -255,7 +255,7 @@ public class DownloadFormsTask extends
 						alreadyExists = Survey
 								.getInstance()
 								.getContentResolver()
-								.query(FormsColumns.CONTENT_URI, projection,
+								.query(FormsProviderAPI.CONTENT_URI, projection,
 										selection, selectionArgs, orderBy);
 
 						if (alreadyExists.getCount() > 0) {
@@ -294,10 +294,10 @@ public class DownloadFormsTask extends
 							} else if (tempFormPath.exists()) {
 								message += Survey.getInstance().getString(
 										R.string.xforms_file_exists,
-										FormsProviderAPI.FILENAME_XFORMS_XML,
+										ODKFileUtils.FILENAME_XFORMS_XML,
 										fd.formName);
 								Log.e(t,
-										FormsProviderAPI.FILENAME_XFORMS_XML
+										ODKFileUtils.FILENAME_XFORMS_XML
 												+ " was present in exploded download of "
 												+ fd.formName);
 							} else {
@@ -325,12 +325,12 @@ public class DownloadFormsTask extends
 				if (message.equals("")) {
 					try {
 						File formDef = new File(tempMediaPath,
-								Survey.FORMDEF_JSON_FILENAME);
+								ODKFileUtils.FORMDEF_JSON_FILENAME);
 
 						if (!formDef.exists()) {
 							message = Survey.getInstance().getString(
 									R.string.no_formdef_json, fd.formName);
-							Log.e(t, Survey.FORMDEF_JSON_FILENAME
+							Log.e(t, ODKFileUtils.FORMDEF_JSON_FILENAME
 									+ " was not found in exploded download of "
 									+ fd.formName);
 						} else {
@@ -489,8 +489,7 @@ public class DownloadFormsTask extends
 
 		String currentHash = "-";
 		if (formPath != null && formPath.exists()) {
-			currentHash = FormsProviderAPI.MD5_COLON_PREFIX
-					+ ODKFileUtils.getMd5Hash(formPath);
+			currentHash = ODKFileUtils.getMd5Hash(formPath);
 		}
 		if (currentHash.equals(fd.hash)) {
 			// no need for the network retrieval -- use local copy
@@ -752,8 +751,7 @@ public class DownloadFormsTask extends
 
 					String currentHash = "-";
 					if (existingMediaFile != null && existingMediaFile.exists()) {
-						currentHash = FormsProviderAPI.MD5_COLON_PREFIX
-								+ ODKFileUtils.getMd5Hash(existingMediaFile);
+						currentHash = ODKFileUtils.getMd5Hash(existingMediaFile);
 					}
 					if (currentHash.equals(toDownload.hash)) {
 						// no need for the network retrieval -- use local copy

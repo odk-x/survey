@@ -16,8 +16,9 @@ package org.opendatakit.survey.android.activities;
 
 import java.util.ArrayList;
 
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -67,7 +68,7 @@ public class AndroidShortcuts extends Activity {
 
 		Cursor c = null;
 		try {
-			c = getContentResolver().query(FormsColumns.CONTENT_URI, null,
+			c = getContentResolver().query(FormsProviderAPI.CONTENT_URI, null,
 					null, null, null);
 
 			if (c.getCount() > 0) {
@@ -76,7 +77,7 @@ public class AndroidShortcuts extends Activity {
 					String formName = c.getString(c
 							.getColumnIndex(FormsColumns.DISPLAY_NAME));
 					names.add(formName);
-					Uri uri = Uri.withAppendedPath(FormsColumns.CONTENT_URI,
+					Uri uri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
 							c.getString(c.getColumnIndex(FormsColumns._ID)));
 					commands.add(uri);
 				}

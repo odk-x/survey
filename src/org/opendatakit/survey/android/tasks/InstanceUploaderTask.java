@@ -34,6 +34,9 @@ import java.util.Map;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.opendatakit.common.android.provider.DataTableColumns;
+import org.opendatakit.common.android.provider.InstanceColumns;
+import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.ClientProtocolException;
@@ -52,13 +55,10 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.DataModelDatabaseHelper;
 import org.opendatakit.survey.android.provider.FileSet;
 import org.opendatakit.survey.android.provider.FileSet.MimeFile;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
-import org.opendatakit.survey.android.provider.InstanceProviderAPI.InstanceColumns;
 import org.opendatakit.survey.android.provider.SubmissionProvider;
-import org.opendatakit.survey.android.utilities.WebUtils;
 
 import android.content.ContentValues;
 import android.content.SharedPreferences;
@@ -129,7 +129,7 @@ public class InstanceUploaderTask extends
 			mOutcome.mResults.put(id, fail + "invalid url: " + urlString
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+					InstanceColumns.STATUS_SUBMISSION_FAILED);
 			Survey.getInstance().getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
@@ -138,7 +138,7 @@ public class InstanceUploaderTask extends
 			mOutcome.mResults.put(id, fail + "invalid uri: " + urlString
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+					InstanceColumns.STATUS_SUBMISSION_FAILED);
 			Survey.getInstance().getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
@@ -147,7 +147,7 @@ public class InstanceUploaderTask extends
 			mOutcome.mResults.put(id, fail + "invalid url: " + urlString
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+					InstanceColumns.STATUS_SUBMISSION_FAILED);
 			Survey.getInstance().getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
@@ -200,7 +200,7 @@ public class InstanceUploaderTask extends
 														+ "Unexpected redirection attempt to a different host: "
 														+ uNew.toString());
 								cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-										InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+										InstanceColumns.STATUS_SUBMISSION_FAILED);
 								Survey.getInstance().getContentResolver()
 										.update(toUpdate, cv, null, null);
 								return true;
@@ -210,7 +210,7 @@ public class InstanceUploaderTask extends
 							mOutcome.mResults.put(id, fail + urlString + " "
 									+ e.getMessage());
 							cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-									InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+									InstanceColumns.STATUS_SUBMISSION_FAILED);
 							Survey.getInstance().getContentResolver()
 									.update(toUpdate, cv, null, null);
 							return true;
@@ -227,7 +227,7 @@ public class InstanceUploaderTask extends
 										fail
 												+ "Invalid status code on Head request.  If you have a web proxy, you may need to login to your network. ");
 						cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-								InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+								InstanceColumns.STATUS_SUBMISSION_FAILED);
 						Survey.getInstance().getContentResolver()
 								.update(toUpdate, cv, null, null);
 						return true;
@@ -238,7 +238,7 @@ public class InstanceUploaderTask extends
 				Log.e(t, e.getMessage());
 				mOutcome.mResults.put(id, fail + "Client Protocol Exception");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -247,7 +247,7 @@ public class InstanceUploaderTask extends
 				Log.e(t, e.getMessage());
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -257,7 +257,7 @@ public class InstanceUploaderTask extends
 						+ " :: Network Connection Failed");
 				Log.e(t, e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -266,7 +266,7 @@ public class InstanceUploaderTask extends
 				Log.e(t, e.getMessage());
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -275,7 +275,7 @@ public class InstanceUploaderTask extends
 				mOutcome.mResults.put(id, fail + "Generic Exception");
 				Log.e(t, e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -298,7 +298,7 @@ public class InstanceUploaderTask extends
 			mOutcome.mResults.put(id, fail
 					+ "instance XML file does not exist!");
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-					InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+					InstanceColumns.STATUS_SUBMISSION_FAILED);
 			Survey.getInstance().getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
@@ -378,7 +378,7 @@ public class InstanceUploaderTask extends
 								+ " (" + responseCode + ") at " + urlString);
 					}
 					cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-							InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+							InstanceColumns.STATUS_SUBMISSION_FAILED);
 					Survey.getInstance().getContentResolver()
 							.update(toUpdate, cv, null, null);
 					return true;
@@ -388,7 +388,7 @@ public class InstanceUploaderTask extends
 				mOutcome.mResults.put(id,
 						fail + "Generic Exception. " + e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-						InstanceProviderAPI.STATUS_SUBMISSION_FAILED);
+						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				Survey.getInstance().getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
@@ -399,7 +399,7 @@ public class InstanceUploaderTask extends
 		mOutcome.mResults.put(id,
 				Survey.getInstance().getString(R.string.success));
 		cv.put(InstanceColumns.XML_PUBLISH_STATUS,
-				InstanceProviderAPI.STATUS_SUBMITTED);
+				InstanceColumns.STATUS_SUBMITTED);
 		Survey.getInstance().getContentResolver()
 				.update(toUpdate, cv, null, null);
 		return true;
@@ -464,7 +464,7 @@ public class InstanceUploaderTask extends
 			publishProgress(i + 1, toUpload.length);
 
 			Uri toUpdate = Uri.withAppendedPath(
-					InstanceColumns.CONTENT_URI,
+					InstanceProviderAPI.CONTENT_URI,
 					uploadingForm.tableId + "/"
 							+ StringEscapeUtils.escapeHtml4(toUpload[i]));
 			Cursor c = null;
@@ -475,7 +475,7 @@ public class InstanceUploaderTask extends
 
 					String id = c
 							.getString(c
-									.getColumnIndex(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN));
+									.getColumnIndex(DataTableColumns.ID));
 					c.close();
 
 					FileSet instanceFiles;

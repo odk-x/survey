@@ -17,8 +17,8 @@ package org.opendatakit.survey.android.logic;
 import java.io.File;
 import java.util.Date;
 
-import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 import android.content.ContentResolver;
 import android.database.Cursor;
@@ -77,7 +77,7 @@ public class FormIdStruct {
 
 				c.moveToFirst();
 				FormIdStruct newForm = new FormIdStruct(formUri, new File(
-						c.getString(formMedia), Survey.FORMDEF_JSON_FILENAME),
+						c.getString(formMedia), ODKFileUtils.FORMDEF_JSON_FILENAME),
 						c.getString(formPath), c.getString(formId),
 						c.getString(formVersion), c.getString(tableId),
 						new Date(c.getLong(date)));

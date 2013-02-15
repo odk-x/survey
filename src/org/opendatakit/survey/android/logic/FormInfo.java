@@ -26,9 +26,10 @@ import java.util.Map;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 
 import android.content.Context;
 import android.database.Cursor;
@@ -178,7 +179,7 @@ public class FormInfo {
 				.getColumnIndex(FormsColumns.FORM_FILE_PATH));
 
 		formDefFile = new File(formMediaPath + File.separator
-				+ Survey.FORMDEF_JSON_FILENAME);
+				+ ODKFileUtils.FORMDEF_JSON_FILENAME);
 
 		lastModificationDate = c.getLong(c.getColumnIndex(FormsColumns.DATE));
 		formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));

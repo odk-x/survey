@@ -25,11 +25,11 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertyManager;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.utilities.WebLogger;
 
 import android.app.Application;
 import android.content.SharedPreferences;
@@ -66,15 +66,12 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	public static final String EXPANSION_FILE_LENGTH = "length";
 	public static final String EXPANSION_FILE_URL = "url";
 
-	// special filename
-	public static final String FORMDEF_JSON_FILENAME = "formDef.json";
-
 	// Storage paths
 	public static final String ODK_ROOT = Environment
 			.getExternalStorageDirectory()
 			+ File.separator
 			+ "odk"
-			+ File.separator + "js";
+			+ File.separator + "app";
 	public static final String FORMS_PATH = ODK_ROOT + File.separator + "forms";
 	public static final String STALE_FORMS_PATH = ODK_ROOT + File.separator
 			+ "forms.old";
@@ -182,7 +179,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 			@Override
 			public boolean accept(File pathname) {
 				return pathname.isDirectory()
-						&& new File(pathname, FORMDEF_JSON_FILENAME).exists();
+						&& new File(pathname, ODKFileUtils.FORMDEF_JSON_FILENAME).exists();
 			}
 		});
 
@@ -196,7 +193,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	public synchronized WebLogger getLogger() {
 		if (logger == null) {
 			createODKDirs();
-			logger = new WebLogger();
+			logger = new WebLogger(LOGGING_PATH);
 		}
 		return logger;
 	}

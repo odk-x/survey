@@ -17,11 +17,12 @@ package org.opendatakit.survey.android.views;
 import java.io.File;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.opendatakit.common.android.provider.FileProvider;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.FormIdStruct;
-import org.opendatakit.survey.android.provider.FileProvider;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
-import org.opendatakit.survey.android.utilities.WebLogger;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -171,7 +172,7 @@ public class JQueryODKView extends FrameLayout {
 			c = Survey
 					.getInstance()
 					.getContentResolver()
-					.query(FormsColumns.CONTENT_URI, null, selection,
+					.query(FormsProviderAPI.CONTENT_URI, null, selection,
 							selectionArgs, orderBy);
 
 			if (c.getCount() > 0) {

@@ -19,11 +19,12 @@ import java.io.File;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.opendatakit.common.android.database.WebDbDatabaseHelper;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
-import org.opendatakit.survey.android.provider.WebDbDatabaseHelper;
-import org.opendatakit.survey.android.utilities.WebLogger;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.database.Cursor;
 import android.os.Build;
@@ -69,7 +70,7 @@ public class JQueryJavascriptCallback {
 			c = Survey
 					.getInstance()
 					.getContentResolver()
-					.query(FormsColumns.CONTENT_URI, null, selection,
+					.query(FormsProviderAPI.CONTENT_URI, null, selection,
 							selectionArgs, orderBy);
 
 			if (c.getCount() > 0) {

@@ -48,6 +48,8 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
+import org.opendatakit.common.android.utilities.Base64Wrapper;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.provider.FileSet;
 import org.opendatakit.survey.android.provider.FileSet.MimeFile;
@@ -193,12 +195,12 @@ public class EncryptionUtils {
 
 		public void appendSubmissionFileSignatureSource(String contents,
 				File file) {
-			String md5Hash = ODKFileUtils.getMd5Hash(contents);
+			String md5Hash = ODKFileUtils.getNakedMd5Hash(contents);
 			appendElementSignatureSource(file.getName() + "::" + md5Hash);
 		}
 
 		public void appendFileSignatureSource(File file) {
-			String md5Hash = ODKFileUtils.getMd5Hash(file);
+			String md5Hash = ODKFileUtils.getNakedMd5Hash(file);
 			appendElementSignatureSource(file.getName() + "::" + md5Hash);
 		}
 

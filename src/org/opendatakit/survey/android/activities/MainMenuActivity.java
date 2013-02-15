@@ -23,6 +23,8 @@ import java.util.Set;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
@@ -35,8 +37,6 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.tasks.CopyExpansionFilesTask;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.utilities.WebLogger;
 import org.opendatakit.survey.android.views.JQueryJavascriptCallback;
 import org.opendatakit.survey.android.views.JQueryODKView;
 
@@ -285,7 +285,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements
 			throw new IllegalArgumentException(
 					"Unexpected null path for instance file");
 		}
-		String mediaPath = ODKFileUtils.getInstanceFolder(
+		String mediaPath = ODKFileUtils.getInstanceFolder(Survey.INSTANCES_PATH,
 				instance.getCurrentForm().tableId, instance.getInstanceId())
 				+ File.separator + System.currentTimeMillis() + extension;
 		return mediaPath;

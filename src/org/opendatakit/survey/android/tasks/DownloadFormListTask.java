@@ -17,6 +17,9 @@ package org.opendatakit.survey.android.tasks;
 import java.util.HashMap;
 
 import org.kxml2.kdom.Element;
+import org.opendatakit.common.android.utilities.DocumentFetchResult;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
@@ -24,9 +27,6 @@ import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.utilities.DocumentFetchResult;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.utilities.WebUtils;
 
 import android.content.SharedPreferences;
 import android.os.AsyncTask;

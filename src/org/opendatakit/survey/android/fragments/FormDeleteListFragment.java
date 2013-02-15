@@ -16,11 +16,12 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.ArrayList;
 
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.fragments.ConfirmationDialogFragment.ConfirmConfirmationDialog;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.DiskSyncListener;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
 import android.database.Cursor;
@@ -329,7 +330,7 @@ public class FormDeleteListFragment extends ListFragment implements
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		Uri baseUri = FormsColumns.CONTENT_URI;
+		Uri baseUri = FormsProviderAPI.CONTENT_URI;
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.

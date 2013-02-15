@@ -24,6 +24,8 @@ import java.util.Map;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.opendatakit.common.android.provider.FileProvider;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 /**
  * Holds the files required for a submission to the ODK Aggregate legacy
@@ -70,7 +72,7 @@ public class FileSet {
 			str.add(map);
 		}
 
-		String serializedString = DataModelDatabaseHelper.mapper
+		String serializedString = ODKFileUtils.mapper
 				.writeValueAsString(str);
 		return serializedString;
 	}
@@ -78,7 +80,7 @@ public class FileSet {
 	public static final FileSet parse(InputStream src)
 			throws JsonParseException, JsonMappingException, IOException {
 		@SuppressWarnings("unchecked")
-		ArrayList<Map<String, String>> str = DataModelDatabaseHelper.mapper
+		ArrayList<Map<String, String>> str = ODKFileUtils.mapper
 				.readValue(src, ArrayList.class);
 
 		FileSet fs = new FileSet();

@@ -14,8 +14,8 @@
 
 package org.opendatakit.survey.android.activities;
 
-import org.opendatakit.survey.android.provider.FileProvider;
-import org.opendatakit.survey.android.utilities.MediaUtils;
+import org.opendatakit.common.android.provider.FileProvider;
+import org.opendatakit.common.android.utilities.MediaUtils;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -37,7 +37,7 @@ public class MediaDeleteImageActivity extends Activity {
 		super.onCreate(savedInstanceState);
 
 		String binaryName = savedInstanceState.getString(MEDIA_PATH);
-		int del = MediaUtils.deleteImageFileFromMediaProvider(FileProvider
+		int del = MediaUtils.deleteImageFileFromMediaProvider(this, FileProvider
 				.getAsFile(binaryName).getAbsolutePath());
 		Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH
 				+ ": " + binaryName);

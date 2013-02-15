@@ -22,11 +22,13 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import org.apache.commons.io.FileUtils;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.DiskSyncListener;
 import org.opendatakit.survey.android.logic.FormInfo;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -67,14 +69,14 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 		Cursor c = null;
 		try {
 			c = Survey.getInstance().getContentResolver()
-					.query(FormsColumns.CONTENT_URI, null, null, null, null);
+					.query(FormsProviderAPI.CONTENT_URI, null, null, null, null);
 
 			if (c.moveToFirst()) {
 				do {
 					String id = Integer.toString(c.getInt(c
 							.getColumnIndex(FormsColumns._ID)));
 					Uri otherUri = Uri.withAppendedPath(
-							FormsColumns.CONTENT_URI, id);
+							FormsProviderAPI.CONTENT_URI, id);
 
 					String formMediaPath = c.getString(c
 							.getColumnIndex(FormsColumns.FORM_MEDIA_PATH));
@@ -109,14 +111,14 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 		Uri uri = null;
 		Cursor c = null;
 		try {
-			File formDef = new File(mediaPath, Survey.FORMDEF_JSON_FILENAME);
+			File formDef = new File(mediaPath, ODKFileUtils.FORMDEF_JSON_FILENAME);
 
 			String selection = FormsColumns.FORM_MEDIA_PATH + "=?";
 			String[] selectionArgs = { mediaPath.getAbsolutePath() };
 			c = Survey
 					.getInstance()
 					.getContentResolver()
-					.query(FormsColumns.CONTENT_URI, null, selection,
+					.query(FormsProviderAPI.CONTENT_URI, null, selection,
 							selectionArgs, null);
 
 			if (c.getCount() > 1) {
@@ -146,7 +148,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 				FileUtils.moveDirectory(mediaPath, tempMediaPath);
 				Survey.getInstance()
 						.getContentResolver()
-						.delete(FormsColumns.CONTENT_URI, selection,
+						.delete(FormsProviderAPI.CONTENT_URI, selection,
 								selectionArgs);
 				FileUtils.moveDirectory(tempMediaPath, mediaPath);
 				if (tempFormPath.exists()) {
@@ -160,7 +162,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 				c.moveToFirst();
 				String id = Integer.toString(c.getInt(c
 						.getColumnIndex(FormsColumns._ID)));
-				uri = Uri.withAppendedPath(FormsColumns.CONTENT_URI, id);
+				uri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, id);
 				Long lastModificationDate = c.getLong(c
 						.getColumnIndex(FormsColumns.DATE));
 				if (lastModificationDate.compareTo(formDef.lastModified()) == 0) {
@@ -242,7 +244,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 			c = Survey
 					.getInstance()
 					.getContentResolver()
-					.query(FormsColumns.CONTENT_URI, null, selection,
+					.query(FormsProviderAPI.CONTENT_URI, null, selection,
 							selectionArgs, null);
 
 			if (c.moveToFirst()) {
@@ -250,7 +252,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 					String id = Integer.toString(c.getInt(c
 							.getColumnIndex(FormsColumns._ID)));
 					Uri otherUri = Uri.withAppendedPath(
-							FormsColumns.CONTENT_URI, id);
+							FormsProviderAPI.CONTENT_URI, id);
 					if (uri == null || otherUri.compareTo(uri) != 0) {
 						Long lastModificationDate = c.getLong(c
 								.getColumnIndex(FormsColumns.DATE));
@@ -328,7 +330,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 						+ " records successfully updated");
 			} else {
 				Survey.getInstance().getContentResolver()
-						.insert(FormsColumns.CONTENT_URI, v);
+						.insert(FormsProviderAPI.CONTENT_URI, v);
 				Log.i(t, "[" + instance + "] one record successfully inserted");
 			}
 
@@ -349,7 +351,7 @@ public class DiskSyncTask extends AsyncTask<Void, String, String> {
 			public boolean accept(File pathname) {
 				if (!pathname.isDirectory())
 					return false;
-				File f = new File(pathname, Survey.FORMDEF_JSON_FILENAME);
+				File f = new File(pathname, ODKFileUtils.FORMDEF_JSON_FILENAME);
 				return (f.exists() && f.isFile());
 			}
 		});

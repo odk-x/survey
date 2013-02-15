@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
@@ -28,7 +29,6 @@ import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
-import org.opendatakit.survey.android.provider.InstanceProviderAPI.InstanceColumns;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -475,7 +475,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 				Cursor results = null;
 				try {
 					Uri uri = Uri.withAppendedPath(
-							InstanceColumns.CONTENT_URI,
+							InstanceProviderAPI.CONTENT_URI,
 							currentForm.tableId + "/"
 									+ StringEscapeUtils.escapeHtml4(id));
 					results = Survey.getInstance().getContentResolver()
@@ -588,10 +588,10 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		// currently filtering.
 		Uri baseUri;
 		if (currentForm != null) {
-			baseUri = Uri.withAppendedPath(InstanceColumns.CONTENT_URI,
+			baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
 					currentForm.tableId);
 		} else {
-			baseUri = InstanceColumns.CONTENT_URI;
+			baseUri = InstanceProviderAPI.CONTENT_URI;
 		}
 
 		String selection;
@@ -602,7 +602,7 @@ public class InstanceUploaderListFragment extends ListFragment implements
 			// show all unsent or failed-sending records
 			selection = InstanceColumns.XML_PUBLISH_STATUS + " IS NULL or "
 					+ InstanceColumns.XML_PUBLISH_STATUS + "=?";
-			selectionArgs = new String[] { InstanceProviderAPI.STATUS_SUBMISSION_FAILED };
+			selectionArgs = new String[] { InstanceColumns.STATUS_SUBMISSION_FAILED };
 			sortOrder = InstanceColumns.DISPLAY_NAME + " ASC";
 		} else {
 			// show all completed instances (ones ready to be submitted)

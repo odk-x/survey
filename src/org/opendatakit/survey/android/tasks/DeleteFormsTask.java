@@ -15,7 +15,7 @@
 package org.opendatakit.survey.android.tasks;
 
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.content.ContentResolver;
 import android.net.Uri;
@@ -51,7 +51,7 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 				break;
 			}
 			try {
-				Uri deleteForm = Uri.withAppendedPath(FormsColumns.CONTENT_URI,
+				Uri deleteForm = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
 						params[i].toString());
 				deleted += cr.delete(deleteForm, null, null);
 			} catch (Exception ex) {

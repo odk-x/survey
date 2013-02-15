@@ -35,13 +35,18 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
+import org.opendatakit.common.android.database.DataModelDatabaseHelper;
+import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
+import org.opendatakit.common.android.database.WebDbDefinition;
+import org.opendatakit.common.android.database.WebSqlDatabaseHelper;
+import org.opendatakit.common.android.provider.DataTableColumns;
+import org.opendatakit.common.android.provider.FileProvider;
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.FormInfo;
-import org.opendatakit.survey.android.provider.DataModelDatabaseHelper.ColumnDefinition;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
 import org.opendatakit.survey.android.utilities.EncryptionUtils;
 import org.opendatakit.survey.android.utilities.EncryptionUtils.EncryptedFormInformation;
-import org.opendatakit.survey.android.utilities.ODKFileUtils;
 
 import android.content.ContentProvider;
 import android.content.ContentResolver;
@@ -85,7 +90,8 @@ public class SubmissionProvider extends ContentProvider {
 	@Override
 	public boolean onCreate() {
 
-		h = new WebSqlDatabaseHelper();
+		String path = Survey.WEBDB_PATH;
+		h = new WebSqlDatabaseHelper(path);
 		WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
 		if (defn != null) {
     		defn.dbFile.getParentFile().mkdirs();
@@ -221,16 +227,16 @@ public class SubmissionProvider extends ContentProvider {
 			b.append("SELECT * FROM ")
 					.append(dbTableName)
 					.append(" WHERE ")
-					.append(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN)
+					.append(DataTableColumns.ID)
 					.append("=?")
 					.append(" group by ")
-					.append(DataModelDatabaseHelper.DATA_TABLE_ID_COLUMN)
+					.append(DataTableColumns.ID)
 					.append(" having ")
-					.append(DataModelDatabaseHelper.DATA_TABLE_TIMESTAMP_COLUMN)
+					.append(DataTableColumns.TIMESTAMP)
 					.append("=max(")
-					.append(DataModelDatabaseHelper.DATA_TABLE_TIMESTAMP_COLUMN)
+					.append(DataTableColumns.TIMESTAMP)
 					.append(")").append(" and ")
-					.append(DataModelDatabaseHelper.DATA_TABLE_SAVED_COLUMN)
+					.append(DataTableColumns.SAVED)
 					.append("=?");
 
 			String[] selectionArgs = new String[] { instanceId, "COMPLETE" };
@@ -274,27 +280,27 @@ public class SubmissionProvider extends ContentProvider {
 								putElementValue(values, defn, value);
 							} else if (defn.elementType.equals("array")) {
 								String valueString = c.getString(i);
-								ArrayList<Object> al = DataModelDatabaseHelper.mapper
+								ArrayList<Object> al = ODKFileUtils.mapper
 										.readValue(valueString, ArrayList.class);
 								putElementValue(values, defn, al);
 							} else if (defn.elementType.equals("object")) {
 								String valueString = c.getString(i);
-								HashMap<String, Object> obj = DataModelDatabaseHelper.mapper
+								HashMap<String, Object> obj = ODKFileUtils.mapper
 										.readValue(valueString, HashMap.class);
 								putElementValue(values, defn, obj);
 							} else /* user-defined */{
 								Log.i(t, "user-defined element type: " + defn.elementType);
 								String valueString = c.getString(i);
-								HashMap<String, Object> obj = DataModelDatabaseHelper.mapper
+								HashMap<String, Object> obj = ODKFileUtils.mapper
 										.readValue(valueString, HashMap.class);
 								putElementValue(values, defn, obj);
 							}
 
 						} else if (columnName
-								.equals(DataModelDatabaseHelper.DATA_TABLE_TIMESTAMP_COLUMN)) {
+								.equals(DataTableColumns.TIMESTAMP)) {
 							timestamp = c.getLong(i);
 						} else if (columnName
-								.equals(DataModelDatabaseHelper.DATA_TABLE_INSTANCE_NAME_COLUMN)) {
+								.equals(DataTableColumns.INSTANCE_NAME)) {
 							instanceName = c.getString(i);
 						}
 					}
@@ -303,10 +309,10 @@ public class SubmissionProvider extends ContentProvider {
 					// contents
 					b.setLength(0);
 					File submissionXml = new File(
-							ODKFileUtils.getInstanceFolder(tableId,instanceId),
+							ODKFileUtils.getInstanceFolder(Survey.INSTANCES_PATH,tableId,instanceId),
 							(asXml ? "submission.xml" : "submission.json"));
 					File manifest = new File(
-							ODKFileUtils.getInstanceFolder(tableId,instanceId),
+							ODKFileUtils.getInstanceFolder(Survey.INSTANCES_PATH,tableId,instanceId),
 							"manifest.json");
 					submissionXml.delete();
 					manifest.delete();
@@ -399,7 +405,7 @@ public class SubmissionProvider extends ContentProvider {
 							fc = Survey
 									.getInstance()
 									.getContentResolver()
-									.query(FormsColumns.CONTENT_URI, null,
+									.query(FormsProviderAPI.CONTENT_URI, null,
 											formSelection, formSelectionArgs,
 											null);
 							if (fc.moveToFirst() && fc.getCount() == 1) {
@@ -614,7 +620,7 @@ public class SubmissionProvider extends ContentProvider {
 								.format(new Date(timestamp));
 						elem.put("timestamp", datestamp);
 
-						b.append(DataModelDatabaseHelper.mapper
+						b.append(ODKFileUtils.mapper
 								.writeValueAsString(wrapper));
 
 						// OK we have the document in the builder (b).

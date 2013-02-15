@@ -14,9 +14,9 @@
 
 package org.opendatakit.survey.android.fragments;
 
+import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.utilities.WebUtils;
 
 import android.app.Activity;
 import android.app.AlertDialog;

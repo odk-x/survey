@@ -14,8 +14,8 @@
 
 package org.opendatakit.survey.android.views;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.utilities.WebLogger;
 
 import android.os.Message;
 import android.util.Log;

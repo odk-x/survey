@@ -33,9 +33,12 @@
         android:theme="@style/Survey"
         android:allowBackup="false" android:hardwareAccelerated="true">
 
-        <provider
-            android:name="org.opendatakit.survey.android.provider.FileProvider"
-            android:authorities="org.opendatakit.survey.android.provider.file.forms;org.opendatakit.survey.android.provider.file.instances" />
+        <!--  TODO: shouldn't this be established by androidcommon directly -->
+		<!--  FileProvider provides read-only access to files specified by: appName/filepath -->
+	    <provider
+	        android:name="org.opendatakit.common.android.provider.FileProvider"
+	        android:authorities="org.opendatakit.common.android.provider.file" />
+
         <provider
             android:name="org.opendatakit.survey.android.provider.FormsProvider"
             android:authorities="org.opendatakit.survey.android.provider.forms" />

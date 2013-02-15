@@ -18,9 +18,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.opendatakit.common.android.utilities.MediaUtils;
+import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.provider.FileProvider;
-import org.opendatakit.survey.android.utilities.MediaUtils;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
@@ -115,7 +115,7 @@ public class MediaCaptureAudioActivity extends Activity {
 		// get the file path and delete the file
 		String path = mediaPath;
 		// delete from media provider
-		int del = MediaUtils.deleteAudioFileFromMediaProvider(path);
+		int del = MediaUtils.deleteAudioFileFromMediaProvider(this, path);
 		Log.i(t, "Deleted " + del + " rows from audio media content provider");
 	}
 

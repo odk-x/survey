@@ -14,10 +14,11 @@
 
 package org.opendatakit.survey.android.fragments;
 
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.listeners.DiskSyncListener;
-import org.opendatakit.survey.android.provider.FormsProviderAPI.FormsColumns;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
 import android.content.ContentUris;
@@ -135,7 +136,7 @@ public class FormChooserListFragment extends ListFragment implements
 		// get uri to form
 		long idFormsTable = ((SimpleCursorAdapter) getListAdapter())
 				.getItemId(position);
-		Uri formUri = ContentUris.withAppendedId(FormsColumns.CONTENT_URI,
+		Uri formUri = ContentUris.withAppendedId(FormsProviderAPI.CONTENT_URI,
 				idFormsTable);
 
 		((ODKActivity) getActivity()).chooseForm(formUri);
@@ -155,7 +156,7 @@ public class FormChooserListFragment extends ListFragment implements
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		Uri baseUri = FormsColumns.CONTENT_URI;
+		Uri baseUri = FormsProviderAPI.CONTENT_URI;
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.

@@ -14,9 +14,9 @@
 
 package org.opendatakit.survey.android.preferences;
 
+import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.AccountList;
-import org.opendatakit.survey.android.utilities.UrlUtils;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
