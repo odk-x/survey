@@ -37,18 +37,17 @@ import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
-import org.opendatakit.common.android.database.WebDbDefinition;
-import org.opendatakit.common.android.database.WebSqlDatabaseHelper;
+import org.opendatakit.common.android.logic.FormInfo;
+import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.provider.impl.CommonContentProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.logic.FormInfo;
+import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.utilities.EncryptionUtils;
 import org.opendatakit.survey.android.utilities.EncryptionUtils.EncryptedFormInformation;
 
-import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -64,7 +63,7 @@ import android.util.Log;
  * @author mitchellsundt@gmail.com
  *
  */
-public class SubmissionProvider extends ContentProvider {
+public class SubmissionProvider extends CommonContentProvider {
 	private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
 	private static final String t = "SubmissionProvider";
@@ -84,20 +83,11 @@ public class SubmissionProvider extends ContentProvider {
 																// namespace
 	private static final String NEW_LINE = "\n";
 
-	private WebSqlDatabaseHelper h;
-	private DataModelDatabaseHelper mDbHelper;
+	private PropertyManager propertyManager;
 
 	@Override
 	public boolean onCreate() {
-
-		String path = Survey.WEBDB_PATH;
-		h = new WebSqlDatabaseHelper(path);
-		WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
-		if (defn != null) {
-    		defn.dbFile.getParentFile().mkdirs();
-			mDbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(),
-					defn.dbFile.getName());
-		}
+	  propertyManager = new PropertyManager(getContext());
 		return true;
 	}
 
@@ -191,22 +181,22 @@ public class SubmissionProvider extends ContentProvider {
 			throw new IllegalArgumentException("Only read access is supported");
 		}
 
-		// URI == ..../tableId/instanceId?formId=&formVersion=
+		// URI == ..../appName/tableId/instanceId?formId=&formVersion=
 
 		List<String> segments = uri.getPathSegments();
 
-		if (segments.size() != 2) {
+		if (segments.size() != 3) {
 			throw new IllegalArgumentException(
 					"Unknown URI (incorrect number of path segments!) " + uri);
 		}
 
-		final String tableId = segments.get(0);
-		final String instanceId = (segments.size() >= 2 ? segments.get(1)
+		final String appName = segments.get(0);
+		final String tableId = segments.get(1);
+		final String instanceId = (segments.size() >= 3 ? segments.get(2)
 				: null);
 		final String formId = uri.getQueryParameter("formId");
 		final String formVersion = uri.getQueryParameter("formVersion");
-
-		final SQLiteDatabase db = mDbHelper.getReadableDatabase();
+		final SQLiteDatabase db = getDbHelper(appName).getReadableDatabase();
 
 		String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
 		if (tableName == null) {
@@ -309,10 +299,10 @@ public class SubmissionProvider extends ContentProvider {
 					// contents
 					b.setLength(0);
 					File submissionXml = new File(
-							ODKFileUtils.getInstanceFolder(Survey.INSTANCES_PATH,tableId,instanceId),
+							ODKFileUtils.getInstanceFolder(appName,tableId,instanceId),
 							(asXml ? "submission.xml" : "submission.json"));
 					File manifest = new File(
-							ODKFileUtils.getInstanceFolder(Survey.INSTANCES_PATH,tableId,instanceId),
+							ODKFileUtils.getInstanceFolder(appName,tableId,instanceId),
 							"manifest.json");
 					submissionXml.delete();
 					manifest.delete();
@@ -402,10 +392,9 @@ public class SubmissionProvider extends ContentProvider {
 
 						Cursor fc = null;
 						try {
-							fc = Survey
-									.getInstance()
+							fc = getContext()
 									.getContentResolver()
-									.query(FormsProviderAPI.CONTENT_URI, null,
+									.query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null,
 											formSelection, formSelectionArgs,
 											null);
 							if (fc.moveToFirst() && fc.getCount() == 1) {
@@ -432,6 +421,8 @@ public class SubmissionProvider extends ContentProvider {
 								if (f.formVersion != null) {
 									e.setAttribute("", "version", f.formVersion);
 								}
+								DynamicPropertiesCallback cb =
+								    new DynamicPropertiesCallback(getContext(), appName, tableId, instanceId );
 
 								int idx = 0;
 								Element meta = d.createElement(
@@ -443,7 +434,7 @@ public class SubmissionProvider extends ContentProvider {
 								meta.addChild(idx++, Node.IGNORABLE_WHITESPACE,
 										NEW_LINE);
 								if (f.xmlDeviceIdPropertyName != null) {
-									String deviceId = Survey.getInstance().getPropertyManager().getSingularProperty(f.xmlDeviceIdPropertyName);
+									String deviceId = propertyManager.getSingularProperty(f.xmlDeviceIdPropertyName, cb);
 									if ( deviceId != null ) {
 										v = d.createElement(XML_OPENROSA_NAMESPACE,
 												"deviceID");
@@ -454,7 +445,7 @@ public class SubmissionProvider extends ContentProvider {
 									}
 								}
 								if (f.xmlUserIdPropertyName != null) {
-									String userId = Survey.getInstance().getPropertyManager().getSingularProperty(f.xmlUserIdPropertyName);
+									String userId = propertyManager.getSingularProperty(f.xmlUserIdPropertyName, cb);
 									if ( userId != null ) {
 										v = d.createElement(XML_OPENROSA_NAMESPACE,
 												"userID");

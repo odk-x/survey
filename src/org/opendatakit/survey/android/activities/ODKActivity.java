@@ -28,9 +28,19 @@ import android.view.View;
  */
 public interface ODKActivity {
 
+   public String getAppName();
+
 	public void setInstanceId(String instanceId);
 
 	public void setPageRef(String pageRef);
+
+   public boolean hasPromptHistory();
+
+   public void clearPromptHistory();
+
+   public String popPromptHistory();
+
+   public void pushPromptHistory(String idx);
 
 	public void setAuxillaryHash(String hash);
 

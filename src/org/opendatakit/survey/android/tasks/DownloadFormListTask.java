@@ -23,11 +23,11 @@ import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
+import android.app.Application;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -51,6 +51,7 @@ public class DownloadFormListTask extends
 	public static final String DL_ERROR_MSG = "dlerrormessage";
 	public static final String DL_AUTH_REQUIRED = "dlauthrequired";
 
+   private Application appContext;
 	private FormListDownloaderListener mStateListener;
 	private HashMap<String, FormDetails> mFormList;
 
@@ -64,10 +65,9 @@ public class DownloadFormListTask extends
 	@Override
 	protected HashMap<String, FormDetails> doInBackground(Void... values) {
 		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(Survey.getInstance()
-						.getBaseContext());
+				.getDefaultSharedPreferences(appContext);
 		String downloadListUrl = settings.getString(
-				PreferencesActivity.KEY_SERVER_URL, Survey.getInstance()
+				PreferencesActivity.KEY_SERVER_URL, appContext
 						.getString(R.string.default_server_url));
 		// NOTE: /formlist must not be translated! It is the well-known path on
 		// the server.
@@ -109,7 +109,7 @@ public class DownloadFormListTask extends
 				Log.e(t, "Parsing OpenRosa reply -- " + error);
 				formList.put(
 						DL_ERROR_MSG,
-						new FormDetails(Survey.getInstance().getString(
+						new FormDetails(appContext.getString(
 								R.string.parse_openrosa_formlist_failed, error)));
 				return formList;
 			}
@@ -120,7 +120,7 @@ public class DownloadFormListTask extends
 				Log.e(t, "Parsing OpenRosa reply -- " + error);
 				formList.put(
 						DL_ERROR_MSG,
-						new FormDetails(Survey.getInstance().getString(
+						new FormDetails(appContext.getString(
 								R.string.parse_openrosa_formlist_failed, error)));
 				return formList;
 			}
@@ -208,7 +208,7 @@ public class DownloadFormListTask extends
 					formList.clear();
 					formList.put(
 							DL_ERROR_MSG,
-							new FormDetails(Survey.getInstance().getString(
+							new FormDetails(appContext.getString(
 									R.string.parse_openrosa_formlist_failed,
 									error)));
 					return formList;
@@ -220,7 +220,7 @@ public class DownloadFormListTask extends
 			String error = "Server is not OpenRosa compliant";
 			Log.e(t, error);
 			formList.clear();
-			formList.put(DL_ERROR_MSG, new FormDetails(Survey.getInstance()
+			formList.put(DL_ERROR_MSG, new FormDetails(appContext
 					.getString(R.string.parse_openrosa_formlist_failed, error)));
 			return formList;
 		}
@@ -252,14 +252,24 @@ public class DownloadFormListTask extends
 		}
 	}
 
+   public HashMap<String, FormDetails> getFormList() {
+      return mFormList;
+   }
+
 	public void setDownloaderListener(FormListDownloaderListener sl) {
 		synchronized (this) {
 			mStateListener = sl;
 		}
 	}
 
-	public HashMap<String, FormDetails> getFormList() {
-		return mFormList;
-	}
+   public void setApplication(Application appContext) {
+     synchronized (this) {
+       this.appContext = appContext;
+     }
+   }
+
+   public Application getApplication() {
+     return appContext;
+   }
 
 }

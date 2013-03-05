@@ -36,6 +36,7 @@ public class FormIdStruct {
 	public final String formPath;
 	public final String formId;
 	public final String tableId;
+	public final String appName;
 	public final String formVersion;
 	public final Date lastDownloadDate;
 
@@ -48,6 +49,7 @@ public class FormIdStruct {
 		this.formId = formId;
 		this.formVersion = formVersion;
 		this.tableId = tableId;
+		this.appName = formDefFile.getParentFile()/*formFolder*/.getParentFile()/*forms folder*/.getParentFile()/*app*/.getName();
 		this.lastDownloadDate = lastModifiedDate;
 	}
 
@@ -57,6 +59,7 @@ public class FormIdStruct {
 		this.formPath = original.formPath;
 		this.formId = original.formId;
 		this.tableId = original.tableId;
+      this.appName = original.appName;
 		this.formVersion = original.formVersion;
 		this.lastDownloadDate = original.lastDownloadDate;
 	}

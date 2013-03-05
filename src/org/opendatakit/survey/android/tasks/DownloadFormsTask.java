@@ -45,14 +45,15 @@ import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
+import android.app.Application;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -70,7 +71,9 @@ public class DownloadFormsTask extends
 
 	private static final String t = "DownloadFormsTask";
 
+	private Application appContext;
 	private FormDownloaderListener mStateListener;
+	private String appName;
 	private HashMap<String, String> mResult;
 
 	private static final String NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_MANIFEST = "http://openrosa.org/xforms/xformsManifest";
@@ -90,7 +93,7 @@ public class DownloadFormsTask extends
 	protected HashMap<String, String> doInBackground(FormDetails... values) {
 
 		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(Survey.getInstance());
+				.getDefaultSharedPreferences(appContext);
 		String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
 		setAuth(auth);
 
@@ -146,9 +149,9 @@ public class DownloadFormsTask extends
 						{
 							// proposed name of form 'media' directory and form
 							// file...
-							String tempMediaPathName = Survey.STALE_FORMS_PATH
+							String tempMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
 									+ File.separator + rootName;
-							String mediaPathName = Survey.FORMS_PATH
+							String mediaPathName = ODKFileUtils.getFormsFolder(getAppName())
 									+ File.separator + rootName;
 
 							tempMediaPath = new File(tempMediaPathName);
@@ -173,12 +176,12 @@ public class DownloadFormsTask extends
 											"Unable to delete stale directory: "
 													+ tempMediaPathName);
 								}
-								tempMediaPathName = Survey.STALE_FORMS_PATH
+								tempMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
 										+ File.separator + rootName + "_" + rev;
 								tempMediaPath = new File(tempMediaPathName);
 								tempFormPath = new File(tempMediaPath,
 										ODKFileUtils.FILENAME_XFORMS_XML);
-								mediaPathName = Survey.FORMS_PATH
+								mediaPathName = ODKFileUtils.getFormsFolder(getAppName())
 										+ File.separator + rootName + "_" + rev;
 								mediaPath = new File(mediaPathName);
 								formPath = new File(mediaPath,
@@ -189,7 +192,7 @@ public class DownloadFormsTask extends
 
 						// and find a name that any existing directory could be
 						// renamed to... (continuing rev counter)
-						String staleMediaPathName = Survey.STALE_FORMS_PATH
+						String staleMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
 								+ File.separator + rootName + "_" + rev;
 						staleMediaPath = new File(staleMediaPathName);
 
@@ -206,7 +209,7 @@ public class DownloadFormsTask extends
 								Log.i(t, "Unable to delete stale directory: "
 										+ staleMediaPathName);
 							}
-							staleMediaPathName = Survey.FORMS_PATH
+							staleMediaPathName = ODKFileUtils.getFormsFolder(getAppName())
 									+ File.separator + rootName + "_" + rev;
 							staleMediaPath = new File(staleMediaPathName);
 							rev++;
@@ -222,7 +225,7 @@ public class DownloadFormsTask extends
 
 					Cursor alreadyExists = null;
 					try {
-						String[] projection = { FormsColumns._ID,
+						String[] projection = { FormsColumns.FORM_ID,
 								FormsColumns.FORM_FILE_PATH,
 								FormsColumns.FORM_MEDIA_PATH,
 								FormsColumns.FORM_VERSION };
@@ -252,10 +255,8 @@ public class DownloadFormsTask extends
 																		// case
 																		// DB
 																		// corrupted)
-						alreadyExists = Survey
-								.getInstance()
-								.getContentResolver()
-								.query(FormsProviderAPI.CONTENT_URI, projection,
+						alreadyExists = appContext.getContentResolver()
+								.query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), projection,
 										selection, selectionArgs, orderBy);
 
 						if (alreadyExists.getCount() > 0) {
@@ -277,7 +278,7 @@ public class DownloadFormsTask extends
 					}
 
 					if (fd.manifestUrl == null) {
-						message += Survey.getInstance().getString(
+						message += appContext.getString(
 								R.string.no_manifest, fd.formName);
 						Log.e(t, "No Manifest for: " + fd.formName);
 					} else {
@@ -292,7 +293,7 @@ public class DownloadFormsTask extends
 							if (error != null) {
 								message += error;
 							} else if (tempFormPath.exists()) {
-								message += Survey.getInstance().getString(
+								message += appContext.getString(
 										R.string.xforms_file_exists,
 										ODKFileUtils.FILENAME_XFORMS_XML,
 										fd.formName);
@@ -328,7 +329,7 @@ public class DownloadFormsTask extends
 								ODKFileUtils.FORMDEF_JSON_FILENAME);
 
 						if (!formDef.exists()) {
-							message = Survey.getInstance().getString(
+							message = appContext.getString(
 									R.string.no_formdef_json, fd.formName);
 							Log.e(t, ODKFileUtils.FORMDEF_JSON_FILENAME
 									+ " was not found in exploded download of "
@@ -351,10 +352,7 @@ public class DownloadFormsTask extends
 							}
 							FileUtils.moveDirectory(tempMediaPath, mediaPath);
 
-							// and launch update activity to update our data
-							// description
-							message = DiskSyncTask.updateFormInfo(mediaPath);
-
+							// and the background listener should update the database
 						}
 					} catch (IOException ex) {
 						ex.printStackTrace();
@@ -384,7 +382,7 @@ public class DownloadFormsTask extends
 						}
 					}
 				} else {
-					message = Survey.getInstance().getString(R.string.success);
+					message = appContext.getString(R.string.success);
 				}
 			}
 			count++;
@@ -420,7 +418,7 @@ public class DownloadFormsTask extends
 				while (entries.hasMoreElements()) {
 					ZipEntry entry = entries.nextElement();
 					File tempFile = new File(tempMediaPath, entry.getName());
-					String formattedString = Survey.getInstance().getString(
+					String formattedString = appContext.getString(
 							R.string.form_download_unzipping, fd.formName,
 							zipfile.getName(),
 							Integer.valueOf(zipCount).toString(),
@@ -553,7 +551,7 @@ public class DownloadFormsTask extends
 
 				if (statusCode != 200) {
 					WebUtils.discardEntityBytes(response);
-					String errMsg = Survey.getInstance().getString(
+					String errMsg = appContext.getString(
 							R.string.file_fetch_failed, downloadUrl,
 							response.getStatusLine().getReasonPhrase(),
 							statusCode);
@@ -625,7 +623,7 @@ public class DownloadFormsTask extends
 			return null;
 
 		publishProgress(
-				Survey.getInstance().getString(R.string.fetching_manifest,
+				appContext.getString(R.string.fetching_manifest,
 						fd.formName), Integer.valueOf(count).toString(),
 				Integer.valueOf(total).toString());
 
@@ -644,11 +642,11 @@ public class DownloadFormsTask extends
 			return result.errorMessage;
 		}
 
-		String errMessage = Survey.getInstance().getString(
+		String errMessage = appContext.getString(
 				R.string.access_error, fd.manifestUrl);
 
 		if (!result.isOpenRosaResponse) {
-			errMessage += Survey.getInstance().getString(
+			errMessage += appContext.getString(
 					R.string.manifest_server_error);
 			Log.e(t, errMessage);
 			return errMessage;
@@ -657,14 +655,14 @@ public class DownloadFormsTask extends
 		// Attempt OpenRosa 1.0 parsing
 		Element manifestElement = result.doc.getRootElement();
 		if (!manifestElement.getName().equals("manifest")) {
-			errMessage += Survey.getInstance().getString(
+			errMessage += appContext.getString(
 					R.string.root_element_error, manifestElement.getName());
 			Log.e(t, errMessage);
 			return errMessage;
 		}
 		String namespace = manifestElement.getNamespace();
 		if (!isXformsManifestNamespacedElement(manifestElement)) {
-			errMessage += Survey.getInstance().getString(
+			errMessage += appContext.getString(
 					R.string.root_namespace_error, namespace);
 			Log.e(t, errMessage);
 			return errMessage;
@@ -716,7 +714,7 @@ public class DownloadFormsTask extends
 					}
 				}
 				if (filename == null || downloadUrl == null || hash == null) {
-					errMessage += Survey.getInstance().getString(
+					errMessage += appContext.getString(
 							R.string.manifest_tag_error, Integer.toString(i));
 					Log.e(t, errMessage);
 					return errMessage;
@@ -736,7 +734,7 @@ public class DownloadFormsTask extends
 				}
 				++mediaCount;
 				publishProgress(
-						Survey.getInstance().getString(
+						appContext.getString(
 								R.string.form_download_progress, fd.formName,
 								toDownload.filename,
 								Integer.valueOf(mediaCount).toString(),
@@ -767,7 +765,7 @@ public class DownloadFormsTask extends
 				}
 			}
 		} else {
-			return Survey.getInstance().getString(R.string.no_manifest,
+			return appContext.getString(R.string.no_manifest,
 					fd.formName);
 		}
 		return null;
@@ -820,4 +818,23 @@ public class DownloadFormsTask extends
 		}
 	}
 
+	public void setAppName(String appName) {
+	  synchronized (this) {
+	    this.appName = appName;
+	  }
+	}
+
+	public String getAppName() {
+	  return appName;
+	}
+
+   public void setApplication(Application appContext) {
+     synchronized (this) {
+       this.appContext = appContext;
+     }
+   }
+
+   public Application getApplication() {
+     return appContext;
+   }
 }

@@ -61,54 +61,71 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
 
+                <!-- file argument specifies app -->
+                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.file" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.form" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.instance" />
             </intent-filter>
         </activity>
         <activity
             android:name=".activities.AccountList"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.AccountInfo"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".preferences.AdminPreferencesActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".preferences.PreferencesActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaCaptureImageActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaChooseImageActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaDeleteImageActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaCaptureAudioActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaChooseAudioActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaDeleteAudioActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaCaptureVideoActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaChooseVideoActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.MediaDeleteVideoActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.GeoPointActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.GeoPointMapActivity"
+            android:exported="false"
             android:label="@string/app_name" />
         <activity
             android:name=".activities.SplashScreenActivity"

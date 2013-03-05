@@ -19,7 +19,9 @@ import java.io.File;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
@@ -27,6 +29,7 @@ import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.database.Cursor;
+import android.net.Uri;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -49,11 +52,15 @@ public class JQueryODKView extends FrameLayout {
 	// starter random number for view IDs
 	private static final String t = "JQueryODKView";
 
-	private WebLogger log = Survey.getInstance().getLogger();
+	private WebLogger log;
 	private WebView mWebView;
 
 	public JQueryODKView(Context context, AttributeSet set) {
 		super(context, set);
+		ODKActivity a = (ODKActivity) context;
+		String appName = a.getAppName();
+
+		log = WebLogger.getLogger(appName);
 
 		mWebView = new WebView(context);
 		mWebView.setId(984732);
@@ -64,8 +71,8 @@ public class JQueryODKView extends FrameLayout {
 		params.setMargins(7, 5, 7, 5);
 		mWebView.setLayoutParams(params);
 
-		mWebView.setWebChromeClient(new ODKWebChromeClient(context));
-		WebViewClient wvc = new ODKWebViewClient();
+		mWebView.setWebChromeClient(new ODKWebChromeClient(a));
+		WebViewClient wvc = new ODKWebViewClient(appName);
 		mWebView.setWebViewClient(wvc);
 
 		// for development -- always draw from source...
@@ -73,14 +80,14 @@ public class JQueryODKView extends FrameLayout {
 		ws.setAllowFileAccess(true);
 		ws.setAppCacheEnabled(true);
 		ws.setAppCacheMaxSize(1024L * 1024L * 200L);
-		ws.setAppCachePath(Survey.APPCACHE_PATH);
+		ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
 		ws.setCacheMode(WebSettings.LOAD_NORMAL);
 		ws.setDatabaseEnabled(true);
-		ws.setDatabasePath(Survey.WEBDB_PATH);
+		ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
 		ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
 		ws.setDefaultFontSize(Survey.getQuestionFontsize());
 		ws.setDomStorageEnabled(true);
-		ws.setGeolocationDatabasePath(Survey.GEOCACHE_PATH);
+		ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
 		ws.setGeolocationEnabled(true);
 		ws.setJavaScriptCanOpenWindowsAutomatically(true);
 		ws.setJavaScriptEnabled(true);
@@ -134,10 +141,19 @@ public class JQueryODKView extends FrameLayout {
 		mWebView.loadUrl(javascriptUrl);
 	}
 
-	public void loadPage(FormIdStruct s, String instanceID, String pageRef,
+	/**
+	 *
+	 * @param appName -- appName to use when FormIdStruct is null
+	 * @param s -- FormIdStruct of the form to open -- may be null
+	 * @param instanceID
+	 * @param pageRef
+	 * @param auxillaryHash
+	 */
+	public void loadPage(String appName, FormIdStruct s, String instanceID, String pageRef,
 			String auxillaryHash) {
 
-		String url = getHtmlUrl(s, instanceID, pageRef, auxillaryHash);
+		String url = getHtmlUrl(((s == null) ? appName : s.appName), s,
+		                        instanceID, pageRef, auxillaryHash);
 		if (url == null)
 			return;
 		log.i(t, "loadUrl: " + url);
@@ -145,7 +161,7 @@ public class JQueryODKView extends FrameLayout {
 		mWebView.requestFocus();
 	}
 
-	private static String getHtmlUrl(FormIdStruct s, String instanceID,
+	private String getHtmlUrl(String appName, FormIdStruct s, String instanceID,
 			String pageRef, String auxillaryHash) {
 
 		// Find the formPath for the default form with the most recent
@@ -169,10 +185,8 @@ public class JQueryODKView extends FrameLayout {
 																	// (in case
 																	// DB
 																	// corrupted)
-			c = Survey
-					.getInstance()
-					.getContentResolver()
-					.query(FormsProviderAPI.CONTENT_URI, null, selection,
+			c = getContext().getContentResolver()
+					.query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, selection,
 							selectionArgs, orderBy);
 
 			if (c.getCount() > 0) {
@@ -193,7 +207,7 @@ public class JQueryODKView extends FrameLayout {
 
 		// formPath always begins ../ -- strip that off to get explicit path
 		// suffix...
-		File mediaFolder = new File(new File(Survey.FORMS_PATH),
+		File mediaFolder = new File(new File(ODKFileUtils.getFormsFolder(appName)),
 				formPath.substring(3));
 
 		// File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());

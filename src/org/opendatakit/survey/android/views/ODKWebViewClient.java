@@ -15,7 +15,6 @@
 package org.opendatakit.survey.android.views;
 
 import org.opendatakit.common.android.utilities.WebLogger;
-import org.opendatakit.survey.android.application.Survey;
 
 import android.os.Message;
 import android.util.Log;
@@ -25,7 +24,11 @@ import android.webkit.WebViewClient;
 
 public class ODKWebViewClient extends WebViewClient {
 	private static final String t = "ODKWebViewClient";
-	private WebLogger log = Survey.getInstance().getLogger();
+	private WebLogger log;
+
+	ODKWebViewClient(String appName) {
+	  log = WebLogger.getLogger(appName);
+	}
 
 	@Override
 	public boolean shouldOverrideUrlLoading(WebView view, String url) {

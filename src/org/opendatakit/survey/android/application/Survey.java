@@ -24,11 +24,9 @@ import java.util.Map;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
+import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.logic.PropertyManager;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Application;
@@ -66,41 +64,17 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	public static final String EXPANSION_FILE_LENGTH = "length";
 	public static final String EXPANSION_FILE_URL = "url";
 
-	// Storage paths
-	public static final String ODK_ROOT = Environment
-			.getExternalStorageDirectory()
-			+ File.separator
-			+ "odk"
-			+ File.separator + "app";
-	public static final String FORMS_PATH = ODK_ROOT + File.separator + "forms";
-	public static final String STALE_FORMS_PATH = ODK_ROOT + File.separator
-			+ "forms.old";
-	public static final String INSTANCES_PATH = ODK_ROOT + File.separator
-			+ "instances";
-	public static final String METADATA_PATH = ODK_ROOT + File.separator
-			+ "metadata";
-	public static final String LOGGING_PATH = ODK_ROOT + File.separator
-			+ "logging";
-	// for WebKit:
-	public static final String APPCACHE_PATH = METADATA_PATH + File.separator
-			+ "appCache";
-	public static final String GEOCACHE_PATH = METADATA_PATH + File.separator
-			+ "geoCache";
-	public static final String WEBDB_PATH = METADATA_PATH + File.separator
-			+ "webDb";
+	public static final String APP_NAME = "app";
 
 	// private values
 	private static final String DEFAULT_FONTSIZE = "21";
-	private static final ObjectMapper mapper = new ObjectMapper();
-
-	private PropertyManager mPropertyManager;
 
 	private int versionCode;
 	private byte[] mSalt;
 	private LicenseChecker mLicenseChecker;
 	private APKExpansionPolicy mAPKExpansionPolicy;
 
-	private WebLogger logger = null;
+   private static final boolean debugAPKExpansion = false;
 
 	private static Survey singleton = null;
 
@@ -116,6 +90,21 @@ public class Survey extends Application implements LicenseCheckerCallback {
 		int questionFontsize = Integer.valueOf(question_font);
 		return questionFontsize;
 	}
+
+   /**
+    * For debugging APK expansion, we check for the existence and process the
+    * local file without also confirming that it matches that on the Google
+    * Play site.
+    *
+    * @return true if there is a test APK Expansion file present.
+    */
+   public static File debugAPKExpansionFile() {
+     File f = Survey.getInstance().localExpansionFile();
+     if ( debugAPKExpansion && f.exists()) {
+       return f;
+     }
+     return null;
+  }
 
 	public String getVersionedAppName() {
 		String versionDetail = "";
@@ -139,22 +128,18 @@ public class Survey extends Application implements LicenseCheckerCallback {
 	 *             if there is no SDCard or the directory exists as a non
 	 *             directory
 	 */
-	public static boolean createODKDirs() throws RuntimeException {
-		String cardstatus = Environment.getExternalStorageState();
-		if (cardstatus.equals(Environment.MEDIA_REMOVED)
-				|| cardstatus.equals(Environment.MEDIA_UNMOUNTABLE)
-				|| cardstatus.equals(Environment.MEDIA_UNMOUNTED)
-				|| cardstatus.equals(Environment.MEDIA_MOUNTED_READ_ONLY)
-				|| cardstatus.equals(Environment.MEDIA_SHARED)) {
-			RuntimeException e = new RuntimeException(
-					"ODK reports :: SDCard error: "
-							+ Environment.getExternalStorageState());
-			throw e;
-		}
+	public static boolean createODKDirs(String appName) throws RuntimeException {
 
-		String[] dirs = { ODK_ROOT, FORMS_PATH, STALE_FORMS_PATH,
-				INSTANCES_PATH, METADATA_PATH, LOGGING_PATH, APPCACHE_PATH,
-				GEOCACHE_PATH, WEBDB_PATH };
+ 	   ODKFileUtils.verifyExternalStorageAvailability();
+
+		String[] dirs = { ODKFileUtils.getAppFolder(appName),
+		      ODKFileUtils.getFormsFolder(appName),
+		      ODKFileUtils.getStaleFormsFolder(appName),
+            ODKFileUtils.getLoggingFolder(appName),
+				ODKFileUtils.getMetadataFolder(appName),
+				ODKFileUtils.getAppCacheFolder(appName),
+				ODKFileUtils.getGeoCacheFolder(appName),
+				ODKFileUtils.getWebDbFolder(appName) };
 
 		for (String dirName : dirs) {
 			File dir = new File(dirName);
@@ -174,7 +159,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 			}
 		}
 
-		File[] files = new File(FORMS_PATH).listFiles(new FileFilter() {
+		File[] files = new File(ODKFileUtils.getFormsFolder(appName)).listFiles(new FileFilter() {
 
 			@Override
 			public boolean accept(File pathname) {
@@ -186,22 +171,10 @@ public class Survey extends Application implements LicenseCheckerCallback {
 		return (files.length != 0);
 	}
 
-	public PropertyManager getPropertyManager() {
-		return mPropertyManager;
-	}
-
-	public synchronized WebLogger getLogger() {
-		if (logger == null) {
-			createODKDirs();
-			logger = new WebLogger(LOGGING_PATH);
-		}
-		return logger;
-	}
-
 	@Override
 	public void onCreate() {
 		singleton = this;
-		mPropertyManager = new PropertyManager(getApplicationContext());
+		PropertyManager propertyManager = new PropertyManager(getApplicationContext());
 		PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 		PreferenceManager
 				.setDefaultValues(this, R.xml.admin_preferences, false);
@@ -242,8 +215,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
 			e.printStackTrace();
 		}
 
-		String deviceId = mPropertyManager
-				.getSingularProperty(PropertyManager.OR_DEVICE_ID_PROPERTY);
+		String deviceId = propertyManager
+				.getSingularProperty(PropertyManager.OR_DEVICE_ID_PROPERTY, null);
 
 		// Construct the LicenseChecker with a Policy.
 		mAPKExpansionPolicy = new APKExpansionPolicy(this, new AESObfuscator(
@@ -307,7 +280,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 
 			String expansionDefs;
 			try {
-				expansionDefs = mapper.writeValueAsString(expansions);
+				expansionDefs = ODKFileUtils.mapper.writeValueAsString(expansions);
 
 				SharedPreferences settings = PreferenceManager
 						.getDefaultSharedPreferences(Survey.getInstance());
@@ -344,7 +317,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 				PreferencesActivity.KEY_APK_EXPANSIONS, null);
 		if (expansionDefs != null) {
 			try {
-				return mapper.readValue(expansionDefs, ArrayList.class);
+				return ODKFileUtils.mapper.readValue(expansionDefs, ArrayList.class);
 			} catch (JsonParseException e) {
 				e.printStackTrace();
 				Log.e(t,

@@ -17,22 +17,18 @@ package org.opendatakit.survey.android.fragments;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.listeners.DiskSyncListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
-import android.content.ContentUris;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.CursorLoader;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v4.widget.SimpleCursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,7 +42,7 @@ import android.widget.TextView;
  *
  */
 public class FormChooserListFragment extends ListFragment implements
-		DiskSyncListener, LoaderManager.LoaderCallbacks<Cursor> {
+		LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String t = "FormChooserListFragment";
 	private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
@@ -113,13 +109,6 @@ public class FormChooserListFragment extends ListFragment implements
 	public void onResume() {
 		super.onResume();
 
-		FragmentManager mgr = getFragmentManager();
-		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
-				.findFragmentByTag("background");
-
-		Log.i(t, "onResume: starting a new disk sync listener");
-		f.startDiskSyncListener(this);
-
 		TextView tv = (TextView) view.findViewById(R.id.status_text);
 		tv.setText(mSyncStatusText);
 	}
@@ -134,20 +123,14 @@ public class FormChooserListFragment extends ListFragment implements
 		super.onListItemClick(l, v, position, id);
 
 		// get uri to form
-		long idFormsTable = ((SimpleCursorAdapter) getListAdapter())
-				.getItemId(position);
-		Uri formUri = ContentUris.withAppendedId(FormsProviderAPI.CONTENT_URI,
-				idFormsTable);
+		Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
+		String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+		Uri formUri = Uri.withAppendedPath(
+		      Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+		          ((ODKActivity) getActivity()).getAppName()),
+		          formId);
 
 		((ODKActivity) getActivity()).chooseForm(formUri);
-	}
-
-	@Override
-	public void SyncComplete(String result) {
-		Log.i(t, "Disk scan complete");
-		mSyncStatusText = result;
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
 	}
 
 	@Override
@@ -156,7 +139,8 @@ public class FormChooserListFragment extends ListFragment implements
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		Uri baseUri = FormsProviderAPI.CONTENT_URI;
+		Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+		      ((ODKActivity) getActivity()).getAppName());
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.

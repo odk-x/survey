@@ -22,7 +22,7 @@ import java.util.Set;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
@@ -476,9 +476,10 @@ public class InstanceUploaderListFragment extends ListFragment implements
 				try {
 					Uri uri = Uri.withAppendedPath(
 							InstanceProviderAPI.CONTENT_URI,
+							currentForm.appName + "/" +
 							currentForm.tableId + "/"
 									+ StringEscapeUtils.escapeHtml4(id));
-					results = Survey.getInstance().getContentResolver()
+					results = getActivity().getContentResolver()
 							.query(uri, null, null, null, null);
 					if (results.getCount() == 1 && results.moveToFirst()) {
 						String name = results.getString(results
@@ -589,9 +590,11 @@ public class InstanceUploaderListFragment extends ListFragment implements
 		Uri baseUri;
 		if (currentForm != null) {
 			baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
+			      currentForm.appName + "/" +
 					currentForm.tableId);
 		} else {
-			baseUri = InstanceProviderAPI.CONTENT_URI;
+			baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
+             ((ODKActivity) getActivity()).getAppName());
 		}
 
 		String selection;

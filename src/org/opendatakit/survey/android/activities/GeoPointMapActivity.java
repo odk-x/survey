@@ -52,6 +52,9 @@ import com.google.android.maps.Overlay;
 public class GeoPointMapActivity extends MapActivity implements
 		LocationListener {
 
+  private static final double LOCATION_ACCURACY = 5;
+  private static final String LOCATION = "gp";
+
 	private MapView mMapView;
 	private TextView mLocationStatus;
 
@@ -70,9 +73,6 @@ public class GeoPointMapActivity extends MapActivity implements
 
 	private boolean mGPSOn = false;
 	private boolean mNetworkOn = false;
-
-	private static double LOCATION_ACCURACY = 5;
-	private static String LOCATION = "gp";
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

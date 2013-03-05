@@ -24,8 +24,7 @@ import android.net.Uri;
  */
 public final class FormsProviderAPI {
 	public static final String AUTHORITY = "org.opendatakit.survey.android.provider.forms";
-	public static final Uri CONTENT_URI = Uri.parse("content://"
-	+ AUTHORITY + "/forms");
+	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/");
 
 	// This class cannot be instantiated
 	private FormsProviderAPI() {

@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
@@ -307,7 +308,7 @@ public class FormDownloadListFragment extends ListFragment implements
 			showProgressDialog(DialogState.ProgressForms);
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 					.findFragmentByTag("background");
-			f.downloadForms(this, filesToDownload
+			f.downloadForms(((ODKActivity) getActivity()).getAppName(), this, filesToDownload
 					.toArray(new FormDetails[filesToDownload.size()]));
 		} else {
 			Toast.makeText(getActivity(), R.string.noselect_error,

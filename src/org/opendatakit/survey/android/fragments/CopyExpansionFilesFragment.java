@@ -119,7 +119,7 @@ public class CopyExpansionFilesFragment extends Fragment implements
 		// launch the copy operation
 		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
 				.findFragmentByTag("background");
-		f.copyExpansionFiles(this);
+		f.copyExpansionFiles(((ODKActivity) getActivity()).getAppName(), this);
 	}
 
 	@Override

@@ -18,9 +18,9 @@ import java.util.ArrayList;
 
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.ConfirmationDialogFragment.ConfirmConfirmationDialog;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
-import org.opendatakit.survey.android.listeners.DiskSyncListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
@@ -51,7 +51,7 @@ import android.widget.Toast;
  *
  */
 public class FormDeleteListFragment extends ListFragment implements
-		DiskSyncListener, DeleteFormsListener, ConfirmConfirmationDialog,
+		DeleteFormsListener, ConfirmConfirmationDialog,
 		LoaderManager.LoaderCallbacks<Cursor> {
 
 	private static final String t = "FormDeleteListFragment";
@@ -73,7 +73,7 @@ public class FormDeleteListFragment extends ListFragment implements
 
 	private String mSyncStatusText = "";
 	private DialogState mDialogState = DialogState.None;
-	private ArrayList<Long> mSelected = new ArrayList<Long>();
+	private ArrayList<String> mSelected = new ArrayList<String>();
 
 	// data that is not persisted
 
@@ -137,8 +137,8 @@ public class FormDeleteListFragment extends ListFragment implements
 			}
 
 			if (savedInstanceState.containsKey(SELECTED)) {
-				long[] selectedArray = savedInstanceState
-						.getLongArray(SELECTED);
+				String[] selectedArray = savedInstanceState
+						.getStringArray(SELECTED);
 				for (int i = 0; i < selectedArray.length; i++) {
 					mSelected.add(selectedArray[i]);
 				}
@@ -156,11 +156,11 @@ public class FormDeleteListFragment extends ListFragment implements
 	@Override
 	public void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		long[] selectedArray = new long[mSelected.size()];
+		String[] selectedArray = new String[mSelected.size()];
 		for (int i = 0; i < mSelected.size(); i++) {
 			selectedArray[i] = mSelected.get(i);
 		}
-		outState.putLongArray(SELECTED, selectedArray);
+		outState.putStringArray(SELECTED, selectedArray);
 		outState.putString(SYNC_MSG_KEY, mSyncStatusText);
 		outState.putString(DIALOG_STATE, mDialogState.name());
 	}
@@ -175,9 +175,9 @@ public class FormDeleteListFragment extends ListFragment implements
 		// if current activity is being reinitialized due to changing
 		// orientation restore all checkmarks for ones selected
 		ListView ls = getListView();
-		for (long id : mSelected) {
+		for (String id : mSelected) {
 			for (int pos = 0; pos < ls.getCount(); pos++) {
-				if (id == ls.getItemIdAtPosition(pos)) {
+				if (id.equals(ls.getItemIdAtPosition(pos))) {
 					ls.setItemChecked(pos, true);
 					break;
 				}
@@ -189,7 +189,6 @@ public class FormDeleteListFragment extends ListFragment implements
 		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
 				.findFragmentByTag("background");
 
-		f.establishDiskSyncListener(this);
 		f.establishDeleteFormsListener(this);
 
 		TextView tv = (TextView) view.findViewById(R.id.status_text);
@@ -268,7 +267,7 @@ public class FormDeleteListFragment extends ListFragment implements
 		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
 				.findFragmentByTag("background");
 
-		f.deleteSelectedForms(this,
+		f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this,
 				mSelected.toArray(new Long[mSelected.size()]));
 	}
 
@@ -278,24 +277,16 @@ public class FormDeleteListFragment extends ListFragment implements
 
 		// get row id from db
 		Cursor c = (Cursor) getListAdapter().getItem(position);
-		long k = c.getLong(c.getColumnIndex(FormsColumns._ID));
+		String formid = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
 
 		// add/remove from selected list
-		if (mSelected.contains(k))
-			mSelected.remove(k);
+		if (mSelected.contains(formid))
+			mSelected.remove(formid);
 		else
-			mSelected.add(k);
+			mSelected.add(formid);
 
 		mDeleteButton.setEnabled(!(mSelected.size() == 0));
 
-	}
-
-	@Override
-	public void SyncComplete(String result) {
-		Log.i(t, "Disk scan complete");
-		mSyncStatusText = result;
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
 	}
 
 	@Override
@@ -330,7 +321,8 @@ public class FormDeleteListFragment extends ListFragment implements
 		// sample only has one Loader, so we don't care about the ID.
 		// First, pick the base URI to use depending on whether we are
 		// currently filtering.
-		Uri baseUri = FormsProviderAPI.CONTENT_URI;
+		Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+		    ((ODKActivity) getActivity()).getAppName());
 
 		// Now create and return a CursorLoader that will take care of
 		// creating a Cursor for the data being displayed.

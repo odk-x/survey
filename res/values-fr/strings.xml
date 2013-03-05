@@ -162,4 +162,5 @@ License.
 <string name="expansion_progress">%1$s\n\n(%2$s of %3$s).</string>
 <string name="expansion_failed">Unable to expand APK expansion files</string>
 <string name="loading_video">Loading video...</string>
+<string name="application">(Application)</string>
 </resources>

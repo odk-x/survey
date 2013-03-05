@@ -21,12 +21,14 @@ import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.opendatakit.common.android.database.WebDbDatabaseHelper;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Build;
 
 /**
@@ -40,10 +42,11 @@ public class JQueryJavascriptCallback {
 	public static final String t = "HtmlJavascriptCallback";
 
 	final ODKActivity mActivity;
-	private WebLogger log = Survey.getInstance().getLogger();
+	private WebLogger log;
 
 	public JQueryJavascriptCallback(ODKActivity activity) {
 		mActivity = activity;
+		log = WebLogger.getLogger(mActivity.getAppName());
 	}
 
 	public String getBaseUrl() {
@@ -70,7 +73,7 @@ public class JQueryJavascriptCallback {
 			c = Survey
 					.getInstance()
 					.getContentResolver()
-					.query(FormsProviderAPI.CONTENT_URI, null, selection,
+					.query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, mActivity.getAppName()), null, selection,
 							selectionArgs, orderBy);
 
 			if (c.getCount() > 0) {
@@ -110,7 +113,7 @@ public class JQueryJavascriptCallback {
 	 * @return JSONstring as defined above.
 	 */
 	public String getPlatformInfo() {
-		File mediaFolder = new File(Survey.FORMS_PATH + File.separator
+		File mediaFolder = new File(ODKFileUtils.getFormsFolder(mActivity.getAppName()) + File.separator
 				+ "default");
 
 		return "{\"container\":\"Android\"," + "\"version\":\""
@@ -155,6 +158,22 @@ public class JQueryJavascriptCallback {
 
 	public void setPageRef(String pageRef) {
 		mActivity.setPageRef(pageRef);
+	}
+
+	public boolean hasPromptHistory() {
+     return mActivity.hasPromptHistory();
+	}
+
+	public void clearPromptHistory() {
+	  mActivity.clearPromptHistory();
+	}
+
+	public String popPromptHistory() {
+	  return mActivity.popPromptHistory();
+	}
+
+	public void pushPromptHistory(String idx) {
+	  mActivity.pushPromptHistory(idx);
 	}
 
 	public void setAuxillaryHash(String auxillaryHash) {

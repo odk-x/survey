@@ -34,6 +34,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
+import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.utilities.WebUtils;
@@ -49,10 +50,8 @@ import org.opendatakit.httpclientandroidlib.entity.mime.content.FileBody;
 import org.opendatakit.httpclientandroidlib.entity.mime.content.StringBody;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
-import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FileSet;
@@ -60,6 +59,7 @@ import org.opendatakit.survey.android.provider.FileSet.MimeFile;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 import org.opendatakit.survey.android.provider.SubmissionProvider;
 
+import android.app.Application;
 import android.content.ContentValues;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -76,12 +76,15 @@ import android.util.Log;
 public class InstanceUploaderTask extends
 		AsyncTask<String, Integer, InstanceUploadOutcome> {
 
-	private static String t = "InstanceUploaderTask";
-	private InstanceUploaderListener mStateListener;
+	private static final String t = "InstanceUploaderTask";
 	// it can take up to 27 seconds to spin up Aggregate
 	private static final int CONNECTION_TIMEOUT = 45000;
 	private static final String fail = "Error: ";
-	private String mAuth = "";
+
+   private Application appContext;
+   private InstanceUploaderListener mStateListener;
+
+   private String mAuth = "";
 
 	private InstanceUploadOutcome mOutcome = new InstanceUploadOutcome();
 
@@ -130,7 +133,7 @@ public class InstanceUploaderTask extends
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 					InstanceColumns.STATUS_SUBMISSION_FAILED);
-			Survey.getInstance().getContentResolver()
+			appContext.getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
 		} catch (URISyntaxException e) {
@@ -139,7 +142,7 @@ public class InstanceUploaderTask extends
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 					InstanceColumns.STATUS_SUBMISSION_FAILED);
-			Survey.getInstance().getContentResolver()
+			appContext.getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
 		} catch (UnsupportedEncodingException e) {
@@ -148,7 +151,7 @@ public class InstanceUploaderTask extends
 					+ " :: details: " + e.getMessage());
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 					InstanceColumns.STATUS_SUBMISSION_FAILED);
-			Survey.getInstance().getContentResolver()
+			appContext.getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
 		}
@@ -201,7 +204,7 @@ public class InstanceUploaderTask extends
 														+ uNew.toString());
 								cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 										InstanceColumns.STATUS_SUBMISSION_FAILED);
-								Survey.getInstance().getContentResolver()
+								appContext.getContentResolver()
 										.update(toUpdate, cv, null, null);
 								return true;
 							}
@@ -211,7 +214,7 @@ public class InstanceUploaderTask extends
 									+ e.getMessage());
 							cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 									InstanceColumns.STATUS_SUBMISSION_FAILED);
-							Survey.getInstance().getContentResolver()
+							appContext.getContentResolver()
 									.update(toUpdate, cv, null, null);
 							return true;
 						}
@@ -228,7 +231,7 @@ public class InstanceUploaderTask extends
 												+ "Invalid status code on Head request.  If you have a web proxy, you may need to login to your network. ");
 						cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 								InstanceColumns.STATUS_SUBMISSION_FAILED);
-						Survey.getInstance().getContentResolver()
+						appContext.getContentResolver()
 								.update(toUpdate, cv, null, null);
 						return true;
 					}
@@ -239,7 +242,7 @@ public class InstanceUploaderTask extends
 				mOutcome.mResults.put(id, fail + "Client Protocol Exception");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			} catch (ConnectTimeoutException e) {
@@ -248,7 +251,7 @@ public class InstanceUploaderTask extends
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			} catch (UnknownHostException e) {
@@ -258,7 +261,7 @@ public class InstanceUploaderTask extends
 				Log.e(t, e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			} catch (SocketTimeoutException e) {
@@ -267,7 +270,7 @@ public class InstanceUploaderTask extends
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			} catch (Exception e) {
@@ -276,7 +279,7 @@ public class InstanceUploaderTask extends
 				Log.e(t, e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			}
@@ -299,7 +302,7 @@ public class InstanceUploaderTask extends
 					+ "instance XML file does not exist!");
 			cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 					InstanceColumns.STATUS_SUBMISSION_FAILED);
-			Survey.getInstance().getContentResolver()
+			appContext.getContentResolver()
 					.update(toUpdate, cv, null, null);
 			return true;
 		}
@@ -379,7 +382,7 @@ public class InstanceUploaderTask extends
 					}
 					cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 							InstanceColumns.STATUS_SUBMISSION_FAILED);
-					Survey.getInstance().getContentResolver()
+					appContext.getContentResolver()
 							.update(toUpdate, cv, null, null);
 					return true;
 				}
@@ -389,7 +392,7 @@ public class InstanceUploaderTask extends
 						fail + "Generic Exception. " + e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
-				Survey.getInstance().getContentResolver()
+				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
 			}
@@ -397,10 +400,10 @@ public class InstanceUploaderTask extends
 
 		// if it got here, it must have worked
 		mOutcome.mResults.put(id,
-				Survey.getInstance().getString(R.string.success));
+		    appContext.getString(R.string.success));
 		cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 				InstanceColumns.STATUS_SUBMITTED);
-		Survey.getInstance().getContentResolver()
+		appContext.getContentResolver()
 				.update(toUpdate, cv, null, null);
 		return true;
 	}
@@ -420,6 +423,8 @@ public class InstanceUploaderTask extends
 			throws JsonParseException, JsonMappingException, IOException {
 
 		Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
+            + "/"
+            + URLEncoder.encode(fi.appName, "UTF-8")
 				+ "/"
 				+ URLEncoder.encode(fi.tableId, "UTF-8")
 				+ "/"
@@ -429,7 +434,7 @@ public class InstanceUploaderTask extends
 				+ ((fi.formVersion == null) ? "" : "&formVersion="
 						+ URLEncoder.encode(fi.formVersion, "UTF-8")));
 
-		InputStream is = Survey.getInstance().getContentResolver()
+		InputStream is = appContext.getContentResolver()
 				.openInputStream(manifest);
 
 		FileSet f = FileSet.parse(is);
@@ -445,11 +450,11 @@ public class InstanceUploaderTask extends
 		mOutcome.mAuthRequestingServer = null;
 
 		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(Survey.getInstance());
+				.getDefaultSharedPreferences(appContext);
 		String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
 		setAuth(auth);
 
-		FormInfo fi = new FormInfo(uploadingForm.formDefFile);
+		FormInfo fi = new FormInfo(appContext, uploadingForm.formDefFile);
 		// get shared HttpContext so that authentication and cookies are
 		// retained.
 		HttpContext localContext = WebUtils.getHttpContext();
@@ -465,11 +470,12 @@ public class InstanceUploaderTask extends
 
 			Uri toUpdate = Uri.withAppendedPath(
 					InstanceProviderAPI.CONTENT_URI,
+					uploadingForm.appName + "/" +
 					uploadingForm.tableId + "/"
 							+ StringEscapeUtils.escapeHtml4(toUpload[i]));
 			Cursor c = null;
 			try {
-				c = Survey.getInstance().getContentResolver()
+				c = appContext.getContentResolver()
 						.query(toUpdate, null, null, null, null);
 				if (c.getCount() == 1 && c.moveToFirst()) {
 
@@ -567,13 +573,23 @@ public class InstanceUploaderTask extends
 		}
 	}
 
+   public InstanceUploadOutcome getResult() {
+      return mResultOutcome;
+   }
+
 	public void setUploaderListener(InstanceUploaderListener sl) {
 		synchronized (this) {
 			mStateListener = sl;
 		}
 	}
 
-	public InstanceUploadOutcome getResult() {
-		return mResultOutcome;
-	}
+   public void setApplication(Application appContext) {
+     synchronized (this) {
+       this.appContext = appContext;
+     }
+   }
+
+   public Application getApplication() {
+     return appContext;
+   }
 }

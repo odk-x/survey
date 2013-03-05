@@ -39,116 +39,118 @@ import android.widget.Toast;
  *
  */
 public class MediaChooseAudioActivity extends Activity {
-	private static final String t = "MediaChooseAudioActivity";
-	private static final int ACTION_CODE = 1;
-	private static final String MEDIA_CLASS = "audio/";
-	private static final String URI = "uri";
-	private static final String CONTENT_TYPE = "contentType";
+  private static final String t = "MediaChooseAudioActivity";
+  private static final int ACTION_CODE = 1;
+  private static final String MEDIA_CLASS = "audio/";
+  private static final String URI = "uri";
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+  private static final String NEW_FILE = "newFile";
+  private static final String CONTENT_TYPE = "contentType";
 
-		Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-		i.setType(MEDIA_CLASS + "*");
-		try {
-			startActivityForResult(i, ACTION_CODE);
-		} catch (ActivityNotFoundException e) {
-			Toast.makeText(
-					this,
-					getString(R.string.activity_not_found,
-							Intent.ACTION_GET_CONTENT + " " + MEDIA_CLASS),
-					Toast.LENGTH_SHORT).show();
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-		}
-	}
+  private String newFileBase = null;
 
-	@Override
-	public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-		if (resultCode == Activity.RESULT_CANCELED) {
-			// request was canceled -- propagate
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-			return;
-		}
+    if (savedInstanceState != null) {
+      newFileBase = savedInstanceState.getString(NEW_FILE);
+    }
+    if (newFileBase == null) {
+      throw new IllegalArgumentException("Expected " + NEW_FILE
+          + " key in intent bundle. Not found.");
+    }
 
-		/*
-		 * We have chosen a saved audio clip from somewhere, but we really want
-		 * it to be in: /sdcard/odk/instances/[current instance]/something.3gpp
-		 * so we copy it there and insert that copy into the content provider.
-		 */
+    Intent i = new Intent(Intent.ACTION_GET_CONTENT);
+    i.setType(MEDIA_CLASS + "*");
+    try {
+      startActivityForResult(i, ACTION_CODE);
+    } catch (ActivityNotFoundException e) {
+      Toast.makeText(this,
+          getString(R.string.activity_not_found, Intent.ACTION_GET_CONTENT + " " + MEDIA_CLASS),
+          Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+    }
+  }
 
-		// get gp of chosen file
-		Uri selectedMedia = intent.getData();
-		String sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia,
-				Audio.Media.DATA);
-		File sourceMedia = new File(sourceMediaPath);
-		String extension = sourceMediaPath.substring(sourceMediaPath
-				.lastIndexOf("."));
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString(NEW_FILE, newFileBase);
+  }
 
-		String destMediaPath = MainMenuActivity.getInstanceFilePath(extension);
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
-		File newMedia = new File(destMediaPath);
-		try {
-			FileUtils.copyFile(sourceMedia, newMedia);
-		} catch (IOException e) {
-			Log.e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
-			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
-					.show();
-			// keep the image as a captured image so user can choose it.
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-			return;
-		}
+    if (resultCode == Activity.RESULT_CANCELED) {
+      // request was canceled -- propagate
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
 
-		Log.i(t,
-				"copied " + sourceMedia.getAbsolutePath() + " to "
-						+ newMedia.getAbsolutePath());
+    /*
+     * We have chosen a saved audio clip from somewhere, but we really want it
+     * to be in: /sdcard/odk/instances/[current instance]/something.3gpp so we
+     * copy it there and insert that copy into the content provider.
+     */
 
-		Uri mediaURI = null;
-		if (newMedia.exists()) {
-			// Add the new image to the Media content provider so that the
-			// viewing is fast in Android 2.0+
-			ContentValues values = new ContentValues(6);
-			values.put(Audio.Media.TITLE, newMedia.getName());
-			values.put(Audio.Media.DISPLAY_NAME, newMedia.getName());
-			values.put(Audio.Media.DATE_ADDED, System.currentTimeMillis());
-			values.put(Audio.Media.MIME_TYPE,
-					MEDIA_CLASS + extension.substring(1));
-			values.put(Audio.Media.DATA, newMedia.getAbsolutePath());
+    // get gp of chosen file
+    Uri selectedMedia = intent.getData();
+    String sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Audio.Media.DATA);
+    File sourceMedia = new File(sourceMediaPath);
+    String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-			mediaURI = getContentResolver().insert(
-					Audio.Media.EXTERNAL_CONTENT_URI, values);
-			Log.i(t,
-					"Insert " + MEDIA_CLASS + " returned uri = "
-							+ mediaURI.toString());
+    String destMediaPath = newFileBase + extension;
 
-			// if you are replacing an answer. delete the previous image using
-			// the
-			// content provider.
-			String binarypath = MediaUtils.getPathFromUri(this, mediaURI,
-					Audio.Media.DATA);
-			File newMediaFromCP = new File(binarypath);
+    File newMedia = new File(destMediaPath);
+    try {
+      FileUtils.copyFile(sourceMedia, newMedia);
+    } catch (IOException e) {
+      Log.e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
+      Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+      // keep the image as a captured image so user can choose it.
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
 
-			Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
-			Intent i = new Intent();
-			i.putExtra(URI, FileProvider.getAsUrl(newMediaFromCP));
-			String name = newMediaFromCP.getName();
-			i.putExtra(CONTENT_TYPE,
-					MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
-			setResult(Activity.RESULT_OK, i);
-			finish();
-		} else {
-			Log.e(t,
-					"No " + MEDIA_CLASS + " exists at: "
-							+ newMedia.getAbsolutePath());
-			Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT)
-					.show();
-			setResult(Activity.RESULT_CANCELED);
-			finish();
-		}
-	}
+    Log.i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
+
+    Uri mediaURI = null;
+    if (newMedia.exists()) {
+      // Add the new image to the Media content provider so that the
+      // viewing is fast in Android 2.0+
+      ContentValues values = new ContentValues(6);
+      values.put(Audio.Media.TITLE, newMedia.getName());
+      values.put(Audio.Media.DISPLAY_NAME, newMedia.getName());
+      values.put(Audio.Media.DATE_ADDED, System.currentTimeMillis());
+      values.put(Audio.Media.MIME_TYPE, MEDIA_CLASS + extension.substring(1));
+      values.put(Audio.Media.DATA, newMedia.getAbsolutePath());
+
+      mediaURI = getContentResolver().insert(Audio.Media.EXTERNAL_CONTENT_URI, values);
+      Log.i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
+
+      // if you are replacing an answer. delete the previous image using
+      // the
+      // content provider.
+      String binarypath = MediaUtils.getPathFromUri(this, mediaURI, Audio.Media.DATA);
+      File newMediaFromCP = new File(binarypath);
+
+      Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
+      Intent i = new Intent();
+      i.putExtra(URI, FileProvider.getAsUrl(newMediaFromCP));
+      String name = newMediaFromCP.getName();
+      i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+      setResult(Activity.RESULT_OK, i);
+      finish();
+    } else {
+      Log.e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
+      Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+    }
+  }
 
 }

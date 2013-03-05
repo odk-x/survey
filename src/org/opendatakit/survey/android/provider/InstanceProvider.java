@@ -16,21 +16,11 @@
 package org.opendatakit.survey.android.provider;
 
 import org.opendatakit.common.android.provider.impl.InstanceProviderImpl;
-import org.opendatakit.survey.android.application.Survey;
 
 /**
  *
  */
 public class InstanceProvider extends InstanceProviderImpl {
-
-
-	public String getWebDbPath() {
-		return Survey.WEBDB_PATH;
-	}
-
-	public String getInstancesPath() {
-		return Survey.INSTANCES_PATH;
-	}
 
 	public String getInstanceAuthority() {
 		return InstanceProviderAPI.AUTHORITY;

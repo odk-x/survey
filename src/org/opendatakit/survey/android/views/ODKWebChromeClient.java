@@ -16,10 +16,7 @@ package org.opendatakit.survey.android.views;
 
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.application.Survey;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.view.View;
@@ -36,17 +33,14 @@ public class ODKWebChromeClient extends WebChromeClient implements
 		MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
 	private static final String t = "ODKWebChromeClient";
-	private Activity a;
+   private WebLogger log;
+	private ODKActivity a;
 	private VideoView video = null;
 	private WebChromeClient.CustomViewCallback callback = null;
-	private WebLogger log = Survey.getInstance().getLogger();
 
-	public ODKWebChromeClient(Context context) {
-		this.a = (Activity) context;
-	}
-
-	public void setActivity(Activity a) {
+	public ODKWebChromeClient(ODKActivity a) {
 		this.a = a;
+      log = WebLogger.getLogger(a.getAppName());
 	}
 
 	@Override
@@ -62,14 +56,14 @@ public class ODKWebChromeClient extends WebChromeClient implements
 				video = (VideoView) frame.getFocusedChild();
 				video.setOnCompletionListener(this);
 				video.setOnErrorListener(this);
-				((ODKActivity) a).swapToCustomView(view);
+				a.swapToCustomView(view);
 				super.onShowCustomView(view, callback);
 				// video.seekTo(0);// reset to start of video...
 				// video.start();
 			} else {
 				log.i(t, "onShowCustomView: FrameLayout not Video "
 						+ frame.getFocusedChild().getClass().getCanonicalName());
-				((ODKActivity) a).swapToCustomView(view);
+				a.swapToCustomView(view);
 				super.onShowCustomView(view, callback);
 			}
 		} else {
@@ -83,7 +77,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
 	@Override
 	public void onHideCustomView() {
 		log.d(t, "onHideCustomView");
-		((ODKActivity) a).swapOffCustomView();
+		a.swapOffCustomView();
 		if (video != null) {
 			video.stopPlayback();
 		}

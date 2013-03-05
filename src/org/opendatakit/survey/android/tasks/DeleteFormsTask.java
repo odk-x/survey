@@ -17,7 +17,7 @@ package org.opendatakit.survey.android.tasks;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
-import android.content.ContentResolver;
+import android.app.Application;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -32,8 +32,9 @@ import android.util.Log;
 public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 	private static final String t = "DeleteFormsTask";
 
-	private ContentResolver cr;
+   private Application appContext;
 	private DeleteFormsListener dl;
+   private String appName;
 
 	private int successCount = 0;
 
@@ -41,7 +42,7 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 	protected Integer doInBackground(Long... params) {
 		int deleted = 0;
 
-		if (params == null || cr == null || dl == null) {
+		if (params == null || appContext == null || dl == null) {
 			return deleted;
 		}
 
@@ -51,9 +52,10 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 				break;
 			}
 			try {
-				Uri deleteForm = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-						params[i].toString());
-				deleted += cr.delete(deleteForm, null, null);
+				Uri deleteForm = Uri.withAppendedPath(
+				    Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,appName),
+				      params[i].toString());
+				deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 			} catch (Exception ex) {
 				Log.e(t, "Exception during delete of: " + params[i].toString()
 						+ " exception: " + ex.toString());
@@ -65,7 +67,7 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 
 	@Override
 	protected void onPostExecute(Integer result) {
-		cr = null;
+	  appContext = null;
 		if (dl != null) {
 			dl.deleteFormsComplete(result);
 		}
@@ -73,7 +75,7 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 
 	@Override
 	protected void onCancelled(Integer result) {
-		cr = null;
+	  appContext = null;
 		// can be null if cancelled before task executes
 		if ( result == null ) {
 			successCount = 0;
@@ -83,15 +85,31 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
 		}
 	}
 
+   public int getDeleteCount() {
+      return successCount;
+   }
+
 	public void setDeleteListener(DeleteFormsListener listener) {
 		dl = listener;
 	}
 
-	public void setContentResolver(ContentResolver resolver) {
-		cr = resolver;
-	}
+   public void setAppName(String appName) {
+     synchronized (this) {
+       this.appName = appName;
+     }
+   }
 
-	public int getDeleteCount() {
-		return successCount;
-	}
+   public String getAppName() {
+     return appName;
+   }
+
+   public void setApplication(Application appContext) {
+     synchronized (this) {
+       this.appContext = appContext;
+     }
+   }
+
+   public Application getApplication() {
+     return appContext;
+   }
 }

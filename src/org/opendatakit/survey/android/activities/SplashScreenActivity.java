@@ -19,8 +19,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Activity;
@@ -60,10 +60,9 @@ public class SplashScreenActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		// must be at the beginning of any activity that can be called from an
-		// external intent
-		try {
-			Survey.createODKDirs();
+		// verify that the external SD Card is available.
+      try {
+        ODKFileUtils.verifyExternalStorageAvailability();
 		} catch (RuntimeException e) {
 			createErrorDialog(e.getMessage(), EXIT);
 			return;

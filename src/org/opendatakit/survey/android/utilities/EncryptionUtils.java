@@ -48,9 +48,9 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
+import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.utilities.Base64Wrapper;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.logic.FormInfo;
 import org.opendatakit.survey.android.provider.FileSet;
 import org.opendatakit.survey.android.provider.FileSet.MimeFile;
 

@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
@@ -42,6 +43,7 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.CopyExpansionFilesListener;
 
+import android.app.Application;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -58,27 +60,15 @@ public class CopyExpansionFilesTask extends
 
 	private static final String t = "CopyExpansionFilesTask";
 
-	private static final boolean debugAPKExpansion = false;
-
+   private Application appContext;
 	private CopyExpansionFilesListener mStateListener;
-	private boolean mSuccess = false;
+   private String appName;
+
+   private boolean mSuccess = false;
 	private ArrayList<String> mResult = new ArrayList<String>();
 
 	private boolean mPendingSuccess = false;
 	private ArrayList<String> mPendingResult = new ArrayList<String>();
-
-	/**
-	 * For debugging APK expansion, we check for the existence and process the
-	 * local file without also confirming that it matches that on the Google
-	 * Play site.
-	 *
-	 * @return true if there is a test APK Expansion file present.
-	 */
-	@SuppressWarnings("unused")
-	public static boolean debugAPKExpansionFileProcessing() {
-		File f = Survey.getInstance().localExpansionFile();
-		return (debugAPKExpansion && f.exists());
-	}
 
 	/**
 	 * For debugging APK expansion, we check for the existence and process the
@@ -90,8 +80,8 @@ public class CopyExpansionFilesTask extends
 	@SuppressWarnings("unused")
 	private void addLocalAPKExpansionFile(
 			ArrayList<Map<String, Object>> expansionFiles) {
-		File f = Survey.getInstance().localExpansionFile();
-		if (debugAPKExpansion && f.exists()) {
+		File f = Survey.debugAPKExpansionFile();
+		if (f != null && f.exists()) {
 			Map<String, Object> expansionFile = new HashMap<String, Object>();
 			expansionFile.put(Survey.EXPANSION_FILE_PATH, f.getAbsolutePath());
 			expansionFile.put(Survey.EXPANSION_FILE_LENGTH, Long.valueOf(f.length()).toString());
@@ -131,7 +121,7 @@ public class CopyExpansionFilesTask extends
 			}
 
 			publishProgress(
-					Survey.getInstance().getString(R.string.expanding_file,
+					appContext.getString(R.string.expanding_file,
 							f.getName()), Integer.valueOf(count).toString(),
 					Integer.valueOf(total).toString());
 
@@ -179,7 +169,7 @@ public class CopyExpansionFilesTask extends
 					// failure...
 					mPendingSuccess = false;
 				} else {
-					message = Survey.getInstance().getString(R.string.success);
+					message = appContext.getString(R.string.success);
 				}
 			}
 			count++;
@@ -207,8 +197,8 @@ public class CopyExpansionFilesTask extends
 					}
 					++nFiles;
 					ZipEntry entry = entries.nextElement();
-					File tempFile = new File(Survey.ODK_ROOT, entry.getName());
-					String formattedString = Survey.getInstance().getString(
+					File tempFile = new File(ODKFileUtils.getAppFolder(appName), entry.getName());
+					String formattedString = appContext.getString(
 							R.string.expansion_unzipping, zipfile.getName(),
 							entry.getName());
 					publishProgress(formattedString, Integer.valueOf(nFiles)
@@ -313,7 +303,7 @@ public class CopyExpansionFilesTask extends
 
 				if (statusCode != 200) {
 					WebUtils.discardEntityBytes(response);
-					String errMsg = Survey.getInstance().getString(
+					String errMsg = appContext.getString(
 							R.string.file_fetch_failed, downloadUrl,
 							response.getStatusLine().getReasonPhrase(),
 							statusCode);
@@ -415,5 +405,25 @@ public class CopyExpansionFilesTask extends
 			mStateListener = sl;
 		}
 	}
+
+   public void setAppName(String appName) {
+     synchronized (this) {
+       this.appName = appName;
+     }
+   }
+
+   public String getAppName() {
+     return appName;
+   }
+
+   public void setApplication(Application appContext) {
+     synchronized (this) {
+       this.appContext = appContext;
+     }
+   }
+
+   public Application getApplication() {
+     return appContext;
+   }
 
 }

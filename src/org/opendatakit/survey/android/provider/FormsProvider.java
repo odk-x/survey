@@ -16,7 +16,6 @@
 package org.opendatakit.survey.android.provider;
 
 import org.opendatakit.common.android.provider.impl.FormsProviderImpl;
-import org.opendatakit.survey.android.application.Survey;
 
 import android.net.Uri;
 
@@ -24,18 +23,6 @@ import android.net.Uri;
  *
  */
 public class FormsProvider extends FormsProviderImpl {
-
-	public String getWebDbPath() {
-		return Survey.WEBDB_PATH;
-	}
-
-	public String getFormsPath() {
-		return Survey.FORMS_PATH;
-	}
-
-	public String getStaleFormsPath() {
-		return Survey.STALE_FORMS_PATH;
-	}
 
 	public String getFormsAuthority() {
 		return FormsProviderAPI.AUTHORITY;

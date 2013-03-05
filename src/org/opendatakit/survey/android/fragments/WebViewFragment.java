@@ -30,7 +30,7 @@ import android.view.ViewGroup;
  *
  */
 public class WebViewFragment extends Fragment {
-	public static int ID = R.layout.blank_layout;
+	public static final int ID = R.layout.blank_layout;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {

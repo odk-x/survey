@@ -39,7 +39,7 @@ public class FileSet {
 	private static final String CONTENT_TYPE = "contentType";
 	public File instanceFile = null;
 
-	public static class MimeFile {
+	public static final class MimeFile {
 		public File file;
 		public String contentType;
 	};
