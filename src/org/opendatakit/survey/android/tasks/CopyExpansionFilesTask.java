@@ -77,7 +77,6 @@ public class CopyExpansionFilesTask extends
 	 *
 	 * @param expansionFiles
 	 */
-	@SuppressWarnings("unused")
 	private void addLocalAPKExpansionFile(
 			ArrayList<Map<String, Object>> expansionFiles) {
 		File f = Survey.debugAPKExpansionFile();

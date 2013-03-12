@@ -25,6 +25,11 @@ import android.util.Log;
 /**
  * Simple shim for media interactions.
  *
+ * Called from javascript with:
+ * shim.doAction(promptPath, internalPromptContext,
+ *       "org.opendatakit.survey.android.activities.MediaDeleteAudioActivity",
+ *      JSON.stringify({ mediaPath: uriFromDatabase }));
+ *
  * @author mitchellsundt@gmail.com
  *
  */

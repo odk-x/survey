@@ -16,7 +16,7 @@
     android:paddingLeft="20dp"
     android:paddingRight="20dp"
     android:gravity="center"
-    android:background="@drawable/white"
-    android:textColor="@drawable/black" />
+    android:background="@color/white"
+    android:textColor="@color/black" />
 
 </LinearLayout>

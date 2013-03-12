@@ -44,7 +44,8 @@ import android.widget.TextView;
 public class FormChooserListFragment extends ListFragment implements
 		LoaderManager.LoaderCallbacks<Cursor> {
 
-	private static final String t = "FormChooserListFragment";
+	@SuppressWarnings("unused")
+  private static final String t = "FormChooserListFragment";
 	private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
 
 	public static final int ID = R.layout.form_chooser_list;

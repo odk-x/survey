@@ -25,6 +25,11 @@ import android.util.Log;
 /**
  * Simple wrapper for delete-file functionality.
  *
+ * Called from javascript with:
+ * shim.doAction(promptPath, internalPromptContext,
+ *       "org.opendatakit.survey.android.activities.MediaDeleteVideoActivity",
+ *      JSON.stringify({ mediaPath: uriFromDatabase }));
+ *
  * @author mitchellsundt@gmail.com
  *
  */

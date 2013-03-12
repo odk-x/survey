@@ -14,12 +14,12 @@ License for the specific language governing permissions and limitations under
 the License.
 -->
 <resources>
-    <drawable name="red">#7f00</drawable>
-    <drawable name="white">#ffffffff</drawable>
-    <drawable name="black">#ff000000</drawable>
-    <drawable name="blue">#770000ff</drawable>
-    <drawable name="green">#7700ff00</drawable>
-    <drawable name="yellow">#77ffff00</drawable>
+    <color name="red">#7f00</color>
+    <color name="white">#ffffffff</color>
+    <color name="black">#ff000000</color>
+    <color name="blue">#770000ff</color>
+    <color name="green">#7700ff00</color>
+    <color name="yellow">#77ffff00</color>
 
     <color name="solid_red">#f00</color>
     <color name="solid_blue">#0000ff</color>

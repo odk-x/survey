@@ -46,6 +46,11 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
   }
 
   @Override
+  public String getAppName() {
+    return appName;
+  }
+
+  @Override
   public String getInstanceDirectory() {
     String mediaPath = ODKFileUtils.getInstanceFolder(appName, tableId, instanceId);
     return mediaPath;
