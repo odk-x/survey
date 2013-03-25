@@ -14,14 +14,11 @@
 
 package org.opendatakit.survey.android.views;
 
-import java.io.File;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.opendatakit.common.android.database.WebDbDatabaseHelper;
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
@@ -60,7 +57,7 @@ public class JQueryJavascriptCallback {
 			// find if there is already a form definition with the same formId
 			// and formVersion...
 			String selection = FormsColumns.FORM_ID + "=?";
-			String[] selectionArgs = { "default" };
+			String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
 			String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the
 																	// most
 																	// recently
@@ -100,25 +97,21 @@ public class JQueryJavascriptCallback {
 	 *
 	 * <pre>
 	 * {"container":"Android",
-	 *  "version":"2.2.3",
-	 *  "appPath":"pathToDirContaining/index.html"
+	 *  "version":"2.2.3"
 	 *  }
 	 * </pre>
 	 *
 	 * Version should map to the capabilities of the WebKit or browser in which
 	 * the form is rendered. For Android, this is part of the operating system
 	 * and is not updated separately, so its version is the OS build version.
-	 * AppDir should end with a trailing slash.
 	 *
 	 * @return JSONstring as defined above.
 	 */
 	public String getPlatformInfo() {
-		File mediaFolder = new File(ODKFileUtils.getFormsFolder(mActivity.getAppName()) + File.separator
-				+ "default");
-
-		return "{\"container\":\"Android\"," + "\"version\":\""
-				+ Build.VERSION.RELEASE + "\"," + "\"appPath\":\""
-				+ mediaFolder.getAbsolutePath() + File.separator + "\"}";
+	   //@formatter:off
+		return "{\"container\":\"Android\","
+		      + "\"version\":\"" + Build.VERSION.RELEASE + "\"}";
+      //@formatter:on
 	}
 
 	/**

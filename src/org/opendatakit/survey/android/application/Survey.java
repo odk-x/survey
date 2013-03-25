@@ -135,6 +135,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
 		String[] dirs = { ODKFileUtils.getAppFolder(appName),
 		      ODKFileUtils.getFormsFolder(appName),
 		      ODKFileUtils.getStaleFormsFolder(appName),
+            ODKFileUtils.getFrameworkFolder(appName),
+            ODKFileUtils.getStaleFrameworkFolder(appName),
             ODKFileUtils.getLoggingFolder(appName),
 				ODKFileUtils.getMetadataFolder(appName),
 				ODKFileUtils.getAppCacheFolder(appName),

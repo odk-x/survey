@@ -89,6 +89,9 @@ public class DownloadFormsTask extends
 				NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_MANIFEST);
 	}
 
+	  /** used only within doInBackground */
+	  static enum DirType { FORMS, FRAMEWORK, OTHER };
+
 	@Override
 	protected HashMap<String, String> doInBackground(FormDetails... values) {
 
@@ -121,16 +124,30 @@ public class DownloadFormsTask extends
 			 * atomically moved into the FORMS_PATH. For atomicity, the Form
 			 * definition file will be stored WITHIN the media folder.
 			 */
-			File tempFormPath = null; // to be downloaded here... under
-										// STALE_FORMS_PATH
-			File tempMediaPath = null; // to be downloaded here... under
-										// STALE_FORMS_PATH
-			File staleMediaPath = null; // existing to be moved here... under
-										// STALE_FORMS_PATH
-			File formPath = null; // downloaded to be moved here... under
-									// FORMS_PATH
-			File mediaPath = null; // downloaded to be moved here... under
-									// FORMS_PATH
+
+			/* download to here... under STALE_FORMS_PATH */
+			File tempFormPath = null;
+			/* download to here.. under STALE_FORMS_PATH */
+			File tempMediaPath = null;
+			/* existing to be moved here... under STALE_FORMS_PATH */
+			File staleMediaPath = null;
+			/* downloaded then moved here... under FORMS_PATH */
+			File formPath = null;
+			/* downloaded then moved here... under FORMS_PATH */
+			File mediaPath = null;
+			/* path to the directory containing the newly downloaded or stale data */
+			String baseStaleMediaPath;
+			/* path to the directory containing the live data */
+			String baseMediaPath;
+			if ( fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID) ) {
+			  baseStaleMediaPath = ODKFileUtils.getStaleFormsFolder(getAppName()) + File.separator;
+			  baseMediaPath = ODKFileUtils.getFormsFolder(getAppName()) + File.separator;
+			} else {
+	         /* the Common Javascript Framework is stored in the Framework directories */
+           baseStaleMediaPath = ODKFileUtils.getStaleFrameworkFolder(getAppName()) + File.separator;
+           baseMediaPath = ODKFileUtils.getFrameworkFolder(getAppName()) + File.separator;
+         }
+
 			try {
 				try {
 					// determine names for the form file and media directory on
@@ -149,10 +166,8 @@ public class DownloadFormsTask extends
 						{
 							// proposed name of form 'media' directory and form
 							// file...
-							String tempMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
-									+ File.separator + rootName;
-							String mediaPathName = ODKFileUtils.getFormsFolder(getAppName())
-									+ File.separator + rootName;
+							String tempMediaPathName = baseStaleMediaPath + rootName;
+							String mediaPathName = baseMediaPath + rootName;
 
 							tempMediaPath = new File(tempMediaPathName);
 							tempFormPath = new File(tempMediaPath,
@@ -164,8 +179,7 @@ public class DownloadFormsTask extends
 							while (tempMediaPath.exists() || mediaPath.exists()) {
 								try {
 									if (tempMediaPath.exists()) {
-										FileUtils
-												.deleteDirectory(tempMediaPath);
+										FileUtils.deleteDirectory(tempMediaPath);
 									}
 									Log.i(t,
 											"Successful delete of stale directory: "
@@ -176,13 +190,11 @@ public class DownloadFormsTask extends
 											"Unable to delete stale directory: "
 													+ tempMediaPathName);
 								}
-								tempMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
-										+ File.separator + rootName + "_" + rev;
+								tempMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
 								tempMediaPath = new File(tempMediaPathName);
 								tempFormPath = new File(tempMediaPath,
 										ODKFileUtils.FILENAME_XFORMS_XML);
-								mediaPathName = ODKFileUtils.getFormsFolder(getAppName())
-										+ File.separator + rootName + "_" + rev;
+								mediaPathName = baseMediaPath + rootName + "_" + rev;
 								mediaPath = new File(mediaPathName);
 								formPath = new File(mediaPath,
 										ODKFileUtils.FILENAME_XFORMS_XML);
@@ -192,8 +204,7 @@ public class DownloadFormsTask extends
 
 						// and find a name that any existing directory could be
 						// renamed to... (continuing rev counter)
-						String staleMediaPathName = ODKFileUtils.getStaleFormsFolder(getAppName())
-								+ File.separator + rootName + "_" + rev;
+						String staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
 						staleMediaPath = new File(staleMediaPathName);
 
 						while (staleMediaPath.exists()) {
@@ -209,8 +220,7 @@ public class DownloadFormsTask extends
 								Log.i(t, "Unable to delete stale directory: "
 										+ staleMediaPathName);
 							}
-							staleMediaPathName = ODKFileUtils.getFormsFolder(getAppName())
-									+ File.separator + rootName + "_" + rev;
+							staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
 							staleMediaPath = new File(staleMediaPathName);
 							rev++;
 						}
@@ -596,6 +606,7 @@ public class DownloadFormsTask extends
 				}
 
 			} catch (Exception e) {
+            WebUtils.clearHttpConnectionManager();
 				Log.e(t, e.toString());
 				e.printStackTrace();
 				if (attemptCount != 1) {

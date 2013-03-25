@@ -175,7 +175,7 @@ public class JQueryODKView extends FrameLayout {
 			//
 			// the default form is named 'default' ...
 			String selection = FormsColumns.FORM_ID + "=?";
-			String[] selectionArgs = { "default" };
+			String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
 			String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the
 																	// most
 																	// recently
@@ -205,10 +205,10 @@ public class JQueryODKView extends FrameLayout {
 		if (formPath == null)
 			return null;
 
-		// formPath always begins ../ -- strip that off to get explicit path
+		// formPath always begins ../../ -- strip that off to get explicit path
 		// suffix...
-		File mediaFolder = new File(new File(ODKFileUtils.getFormsFolder(appName)),
-				formPath.substring(3));
+		File mediaFolder = new File(new File(ODKFileUtils.getAppFolder(appName)),
+				formPath.substring(6));
 
 		// File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
 		File htmlFile = new File(mediaFolder, "index.html");

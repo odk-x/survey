@@ -45,6 +45,7 @@ import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpHead;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpPost;
 import org.opendatakit.httpclientandroidlib.conn.ConnectTimeoutException;
+import org.opendatakit.httpclientandroidlib.conn.HttpHostConnectException;
 import org.opendatakit.httpclientandroidlib.entity.mime.MultipartEntity;
 import org.opendatakit.httpclientandroidlib.entity.mime.content.FileBody;
 import org.opendatakit.httpclientandroidlib.entity.mime.content.StringBody;
@@ -239,6 +240,7 @@ public class InstanceUploaderTask extends
 			} catch (ClientProtocolException e) {
 				e.printStackTrace();
 				Log.e(t, e.getMessage());
+            WebUtils.clearHttpConnectionManager();
 				mOutcome.mResults.put(id, fail + "Client Protocol Exception");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -248,6 +250,7 @@ public class InstanceUploaderTask extends
 			} catch (ConnectTimeoutException e) {
 				e.printStackTrace();
 				Log.e(t, e.getMessage());
+            WebUtils.clearHttpConnectionManager();
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -256,6 +259,7 @@ public class InstanceUploaderTask extends
 				return true;
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
+            WebUtils.clearHttpConnectionManager();
 				mOutcome.mResults.put(id, fail + e.getMessage()
 						+ " :: Network Connection Failed");
 				Log.e(t, e.getMessage());
@@ -267,14 +271,24 @@ public class InstanceUploaderTask extends
 			} catch (SocketTimeoutException e) {
 				e.printStackTrace();
 				Log.e(t, e.getMessage());
+            WebUtils.clearHttpConnectionManager();
 				mOutcome.mResults.put(id, fail + "Connection Timeout");
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
 						InstanceColumns.STATUS_SUBMISSION_FAILED);
 				appContext.getContentResolver()
 						.update(toUpdate, cv, null, null);
 				return true;
+         } catch (HttpHostConnectException e) {
+           e.printStackTrace();
+           Log.e(t, e.toString());
+           WebUtils.clearHttpConnectionManager();
+           mOutcome.mResults.put(id, fail + "Network Connection Refused");
+           cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
+           appContext.getContentResolver().update(toUpdate, cv, null, null);
+           return true;
 			} catch (Exception e) {
 				e.printStackTrace();
+            WebUtils.clearHttpConnectionManager();
 				mOutcome.mResults.put(id, fail + "Generic Exception");
 				Log.e(t, e.getMessage());
 				cv.put(InstanceColumns.XML_PUBLISH_STATUS,
