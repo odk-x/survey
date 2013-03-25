@@ -34,67 +34,64 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
  * @author mitchellsundt@gmail.com
  */
 public class FileSet {
-	private static final String APPLICATION_XML = "application/xml";
-	private static final String URI = "uri";
-	private static final String CONTENT_TYPE = "contentType";
-	public File instanceFile = null;
+  private static final String APPLICATION_XML = "application/xml";
+  private static final String URI = "uri";
+  private static final String CONTENT_TYPE = "contentType";
+  public File instanceFile = null;
 
-	public static final class MimeFile {
-		public File file;
-		public String contentType;
-	};
+  public static final class MimeFile {
+    public File file;
+    public String contentType;
+  };
 
-	public ArrayList<MimeFile> attachmentFiles = new ArrayList<MimeFile>();
+  public ArrayList<MimeFile> attachmentFiles = new ArrayList<MimeFile>();
 
-	public FileSet() {
-	}
+  public FileSet() {
+  }
 
-	public void addAttachmentFile(File file, String contentType) {
-		MimeFile f = new MimeFile();
-		f.file = file;
-		f.contentType = contentType;
-		attachmentFiles.add(f);
-	}
+  public void addAttachmentFile(File file, String contentType) {
+    MimeFile f = new MimeFile();
+    f.file = file;
+    f.contentType = contentType;
+    attachmentFiles.add(f);
+  }
 
-	public String serialize() throws JsonGenerationException,
-			JsonMappingException, IOException {
-		ArrayList<HashMap<String, String>> str = new ArrayList<HashMap<String, String>>();
+  public String serialize() throws JsonGenerationException, JsonMappingException, IOException {
+    ArrayList<HashMap<String, String>> str = new ArrayList<HashMap<String, String>>();
 
-		HashMap<String, String> map;
-		map = new HashMap<String, String>();
-		map.put(URI, FileProvider.getAsUrl(instanceFile));
-		map.put(CONTENT_TYPE, APPLICATION_XML);
-		str.add(map);
-		for (MimeFile f : attachmentFiles) {
-			map = new HashMap<String, String>();
-			map.put(URI, FileProvider.getAsUrl(f.file));
-			map.put(CONTENT_TYPE, f.contentType);
-			str.add(map);
-		}
+    HashMap<String, String> map;
+    map = new HashMap<String, String>();
+    map.put(URI, FileProvider.getAsUrl(instanceFile));
+    map.put(CONTENT_TYPE, APPLICATION_XML);
+    str.add(map);
+    for (MimeFile f : attachmentFiles) {
+      map = new HashMap<String, String>();
+      map.put(URI, FileProvider.getAsUrl(f.file));
+      map.put(CONTENT_TYPE, f.contentType);
+      str.add(map);
+    }
 
-		String serializedString = ODKFileUtils.mapper
-				.writeValueAsString(str);
-		return serializedString;
-	}
+    String serializedString = ODKFileUtils.mapper.writeValueAsString(str);
+    return serializedString;
+  }
 
-	public static final FileSet parse(InputStream src)
-			throws JsonParseException, JsonMappingException, IOException {
-		@SuppressWarnings("unchecked")
-		ArrayList<Map<String, String>> str = ODKFileUtils.mapper
-				.readValue(src, ArrayList.class);
+  public static final FileSet parse(InputStream src) throws JsonParseException,
+      JsonMappingException, IOException {
+    @SuppressWarnings("unchecked")
+    ArrayList<Map<String, String>> str = ODKFileUtils.mapper.readValue(src, ArrayList.class);
 
-		FileSet fs = new FileSet();
-		Map<String, String> map;
-		map = (Map<String, String>) str.get(0);
-		fs.instanceFile = FileProvider.getAsFile(map.get(URI));
-		for (int i = 1; i < str.size(); ++i) {
-			map = (Map<String, String>) str.get(i);
-			MimeFile f = new MimeFile();
-			f.file = FileProvider.getAsFile(map.get(URI));
-			f.contentType = map.get(CONTENT_TYPE);
-			fs.attachmentFiles.add(f);
-		}
-		return fs;
-	}
+    FileSet fs = new FileSet();
+    Map<String, String> map;
+    map = (Map<String, String>) str.get(0);
+    fs.instanceFile = FileProvider.getAsFile(map.get(URI));
+    for (int i = 1; i < str.size(); ++i) {
+      map = (Map<String, String>) str.get(i);
+      MimeFile f = new MimeFile();
+      f.file = FileProvider.getAsFile(map.get(URI));
+      f.contentType = map.get(CONTENT_TYPE);
+      fs.attachmentFiles.add(f);
+    }
+    return fs;
+  }
 
 }

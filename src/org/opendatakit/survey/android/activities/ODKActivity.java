@@ -28,52 +28,50 @@ import android.view.View;
  */
 public interface ODKActivity {
 
-   public String getAppName();
+  public String getAppName();
 
-	public void setInstanceId(String instanceId);
+  public void setInstanceId(String instanceId);
 
-	public void setPageRef(String pageRef);
+  public void setPageRef(String pageRef);
 
-   public boolean hasPromptHistory();
+  public boolean hasPromptHistory();
 
-   public void clearPromptHistory();
+  public void clearPromptHistory();
 
-   public String popPromptHistory();
+  public String popPromptHistory();
 
-   public void pushPromptHistory(String idx);
+  public void pushPromptHistory(String idx);
 
-	public void setAuxillaryHash(String hash);
+  public void setAuxillaryHash(String hash);
 
-	public void saveAllChangesCompleted(String tableId, String instanceId,
-			boolean asComplete);
+  public void saveAllChangesCompleted(String tableId, String instanceId, boolean asComplete);
 
-	public void saveAllChangesFailed(String tableId, String instanceId);
+  public void saveAllChangesFailed(String tableId, String instanceId);
 
-	public void ignoreAllChangesCompleted(String tableId, String instanceId);
+  public void ignoreAllChangesCompleted(String tableId, String instanceId);
 
-	public void ignoreAllChangesFailed(String tableId, String instanceId);
+  public void ignoreAllChangesFailed(String tableId, String instanceId);
 
-	public String doAction(String page, String path, String action,
-			JSONObject valueMap);
+  public String doAction(String page, String path, String action, JSONObject valueMap);
 
-	public void swapToCustomView(View view);
+  public void swapToCustomView(View view);
 
-	public void swapOffCustomView();
+  public void swapOffCustomView();
 
-	public View getVideoLoadingProgressView();
+  public View getVideoLoadingProgressView();
 
-	public Bitmap getDefaultVideoPoster();
+  public Bitmap getDefaultVideoPoster();
 
-	// for CopyExpansionFilesFragment
-	public void expansionFilesCopied(String fragmentToShowNext);
+  // for CopyExpansionFilesFragment
+  public void expansionFilesCopied(String fragmentToShowNext);
 
-	// for FormChooserListFragment
-	public void chooseForm(Uri formUri);
+  // for FormChooserListFragment
+  public void chooseForm(Uri formUri);
 
-	/**
-	 * Use the Activity implementation of this.
-	 *
-	 * @param r
-	 */
-	public void runOnUiThread(Runnable r);
+  /**
+   * Use the Activity implementation of this.
+   *
+   * @param r
+   */
+  public void runOnUiThread(Runnable r);
 }

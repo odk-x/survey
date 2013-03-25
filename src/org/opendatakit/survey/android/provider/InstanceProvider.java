@@ -22,7 +22,7 @@ import org.opendatakit.common.android.provider.impl.InstanceProviderImpl;
  */
 public class InstanceProvider extends InstanceProviderImpl {
 
-	public String getInstanceAuthority() {
-		return InstanceProviderAPI.AUTHORITY;
-	}
+  public String getInstanceAuthority() {
+    return InstanceProviderAPI.AUTHORITY;
+  }
 }

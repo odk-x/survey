@@ -25,33 +25,31 @@ import android.util.Log;
 /**
  * Simple shim for media interactions.
  *
- * Called from javascript with:
- * shim.doAction(promptPath, internalPromptContext,
- *       "org.opendatakit.survey.android.activities.MediaDeleteImageActivity",
- *      JSON.stringify({ mediaPath: uriFromDatabase }));
+ * Called from javascript with: shim.doAction(promptPath, internalPromptContext,
+ * "org.opendatakit.survey.android.activities.MediaDeleteImageActivity",
+ * JSON.stringify({ mediaPath: uriFromDatabase }));
  *
  * @author mitchellsundt@gmail.com
  *
  */
 public class MediaDeleteImageActivity extends Activity {
-	private static final String t = "MediaDeleteImageActivity";
-	private static final String MEDIA_PATH = "mediaPath";
+  private static final String t = "MediaDeleteImageActivity";
+  private static final String MEDIA_PATH = "mediaPath";
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
 
-		String binaryName = savedInstanceState.getString(MEDIA_PATH);
-		int del = MediaUtils.deleteImageFileFromMediaProvider(this, FileProvider
-				.getAsFile(binaryName).getAbsolutePath());
-		Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH
-				+ ": " + binaryName);
+    String binaryName = savedInstanceState.getString(MEDIA_PATH);
+    int del = MediaUtils.deleteImageFileFromMediaProvider(this, FileProvider.getAsFile(binaryName)
+        .getAbsolutePath());
+    Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH + ": " + binaryName);
 
-		Intent i = new Intent();
+    Intent i = new Intent();
 
-		i.putExtra(MEDIA_PATH, binaryName);
-		i.putExtra("deleteCount", del);
-		setResult(Activity.RESULT_OK, i);
-		finish();
-	}
+    i.putExtra(MEDIA_PATH, binaryName);
+    i.putExtra("deleteCount", del);
+    setResult(Activity.RESULT_OK, i);
+    finish();
+  }
 }

@@ -42,129 +42,124 @@ import android.widget.TextView;
  *
  */
 public class FormChooserListFragment extends ListFragment implements
-		LoaderManager.LoaderCallbacks<Cursor> {
+    LoaderManager.LoaderCallbacks<Cursor> {
 
-	@SuppressWarnings("unused")
+  @SuppressWarnings("unused")
   private static final String t = "FormChooserListFragment";
-	private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
+  private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
 
-	public static final int ID = R.layout.form_chooser_list;
+  public static final int ID = R.layout.form_chooser_list;
 
-	// keys for the data being persisted
+  // keys for the data being persisted
 
-	private static final String SYNC_MSG_KEY = "syncMsgKey";
+  private static final String SYNC_MSG_KEY = "syncMsgKey";
 
-	// data to persist across orientation changes
+  // data to persist across orientation changes
 
-	private String mSyncStatusText = "";
+  private String mSyncStatusText = "";
 
-	// data that is not persisted
+  // data that is not persisted
 
-	private CursorAdapter mInstances;
-	private View view;
+  private CursorAdapter mInstances;
+  private View view;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	}
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+  @Override
+  public void onActivityCreated(Bundle savedInstanceState) {
+    super.onActivityCreated(savedInstanceState);
 
-		String[] data = new String[] { FormsColumns.DISPLAY_NAME,
-				FormsColumns.DISPLAY_SUBTEXT, FormsColumns.FORM_VERSION };
-		int[] viewParams = new int[] { R.id.text1, R.id.text2, R.id.text3 };
+    String[] data = new String[] { FormsColumns.DISPLAY_NAME, FormsColumns.DISPLAY_SUBTEXT,
+        FormsColumns.FORM_VERSION };
+    int[] viewParams = new int[] { R.id.text1, R.id.text2, R.id.text3 };
 
-		// render total instance view
-		mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION,
-				this.getActivity(), R.layout.two_item, data, viewParams);
-		setListAdapter(mInstances);
-		// getListView().setBackgroundColor(Color.WHITE);
+    // render total instance view
+    mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
+        R.layout.two_item, data, viewParams);
+    setListAdapter(mInstances);
+    // getListView().setBackgroundColor(Color.WHITE);
 
-		getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
-	}
+    getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
+  }
 
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		view = inflater.inflate(ID, container, false);
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    view = inflater.inflate(ID, container, false);
 
-		if (savedInstanceState != null
-				&& savedInstanceState.containsKey(SYNC_MSG_KEY)) {
-			mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
-		}
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
+    if (savedInstanceState != null && savedInstanceState.containsKey(SYNC_MSG_KEY)) {
+      mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
+    }
+    TextView tv = (TextView) view.findViewById(R.id.status_text);
+    tv.setText(mSyncStatusText);
 
-		return view;
-	}
+    return view;
+  }
 
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		outState.putString(SYNC_MSG_KEY, mSyncStatusText);
-	}
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString(SYNC_MSG_KEY, mSyncStatusText);
+  }
 
-	@Override
-	public void onResume() {
-		super.onResume();
+  @Override
+  public void onResume() {
+    super.onResume();
 
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
-	}
+    TextView tv = (TextView) view.findViewById(R.id.status_text);
+    tv.setText(mSyncStatusText);
+  }
 
-	@Override
-	public void onPause() {
-		super.onPause();
-	}
+  @Override
+  public void onPause() {
+    super.onPause();
+  }
 
-	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-		super.onListItemClick(l, v, position, id);
+  @Override
+  public void onListItemClick(ListView l, View v, int position, long id) {
+    super.onListItemClick(l, v, position, id);
 
-		// get uri to form
-		Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
-		String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
-		Uri formUri = Uri.withAppendedPath(
-		      Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-		          ((ODKActivity) getActivity()).getAppName()),
-		          formId);
+    // get uri to form
+    Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
+    String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+    Uri formUri = Uri.withAppendedPath(
+        Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+            ((ODKActivity) getActivity()).getAppName()), formId);
 
-		((ODKActivity) getActivity()).chooseForm(formUri);
-	}
+    ((ODKActivity) getActivity()).chooseForm(formUri);
+  }
 
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		// This is called when a new Loader needs to be created. This
-		// sample only has one Loader, so we don't care about the ID.
-		// First, pick the base URI to use depending on whether we are
-		// currently filtering.
-		Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-		      ((ODKActivity) getActivity()).getAppName());
+  @Override
+  public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    // This is called when a new Loader needs to be created. This
+    // sample only has one Loader, so we don't care about the ID.
+    // First, pick the base URI to use depending on whether we are
+    // currently filtering.
+    Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+        ((ODKActivity) getActivity()).getAppName());
 
-		String selection = FormsColumns.FORM_ID + "<> ?";
-		String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
-		// Now create and return a CursorLoader that will take care of
-		// creating a Cursor for the data being displayed.
-		String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, "
-				+ FormsColumns.FORM_VERSION + " DESC";
-		return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs,
-				sortOrder);
-	}
+    String selection = FormsColumns.FORM_ID + "<> ?";
+    String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
+    // Now create and return a CursorLoader that will take care of
+    // creating a Cursor for the data being displayed.
+    String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.FORM_VERSION + " DESC";
+    return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs, sortOrder);
+  }
 
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-		// Swap the new cursor in. (The framework will take care of closing the
-		// old cursor once we return.)
-		mInstances.swapCursor(cursor);
-	}
+  @Override
+  public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+    // Swap the new cursor in. (The framework will take care of closing the
+    // old cursor once we return.)
+    mInstances.swapCursor(cursor);
+  }
 
-	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		// This is called when the last Cursor provided to onLoadFinished()
-		// above is about to be closed. We need to make sure we are no
-		// longer using it.
-		mInstances.swapCursor(null);
-	}
+  @Override
+  public void onLoaderReset(Loader<Cursor> loader) {
+    // This is called when the last Cursor provided to onLoadFinished()
+    // above is about to be closed. We need to make sure we are no
+    // longer using it.
+    mInstances.swapCursor(null);
+  }
 }

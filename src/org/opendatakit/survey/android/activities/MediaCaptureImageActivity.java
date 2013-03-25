@@ -95,7 +95,7 @@ public class MediaCaptureImageActivity extends Activity {
       Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
       // workaround for image capture bug
       // create an empty file and pass filename to Camera app.
-      if ( mediaPath == null ) {
+      if (mediaPath == null) {
         mediaPath = newFileBase + TMP_EXTENSION;
       }
       File mediaFile = new File(mediaPath);

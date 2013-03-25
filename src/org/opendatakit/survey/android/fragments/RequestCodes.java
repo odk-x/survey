@@ -15,5 +15,5 @@
 package org.opendatakit.survey.android.fragments;
 
 public enum RequestCodes {
-	AUTH_DIALOG, ALERT_DIALOG, PROGRESS_DIALOG
+  AUTH_DIALOG, ALERT_DIALOG, PROGRESS_DIALOG
 }

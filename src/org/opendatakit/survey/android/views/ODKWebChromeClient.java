@@ -30,164 +30,159 @@ import android.widget.FrameLayout;
 import android.widget.VideoView;
 
 public class ODKWebChromeClient extends WebChromeClient implements
-		MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
+    MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
-	private static final String t = "ODKWebChromeClient";
-   private WebLogger log;
-	private ODKActivity a;
-	private VideoView video = null;
-	private WebChromeClient.CustomViewCallback callback = null;
+  private static final String t = "ODKWebChromeClient";
+  private WebLogger log;
+  private ODKActivity a;
+  private VideoView video = null;
+  private WebChromeClient.CustomViewCallback callback = null;
 
-	public ODKWebChromeClient(ODKActivity a) {
-		this.a = a;
-      log = WebLogger.getLogger(a.getAppName());
-	}
+  public ODKWebChromeClient(ODKActivity a) {
+    this.a = a;
+    log = WebLogger.getLogger(a.getAppName());
+  }
 
-	@Override
-	public void onShowCustomView(View view, CustomViewCallback callback) {
-		if (this.callback != null) {
-			this.callback.onCustomViewHidden();
-		}
-		this.callback = callback;
-		if (view instanceof FrameLayout) {
-			FrameLayout frame = (FrameLayout) view;
-			if (frame.getFocusedChild() instanceof VideoView) {
-				log.i(t, "onShowCustomView: FrameLayout Video");
-				video = (VideoView) frame.getFocusedChild();
-				video.setOnCompletionListener(this);
-				video.setOnErrorListener(this);
-				a.swapToCustomView(view);
-				super.onShowCustomView(view, callback);
-				// video.seekTo(0);// reset to start of video...
-				// video.start();
-			} else {
-				log.i(t, "onShowCustomView: FrameLayout not Video "
-						+ frame.getFocusedChild().getClass().getCanonicalName());
-				a.swapToCustomView(view);
-				super.onShowCustomView(view, callback);
-			}
-		} else {
-			log.i(t, "onShowCustomView: not FrameLayout "
-					+ view.getClass().getCanonicalName());
-			((ODKActivity) a).swapToCustomView(view);
-			super.onShowCustomView(view, callback);
-		}
-	}
+  @Override
+  public void onShowCustomView(View view, CustomViewCallback callback) {
+    if (this.callback != null) {
+      this.callback.onCustomViewHidden();
+    }
+    this.callback = callback;
+    if (view instanceof FrameLayout) {
+      FrameLayout frame = (FrameLayout) view;
+      if (frame.getFocusedChild() instanceof VideoView) {
+        log.i(t, "onShowCustomView: FrameLayout Video");
+        video = (VideoView) frame.getFocusedChild();
+        video.setOnCompletionListener(this);
+        video.setOnErrorListener(this);
+        a.swapToCustomView(view);
+        super.onShowCustomView(view, callback);
+        // video.seekTo(0);// reset to start of video...
+        // video.start();
+      } else {
+        log.i(t, "onShowCustomView: FrameLayout not Video "
+            + frame.getFocusedChild().getClass().getCanonicalName());
+        a.swapToCustomView(view);
+        super.onShowCustomView(view, callback);
+      }
+    } else {
+      log.i(t, "onShowCustomView: not FrameLayout " + view.getClass().getCanonicalName());
+      ((ODKActivity) a).swapToCustomView(view);
+      super.onShowCustomView(view, callback);
+    }
+  }
 
-	@Override
-	public void onHideCustomView() {
-		log.d(t, "onHideCustomView");
-		a.swapOffCustomView();
-		if (video != null) {
-			video.stopPlayback();
-		}
-		video = null;
-		if (callback != null) {
-			callback.onCustomViewHidden();
-			callback = null;
-		}
-	}
+  @Override
+  public void onHideCustomView() {
+    log.d(t, "onHideCustomView");
+    a.swapOffCustomView();
+    if (video != null) {
+      video.stopPlayback();
+    }
+    video = null;
+    if (callback != null) {
+      callback.onCustomViewHidden();
+      callback = null;
+    }
+  }
 
-	@Override
-	public void onCompletion(MediaPlayer mp) {
-		log.d(t, "Video ended");
-		if (mp.isPlaying()) {
-			mp.stop();
-		}
-		mp.reset();
-		onHideCustomView();
-	}
+  @Override
+  public void onCompletion(MediaPlayer mp) {
+    log.d(t, "Video ended");
+    if (mp.isPlaying()) {
+      mp.stop();
+    }
+    mp.reset();
+    onHideCustomView();
+  }
 
-	@Override
-	public boolean onError(MediaPlayer mp, int what, int extra) {
-		log.w(t, "Video error");
-		if (mp.isPlaying()) {
-			mp.stop();
-		}
-		mp.reset();
-		onHideCustomView();
-		return true;
-	}
+  @Override
+  public boolean onError(MediaPlayer mp, int what, int extra) {
+    log.w(t, "Video error");
+    if (mp.isPlaying()) {
+      mp.stop();
+    }
+    mp.reset();
+    onHideCustomView();
+    return true;
+  }
 
-	/**
-	 * Ask the browser for an icon to represent a <video> element. This icon
-	 * will be used if the Web page did not specify a poster attribute.
-	 *
-	 * @return Bitmap The icon or null if no such icon is available.
-	 */
-	@Override
-	public Bitmap getDefaultVideoPoster() {
-		return ((ODKActivity) a).getDefaultVideoPoster();
-	}
+  /**
+   * Ask the browser for an icon to represent a <video> element. This icon will
+   * be used if the Web page did not specify a poster attribute.
+   *
+   * @return Bitmap The icon or null if no such icon is available.
+   */
+  @Override
+  public Bitmap getDefaultVideoPoster() {
+    return ((ODKActivity) a).getDefaultVideoPoster();
+  }
 
-	/**
-	 * Ask the host application for a custom progress view to show while a
-	 * <video> is loading.
-	 *
-	 * @return View The progress view.
-	 */
-	@Override
-	public View getVideoLoadingProgressView() {
-		return ((ODKActivity) a).getVideoLoadingProgressView();
-	}
+  /**
+   * Ask the host application for a custom progress view to show while a <video>
+   * is loading.
+   *
+   * @return View The progress view.
+   */
+  @Override
+  public View getVideoLoadingProgressView() {
+    return ((ODKActivity) a).getVideoLoadingProgressView();
+  }
 
-	@Override
-	public void getVisitedHistory(ValueCallback<String[]> callback) {
-		callback.onReceiveValue(new String[] {});
-	}
+  @Override
+  public void getVisitedHistory(ValueCallback<String[]> callback) {
+    callback.onReceiveValue(new String[] {});
+  }
 
-	@Override
-	public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
-		if (consoleMessage.sourceId() == null
-				|| consoleMessage.sourceId().length() == 0) {
-			log.e(t, "onConsoleMessage: Javascript exception: "
-					+ consoleMessage.message());
-			return true;
-		} else {
-			if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG) {
-				log.d(t, consoleMessage.message());
-			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-				log.e(t, consoleMessage.message());
-			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG) {
-				log.i(t, consoleMessage.message());
-			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP) {
-				log.t(t, consoleMessage.message());
-			} else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
-				log.w(t, consoleMessage.message());
-			} else {
-				log.e(t, consoleMessage.message());
-			}
-			return true;
-		}
-	}
+  @Override
+  public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+    if (consoleMessage.sourceId() == null || consoleMessage.sourceId().length() == 0) {
+      log.e(t, "onConsoleMessage: Javascript exception: " + consoleMessage.message());
+      return true;
+    } else {
+      if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG) {
+        log.d(t, consoleMessage.message());
+      } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
+        log.e(t, consoleMessage.message());
+      } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG) {
+        log.i(t, consoleMessage.message());
+      } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP) {
+        log.t(t, consoleMessage.message());
+      } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
+        log.w(t, consoleMessage.message());
+      } else {
+        log.e(t, consoleMessage.message());
+      }
+      return true;
+    }
+  }
 
-	@Override
-	public void onExceededDatabaseQuota(String url, String databaseIdentifier,
-			long currentQuota, long estimatedSize, long totalUsedQuota,
-			QuotaUpdater quotaUpdater) {
-		long space = (4 + (currentQuota / 65536L)) * 65536L;
-		log.i(t, "Extending Database quota to: " + Long.toString(space));
-		quotaUpdater.updateQuota(space);
-	}
+  @Override
+  public void onExceededDatabaseQuota(String url, String databaseIdentifier, long currentQuota,
+      long estimatedSize, long totalUsedQuota, QuotaUpdater quotaUpdater) {
+    long space = (4 + (currentQuota / 65536L)) * 65536L;
+    log.i(t, "Extending Database quota to: " + Long.toString(space));
+    quotaUpdater.updateQuota(space);
+  }
 
-	@Override
-	public void onReachedMaxAppCacheSize(long spaceNeeded, long totalUsedQuota,
-			QuotaUpdater quotaUpdater) {
-		long space = (4 + (spaceNeeded / 65536L)) * 65536L;
-		log.i(t, "Extending AppCache quota to: " + Long.toString(space));
-		quotaUpdater.updateQuota(space);
-	}
+  @Override
+  public void onReachedMaxAppCacheSize(long spaceNeeded, long totalUsedQuota,
+      QuotaUpdater quotaUpdater) {
+    long space = (4 + (spaceNeeded / 65536L)) * 65536L;
+    log.i(t, "Extending AppCache quota to: " + Long.toString(space));
+    quotaUpdater.updateQuota(space);
+  }
 
-	@Override
-	public void onConsoleMessage(String message, int lineNumber, String sourceID) {
-		log.i(t, sourceID + "[" + lineNumber + "]: " + message);
-	}
+  @Override
+  public void onConsoleMessage(String message, int lineNumber, String sourceID) {
+    log.i(t, sourceID + "[" + lineNumber + "]: " + message);
+  }
 
-	@Override
-	public boolean onJsAlert(WebView view, String url, String message,
-			JsResult result) {
-		log.w(t, url + ": " + message);
-		return false;
-	}
+  @Override
+  public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
+    log.w(t, url + ": " + message);
+    return false;
+  }
 
 }

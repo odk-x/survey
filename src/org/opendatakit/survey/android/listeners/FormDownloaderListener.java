@@ -20,7 +20,7 @@ import java.util.HashMap;
  * @author Carl Hartung (carlhartung@gmail.com)
  */
 public interface FormDownloaderListener {
-	void formsDownloadingComplete(HashMap<String, String> result);
+  void formsDownloadingComplete(HashMap<String, String> result);
 
-	void formDownloadProgressUpdate(String currentFile, int progress, int total);
+  void formDownloadProgressUpdate(String currentFile, int progress, int total);
 }

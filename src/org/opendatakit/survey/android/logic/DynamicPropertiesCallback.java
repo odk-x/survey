@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2013 University of Washington
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package org.opendatakit.survey.android.logic;
 
 import java.io.File;
@@ -64,19 +78,20 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
     for (;;) {
       final String fileName = Long.toString(System.currentTimeMillis());
       chosenFileName = fileName;
-      // see if there are any files with this fileName, with or without file extensions
+      // see if there are any files with this fileName, with or without file
+      // extensions
       File[] files = f.listFiles(new FileFilter() {
 
         @Override
         public boolean accept(File pathname) {
           String name = pathname.getName();
-          if ( !name.startsWith(fileName) ) {
+          if (!name.startsWith(fileName)) {
             return false;
           }
           // strip of any extension...
           int idx = name.indexOf('.');
-          if ( idx != -1 ) {
-            String  firstPart = name.substring(0,idx);
+          if (idx != -1) {
+            String firstPart = name.substring(0, idx);
             if (firstPart.equals(fileName)) {
               return true;
             }

@@ -85,8 +85,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER,
-    WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
   };
 
   // Extra returned from gp activity
@@ -385,44 +384,46 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // external intent
     setAppName("survey");
     Uri uri = getIntent().getData();
-    if ( uri != null ) {
-      // initialize to the URI, then we will customize further based upon the savedInstanceState...
+    if (uri != null) {
+      // initialize to the URI, then we will customize further based upon the
+      // savedInstanceState...
       String authority = uri.getAuthority();
-      if ( authority.equalsIgnoreCase(FileProvider.FILE_AUTHORITY)) {
-         List<String> segments = uri.getPathSegments();
-         if ( segments != null && segments.size() == 1 ) {
-           String appName = segments.get(0);
-           setAppName(appName);
-         } else {
-           String err = "Invalid " + FileProvider.FILE_AUTHORITY +
-               " uri (" + uri.toString() + "). Expected one segment (the application name).";
-           Log.e(t,err);
-           Intent i = new Intent();
-           setResult(RESULT_CANCELED, i);
-           finish();
-           return;
-         }
-      } else if ( authority.equalsIgnoreCase(FormsProviderAPI.AUTHORITY)) {
+      if (authority.equalsIgnoreCase(FileProvider.FILE_AUTHORITY)) {
         List<String> segments = uri.getPathSegments();
-        if ( segments != null && segments.size() >= 2 ) {
+        if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
-          Uri simpleUri = Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), segments.get(1));
+        } else {
+          String err = "Invalid " + FileProvider.FILE_AUTHORITY + " uri (" + uri.toString()
+              + "). Expected one segment (the application name).";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+      } else if (authority.equalsIgnoreCase(FormsProviderAPI.AUTHORITY)) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() >= 2) {
+          String appName = segments.get(0);
+          setAppName(appName);
+          Uri simpleUri = Uri.withAppendedPath(
+              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), segments.get(1));
           FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), simpleUri);
-          if ( newForm != null ) {
+          if (newForm != null) {
             setAppName(newForm.appName);
             setCurrentForm(newForm);
-            if ( segments.size() > 2 ) {
+            if (segments.size() > 2) {
               String instanceId = segments.get(2);
               setInstanceId(instanceId);
               // and process the fragment to find the pageRef, if any...
               String fragment = uri.getFragment();
               String[] pargs = fragment.split("&");
               int i;
-              for ( i = 0 ; i < pargs.length ; ++i ) {
+              for (i = 0; i < pargs.length; ++i) {
                 String[] keyValue = pargs[i].split("=");
-                if ( "pageRef".equals(keyValue[0]) ) {
-                  if ( keyValue.length == 2 ) {
+                if ("pageRef".equals(keyValue[0])) {
+                  if (keyValue.length == 2) {
                     setPageRef(StringEscapeUtils.unescapeHtml4(keyValue[1]));
                   }
                   break;
@@ -431,16 +432,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
               // now construct the auxillary hash string from the other parts
               boolean first = true;
               StringBuilder b = new StringBuilder();
-              for ( int j = 0 ; j < pargs.length ; ++j ) {
-                if ( j == i ) continue;
-                if ( !first ) {
+              for (int j = 0; j < pargs.length; ++j) {
+                if (j == i)
+                  continue;
+                if (!first) {
                   b.append("&");
                 }
                 first = false;
                 b.append(pargs[j]);
               }
               String aux = b.toString();
-              if ( aux.length() != 0 ) {
+              if (aux.length() != 0) {
                 setAuxillaryHash(aux);
               }
             }
@@ -448,27 +450,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             nestedScreen = ScreenList.WEBKIT;
           } else {
             // cancel action if the form is not found...
-            String err = "Invalid " + FormsProviderAPI.AUTHORITY +
-                " uri (" + uri.toString() + "). Form not found.";
-            Log.e(t,err);
+            String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
+                + "). Form not found.";
+            Log.e(t, err);
             Intent i = new Intent();
             setResult(RESULT_CANCELED, i);
             finish();
             return;
           }
         } else {
-          String err = "Invalid " + FormsProviderAPI.AUTHORITY +
-              " uri (" + uri.toString() + "). Expected two segments.";
-          Log.e(t,err);
+          String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
+              + "). Expected two segments.";
+          Log.e(t, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
       } else {
-        String err = "Unexpected " + authority + " uri. Only one of " +
-            FileProvider.FILE_AUTHORITY + " or " + FormsProviderAPI.AUTHORITY + " allowed.";
-        Log.e(t,err);
+        String err = "Unexpected " + authority + " uri. Only one of " + FileProvider.FILE_AUTHORITY
+            + " or " + FormsProviderAPI.AUTHORITY + " allowed.";
+        Log.e(t, err);
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
         finish();
@@ -498,10 +500,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       // if appName is explicitly set, use it...
       setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
           : getAppName());
-      if ( savedInstanceState.containsKey(FORM_URI) ) {
+      if (savedInstanceState.containsKey(FORM_URI)) {
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(),
             Uri.parse(savedInstanceState.getString(FORM_URI)));
-        if ( newForm != null ) {
+        if (newForm != null) {
           setAppName(newForm.appName);
           setCurrentForm(newForm);
         }
@@ -513,15 +515,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ? savedInstanceState
           .getString(AUXILLARY_HASH) : getAuxillaryHash());
 
-      if ( savedInstanceState.containsKey(PAGE_REF_HISTORY) ) {
+      if (savedInstanceState.containsKey(PAGE_REF_HISTORY)) {
         pageRefHistory = savedInstanceState.getStringArrayList(PAGE_REF_HISTORY);
       }
     }
 
-    if ( pageRefHistory == null ) {
+    if (pageRefHistory == null) {
       pageRefHistory = new ArrayList<String>();
     }
-
 
     Log.i(t, "Starting up, creating directories");
     try {
@@ -547,11 +548,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     {
       JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
       view.setJavascriptCallback(mJSCallback);
-      if (savedInstanceState != null && savedInstanceState.containsKey(WEBKIT_STATE) ) {
+      if (savedInstanceState != null && savedInstanceState.containsKey(WEBKIT_STATE)) {
         // trust that we are restoring the state from the view itself...
       } else {
         // we are loading a new page -- call loadPage...
-        view.loadPage(getAppName(), getCurrentForm(), getInstanceId(), getPageRef(), getAuxillaryHash());
+        view.loadPage(getAppName(), getCurrentForm(), getInstanceId(), getPageRef(),
+            getAuxillaryHash());
       }
     }
   }
@@ -963,8 +965,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public String popPromptHistory() {
-    int last = pageRefHistory.size()-1;
-    if ( last == -1 ) return null;
+    int last = pageRefHistory.size() - 1;
+    if (last == -1)
+      return null;
     String v = pageRefHistory.get(last);
     pageRefHistory.remove(last);
     return v;

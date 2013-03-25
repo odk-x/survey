@@ -36,275 +36,259 @@ import android.view.ViewGroup;
  * @author mitchellsundt@gmail.com
  *
  */
-public class CopyExpansionFilesFragment extends Fragment implements
-		CopyExpansionFilesListener, ConfirmAlertDialog, CancelProgressDialog {
+public class CopyExpansionFilesFragment extends Fragment implements CopyExpansionFilesListener,
+    ConfirmAlertDialog, CancelProgressDialog {
 
-	private static final String t = "CopyExpansionFilesFragment";
+  private static final String t = "CopyExpansionFilesFragment";
 
-	public static final int ID = R.layout.copy_expansion_files_layout;
+  public static final int ID = R.layout.copy_expansion_files_layout;
 
-	private static enum DialogState {
-		Progress, Alert, None
-	};
+  private static enum DialogState {
+    Progress, Alert, None
+  };
 
-	// keys for the data being persisted
+  // keys for the data being persisted
 
-	private static final String DIALOG_TITLE = "dialogTitle";
-	private static final String DIALOG_MSG = "dialogMsg";
-	private static final String DIALOG_STATE = "dialogState";
-	private static final String FRAGMENT_TO_SHOW_NEXT = "fragmentToShowNext";
+  private static final String DIALOG_TITLE = "dialogTitle";
+  private static final String DIALOG_MSG = "dialogMsg";
+  private static final String DIALOG_STATE = "dialogState";
+  private static final String FRAGMENT_TO_SHOW_NEXT = "fragmentToShowNext";
 
-	// data to persist across orientation changes
+  // data to persist across orientation changes
 
-	private String mAlertTitle;
-	private String mAlertMsg;
-	private DialogState mDialogState = DialogState.None;
-	private String mFragmentToShowNext;
+  private String mAlertTitle;
+  private String mAlertMsg;
+  private DialogState mDialogState = DialogState.None;
+  private String mFragmentToShowNext;
 
-	// data that is not persisted
+  // data that is not persisted
 
-	private View view;
+  private View view;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	}
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
 
-	public void setFragmentToShowNext(String nextFragment) {
-		mFragmentToShowNext = nextFragment;
-	}
+  public void setFragmentToShowNext(String nextFragment) {
+    mFragmentToShowNext = nextFragment;
+  }
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
-	}
+  @Override
+  public void onActivityCreated(Bundle savedInstanceState) {
+    super.onActivityCreated(savedInstanceState);
+  }
 
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		view = inflater.inflate(ID, container, false);
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    view = inflater.inflate(ID, container, false);
 
-		if (savedInstanceState != null) {
+    if (savedInstanceState != null) {
 
-			// to restore alert dialog.
-			if (savedInstanceState.containsKey(DIALOG_TITLE)) {
-				mAlertTitle = savedInstanceState.getString(DIALOG_TITLE);
-			}
-			if (savedInstanceState.containsKey(DIALOG_MSG)) {
-				mAlertMsg = savedInstanceState.getString(DIALOG_MSG);
-			}
-			if (savedInstanceState.containsKey(DIALOG_STATE)) {
-				mDialogState = DialogState.valueOf(savedInstanceState
-						.getString(DIALOG_STATE));
-			}
+      // to restore alert dialog.
+      if (savedInstanceState.containsKey(DIALOG_TITLE)) {
+        mAlertTitle = savedInstanceState.getString(DIALOG_TITLE);
+      }
+      if (savedInstanceState.containsKey(DIALOG_MSG)) {
+        mAlertMsg = savedInstanceState.getString(DIALOG_MSG);
+      }
+      if (savedInstanceState.containsKey(DIALOG_STATE)) {
+        mDialogState = DialogState.valueOf(savedInstanceState.getString(DIALOG_STATE));
+      }
 
-			if (savedInstanceState.containsKey(FRAGMENT_TO_SHOW_NEXT)) {
-				mFragmentToShowNext = savedInstanceState
-						.getString(FRAGMENT_TO_SHOW_NEXT);
-			}
-		}
+      if (savedInstanceState.containsKey(FRAGMENT_TO_SHOW_NEXT)) {
+        mFragmentToShowNext = savedInstanceState.getString(FRAGMENT_TO_SHOW_NEXT);
+      }
+    }
 
-		return view;
-	}
+    return view;
+  }
 
-	/**
-	 * Starts the download task and shows the progress dialog.
-	 */
-	private void copyExpansionFiles() {
-		// set up the first dialog, but don't show it...
-		mAlertTitle = getString(R.string.searching_for_expansion_files);
-		mAlertMsg = getString(R.string.please_wait);
-		mDialogState = DialogState.Progress;
+  /**
+   * Starts the download task and shows the progress dialog.
+   */
+  private void copyExpansionFiles() {
+    // set up the first dialog, but don't show it...
+    mAlertTitle = getString(R.string.searching_for_expansion_files);
+    mAlertMsg = getString(R.string.please_wait);
+    mDialogState = DialogState.Progress;
 
-		// launch the copy operation
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
-				.findFragmentByTag("background");
-		f.copyExpansionFiles(((ODKActivity) getActivity()).getAppName(), this);
-	}
+    // launch the copy operation
+    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
+        "background");
+    f.copyExpansionFiles(((ODKActivity) getActivity()).getAppName(), this);
+  }
 
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		if (mAlertTitle != null) {
-			outState.putString(DIALOG_TITLE, mAlertTitle);
-		}
-		if (mAlertMsg != null) {
-			outState.putString(DIALOG_MSG, mAlertMsg);
-		}
-		outState.putString(DIALOG_STATE, mDialogState.name());
-		outState.putString(FRAGMENT_TO_SHOW_NEXT, mFragmentToShowNext);
-	}
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    if (mAlertTitle != null) {
+      outState.putString(DIALOG_TITLE, mAlertTitle);
+    }
+    if (mAlertMsg != null) {
+      outState.putString(DIALOG_MSG, mAlertMsg);
+    }
+    outState.putString(DIALOG_STATE, mDialogState.name());
+    outState.putString(FRAGMENT_TO_SHOW_NEXT, mFragmentToShowNext);
+  }
 
-	@Override
-	public void onResume() {
-		FragmentManager mgr = getFragmentManager();
+  @Override
+  public void onResume() {
+    FragmentManager mgr = getFragmentManager();
 
-		// re-attach to the background fragment for task notifications...
-		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
-				.findFragmentByTag("background");
+    // re-attach to the background fragment for task notifications...
+    BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
-		f.establishCopyExpansionFilesListener(this);
+    f.establishCopyExpansionFilesListener(this);
 
-		super.onResume();
+    super.onResume();
 
-		if (mDialogState == DialogState.None) {
-			copyExpansionFiles();
-		}
+    if (mDialogState == DialogState.None) {
+      copyExpansionFiles();
+    }
 
-		if (mDialogState == DialogState.Progress) {
-			restoreProgressDialog();
-		} else if (mDialogState == DialogState.Alert) {
-			restoreAlertDialog();
-		}
-	}
+    if (mDialogState == DialogState.Progress) {
+      restoreProgressDialog();
+    } else if (mDialogState == DialogState.Alert) {
+      restoreAlertDialog();
+    }
+  }
 
-	@Override
-	public void onPause() {
-		FragmentManager mgr = getFragmentManager();
+  @Override
+  public void onPause() {
+    FragmentManager mgr = getFragmentManager();
 
-		// dismiss dialogs...
-		AlertDialogFragment alertDialog = (AlertDialogFragment) mgr
-				.findFragmentByTag("alertDialog");
-		if (alertDialog != null) {
-			alertDialog.dismiss();
-		}
-		ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
-				.findFragmentByTag("progressDialog");
-		if (progressDialog != null) {
-			progressDialog.dismiss();
-		}
-		super.onPause();
-	}
+    // dismiss dialogs...
+    AlertDialogFragment alertDialog = (AlertDialogFragment) mgr.findFragmentByTag("alertDialog");
+    if (alertDialog != null) {
+      alertDialog.dismiss();
+    }
+    ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
+        .findFragmentByTag("progressDialog");
+    if (progressDialog != null) {
+      progressDialog.dismiss();
+    }
+    super.onPause();
+  }
 
-	@Override
-	public void copyExpansionFilesComplete(boolean overallSuccess,
-			ArrayList<String> result) {
-		try {
-			dismissProgressDialog();
-		} catch (IllegalArgumentException e) {
-			Log.i(t,
-					"Attempting to close a dialog that was not previously opened");
-		}
+  @Override
+  public void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result) {
+    try {
+      dismissProgressDialog();
+    } catch (IllegalArgumentException e) {
+      Log.i(t, "Attempting to close a dialog that was not previously opened");
+    }
 
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
-				.findFragmentByTag("background");
-		f.clearCopyExpansionFilesTask();
+    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
+        "background");
+    f.clearCopyExpansionFilesTask();
 
-		StringBuilder b = new StringBuilder();
-		for (String k : result) {
-			b.append(k);
-			b.append("\n\n");
-		}
+    StringBuilder b = new StringBuilder();
+    for (String k : result) {
+      b.append(k);
+      b.append("\n\n");
+    }
 
-		createAlertDialog(
-				overallSuccess ? getString(R.string.expansion_complete)
-						: getString(R.string.expansion_failed), b.toString()
-						.trim());
-	}
+    createAlertDialog(overallSuccess ? getString(R.string.expansion_complete)
+        : getString(R.string.expansion_failed), b.toString().trim());
+  }
 
-	private void restoreProgressDialog() {
-		Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
-		if (alert != null) {
-			((AlertDialogFragment) alert).dismiss();
-		}
+  private void restoreProgressDialog() {
+    Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
+    if (alert != null) {
+      ((AlertDialogFragment) alert).dismiss();
+    }
 
-		Fragment dialog = getFragmentManager().findFragmentByTag(
-				"progressDialog");
+    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
 
-		if (dialog != null
-				&& ((ProgressDialogFragment) dialog).getDialog() != null) {
-			mDialogState = DialogState.Progress;
-			((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
-			((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
+    if (dialog != null && ((ProgressDialogFragment) dialog).getDialog() != null) {
+      mDialogState = DialogState.Progress;
+      ((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+      ((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
 
-		} else {
+    } else {
 
-			ProgressDialogFragment f = ProgressDialogFragment.newInstance(
-					getId(), mAlertTitle, mAlertMsg);
+      ProgressDialogFragment f = ProgressDialogFragment
+          .newInstance(getId(), mAlertTitle, mAlertMsg);
 
-			mDialogState = DialogState.Progress;
-			f.show(getFragmentManager(), "progressDialog");
-		}
-	}
+      mDialogState = DialogState.Progress;
+      f.show(getFragmentManager(), "progressDialog");
+    }
+  }
 
-	private void updateProgressDialogMessage(String message) {
-		if (mDialogState == DialogState.Progress) {
-			mAlertTitle = getString(R.string.expanding_expansion_files);
-			mAlertMsg = message;
-			restoreProgressDialog();
-		}
-	}
+  private void updateProgressDialogMessage(String message) {
+    if (mDialogState == DialogState.Progress) {
+      mAlertTitle = getString(R.string.expanding_expansion_files);
+      mAlertMsg = message;
+      restoreProgressDialog();
+    }
+  }
 
-	private void dismissProgressDialog() {
-		if ( mDialogState == DialogState.Progress ) {
-			mDialogState = DialogState.None;
-		}
-		Fragment dialog = getFragmentManager().findFragmentByTag(
-				"progressDialog");
-		if (dialog != null) {
-			((ProgressDialogFragment) dialog).dismiss();
-		}
-	}
+  private void dismissProgressDialog() {
+    if (mDialogState == DialogState.Progress) {
+      mDialogState = DialogState.None;
+    }
+    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
+    if (dialog != null) {
+      ((ProgressDialogFragment) dialog).dismiss();
+    }
+  }
 
-	private void restoreAlertDialog() {
-		Fragment progress = getFragmentManager().findFragmentByTag(
-				"progressDialog");
-		if (progress != null) {
-			((ProgressDialogFragment) progress).dismiss();
-		}
+  private void restoreAlertDialog() {
+    Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+    if (progress != null) {
+      ((ProgressDialogFragment) progress).dismiss();
+    }
 
-		Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
+    Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
 
-		if (dialog != null
-				&& ((AlertDialogFragment) dialog).getDialog() != null) {
-			mDialogState = DialogState.Alert;
-			((AlertDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
-			((AlertDialogFragment) dialog).setMessage(mAlertMsg);
+    if (dialog != null && ((AlertDialogFragment) dialog).getDialog() != null) {
+      mDialogState = DialogState.Alert;
+      ((AlertDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+      ((AlertDialogFragment) dialog).setMessage(mAlertMsg);
 
-		} else {
+    } else {
 
-			AlertDialogFragment f = AlertDialogFragment.newInstance(getId(),
-					mAlertTitle, mAlertMsg);
+      AlertDialogFragment f = AlertDialogFragment.newInstance(getId(), mAlertTitle, mAlertMsg);
 
-			mDialogState = DialogState.Alert;
-			f.show(getFragmentManager(), "alertDialog");
-		}
-	}
+      mDialogState = DialogState.Alert;
+      f.show(getFragmentManager(), "alertDialog");
+    }
+  }
 
-	@Override
-	public void okAlertDialog() {
-		mDialogState = DialogState.None;
-		((ODKActivity) getActivity()).expansionFilesCopied(mFragmentToShowNext);
-	}
+  @Override
+  public void okAlertDialog() {
+    mDialogState = DialogState.None;
+    ((ODKActivity) getActivity()).expansionFilesCopied(mFragmentToShowNext);
+  }
 
-	/**
-	 * Creates an alert dialog with the given tite and message. If shouldExit is
-	 * set to true, the activity will exit when the user clicks "ok".
-	 *
-	 * @param title
-	 * @param shouldExit
-	 */
-	private void createAlertDialog(String title, String message) {
-		mAlertMsg = message;
-		mAlertTitle = title;
-		restoreAlertDialog();
-	}
+  /**
+   * Creates an alert dialog with the given tite and message. If shouldExit is
+   * set to true, the activity will exit when the user clicks "ok".
+   *
+   * @param title
+   * @param shouldExit
+   */
+  private void createAlertDialog(String title, String message) {
+    mAlertMsg = message;
+    mAlertTitle = title;
+    restoreAlertDialog();
+  }
 
-	@Override
-	public void copyProgressUpdate(String currentFile, int progress, int total) {
-		updateProgressDialogMessage(getString(R.string.expansion_progress,
-				currentFile, progress, total));
-	}
+  @Override
+  public void copyProgressUpdate(String currentFile, int progress, int total) {
+    updateProgressDialogMessage(getString(R.string.expansion_progress, currentFile, progress, total));
+  }
 
-	@Override
-	public void cancelProgressDialog() {
-		BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
-				.findFragmentByTag("background");
-		// signal the task that we want it to be cancelled.
-		// but keep the notification path...
-		// the task will call back with a copyExpansionFilesComplete()
-		// to report status (cancelled).
-		f.cancelCopyExpansionFilesTask();
-	}
+  @Override
+  public void cancelProgressDialog() {
+    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
+        "background");
+    // signal the task that we want it to be cancelled.
+    // but keep the notification path...
+    // the task will call back with a copyExpansionFilesComplete()
+    // to report status (cancelled).
+    f.cancelCopyExpansionFilesTask();
+  }
 
 }

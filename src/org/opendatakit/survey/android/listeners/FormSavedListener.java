@@ -18,5 +18,5 @@ package org.opendatakit.survey.android.listeners;
  * @author Carl Hartung (carlhartung@gmail.com)
  */
 public interface FormSavedListener {
-	void savingComplete(int saveStatus);
+  void savingComplete(int saveStatus);
 }

@@ -517,7 +517,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		Fragment progress = getFragmentManager().findFragmentByTag(
 				"progressDialog");
 		if (progress != null) {
-			((ProgressDialogFragment) progress).dismiss();
+      ((ProgressDialogFragment) progress).dismiss();
 		}
 
 		Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");

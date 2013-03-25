@@ -31,66 +31,67 @@ import android.net.Uri;
  *
  */
 public class FormIdStruct {
-	public final Uri formUri;
-	public final File formDefFile;
-	public final String formPath;
-	public final String formId;
-	public final String tableId;
-	public final String appName;
-	public final String formVersion;
-	public final Date lastDownloadDate;
+  public final Uri formUri;
+  public final File formDefFile;
+  public final String formPath;
+  public final String formId;
+  public final String tableId;
+  public final String appName;
+  public final String formVersion;
+  public final Date lastDownloadDate;
 
-	public FormIdStruct(Uri formUri, File formDefFile, String formPath,
-			String formId, String formVersion, String tableId,
-			Date lastModifiedDate) {
-		this.formUri = formUri;
-		this.formDefFile = formDefFile;
-		this.formPath = formPath;
-		this.formId = formId;
-		this.formVersion = formVersion;
-		this.tableId = tableId;
-		this.appName = formDefFile.getParentFile()/*formFolder*/.getParentFile()/*forms folder*/.getParentFile()/*app*/.getName();
-		this.lastDownloadDate = lastModifiedDate;
-	}
+  public FormIdStruct(Uri formUri, File formDefFile, String formPath, String formId,
+      String formVersion, String tableId, Date lastModifiedDate) {
+    this.formUri = formUri;
+    this.formDefFile = formDefFile;
+    this.formPath = formPath;
+    this.formId = formId;
+    this.formVersion = formVersion;
+    this.tableId = tableId;
+    this.appName = formDefFile.getParentFile()/* formFolder */.getParentFile()/*
+                                                                               * forms
+                                                                               * folder
+                                                                               */.getParentFile()
+        /* app */.getName();
+    this.lastDownloadDate = lastModifiedDate;
+  }
 
-	public FormIdStruct(FormIdStruct original) {
-		this.formUri = original.formUri;
-		this.formDefFile = original.formDefFile;
-		this.formPath = original.formPath;
-		this.formId = original.formId;
-		this.tableId = original.tableId;
-      this.appName = original.appName;
-		this.formVersion = original.formVersion;
-		this.lastDownloadDate = original.lastDownloadDate;
-	}
+  public FormIdStruct(FormIdStruct original) {
+    this.formUri = original.formUri;
+    this.formDefFile = original.formDefFile;
+    this.formPath = original.formPath;
+    this.formId = original.formId;
+    this.tableId = original.tableId;
+    this.appName = original.appName;
+    this.formVersion = original.formVersion;
+    this.lastDownloadDate = original.lastDownloadDate;
+  }
 
-	public static final FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
-		if (formUri == null)
-			return null;
-		Cursor c = null;
-		try {
-			c = resolver.query(formUri, null, null, null, null);
-			if (c.getCount() == 1) {
-				int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
-				int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
-				int formId = c.getColumnIndex(FormsColumns.FORM_ID);
-				int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
-				int tableId = c.getColumnIndex(FormsColumns.TABLE_ID);
-				int date = c.getColumnIndex(FormsColumns.DATE);
+  public static final FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
+    if (formUri == null)
+      return null;
+    Cursor c = null;
+    try {
+      c = resolver.query(formUri, null, null, null, null);
+      if (c.getCount() == 1) {
+        int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
+        int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
+        int formId = c.getColumnIndex(FormsColumns.FORM_ID);
+        int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
+        int tableId = c.getColumnIndex(FormsColumns.TABLE_ID);
+        int date = c.getColumnIndex(FormsColumns.DATE);
 
-				c.moveToFirst();
-				FormIdStruct newForm = new FormIdStruct(formUri, new File(
-						c.getString(formMedia), ODKFileUtils.FORMDEF_JSON_FILENAME),
-						c.getString(formPath), c.getString(formId),
-						c.getString(formVersion), c.getString(tableId),
-						new Date(c.getLong(date)));
-				return newForm;
-			}
-		} finally {
-			if (c != null) {
-				c.close();
-			}
-		}
-		return null;
-	}
+        c.moveToFirst();
+        FormIdStruct newForm = new FormIdStruct(formUri, new File(c.getString(formMedia),
+            ODKFileUtils.FORMDEF_JSON_FILENAME), c.getString(formPath), c.getString(formId),
+            c.getString(formVersion), c.getString(tableId), new Date(c.getLong(date)));
+        return newForm;
+      }
+    } finally {
+      if (c != null) {
+        c.close();
+      }
+    }
+    return null;
+  }
 }

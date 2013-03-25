@@ -30,62 +30,61 @@ import android.support.v4.app.FragmentManager;
  */
 public class ConfirmationDialogFragment extends DialogFragment {
 
-	public static interface ConfirmConfirmationDialog {
-		public void okConfirmationDialog();
+  public static interface ConfirmConfirmationDialog {
+    public void okConfirmationDialog();
 
-		public void cancelConfirmationDialog();
-	};
+    public void cancelConfirmationDialog();
+  };
 
-	public static ConfirmationDialogFragment newInstance(int fragmentId,
-			String title, String message, String okButton, String cancelButton) {
-		ConfirmationDialogFragment frag = new ConfirmationDialogFragment();
-		Bundle args = new Bundle();
-		args.putInt("fragmentId", fragmentId);
-		args.putString("title", title);
-		args.putString("message", message);
-		args.putString("okButton", okButton);
-		args.putString("cancelButton", cancelButton);
-		frag.setArguments(args);
-		return frag;
-	}
+  public static ConfirmationDialogFragment newInstance(int fragmentId, String title,
+      String message, String okButton, String cancelButton) {
+    ConfirmationDialogFragment frag = new ConfirmationDialogFragment();
+    Bundle args = new Bundle();
+    args.putInt("fragmentId", fragmentId);
+    args.putString("title", title);
+    args.putString("message", message);
+    args.putString("okButton", okButton);
+    args.putString("cancelButton", cancelButton);
+    frag.setArguments(args);
+    return frag;
+  }
 
-	public void setMessage(String message) {
-		((AlertDialog) this.getDialog()).setMessage(message);
-	}
+  public void setMessage(String message) {
+    ((AlertDialog) this.getDialog()).setMessage(message);
+  }
 
-	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		String title = getArguments().getString("title");
-		String message = getArguments().getString("message");
-		String okButton = getArguments().getString("okButton");
-		String cancelButton = getArguments().getString("cancelButton");
+  @Override
+  public Dialog onCreateDialog(Bundle savedInstanceState) {
+    String title = getArguments().getString("title");
+    String message = getArguments().getString("message");
+    String okButton = getArguments().getString("okButton");
+    String cancelButton = getArguments().getString("cancelButton");
 
-		final Integer fragmentId = getArguments().getInt("fragmentId");
+    final Integer fragmentId = getArguments().getInt("fragmentId");
 
-		DialogInterface.OnClickListener dialogYesNoListener = new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int i) {
-				FragmentManager mgr = getFragmentManager();
-				Fragment f = mgr.findFragmentById(fragmentId);
-				switch (i) {
-				case DialogInterface.BUTTON_POSITIVE: // delete
-					((ConfirmConfirmationDialog) f).okConfirmationDialog();
-					dialog.dismiss();
-					break;
-				case DialogInterface.BUTTON_NEGATIVE: // do nothing
-					((ConfirmConfirmationDialog) f).cancelConfirmationDialog();
-					dialog.dismiss();
-					break;
-				}
-			}
-		};
+    DialogInterface.OnClickListener dialogYesNoListener = new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int i) {
+        FragmentManager mgr = getFragmentManager();
+        Fragment f = mgr.findFragmentById(fragmentId);
+        switch (i) {
+        case DialogInterface.BUTTON_POSITIVE: // delete
+          ((ConfirmConfirmationDialog) f).okConfirmationDialog();
+          dialog.dismiss();
+          break;
+        case DialogInterface.BUTTON_NEGATIVE: // do nothing
+          ((ConfirmConfirmationDialog) f).cancelConfirmationDialog();
+          dialog.dismiss();
+          break;
+        }
+      }
+    };
 
-		AlertDialog dlg = new AlertDialog.Builder(getActivity())
-				.setIcon(android.R.drawable.ic_dialog_info).setTitle(title)
-				.setMessage(message).setCancelable(false)
-				.setPositiveButton(okButton, dialogYesNoListener)
-				.setNegativeButton(cancelButton, dialogYesNoListener).create();
-		dlg.setCanceledOnTouchOutside(false);
-		return dlg;
-	}
+    AlertDialog dlg = new AlertDialog.Builder(getActivity())
+        .setIcon(android.R.drawable.ic_dialog_info).setTitle(title).setMessage(message)
+        .setCancelable(false).setPositiveButton(okButton, dialogYesNoListener)
+        .setNegativeButton(cancelButton, dialogYesNoListener).create();
+    dlg.setCanceledOnTouchOutside(false);
+    return dlg;
+  }
 }

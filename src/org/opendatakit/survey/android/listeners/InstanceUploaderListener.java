@@ -20,7 +20,7 @@ import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
  * @author Carl Hartung (carlhartung@gmail.com)
  */
 public interface InstanceUploaderListener {
-	void uploadingComplete(InstanceUploadOutcome outcome);
+  void uploadingComplete(InstanceUploadOutcome outcome);
 
-	void progressUpdate(int progress, int total);
+  void progressUpdate(int progress, int total);
 }

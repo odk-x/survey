@@ -30,23 +30,22 @@ import android.view.ViewGroup;
  *
  */
 public class WebViewFragment extends Fragment {
-	public static final int ID = R.layout.blank_layout;
+  public static final int ID = R.layout.blank_layout;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	}
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+  @Override
+  public void onActivityCreated(Bundle savedInstanceState) {
+    super.onActivityCreated(savedInstanceState);
 
-	}
+  }
 
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-		return inflater.inflate(ID, container, false);
-	}
+    return inflater.inflate(ID, container, false);
+  }
 }

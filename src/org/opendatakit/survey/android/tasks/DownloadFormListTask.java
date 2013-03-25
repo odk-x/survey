@@ -86,7 +86,7 @@ public class DownloadFormListTask extends
 		HttpClient httpclient = WebUtils
 				.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
-		DocumentFetchResult result = WebUtils.getXmlDocument(downloadListUrl,
+    DocumentFetchResult result = WebUtils.getXmlDocument(downloadListUrl,
 				localContext, httpclient, auth);
 
 		// If we can't get the document, return the error, cancel the task

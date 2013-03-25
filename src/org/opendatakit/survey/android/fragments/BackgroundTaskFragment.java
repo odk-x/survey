@@ -251,7 +251,8 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
     }
   }
 
-  public void downloadForms(String appName, FormDownloaderListener listener, FormDetails[] filesToDownload) {
+  public void downloadForms(String appName, FormDownloaderListener listener,
+      FormDetails[] filesToDownload) {
     mFormDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormsTask != null
         && mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {

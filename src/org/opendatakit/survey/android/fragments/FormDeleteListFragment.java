@@ -50,302 +50,287 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormDeleteListFragment extends ListFragment implements
-		DeleteFormsListener, ConfirmConfirmationDialog,
-		LoaderManager.LoaderCallbacks<Cursor> {
+public class FormDeleteListFragment extends ListFragment implements DeleteFormsListener,
+    ConfirmConfirmationDialog, LoaderManager.LoaderCallbacks<Cursor> {
 
-	private static final String t = "FormDeleteListFragment";
-	private static final int FORM_DELETE_LIST_LOADER = 0x01;
+  private static final String t = "FormDeleteListFragment";
+  private static final int FORM_DELETE_LIST_LOADER = 0x01;
 
-	public static final int ID = R.layout.form_delete_list;
+  public static final int ID = R.layout.form_delete_list;
 
-	private static enum DialogState {
-		Confirmation, None
-	};
+  private static enum DialogState {
+    Confirmation, None
+  };
 
-	// keys for the data being persisted
+  // keys for the data being persisted
 
-	private static final String DIALOG_STATE = "dialogState";
-	private static final String SYNC_MSG_KEY = "syncMsgKey";
-	private static final String SELECTED = "selected";
+  private static final String DIALOG_STATE = "dialogState";
+  private static final String SYNC_MSG_KEY = "syncMsgKey";
+  private static final String SELECTED = "selected";
 
-	// data to persist across orientation changes
+  // data to persist across orientation changes
 
-	private String mSyncStatusText = "";
-	private DialogState mDialogState = DialogState.None;
-	private ArrayList<String> mSelected = new ArrayList<String>();
+  private String mSyncStatusText = "";
+  private DialogState mDialogState = DialogState.None;
+  private ArrayList<String> mSelected = new ArrayList<String>();
 
-	// data that is not persisted
+  // data that is not persisted
 
-	private Button mDeleteButton;
+  private Button mDeleteButton;
 
-	private CursorAdapter mInstances;
+  private CursorAdapter mInstances;
 
-	private View view;
+  private View view;
 
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-	}
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+  }
 
-	@Override
-	public void onActivityCreated(Bundle savedInstanceState) {
-		super.onActivityCreated(savedInstanceState);
+  @Override
+  public void onActivityCreated(Bundle savedInstanceState) {
+    super.onActivityCreated(savedInstanceState);
 
-		String[] data = new String[] { FormsColumns.DISPLAY_NAME,
-				FormsColumns.DISPLAY_SUBTEXT, FormsColumns.FORM_VERSION };
-		int[] viewParams = new int[] { R.id.text1, R.id.text2, R.id.text3 };
+    String[] data = new String[] { FormsColumns.DISPLAY_NAME, FormsColumns.DISPLAY_SUBTEXT,
+        FormsColumns.FORM_VERSION };
+    int[] viewParams = new int[] { R.id.text1, R.id.text2, R.id.text3 };
 
-		// render total instance view
-		mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION,
-				this.getActivity(), R.layout.two_item_multiple_choice, data,
-				viewParams);
-		setListAdapter(mInstances);
+    // render total instance view
+    mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
+        R.layout.two_item_multiple_choice, data, viewParams);
+    setListAdapter(mInstances);
 
-		getLoaderManager().initLoader(FORM_DELETE_LIST_LOADER, null, this);
-	}
+    getLoaderManager().initLoader(FORM_DELETE_LIST_LOADER, null, this);
+  }
 
-	@Override
-	public View onCreateView(LayoutInflater inflater, ViewGroup container,
-			Bundle savedInstanceState) {
-		view = inflater.inflate(ID, container, false);
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    view = inflater.inflate(ID, container, false);
 
-		mDeleteButton = (Button) view.findViewById(R.id.delete_button);
-		mDeleteButton.setText(getString(R.string.delete_file));
-		mDeleteButton.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View v) {
+    mDeleteButton = (Button) view.findViewById(R.id.delete_button);
+    mDeleteButton.setText(getString(R.string.delete_file));
+    mDeleteButton.setOnClickListener(new OnClickListener() {
+      @Override
+      public void onClick(View v) {
 
-				if (mSelected.size() > 0) {
-					createDeleteFormsDialog();
-				} else {
-					Toast.makeText(getActivity().getApplicationContext(),
-							R.string.noselect_error, Toast.LENGTH_SHORT).show();
-				}
-			}
-		});
+        if (mSelected.size() > 0) {
+          createDeleteFormsDialog();
+        } else {
+          Toast.makeText(getActivity().getApplicationContext(), R.string.noselect_error,
+              Toast.LENGTH_SHORT).show();
+        }
+      }
+    });
 
-		if (savedInstanceState != null) {
-			if (savedInstanceState.containsKey(SYNC_MSG_KEY)) {
-				mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
-			}
+    if (savedInstanceState != null) {
+      if (savedInstanceState.containsKey(SYNC_MSG_KEY)) {
+        mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
+      }
 
-			// to restore alert dialog.
-			if (savedInstanceState.containsKey(DIALOG_STATE)) {
-				mDialogState = DialogState.valueOf(savedInstanceState
-						.getString(DIALOG_STATE));
-			}
+      // to restore alert dialog.
+      if (savedInstanceState.containsKey(DIALOG_STATE)) {
+        mDialogState = DialogState.valueOf(savedInstanceState.getString(DIALOG_STATE));
+      }
 
-			if (savedInstanceState.containsKey(SELECTED)) {
-				String[] selectedArray = savedInstanceState
-						.getStringArray(SELECTED);
-				for (int i = 0; i < selectedArray.length; i++) {
-					mSelected.add(selectedArray[i]);
-				}
-			}
-		}
+      if (savedInstanceState.containsKey(SELECTED)) {
+        String[] selectedArray = savedInstanceState.getStringArray(SELECTED);
+        for (int i = 0; i < selectedArray.length; i++) {
+          mSelected.add(selectedArray[i]);
+        }
+      }
+    }
 
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
+    TextView tv = (TextView) view.findViewById(R.id.status_text);
+    tv.setText(mSyncStatusText);
 
-		mDeleteButton.setEnabled(!(mSelected.size() == 0));
+    mDeleteButton.setEnabled(!(mSelected.size() == 0));
 
-		return view;
-	}
+    return view;
+  }
 
-	@Override
-	public void onSaveInstanceState(Bundle outState) {
-		super.onSaveInstanceState(outState);
-		String[] selectedArray = new String[mSelected.size()];
-		for (int i = 0; i < mSelected.size(); i++) {
-			selectedArray[i] = mSelected.get(i);
-		}
-		outState.putStringArray(SELECTED, selectedArray);
-		outState.putString(SYNC_MSG_KEY, mSyncStatusText);
-		outState.putString(DIALOG_STATE, mDialogState.name());
-	}
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    String[] selectedArray = new String[mSelected.size()];
+    for (int i = 0; i < mSelected.size(); i++) {
+      selectedArray[i] = mSelected.get(i);
+    }
+    outState.putStringArray(SELECTED, selectedArray);
+    outState.putString(SYNC_MSG_KEY, mSyncStatusText);
+    outState.putString(DIALOG_STATE, mDialogState.name());
+  }
 
-	@Override
-	public void onResume() {
-		super.onResume();
+  @Override
+  public void onResume() {
+    super.onResume();
 
-		getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-		getListView().setItemsCanFocus(false);
+    getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+    getListView().setItemsCanFocus(false);
 
-		// if current activity is being reinitialized due to changing
-		// orientation restore all checkmarks for ones selected
-		ListView ls = getListView();
-		for (String id : mSelected) {
-			for (int pos = 0; pos < ls.getCount(); pos++) {
-				if (id.equals(ls.getItemIdAtPosition(pos))) {
-					ls.setItemChecked(pos, true);
-					break;
-				}
-			}
+    // if current activity is being reinitialized due to changing
+    // orientation restore all checkmarks for ones selected
+    ListView ls = getListView();
+    for (String id : mSelected) {
+      for (int pos = 0; pos < ls.getCount(); pos++) {
+        if (id.equals(ls.getItemIdAtPosition(pos))) {
+          ls.setItemChecked(pos, true);
+          break;
+        }
+      }
 
-		}
+    }
 
-		FragmentManager mgr = getFragmentManager();
-		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
-				.findFragmentByTag("background");
+    FragmentManager mgr = getFragmentManager();
+    BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
-		f.establishDeleteFormsListener(this);
+    f.establishDeleteFormsListener(this);
 
-		TextView tv = (TextView) view.findViewById(R.id.status_text);
-		tv.setText(mSyncStatusText);
+    TextView tv = (TextView) view.findViewById(R.id.status_text);
+    tv.setText(mSyncStatusText);
 
-		if (mDialogState == DialogState.Confirmation) {
-			restoreConfirmationDialog();
-		}
-	}
+    if (mDialogState == DialogState.Confirmation) {
+      restoreConfirmationDialog();
+    }
+  }
 
-	@Override
-	public void onPause() {
-		FragmentManager mgr = getFragmentManager();
+  @Override
+  public void onPause() {
+    FragmentManager mgr = getFragmentManager();
 
-		// dismiss dialogs...
-		ConfirmationDialogFragment dialog = (ConfirmationDialogFragment) mgr
-				.findFragmentByTag("confirmationDialog");
-		if (dialog != null) {
-			dialog.dismiss();
-		}
-		super.onPause();
-	}
+    // dismiss dialogs...
+    ConfirmationDialogFragment dialog = (ConfirmationDialogFragment) mgr
+        .findFragmentByTag("confirmationDialog");
+    if (dialog != null) {
+      dialog.dismiss();
+    }
+    super.onPause();
+  }
 
-	private void restoreConfirmationDialog() {
-		Fragment dialog = getFragmentManager().findFragmentByTag(
-				"confirmationDialog");
-		String alertMsg = getString(R.string.delete_confirm, mSelected.size());
+  private void restoreConfirmationDialog() {
+    Fragment dialog = getFragmentManager().findFragmentByTag("confirmationDialog");
+    String alertMsg = getString(R.string.delete_confirm, mSelected.size());
 
-		if (dialog != null
-				&& ((ConfirmationDialogFragment) dialog).getDialog() != null) {
-			mDialogState = DialogState.Confirmation;
-			((ConfirmationDialogFragment) dialog).getDialog().setTitle(
-					getString(R.string.delete_file));
-			((ConfirmationDialogFragment) dialog).setMessage(alertMsg);
-			// TODO: may need to set the ok/cancel button text if this is ever
-			// reused?
-		} else {
+    if (dialog != null && ((ConfirmationDialogFragment) dialog).getDialog() != null) {
+      mDialogState = DialogState.Confirmation;
+      ((ConfirmationDialogFragment) dialog).getDialog().setTitle(getString(R.string.delete_file));
+      ((ConfirmationDialogFragment) dialog).setMessage(alertMsg);
+      // TODO: may need to set the ok/cancel button text if this is ever
+      // reused?
+    } else {
 
-			ConfirmationDialogFragment f = ConfirmationDialogFragment
-					.newInstance(getId(), getString(R.string.delete_file),
-							alertMsg, getString(R.string.delete_yes),
-							getString(R.string.delete_no));
+      ConfirmationDialogFragment f = ConfirmationDialogFragment.newInstance(getId(),
+          getString(R.string.delete_file), alertMsg, getString(R.string.delete_yes),
+          getString(R.string.delete_no));
 
-			mDialogState = DialogState.Confirmation;
-			f.show(getFragmentManager(), "confirmationDialog");
-		}
-	}
+      mDialogState = DialogState.Confirmation;
+      f.show(getFragmentManager(), "confirmationDialog");
+    }
+  }
 
-	@Override
-	public void okConfirmationDialog() {
-		Log.i(t, "ok (delete) selected files");
-		mDialogState = DialogState.None;
-		deleteSelectedForms();
-	}
+  @Override
+  public void okConfirmationDialog() {
+    Log.i(t, "ok (delete) selected files");
+    mDialogState = DialogState.None;
+    deleteSelectedForms();
+  }
 
-	@Override
-	public void cancelConfirmationDialog() {
-		// no-op
-		mDialogState = DialogState.None;
-		Log.i(t, "cancel (do not delete) selected files");
-	}
+  @Override
+  public void cancelConfirmationDialog() {
+    // no-op
+    mDialogState = DialogState.None;
+    Log.i(t, "cancel (do not delete) selected files");
+  }
 
-	/**
-	 * Create the form delete dialog
-	 */
-	private void createDeleteFormsDialog() {
-		restoreConfirmationDialog();
-	}
+  /**
+   * Create the form delete dialog
+   */
+  private void createDeleteFormsDialog() {
+    restoreConfirmationDialog();
+  }
 
-	/**
-	 * Deletes the selected files.First from the database then from the file
-	 * system
-	 */
-	private void deleteSelectedForms() {
-		FragmentManager mgr = getFragmentManager();
-		BackgroundTaskFragment f = (BackgroundTaskFragment) mgr
-				.findFragmentByTag("background");
+  /**
+   * Deletes the selected files.First from the database then from the file
+   * system
+   */
+  private void deleteSelectedForms() {
+    FragmentManager mgr = getFragmentManager();
+    BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
-		f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this,
-				mSelected.toArray(new Long[mSelected.size()]));
-	}
+    f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this,
+        mSelected.toArray(new Long[mSelected.size()]));
+  }
 
-	@Override
-	public void onListItemClick(ListView l, View v, int position, long id) {
-		super.onListItemClick(l, v, position, id);
+  @Override
+  public void onListItemClick(ListView l, View v, int position, long id) {
+    super.onListItemClick(l, v, position, id);
 
-		// get row id from db
-		Cursor c = (Cursor) getListAdapter().getItem(position);
-		String formid = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+    // get row id from db
+    Cursor c = (Cursor) getListAdapter().getItem(position);
+    String formid = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
 
-		// add/remove from selected list
-		if (mSelected.contains(formid))
-			mSelected.remove(formid);
-		else
-			mSelected.add(formid);
+    // add/remove from selected list
+    if (mSelected.contains(formid))
+      mSelected.remove(formid);
+    else
+      mSelected.add(formid);
 
-		mDeleteButton.setEnabled(!(mSelected.size() == 0));
+    mDeleteButton.setEnabled(!(mSelected.size() == 0));
 
-	}
+  }
 
-	@Override
-	public void deleteFormsComplete(int deletedForms) {
-		Log.i(t, "Delete forms complete");
-		if (deletedForms == mSelected.size()) {
-			// all deletes were successful
-			Toast.makeText(getActivity(),
-					getString(R.string.file_deleted_ok, deletedForms),
-					Toast.LENGTH_SHORT).show();
-		} else {
-			// had some failures
-			Log.e(t, "Failed to delete " + (mSelected.size() - deletedForms)
-					+ " forms");
-			Toast.makeText(
-					getActivity(),
-					getString(R.string.file_deleted_error, mSelected.size()
-							- deletedForms, mSelected.size()),
-					Toast.LENGTH_LONG).show();
-		}
-		mSelected.clear();
-		getListView().clearChoices(); // doesn't unset the checkboxes
-		for (int i = 0; i < getListView().getCount(); ++i) {
-			getListView().setItemChecked(i, false);
-		}
-		mDeleteButton.setEnabled(false);
-	}
+  @Override
+  public void deleteFormsComplete(int deletedForms) {
+    Log.i(t, "Delete forms complete");
+    if (deletedForms == mSelected.size()) {
+      // all deletes were successful
+      Toast.makeText(getActivity(), getString(R.string.file_deleted_ok, deletedForms),
+          Toast.LENGTH_SHORT).show();
+    } else {
+      // had some failures
+      Log.e(t, "Failed to delete " + (mSelected.size() - deletedForms) + " forms");
+      Toast
+          .makeText(
+              getActivity(),
+              getString(R.string.file_deleted_error, mSelected.size() - deletedForms,
+                  mSelected.size()), Toast.LENGTH_LONG).show();
+    }
+    mSelected.clear();
+    getListView().clearChoices(); // doesn't unset the checkboxes
+    for (int i = 0; i < getListView().getCount(); ++i) {
+      getListView().setItemChecked(i, false);
+    }
+    mDeleteButton.setEnabled(false);
+  }
 
-	@Override
-	public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-		// This is called when a new Loader needs to be created. This
-		// sample only has one Loader, so we don't care about the ID.
-		// First, pick the base URI to use depending on whether we are
-		// currently filtering.
-		Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-		    ((ODKActivity) getActivity()).getAppName());
+  @Override
+  public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+    // This is called when a new Loader needs to be created. This
+    // sample only has one Loader, so we don't care about the ID.
+    // First, pick the base URI to use depending on whether we are
+    // currently filtering.
+    Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+        ((ODKActivity) getActivity()).getAppName());
 
-      String selection = FormsColumns.FORM_ID + "<> ?";
-      String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
-		// Now create and return a CursorLoader that will take care of
-		// creating a Cursor for the data being displayed.
-		String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, "
-				+ FormsColumns.FORM_VERSION + " DESC";
-		return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs,
-				sortOrder);
-	}
+    String selection = FormsColumns.FORM_ID + "<> ?";
+    String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
+    // Now create and return a CursorLoader that will take care of
+    // creating a Cursor for the data being displayed.
+    String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.FORM_VERSION + " DESC";
+    return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs, sortOrder);
+  }
 
-	@Override
-	public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
-		// Swap the new cursor in. (The framework will take care of closing the
-		// old cursor once we return.)
-		mInstances.swapCursor(cursor);
-	}
+  @Override
+  public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+    // Swap the new cursor in. (The framework will take care of closing the
+    // old cursor once we return.)
+    mInstances.swapCursor(cursor);
+  }
 
-	@Override
-	public void onLoaderReset(Loader<Cursor> loader) {
-		// This is called when the last Cursor provided to onLoadFinished()
-		// above is about to be closed. We need to make sure we are no
-		// longer using it.
-		mInstances.swapCursor(null);
-	}
+  @Override
+  public void onLoaderReset(Loader<Cursor> loader) {
+    // This is called when the last Cursor provided to onLoadFinished()
+    // above is about to be closed. We need to make sure we are no
+    // longer using it.
+    mInstances.swapCursor(null);
+  }
 }

@@ -22,5 +22,5 @@ import org.opendatakit.survey.android.logic.FormDetails;
  * @author Carl Hartung (carlhartung@gmail.com)
  */
 public interface FormListDownloaderListener {
-	void formListDownloadingComplete(HashMap<String, FormDetails> value);
+  void formListDownloadingComplete(HashMap<String, FormDetails> value);
 }

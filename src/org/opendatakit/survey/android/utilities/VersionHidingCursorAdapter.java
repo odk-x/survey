@@ -31,44 +31,40 @@ import android.widget.TextView;
  */
 public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
 
-	private final Context ctxt;
-	private final String versionColumnName;
-	private final ViewBinder originalBinder;
+  private final Context ctxt;
+  private final String versionColumnName;
+  private final ViewBinder originalBinder;
 
-	public VersionHidingCursorAdapter(String versionColumnName,
-			Context context, int layout, String[] from, int[] to) {
-		super(context, layout, null, from, to, 0);
-		this.versionColumnName = versionColumnName;
-		ctxt = context;
-		originalBinder = getViewBinder();
-		setViewBinder(new ViewBinder() {
+  public VersionHidingCursorAdapter(String versionColumnName, Context context, int layout,
+      String[] from, int[] to) {
+    super(context, layout, null, from, to, 0);
+    this.versionColumnName = versionColumnName;
+    ctxt = context;
+    originalBinder = getViewBinder();
+    setViewBinder(new ViewBinder() {
 
-			@Override
-			public boolean setViewValue(View view, Cursor cursor,
-					int columnIndex) {
-				String columnName = cursor.getColumnName(columnIndex);
-				if (!columnName
-						.equals(VersionHidingCursorAdapter.this.versionColumnName)) {
-					if (originalBinder != null) {
-						return originalBinder.setViewValue(view, cursor,
-								columnIndex);
-					}
-					return false;
-				} else {
-					String version = cursor.getString(columnIndex);
-					TextView v = (TextView) view;
-					if (version != null) {
-						v.setText(ctxt.getString(R.string.version) + " "
-								+ version);
-						v.setVisibility(View.VISIBLE);
-					} else {
-						v.setText(null);
-						v.setVisibility(View.GONE);
-					}
-				}
-				return true;
-			}
-		});
-	}
+      @Override
+      public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
+        String columnName = cursor.getColumnName(columnIndex);
+        if (!columnName.equals(VersionHidingCursorAdapter.this.versionColumnName)) {
+          if (originalBinder != null) {
+            return originalBinder.setViewValue(view, cursor, columnIndex);
+          }
+          return false;
+        } else {
+          String version = cursor.getString(columnIndex);
+          TextView v = (TextView) view;
+          if (version != null) {
+            v.setText(ctxt.getString(R.string.version) + " " + version);
+            v.setVisibility(View.VISIBLE);
+          } else {
+            v.setText(null);
+            v.setVisibility(View.GONE);
+          }
+        }
+        return true;
+      }
+    });
+  }
 
 }

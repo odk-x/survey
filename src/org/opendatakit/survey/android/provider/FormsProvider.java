@@ -24,11 +24,11 @@ import android.net.Uri;
  */
 public class FormsProvider extends FormsProviderImpl {
 
-	public String getFormsAuthority() {
-		return FormsProviderAPI.AUTHORITY;
-	}
+  public String getFormsAuthority() {
+    return FormsProviderAPI.AUTHORITY;
+  }
 
-	public Uri getFormsContentUri() {
-		return FormsProviderAPI.CONTENT_URI;
-	}
+  public Uri getFormsContentUri() {
+    return FormsProviderAPI.CONTENT_URI;
+  }
 }

@@ -41,73 +41,68 @@ import android.widget.TextView;
  * @author cswenson@google.com (Christopher Swenson)
  */
 public class AccountList extends ListActivity {
-	protected AccountManager accountManager;
+  protected AccountManager accountManager;
 
-	/**
-	 * Called to initialize the activity the first time it is run.
-	 */
-	@Override
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setTitle(getString(R.string.app_name) + " > "
-				+ getString(R.string.google_account));
-	}
+  /**
+   * Called to initialize the activity the first time it is run.
+   */
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setTitle(getString(R.string.app_name) + " > " + getString(R.string.google_account));
+  }
 
-	/**
-	 * Called when the activity is resumed.
-	 */
-	@Override
-	public void onResume() {
-		super.onResume();
-		accountManager = AccountManager.get(getApplicationContext());
-		final Account[] accounts = accountManager
-				.getAccountsByType("com.google");
-		this.setListAdapter(new ArrayAdapter<Account>(this,
-				R.layout.account_chooser, accounts) {
-			@Override
-			public View getView(int position, View convertView, ViewGroup parent) {
-				View row;
+  /**
+   * Called when the activity is resumed.
+   */
+  @Override
+  public void onResume() {
+    super.onResume();
+    accountManager = AccountManager.get(getApplicationContext());
+    final Account[] accounts = accountManager.getAccountsByType("com.google");
+    this.setListAdapter(new ArrayAdapter<Account>(this, R.layout.account_chooser, accounts) {
+      @Override
+      public View getView(int position, View convertView, ViewGroup parent) {
+        View row;
 
-				if (convertView == null) {
-					row = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
-							.inflate(R.layout.account_chooser, null);
-				} else {
-					row = convertView;
-				}
-				TextView vw = (TextView) row.findViewById(android.R.id.text1);
-				vw.setTextSize(Survey.getQuestionFontsize());
-				SharedPreferences settings = PreferenceManager
-						.getDefaultSharedPreferences(getBaseContext());
-				String selected = settings.getString(
-						PreferencesActivity.KEY_ACCOUNT, "");
-				if (accounts[position].name.equals(selected)) {
-					vw.setBackgroundColor(Color.LTGRAY);
-				} else {
-					vw.setBackgroundColor(Color.WHITE);
-				}
-				vw.setText(getItem(position).name);
+        if (convertView == null) {
+          row = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(
+              R.layout.account_chooser, null);
+        } else {
+          row = convertView;
+        }
+        TextView vw = (TextView) row.findViewById(android.R.id.text1);
+        vw.setTextSize(Survey.getQuestionFontsize());
+        SharedPreferences settings = PreferenceManager
+            .getDefaultSharedPreferences(getBaseContext());
+        String selected = settings.getString(PreferencesActivity.KEY_ACCOUNT, "");
+        if (accounts[position].name.equals(selected)) {
+          vw.setBackgroundColor(Color.LTGRAY);
+        } else {
+          vw.setBackgroundColor(Color.WHITE);
+        }
+        vw.setText(getItem(position).name);
 
-				return row;
-			}
-		});
-	}
+        return row;
+      }
+    });
+  }
 
-	/**
-	 * When the user clicks an item, authenticate against that account.
-	 */
-	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
-		Account account = (Account) getListView().getItemAtPosition(position);
-		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(getBaseContext());
-		SharedPreferences.Editor editor = settings.edit();
-		editor.remove(PreferencesActivity.KEY_AUTH);
-		editor.putString(PreferencesActivity.KEY_ACCOUNT, account.name);
-		editor.commit();
+  /**
+   * When the user clicks an item, authenticate against that account.
+   */
+  @Override
+  protected void onListItemClick(ListView l, View v, int position, long id) {
+    Account account = (Account) getListView().getItemAtPosition(position);
+    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
+    SharedPreferences.Editor editor = settings.edit();
+    editor.remove(PreferencesActivity.KEY_AUTH);
+    editor.putString(PreferencesActivity.KEY_ACCOUNT, account.name);
+    editor.commit();
 
-		Intent intent = new Intent(this, AccountInfo.class);
-		intent.putExtra("account", account);
-		startActivity(intent);
-		finish();
-	}
+    Intent intent = new Intent(this, AccountInfo.class);
+    intent.putExtra("account", account);
+    startActivity(intent);
+    finish();
+  }
 }

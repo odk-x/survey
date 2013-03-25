@@ -23,10 +23,10 @@ import android.net.Uri;
  * Convenience definitions for NotePadProvider
  */
 public final class InstanceProviderAPI {
-	public static final String AUTHORITY = "org.opendatakit.survey.android.provider.instances";
-	public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/");
+  public static final String AUTHORITY = "org.opendatakit.survey.android.provider.instances";
+  public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY + "/");
 
-	// This class cannot be instantiated
-	private InstanceProviderAPI() {
-	}
+  // This class cannot be instantiated
+  private InstanceProviderAPI() {
+  }
 }

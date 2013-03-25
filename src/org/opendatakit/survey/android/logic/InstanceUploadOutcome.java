@@ -19,9 +19,9 @@ import java.util.HashMap;
 
 public class InstanceUploadOutcome {
 
-	public URI mAuthRequestingServer = null;
-	public HashMap<String, String> mResults = null;
+  public URI mAuthRequestingServer = null;
+  public HashMap<String, String> mResults = null;
 
-	public InstanceUploadOutcome() {
-	};
+  public InstanceUploadOutcome() {
+  };
 }

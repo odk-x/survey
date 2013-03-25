@@ -32,54 +32,53 @@ import android.support.v4.app.FragmentManager;
  */
 public class ProgressDialogFragment extends DialogFragment {
 
-	public static interface CancelProgressDialog {
-		public void cancelProgressDialog();
-	};
+  public static interface CancelProgressDialog {
+    public void cancelProgressDialog();
+  };
 
-	public static ProgressDialogFragment newInstance(int fragmentId,
-			String title, String message) {
-		ProgressDialogFragment frag = new ProgressDialogFragment();
-		Bundle args = new Bundle();
-		args.putInt("fragmentId", fragmentId);
-		args.putString("title", title);
-		args.putString("message", message);
-		frag.setArguments(args);
-		return frag;
-	}
+  public static ProgressDialogFragment newInstance(int fragmentId, String title, String message) {
+    ProgressDialogFragment frag = new ProgressDialogFragment();
+    Bundle args = new Bundle();
+    args.putInt("fragmentId", fragmentId);
+    args.putString("title", title);
+    args.putString("message", message);
+    frag.setArguments(args);
+    return frag;
+  }
 
-	public void setMessage(String message) {
-		((ProgressDialog) this.getDialog()).setMessage(message);
-	}
+  public void setMessage(String message) {
+    ((ProgressDialog) this.getDialog()).setMessage(message);
+  }
 
-	@Override
-	public Dialog onCreateDialog(Bundle savedInstanceState) {
-		String title = getArguments().getString("title");
-		String message = getArguments().getString("message");
+  @Override
+  public Dialog onCreateDialog(Bundle savedInstanceState) {
+    String title = getArguments().getString("title");
+    String message = getArguments().getString("message");
 
-		final Integer fragmentId = getArguments().getInt("fragmentId");
+    final Integer fragmentId = getArguments().getInt("fragmentId");
 
-		DialogInterface.OnClickListener loadingButtonListener = new DialogInterface.OnClickListener() {
-			@Override
-			public void onClick(DialogInterface dialog, int which) {
-				FragmentManager mgr = getFragmentManager();
-				Fragment f = mgr.findFragmentById(fragmentId);
+    DialogInterface.OnClickListener loadingButtonListener = new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which) {
+        FragmentManager mgr = getFragmentManager();
+        Fragment f = mgr.findFragmentById(fragmentId);
 
-				((CancelProgressDialog) f).cancelProgressDialog();
-				// user code should dismiss the dialog
-				// since this is a cancellation action...
-				// dialog.dismiss();
-			}
-		};
-		ProgressDialog mProgressDialog = new ProgressDialog(getActivity());
-		mProgressDialog.setTitle(title);
-		mProgressDialog.setMessage(message);
-		mProgressDialog.setIcon(android.R.drawable.ic_dialog_info);
-		mProgressDialog.setIndeterminate(true);
-		mProgressDialog.setCancelable(false);
-		mProgressDialog.setCanceledOnTouchOutside(false);
-		mProgressDialog.setButton(DialogInterface.BUTTON_POSITIVE,
-				getString(R.string.cancel), loadingButtonListener);
-		return mProgressDialog;
-	}
+        ((CancelProgressDialog) f).cancelProgressDialog();
+        // user code should dismiss the dialog
+        // since this is a cancellation action...
+        // dialog.dismiss();
+      }
+    };
+    ProgressDialog mProgressDialog = new ProgressDialog(getActivity());
+    mProgressDialog.setTitle(title);
+    mProgressDialog.setMessage(message);
+    mProgressDialog.setIcon(android.R.drawable.ic_dialog_info);
+    mProgressDialog.setIndeterminate(true);
+    mProgressDialog.setCancelable(false);
+    mProgressDialog.setCanceledOnTouchOutside(false);
+    mProgressDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.cancel),
+        loadingButtonListener);
+    return mProgressDialog;
+  }
 
 }
