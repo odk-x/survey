@@ -34,7 +34,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -250,8 +249,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
       // (a cached entry does not have the expansion info).
       // Gather and persist the expansion file info into the user
       // preferences.
-      File f = new File(new File(new File(Environment.getExternalStorageDirectory(), "Android"),
-          "obb"), getPackageName());
+      File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
       f.mkdirs();
 
       ArrayList<Map<String, Object>> expansions = new ArrayList<Map<String, Object>>();
@@ -293,8 +291,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 
   @SuppressWarnings("unchecked")
   public ArrayList<Map<String, Object>> expansionFiles() {
-    File f = new File(new File(new File(Environment.getExternalStorageDirectory(), "Android"),
-        "obb"), getPackageName());
+    File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
     f.mkdirs();
 
     SharedPreferences settings = PreferenceManager
@@ -318,8 +315,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
   }
 
   public File localExpansionFile() {
-    File f = new File(new File(new File(Environment.getExternalStorageDirectory(), "Android"),
-        "obb"), getPackageName());
+    File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
     f.mkdirs();
 
     String name = ODKFileUtils.getExpansionAPKFileName(this, true, versionCode);
