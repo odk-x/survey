@@ -223,6 +223,7 @@ public class SubmissionProvider extends CommonContentProvider {
         if (c.moveToFirst() && c.getCount() == 1) {
           Long timestamp = null;
           String instanceName = null;
+          String formStateId = null;
           // OK. we have the record -- work through all the terms
           for (int i = 0; i < c.getColumnCount(); ++i) {
             String columnName = c.getColumnName(i);
@@ -272,6 +273,8 @@ public class SubmissionProvider extends CommonContentProvider {
               timestamp = c.getLong(i);
             } else if (columnName.equals(DataTableColumns.INSTANCE_NAME)) {
               instanceName = c.getString(i);
+            } else if (columnName.equals(DataTableColumns.FORM_ID)) {
+              formStateId = c.getString(i);
             }
           }
 
@@ -413,11 +416,19 @@ public class SubmissionProvider extends CommonContentProvider {
                 v.addChild(0, Node.TEXT, datestamp);
                 meta.addChild(idx++, Node.ELEMENT, v);
                 meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+
                 // these are extra metadata tags...
                 v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
                 v.addChild(0, Node.TEXT, instanceName);
                 meta.addChild(idx++, Node.ELEMENT, v);
                 meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+
+                // these are extra metadata tags...
+                v = d.createElement(XML_DEFAULT_NAMESPACE, "formID");
+                v.addChild(0, Node.TEXT, formStateId);
+                meta.addChild(idx++, Node.ELEMENT, v);
+                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+
                 // we may want to track incomplete or partial submissions in the
                 // future...
                 v = d.createElement(XML_DEFAULT_NAMESPACE, "saved");
