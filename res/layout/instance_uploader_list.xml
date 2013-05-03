@@ -51,6 +51,7 @@ the License.
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_above="@+id/buttonholder"
+        android:orientation="vertical"
         android:layout_alignParentTop="true" >
 
     <ListView
