@@ -61,7 +61,7 @@ public class GeoPointActivity extends Activity implements LocationListener {
       }
     }
     if (!mGPSOn && !mNetworkOn) {
-      Toast.makeText(getBaseContext(), getString(R.string.provider_disabled_error),
+      Toast.makeText(this, getString(R.string.provider_disabled_error),
           Toast.LENGTH_SHORT).show();
       finish();
     }

@@ -216,7 +216,7 @@ public class JQueryODKView extends FrameLayout {
     if (!htmlFile.exists())
       return null;
 
-    String fullPath = FileProvider.getAsUrl(htmlFile);
+    String fullPath = FileProvider.getAsUrl(getContext(), htmlFile);
     String htmlUrl = fullPath + "#formPath="
         + StringEscapeUtils.escapeHtml4((s == null) ? formPath : s.formPath)
         + ((instanceID == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceID))

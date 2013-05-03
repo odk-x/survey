@@ -405,7 +405,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
 
-    FileSet f = FileSet.parse(is);
+    FileSet f = FileSet.parse(appContext, is);
     return f;
   }
 

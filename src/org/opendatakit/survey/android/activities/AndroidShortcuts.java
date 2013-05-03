@@ -119,7 +119,7 @@ public class AndroidShortcuts extends Activity {
           while (c.moveToNext()) {
             if (first) {
               String appName = app.getName();
-              Uri uri = Uri.withAppendedPath(FileProvider.CONTENT_URI, app.getName());
+              Uri uri = Uri.withAppendedPath(FileProvider.getContentUri(this), app.getName());
               choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName));
               first = false;
             }

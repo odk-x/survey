@@ -27,6 +27,8 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 
+import android.content.Context;
+
 /**
  * Holds the files required for a submission to the ODK Aggregate legacy
  * interface
@@ -56,17 +58,17 @@ public class FileSet {
     attachmentFiles.add(f);
   }
 
-  public String serialize() throws JsonGenerationException, JsonMappingException, IOException {
+  public String serialize(Context context) throws JsonGenerationException, JsonMappingException, IOException {
     ArrayList<HashMap<String, String>> str = new ArrayList<HashMap<String, String>>();
 
     HashMap<String, String> map;
     map = new HashMap<String, String>();
-    map.put(URI, FileProvider.getAsUrl(instanceFile));
+    map.put(URI, FileProvider.getAsUrl(context, instanceFile));
     map.put(CONTENT_TYPE, APPLICATION_XML);
     str.add(map);
     for (MimeFile f : attachmentFiles) {
       map = new HashMap<String, String>();
-      map.put(URI, FileProvider.getAsUrl(f.file));
+      map.put(URI, FileProvider.getAsUrl(context, f.file));
       map.put(CONTENT_TYPE, f.contentType);
       str.add(map);
     }
@@ -75,7 +77,7 @@ public class FileSet {
     return serializedString;
   }
 
-  public static final FileSet parse(InputStream src) throws JsonParseException,
+  public static final FileSet parse(Context context, InputStream src) throws JsonParseException,
       JsonMappingException, IOException {
     @SuppressWarnings("unchecked")
     ArrayList<Map<String, String>> str = ODKFileUtils.mapper.readValue(src, ArrayList.class);
@@ -83,11 +85,11 @@ public class FileSet {
     FileSet fs = new FileSet();
     Map<String, String> map;
     map = (Map<String, String>) str.get(0);
-    fs.instanceFile = FileProvider.getAsFile(map.get(URI));
+    fs.instanceFile = FileProvider.getAsFile(context, map.get(URI));
     for (int i = 1; i < str.size(); ++i) {
       map = (Map<String, String>) str.get(i);
       MimeFile f = new MimeFile();
-      f.file = FileProvider.getAsFile(map.get(URI));
+      f.file = FileProvider.getAsFile(context, map.get(URI));
       f.contentType = map.get(CONTENT_TYPE);
       fs.attachmentFiles.add(f);
     }

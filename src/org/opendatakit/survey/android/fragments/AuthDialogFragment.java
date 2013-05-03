@@ -70,8 +70,7 @@ public class AuthDialogFragment extends DialogFragment {
     final View dialogView = factory.inflate(R.layout.server_auth_dialog, null);
 
     // Get the server, username, and password from the settings
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity()
-        .getBaseContext());
+    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
 
     EditText username = (EditText) dialogView.findViewById(R.id.username_edit);
     String storedUsername = settings.getString(PreferencesActivity.KEY_USERNAME, null);

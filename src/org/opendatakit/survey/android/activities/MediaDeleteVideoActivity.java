@@ -41,7 +41,7 @@ public class MediaDeleteVideoActivity extends Activity {
     super.onCreate(savedInstanceState);
 
     String binaryName = savedInstanceState.getString(MEDIA_PATH);
-    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, FileProvider.getAsFile(binaryName)
+    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, FileProvider.getAsFile(this,binaryName)
         .getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH + ": " + binaryName);
 

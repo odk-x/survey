@@ -190,7 +190,7 @@ public class SubmissionProvider extends CommonContentProvider {
     final String instanceId = (segments.size() >= 3 ? segments.get(2) : null);
     final String formId = uri.getQueryParameter("formId");
     final String formVersion = uri.getQueryParameter("formVersion");
-    final SQLiteDatabase db = getDbHelper(appName).getReadableDatabase();
+    final SQLiteDatabase db = getDbHelper(getContext(), appName).getReadableDatabase();
 
     String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
     if (tableName == null) {
@@ -329,7 +329,7 @@ public class SubmissionProvider extends CommonContentProvider {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFile = (String) mimeuri.get("uri");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(uriFile);
+                      File f = FileProvider.getAsFile(getContext(), uriFile);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -521,7 +521,7 @@ public class SubmissionProvider extends CommonContentProvider {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFile = (String) mimeuri.get("uri");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(uriFile);
+                      File f = FileProvider.getAsFile(getContext(),uriFile);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -559,7 +559,7 @@ public class SubmissionProvider extends CommonContentProvider {
             String doc = b.toString();
             exportFile(doc, submissionXml);
           }
-          exportFile(freturn.serialize(), manifest);
+          exportFile(freturn.serialize(getContext()), manifest);
           return ParcelFileDescriptor.open(manifest, ParcelFileDescriptor.MODE_READ_ONLY);
 
         }

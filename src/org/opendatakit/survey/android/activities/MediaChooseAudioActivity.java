@@ -140,7 +140,7 @@ public class MediaChooseAudioActivity extends Activity {
 
       Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
-      i.putExtra(URI, FileProvider.getAsUrl(newMediaFromCP));
+      i.putExtra(URI, FileProvider.getAsUrl(this, newMediaFromCP));
       String name = newMediaFromCP.getName();
       i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);

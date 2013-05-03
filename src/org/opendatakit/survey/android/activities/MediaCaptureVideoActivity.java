@@ -249,7 +249,7 @@ public class MediaCaptureVideoActivity extends Activity {
     File sourceMedia = (mediaPath != null) ? new File(mediaPath) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
-      i.putExtra(URI, FileProvider.getAsUrl(sourceMedia));
+      i.putExtra(URI, FileProvider.getAsUrl(this, sourceMedia));
       String name = sourceMedia.getName();
       i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);

@@ -388,13 +388,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       String authority = uri.getAuthority();
-      if (authority.equalsIgnoreCase(FileProvider.FILE_AUTHORITY)) {
+      if (authority.equalsIgnoreCase(FileProvider.getFileAuthority(this))) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + FileProvider.FILE_AUTHORITY + " uri (" + uri.toString()
+          String err = "Invalid " + FileProvider.getFileAuthority(this) + " uri (" + uri.toString()
               + "). Expected one segment (the application name).";
           Log.e(t, err);
           Intent i = new Intent();
@@ -468,7 +468,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
           return;
         }
       } else {
-        String err = "Unexpected " + authority + " uri. Only one of " + FileProvider.FILE_AUTHORITY
+        String err = "Unexpected " + authority + " uri. Only one of " + FileProvider.getFileAuthority(this)
             + " or " + FormsProviderAPI.AUTHORITY + " allowed.";
         Log.e(t, err);
         Intent i = new Intent();

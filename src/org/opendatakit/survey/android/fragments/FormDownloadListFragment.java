@@ -435,7 +435,7 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	private void showAuthDialog() {
 		SharedPreferences settings = PreferenceManager
-				.getDefaultSharedPreferences(getActivity().getBaseContext());
+				.getDefaultSharedPreferences(getActivity());
 		String server = settings.getString(PreferencesActivity.KEY_SERVER_URL,
 				getString(R.string.default_server_url));
 
