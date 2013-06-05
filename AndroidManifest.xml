@@ -37,7 +37,7 @@
         <!--  TODO: shouldn't this be established by androidcommon directly -->
 		<!--  FileProvider provides read-only access to files specified by: appName/filepath -->
 	    <provider
-	        android:name="org.opendatakit.common.android.provider.FileProvider"
+	        android:name="org.opendatakit.survey.android.provider.FileProvider"
 	        android:authorities="org.opendatakit.survey.android.provider.file" />
 
         <provider
@@ -150,6 +150,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+		<uses-library
+		    android:name="org.opendatakit.common.android"
+		    android:required="true" />
 
         <uses-library
             android:name="com.google.android.maps"
