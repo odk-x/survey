@@ -1099,11 +1099,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
         Log.i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
-        view.loadJavascriptUrl("javascript:landing.opendatakitCallback('" + pageWaitingForData
+        view.loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
             + "','" + pathWaitingForData + "','" + actionWaitingForData + "', '" + jsonObject
             + "' )");
       } catch (Exception e) {
-        view.loadJavascriptUrl("javascript:landing.opendatakitCallback('" + pageWaitingForData
+        view.loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
             + "','" + pathWaitingForData + "','" + actionWaitingForData
             + "', '{ \"status\":0, \"result\":\"" + e.toString() + "\"}' )");
       } finally {
