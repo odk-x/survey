@@ -53,6 +53,11 @@ public class MediaChooseAudioActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    Bundle extras = getIntent().getExtras();
+    if (extras != null) {
+        newFileBase = extras.getString(NEW_FILE);
+    }
+
     if (savedInstanceState != null) {
       newFileBase = savedInstanceState.getString(NEW_FILE);
     }

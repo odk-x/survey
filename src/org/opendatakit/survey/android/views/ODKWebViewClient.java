@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.views;
 
+import org.apache.commons.lang3.StringUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 
 import android.os.Message;
@@ -25,8 +26,10 @@ import android.webkit.WebViewClient;
 public class ODKWebViewClient extends WebViewClient {
   private static final String t = "ODKWebViewClient";
   private WebLogger log;
+  private JQueryODKView jQueryODKView;
 
-  ODKWebViewClient(String appName) {
+  ODKWebViewClient(JQueryODKView jQueryODKView, String appName) {
+	this.jQueryODKView = jQueryODKView;
     log = WebLogger.getLogger(appName);
   }
 
@@ -61,6 +64,9 @@ public class ODKWebViewClient extends WebViewClient {
   public void onPageFinished(WebView view, String url) {
     log.i(t, "onPageFinished: " + url + " ms: " + Long.toString(System.currentTimeMillis()));
     super.onPageFinished(view, url);
+    if ( !StringUtils.startsWithIgnoreCase(url, "javascript:") ) {
+      jQueryODKView.loadPageFinished();
+    }
   }
 
   @Override

@@ -62,6 +62,14 @@ public class MediaCaptureAudioActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    Bundle extras = getIntent().getExtras();
+    if (extras != null) {
+        mediaPath = extras.getString(URI);
+        hasLaunched = extras.getBoolean(HAS_LAUNCHED);
+        afterResult = extras.getBoolean(AFTER_RESULT);
+        newFileBase = extras.getString(NEW_FILE);
+    }
+
     if (savedInstanceState != null) {
       mediaPath = savedInstanceState.getString(URI);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);

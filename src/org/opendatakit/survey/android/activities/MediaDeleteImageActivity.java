@@ -40,7 +40,21 @@ public class MediaDeleteImageActivity extends Activity {
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    String binaryName = savedInstanceState.getString(MEDIA_PATH);
+    String binaryName = null;
+    Bundle extras = getIntent().getExtras();
+    if (extras != null) {
+    	binaryName = extras.getString(MEDIA_PATH);
+    }
+
+    if (savedInstanceState != null) {
+    	binaryName = savedInstanceState.getString(MEDIA_PATH);
+    }
+
+    if (binaryName == null) {
+        throw new IllegalArgumentException("Expected " + MEDIA_PATH
+            + " key in intent bundle. Not found.");
+    }
+
     int del = MediaUtils.deleteImageFileFromMediaProvider(this, FileProvider.getAsFile(this,binaryName)
         .getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH + ": " + binaryName);

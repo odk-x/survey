@@ -110,7 +110,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String CURRENT_SCREEN = "currentScreen";
   private static final String NESTED_SCREEN = "nestedScreen";
   private static final String PROCESS_APK_EXPANSION_FILES = "processAPKExpansionFiles";
-  private static final String WEBKIT_STATE = "webkitState";
 
   // menu options
 
@@ -191,6 +190,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private String pathWaitingForData = null;
   private String actionWaitingForData = null;
 
+  private boolean webkitStateValid = false;
+
   private String appName = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
@@ -233,9 +234,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   protected void onSaveInstanceState(Bundle outState) {
     // TODO Auto-generated method stub
     super.onSaveInstanceState(outState);
-
-    // record that we are expecting the webkit state to be recovered
-    outState.putString(WEBKIT_STATE, "yes");
 
     if (pageWaitingForData != null) {
       outState.putString(PAGE_WAITING_FOR_DATA, pageWaitingForData);
@@ -545,17 +543,25 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     actionBar.setDisplayShowHomeEnabled(false);
     actionBar.setDisplayHomeAsUpEnabled(false);
 
-    {
-      JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
-      view.setJavascriptCallback(mJSCallback);
-      if (savedInstanceState != null && savedInstanceState.containsKey(WEBKIT_STATE)) {
-        // trust that we are restoring the state from the view itself...
-      } else {
-        // we are loading a new page -- call loadPage...
-        view.loadPage(getAppName(), getCurrentForm(), getInstanceId(), getPageRef(),
-            getAuxillaryHash());
-      }
-    }
+	JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
+    view.setJavascriptCallback(mJSCallback);
+  }
+
+  @Override
+  public void onRestart() {
+	super.onRestart();
+	//	webkitStateValid = true;  // TODO: disable this? or make WebKit a non-static again?
+  }
+
+  @Override
+  public void onStart() {
+	super.onStart();
+	if ( !webkitStateValid ) {
+	  JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
+      // we are loading a new page -- call loadPage...
+      view.loadPage(getAppName(), getCurrentForm(), getInstanceId(), getPageRef(),
+          getAuxillaryHash());
+	}
   }
 
   @Override

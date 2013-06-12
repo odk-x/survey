@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.views;
 
 import java.io.File;
+import java.util.LinkedList;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.provider.FileProvider;
@@ -52,60 +53,68 @@ public class JQueryODKView extends FrameLayout {
   // starter random number for view IDs
   private static final String t = "JQueryODKView";
 
-  private WebLogger log;
-  private WebView mWebView;
+  private static WebView mWebView = null;
 
+  private static synchronized void assertWebView(Context context, String appName) {
+	  if ( mWebView == null ) {
+		mWebView = new WebView(context);
+		mWebView.setId(984732);
+		TableLayout.LayoutParams params = new TableLayout.LayoutParams();
+		params.setMargins(7, 5, 7, 5);
+		mWebView.setLayoutParams(params);
+
+		// for development -- always draw from source...
+	    WebSettings ws = mWebView.getSettings();
+	    ws.setAllowFileAccess(true);
+	    ws.setAppCacheEnabled(true);
+	    ws.setAppCacheMaxSize(1024L * 1024L * 200L);
+	    ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
+	    ws.setCacheMode(WebSettings.LOAD_NORMAL);
+	    ws.setDatabaseEnabled(true);
+	    ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
+	    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
+	    ws.setDefaultFontSize(Survey.getQuestionFontsize());
+	    ws.setDomStorageEnabled(true);
+	    ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
+	    ws.setGeolocationEnabled(true);
+	    ws.setJavaScriptCanOpenWindowsAutomatically(true);
+	    ws.setJavaScriptEnabled(true);
+	    ws.setPluginState(PluginState.ON);
+	    ws.setRenderPriority(RenderPriority.HIGH);
+
+	    // disable to try to solve touch/mouse/swipe issues
+	    ws.setBuiltInZoomControls(false);
+	    ws.setSupportZoom(false);
+
+	    mWebView.setFocusable(true);
+	    mWebView.setFocusableInTouchMode(true);
+	    mWebView.setInitialScale(100);
+
+	    // questionable value...
+	    mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
+	    mWebView.setSaveEnabled(true);
+	  }
+  }
+
+  private WebLogger log;
+  private boolean isLoadPageFinished = false;
+  private boolean isJavascriptFlushActive = false;
+  private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
   public JQueryODKView(Context context, AttributeSet set) {
     super(context, set);
     ODKActivity a = (ODKActivity) context;
     String appName = a.getAppName();
 
     log = WebLogger.getLogger(appName);
-
-    mWebView = new WebView(context);
-    mWebView.setId(984732);
-
-    FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
-        LayoutParams.MATCH_PARENT);
-    TableLayout.LayoutParams params = new TableLayout.LayoutParams();
-    params.setMargins(7, 5, 7, 5);
-    mWebView.setLayoutParams(params);
+    assertWebView(context, appName);
 
     mWebView.setWebChromeClient(new ODKWebChromeClient(a));
-    WebViewClient wvc = new ODKWebViewClient(appName);
+    WebViewClient wvc = new ODKWebViewClient(this, appName);
     mWebView.setWebViewClient(wvc);
 
-    // for development -- always draw from source...
-    WebSettings ws = mWebView.getSettings();
-    ws.setAllowFileAccess(true);
-    ws.setAppCacheEnabled(true);
-    ws.setAppCacheMaxSize(1024L * 1024L * 200L);
-    ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
-    ws.setCacheMode(WebSettings.LOAD_NORMAL);
-    ws.setDatabaseEnabled(true);
-    ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
-    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
-    ws.setDefaultFontSize(Survey.getQuestionFontsize());
-    ws.setDomStorageEnabled(true);
-    ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
-    ws.setGeolocationEnabled(true);
-    ws.setJavaScriptCanOpenWindowsAutomatically(true);
-    ws.setJavaScriptEnabled(true);
-    ws.setPluginState(PluginState.ON);
-    ws.setRenderPriority(RenderPriority.HIGH);
 
-    // disable to try to solve touch/mouse/swipe issues
-    ws.setBuiltInZoomControls(false);
-    ws.setSupportZoom(false);
-
-    mWebView.setFocusable(true);
-    mWebView.setFocusableInTouchMode(true);
-    mWebView.setInitialScale(100);
-
-    // questionable value...
-    mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-    mWebView.setSaveEnabled(true);
-
+    FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
+    		LayoutParams.MATCH_PARENT);
     addView(mWebView, fp);
 
     InputMethodManager imm = (InputMethodManager) context
@@ -137,8 +146,35 @@ public class JQueryODKView extends FrameLayout {
 
   // called to invoke a javascript method inside the webView
   public void loadJavascriptUrl(String javascriptUrl) {
-    log.i(t, "loadUrl: " + javascriptUrl);
-    mWebView.loadUrl(javascriptUrl);
+    if ( isLoadPageFinished || isJavascriptFlushActive ) {
+        log.i(t, "loadUrl: " + javascriptUrl);
+        mWebView.loadUrl(javascriptUrl);
+    } else {
+        log.i(t, "loadJavascriptUrl: QUEUING: " + javascriptUrl);
+    	javascriptRequestsWaitingForPageLoad.add(javascriptUrl);
+    }
+  }
+
+  public void loadPageFinished() {
+	  if ( !isLoadPageFinished && !isJavascriptFlushActive ) {
+		  isJavascriptFlushActive = true;
+		  while ( isJavascriptFlushActive &&
+				  !javascriptRequestsWaitingForPageLoad.isEmpty() ) {
+			  String s = javascriptRequestsWaitingForPageLoad.removeFirst();
+			  loadJavascriptUrl(s);
+		  }
+		  isLoadPageFinished = true;
+		  isJavascriptFlushActive = false;
+	  }
+  }
+
+  public void resetLoadPageStatus() {
+	  isLoadPageFinished = false;
+	  isJavascriptFlushActive = false;
+	  while ( !javascriptRequestsWaitingForPageLoad.isEmpty() ) {
+		  String s = javascriptRequestsWaitingForPageLoad.removeFirst();
+		    log.i(t, "resetLoadPageStatus: DISCARDING javascriptUrl: " + s);
+	  }
   }
 
   /**
@@ -159,6 +195,7 @@ public class JQueryODKView extends FrameLayout {
     if (url == null)
       return;
     log.i(t, "loadUrl: " + url);
+	resetLoadPageStatus();
     mWebView.loadUrl(url);
     mWebView.requestFocus();
   }
