@@ -27,7 +27,6 @@ import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.webkit.JavascriptInterface;
 
 /**
  * The class mapped to 'shim' in the Javascript
@@ -47,7 +46,7 @@ public class JQueryJavascriptCallback {
 		log = WebLogger.getLogger(mActivity.getAppName());
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public String getBaseUrl() {
 
 		// Find the formPath for the default form with the most recent
@@ -110,7 +109,7 @@ public class JQueryJavascriptCallback {
 	 *
 	 * @return JSONstring as defined above.
 	 */
-	@JavascriptInterface
+	// @JavascriptInterface
 	public String getPlatformInfo() {
 		// @formatter:off
 		return "{\"container\":\"Android\"," + "\"version\":\""
@@ -137,7 +136,7 @@ public class JQueryJavascriptCallback {
 	 *
 	 * @return JSONstring as defined above.
 	 */
-	@JavascriptInterface
+	// @JavascriptInterface
 	public String getDatabaseSettings() {
 		// maxSize is in bytes
 		return "{\"shortName\":\""
@@ -150,53 +149,53 @@ public class JQueryJavascriptCallback {
 				+ WebDbDatabaseHelper.WEBDB_INSTANCE_DB_ESTIMATED_SIZE + "}";
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void setInstanceId(String instanceId) {
 		mActivity.setInstanceId(instanceId);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void setPageRef(String pageRef) {
 		mActivity.setPageRef(pageRef);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public boolean hasPromptHistory() {
 		return mActivity.hasPromptHistory();
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void clearPromptHistory() {
 		mActivity.clearPromptHistory();
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public String popPromptHistory() {
 		return mActivity.popPromptHistory();
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void pushPromptHistory(String idx) {
 		mActivity.pushPromptHistory(idx);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void setAuxillaryHash(String auxillaryHash) {
 		// NOTE: not currently used...
 		mActivity.setAuxillaryHash(auxillaryHash);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void ignoreAllChangesCompleted(String formId, String instanceId) {
 		mActivity.ignoreAllChangesCompleted(formId, instanceId);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void ignoreAllChangesFailed(String formId, String instanceId) {
 		mActivity.ignoreAllChangesFailed(formId, instanceId);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void saveAllChangesCompleted(String formId, String instanceId,
 			boolean asComplete) {
 		// go through the FC because there are additional keys that should be
@@ -204,12 +203,12 @@ public class JQueryJavascriptCallback {
 		mActivity.saveAllChangesCompleted(formId, instanceId, asComplete);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void saveAllChangesFailed(String formId, String instanceId) {
 		mActivity.saveAllChangesFailed(formId, instanceId);
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public void log(String level, String loggingString) {
 		char l = (level == null) ? 'I' : level.charAt(0);
 		switch (l) {
@@ -240,7 +239,7 @@ public class JQueryJavascriptCallback {
 		}
 	}
 
-	@JavascriptInterface
+	// @JavascriptInterface
 	public String doAction(String page, String path, String action,
 			String jsonMap) {
 

@@ -37,16 +37,19 @@
         <!--  TODO: shouldn't this be established by androidcommon directly -->
 		<!--  FileProvider provides read-only access to files specified by: appName/filepath -->
 	    <provider
+	        android:exported="true"
 	        android:name="org.opendatakit.survey.android.provider.FileProvider"
 	        android:authorities="org.opendatakit.survey.android.provider.file" />
-
         <provider
+            android:exported="true"
             android:name="org.opendatakit.survey.android.provider.FormsProvider"
             android:authorities="org.opendatakit.survey.android.provider.forms" />
         <provider
+            android:exported="true"
             android:name="org.opendatakit.survey.android.provider.InstanceProvider"
             android:authorities="org.opendatakit.survey.android.provider.instances" />
         <provider
+            android:exported="true"
             android:name="org.opendatakit.survey.android.provider.SubmissionProvider"
             android:authorities="org.opendatakit.survey.android.provider.submission.xml;org.opendatakit.survey.android.provider.submission.json" />
 
