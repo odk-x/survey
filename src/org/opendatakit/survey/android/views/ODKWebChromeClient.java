@@ -14,9 +14,6 @@
 
 package org.opendatakit.survey.android.views;
 
-import org.opendatakit.common.android.utilities.WebLogger;
-import org.opendatakit.survey.android.activities.ODKActivity;
-
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.view.View;
@@ -33,14 +30,12 @@ public class ODKWebChromeClient extends WebChromeClient implements
     MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
 
   private static final String t = "ODKWebChromeClient";
-  private WebLogger log;
-  private ODKActivity a;
+  private ODKWebView wrappedWebView;
   private VideoView video = null;
   private WebChromeClient.CustomViewCallback callback = null;
 
-  public ODKWebChromeClient(ODKActivity a) {
-    this.a = a;
-    log = WebLogger.getLogger(a.getAppName());
+  public ODKWebChromeClient(ODKWebView wrappedWebView) {
+    this.wrappedWebView = wrappedWebView;
   }
 
   @Override
@@ -52,31 +47,31 @@ public class ODKWebChromeClient extends WebChromeClient implements
     if (view instanceof FrameLayout) {
       FrameLayout frame = (FrameLayout) view;
       if (frame.getFocusedChild() instanceof VideoView) {
-        log.i(t, "onShowCustomView: FrameLayout Video");
+        wrappedWebView.getLogger().i(t, "onShowCustomView: FrameLayout Video");
         video = (VideoView) frame.getFocusedChild();
         video.setOnCompletionListener(this);
         video.setOnErrorListener(this);
-        a.swapToCustomView(view);
+        wrappedWebView.swapToCustomView(view);
         super.onShowCustomView(view, callback);
         // video.seekTo(0);// reset to start of video...
         // video.start();
       } else {
-        log.i(t, "onShowCustomView: FrameLayout not Video "
+        wrappedWebView.getLogger().i(t, "onShowCustomView: FrameLayout not Video "
             + frame.getFocusedChild().getClass().getCanonicalName());
-        a.swapToCustomView(view);
+        wrappedWebView.swapToCustomView(view);
         super.onShowCustomView(view, callback);
       }
     } else {
-      log.i(t, "onShowCustomView: not FrameLayout " + view.getClass().getCanonicalName());
-      ((ODKActivity) a).swapToCustomView(view);
+      wrappedWebView.getLogger().i(t, "onShowCustomView: not FrameLayout " + view.getClass().getCanonicalName());
+      wrappedWebView.swapToCustomView(view);
       super.onShowCustomView(view, callback);
     }
   }
 
   @Override
   public void onHideCustomView() {
-    log.d(t, "onHideCustomView");
-    a.swapOffCustomView();
+    wrappedWebView.getLogger().d(t, "onHideCustomView");
+    wrappedWebView.swapOffCustomView();
     if (video != null) {
       video.stopPlayback();
     }
@@ -89,7 +84,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
   @Override
   public void onCompletion(MediaPlayer mp) {
-    log.d(t, "Video ended");
+    wrappedWebView.getLogger().d(t, "Video ended");
     if (mp.isPlaying()) {
       mp.stop();
     }
@@ -99,7 +94,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
-    log.w(t, "Video error");
+    wrappedWebView.getLogger().w(t, "Video error");
     if (mp.isPlaying()) {
       mp.stop();
     }
@@ -116,7 +111,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
    */
   @Override
   public Bitmap getDefaultVideoPoster() {
-    return ((ODKActivity) a).getDefaultVideoPoster();
+    return wrappedWebView.getDefaultVideoPoster();
   }
 
   /**
@@ -127,7 +122,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
    */
   @Override
   public View getVideoLoadingProgressView() {
-    return ((ODKActivity) a).getVideoLoadingProgressView();
+    return wrappedWebView.getVideoLoadingProgressView();
   }
 
   @Override
@@ -138,21 +133,21 @@ public class ODKWebChromeClient extends WebChromeClient implements
   @Override
   public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
     if (consoleMessage.sourceId() == null || consoleMessage.sourceId().length() == 0) {
-      log.e(t, "onConsoleMessage: Javascript exception: " + consoleMessage.message());
+      wrappedWebView.getLogger().e(t, "onConsoleMessage: Javascript exception: " + consoleMessage.message());
       return true;
     } else {
       if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.DEBUG) {
-        log.d(t, consoleMessage.message());
+        wrappedWebView.getLogger().d(t, consoleMessage.message());
       } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.ERROR) {
-        log.e(t, consoleMessage.message());
+        wrappedWebView.getLogger().e(t, consoleMessage.message());
       } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.LOG) {
-        log.i(t, consoleMessage.message());
+        wrappedWebView.getLogger().i(t, consoleMessage.message());
       } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.TIP) {
-        log.t(t, consoleMessage.message());
+        wrappedWebView.getLogger().t(t, consoleMessage.message());
       } else if (consoleMessage.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
-        log.w(t, consoleMessage.message());
+        wrappedWebView.getLogger().w(t, consoleMessage.message());
       } else {
-        log.e(t, consoleMessage.message());
+        wrappedWebView.getLogger().e(t, consoleMessage.message());
       }
       return true;
     }
@@ -162,7 +157,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
   public void onExceededDatabaseQuota(String url, String databaseIdentifier, long currentQuota,
       long estimatedSize, long totalUsedQuota, QuotaUpdater quotaUpdater) {
     long space = (4 + (currentQuota / 65536L)) * 65536L;
-    log.i(t, "Extending Database quota to: " + Long.toString(space));
+    wrappedWebView.getLogger().i(t, "Extending Database quota to: " + Long.toString(space));
     quotaUpdater.updateQuota(space);
   }
 
@@ -170,18 +165,18 @@ public class ODKWebChromeClient extends WebChromeClient implements
   public void onReachedMaxAppCacheSize(long spaceNeeded, long totalUsedQuota,
       QuotaUpdater quotaUpdater) {
     long space = (4 + (spaceNeeded / 65536L)) * 65536L;
-    log.i(t, "Extending AppCache quota to: " + Long.toString(space));
+    wrappedWebView.getLogger().i(t, "Extending AppCache quota to: " + Long.toString(space));
     quotaUpdater.updateQuota(space);
   }
 
   @Override
   public void onConsoleMessage(String message, int lineNumber, String sourceID) {
-    log.i(t, sourceID + "[" + lineNumber + "]: " + message);
+    wrappedWebView.getLogger().i(t, sourceID + "[" + lineNumber + "]: " + message);
   }
 
   @Override
   public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
-    log.w(t, url + ": " + message);
+    wrappedWebView.getLogger().w(t, url + ": " + message);
     return false;
   }
 

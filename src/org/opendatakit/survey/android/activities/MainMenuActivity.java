@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.activities;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +23,9 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FileProvider;
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
@@ -38,7 +41,6 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
-import org.opendatakit.survey.android.views.JQueryJavascriptCallback;
 import org.opendatakit.survey.android.views.JQueryODKView;
 
 import android.app.Activity;
@@ -47,6 +49,7 @@ import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -103,9 +106,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String APP_NAME = "appName";
   private static final String FORM_URI = "formUri";
   private static final String INSTANCE_ID = "instanceId";
-  private static final String PAGE_REF = "pageRef";
+  private static final String SCREEN_PATH = "screenPath";
   private static final String AUXILLARY_HASH = "auxillaryHash";
-  private static final String PAGE_REF_HISTORY = "pageRefHistory";
+  private static final String SCREEN_HISTORY = "screenHistory";
+  private static final String SECTION_STACK = "sectionStack";
 
   private static final String CURRENT_SCREEN = "currentScreen";
   private static final String NESTED_SCREEN = "nestedScreen";
@@ -195,9 +199,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private String appName = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
-  private String pageRef = null;
-  private String auxilllaryHash = null;
-  private ArrayList<String> pageRefHistory = new ArrayList<String>();
+  private String screenPath = null;
+  private String auxillaryHash = null;
+
+  private String frameworkBaseUrl = null;
+  private Long frameworkLastModifiedDate = 0L;
+
+  private ArrayList<String> screenHistory = new ArrayList<String>();
+  private ArrayList<String> sectionStack = new ArrayList<String>();
 
   /**
    * Member variables that do not need to be perserved across orientation
@@ -206,11 +215,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private PropertyManager mPropertyManager; // no need to preserve
 
   private AlertDialog mAlertDialog; // no need to preserve
-
-  private JQueryJavascriptCallback mJSCallback = null; // cached for
-  // efficiency only
-  // -- no need to
-  // preserve
 
   private SharedPreferences mAdminPreferences; // cached for efficiency only
   // -- no need to preserve
@@ -254,8 +258,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (getInstanceId() != null) {
       outState.putString(INSTANCE_ID, getInstanceId());
     }
-    if (getPageRef() != null) {
-      outState.putString(PAGE_REF, getPageRef());
+    if (getScreenPath() != null) {
+      outState.putString(SCREEN_PATH, getScreenPath());
     }
     if (getAuxillaryHash() != null) {
       outState.putString(AUXILLARY_HASH, getAuxillaryHash());
@@ -264,7 +268,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       outState.putString(APP_NAME, getAppName());
     }
 
-    outState.putStringArrayList(PAGE_REF_HISTORY, pageRefHistory);
+    outState.putStringArrayList(SCREEN_HISTORY, screenHistory);
+    outState.putStringArrayList(SECTION_STACK, sectionStack);
   }
 
   @Override
@@ -346,17 +351,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     return this.instanceId;
   }
 
-  public void setPageRef(String pageRef) {
-    WebLogger.getLogger(getAppName()).i(t, "setPageRef: " + pageRef);
-    this.pageRef = pageRef;
+  public void setScreenPath(String screenPath) {
+    WebLogger.getLogger(getAppName()).i(t, "setScreenPath: " + screenPath);
+    this.screenPath = screenPath;
   }
 
-  public String getPageRef() {
-    return this.pageRef;
+  public String getScreenPath() {
+    return this.screenPath;
   }
 
   public void setAuxillaryHash(String auxillaryHash) {
-    this.auxilllaryHash = auxillaryHash;
+    this.auxillaryHash = auxillaryHash;
   }
 
   @Override
@@ -364,12 +369,104 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     return this.appName;
   }
 
+  @Override
+  public FrameworkFormPathInfo getFrameworkFormPathInfo() {
+
+    // Find the formPath for the default form with the most recent
+    // version...
+    Cursor c = null;
+    String formPath = null;
+    Long lastModified = null;
+
+    try {
+      //
+      // the default form is named 'default' ...
+      String selection = FormsColumns.FORM_ID + "=?";
+      String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
+      // use the most recently created of the matches
+      // (in case DB corrupted)
+      String orderBy = FormsColumns.FORM_VERSION + " DESC";
+      c = getContentResolver().query(
+          Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, selection,
+          selectionArgs, orderBy);
+
+      if (c.getCount() > 0) {
+        // we found a match...
+        c.moveToFirst();
+        formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
+        lastModified = c.getLong(c.getColumnIndex(FormsColumns.DATE));
+      }
+    } finally {
+       if (c != null && !c.isClosed()) {
+          c.close();
+       }
+    }
+
+    if ( formPath == null ) {
+      return null;
+    } else {
+      return new FrameworkFormPathInfo(formPath, lastModified);
+    }
+  }
+
+  @Override
+  public String getUrlBaseLocation(boolean ifChanged) {
+    // Find the formPath for the default form with the most recent
+    // version...
+    // we need this so that we can load the index.html and main javascript
+    // code
+    FrameworkFormPathInfo info = getFrameworkFormPathInfo();
+    if ( info == null ) {
+      return null;
+    }
+    String formPath = info.relativePath;
+    Long lastModified = info.lastModified;
+
+    // formPath always begins ../../ -- strip that off to get explicit path
+    // suffix...
+    File mediaFolder = new File(new File(ODKFileUtils.getAppFolder(appName)), formPath.substring(6));
+
+    // File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
+    File htmlFile = new File(mediaFolder, "index.html");
+
+    if (!htmlFile.exists()) {
+      return null;
+    }
+
+    String fullPath = FileProvider.getAsUrl(this, htmlFile);
+
+    if (fullPath == null) {
+      return null;
+    }
+
+    if (frameworkBaseUrl != null &&
+        frameworkBaseUrl.equals(fullPath) && lastModified.equals(frameworkLastModifiedDate)) {
+      // no need to change the base page...
+      return ifChanged ? null : frameworkBaseUrl;
+    }
+
+    frameworkBaseUrl = fullPath;
+    frameworkLastModifiedDate = lastModified;
+    return frameworkBaseUrl;
+  }
+
+  @Override
+  public String getUrlLocationHash() {
+    String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
+        + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
+        + ((screenPath == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(screenPath))
+        + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+
+    return hashUrl;
+
+  }
+
   public void setAppName(String appName) {
     this.appName = appName;
   }
 
   public String getAuxillaryHash() {
-    return this.auxilllaryHash;
+    return this.auxillaryHash;
   }
 
   @Override
@@ -414,15 +511,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             if (segments.size() > 2) {
               String instanceId = segments.get(2);
               setInstanceId(instanceId);
-              // and process the fragment to find the pageRef, if any...
+              // and process the fragment to find the setScreenPath, if any...
               String fragment = uri.getFragment();
               String[] pargs = fragment.split("&");
               int i;
               for (i = 0; i < pargs.length; ++i) {
                 String[] keyValue = pargs[i].split("=");
-                if ("pageRef".equals(keyValue[0])) {
+                if ("setScreenPath".equals(keyValue[0])) {
                   if (keyValue.length == 2) {
-                    setPageRef(StringEscapeUtils.unescapeHtml4(keyValue[1]));
+                    setScreenPath(StringEscapeUtils.unescapeHtml4(keyValue[1]));
                   }
                   break;
                 }
@@ -508,18 +605,25 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       }
       setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
           .getString(INSTANCE_ID) : getInstanceId());
-      setPageRef(savedInstanceState.containsKey(PAGE_REF) ? savedInstanceState.getString(PAGE_REF)
-          : getPageRef());
+      setScreenPath(savedInstanceState.containsKey(SCREEN_PATH) ? savedInstanceState.getString(SCREEN_PATH)
+          : getScreenPath());
       setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ? savedInstanceState
           .getString(AUXILLARY_HASH) : getAuxillaryHash());
 
-      if (savedInstanceState.containsKey(PAGE_REF_HISTORY)) {
-        pageRefHistory = savedInstanceState.getStringArrayList(PAGE_REF_HISTORY);
+      if (savedInstanceState.containsKey(SCREEN_HISTORY)) {
+        screenHistory = savedInstanceState.getStringArrayList(SCREEN_HISTORY);
+      }
+      if (savedInstanceState.containsKey(SECTION_STACK)) {
+        sectionStack = savedInstanceState.getStringArrayList(SECTION_STACK);
       }
     }
 
-    if (pageRefHistory == null) {
-      pageRefHistory = new ArrayList<String>();
+    if (screenHistory == null) {
+      screenHistory = new ArrayList<String>();
+    }
+
+    if (sectionStack == null) {
+      sectionStack = new ArrayList<String>();
     }
 
     Log.i(t, "Starting up, creating directories");
@@ -532,8 +636,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     mAdminPreferences = this.getSharedPreferences(AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
 
-    mJSCallback = new JQueryJavascriptCallback(this);
-
     // This creates the WebKit. We need all our values initialized by this point
     setContentView(R.layout.main_screen);
 
@@ -542,9 +644,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     actionBar.setDisplayShowTitleEnabled(false);
     actionBar.setDisplayShowHomeEnabled(false);
     actionBar.setDisplayHomeAsUpEnabled(false);
-
-	JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
-    view.setJavascriptCallback(mJSCallback);
   }
 
   @Override
@@ -559,8 +658,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 	if ( !webkitStateValid ) {
 	  JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
       // we are loading a new page -- call loadPage...
-      view.loadPage(getAppName(), getCurrentForm(), getInstanceId(), getPageRef(),
-          getAuxillaryHash());
+      view.loadPage();
 	}
   }
 
@@ -693,9 +791,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         lf.changeForm(newForm);
       }
       setInstanceId(null);
-      setPageRef(null);
+      setScreenPath(null);
       setAuxillaryHash(null);
-      webkitView.loadPage(getAppName(), newForm, null, null, null);
+      webkitView.loadPage();
     }
 
     if (success) {
@@ -816,14 +914,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     this.runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        WebLogger.getLogger(getAppName()).log(WebLogger.INFO, t, "hideWebkitView");
+        WebLogger.getLogger(getAppName()).i(t, "hideWebkitView");
         // In the fragment UI, we want to return to not having any
         // instanceId defined.
         JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
         setInstanceId(null);
-        setPageRef(null);
+        setScreenPath(null);
         setAuxillaryHash(null);
-        webkitView.loadPage(getAppName(), getCurrentForm(), null, null, null);
+        webkitView.loadPage();
         invalidateOptionsMenu();
       }
     });
@@ -960,28 +1058,53 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public boolean hasPromptHistory() {
-    return !pageRefHistory.isEmpty();
+  public boolean hasScreenHistory() {
+    return !screenHistory.isEmpty();
   }
 
   @Override
-  public void clearPromptHistory() {
-    pageRefHistory.clear();
+  public void clearScreenHistory() {
+    screenHistory.clear();
   }
 
   @Override
-  public String popPromptHistory() {
-    int last = pageRefHistory.size() - 1;
+  public String popScreenHistory() {
+    int last = screenHistory.size() - 1;
     if (last == -1)
       return null;
-    String v = pageRefHistory.get(last);
-    pageRefHistory.remove(last);
+    String v = screenHistory.get(last);
+    screenHistory.remove(last);
     return v;
   }
 
   @Override
-  public void pushPromptHistory(String idx) {
-    pageRefHistory.add(idx);
+  public void pushScreenHistory(String idx) {
+    screenHistory.add(idx);
+  }
+
+  @Override
+  public boolean hasSectionStack() {
+    return !sectionStack.isEmpty();
+  }
+
+  @Override
+  public void clearSectionStack() {
+    sectionStack.clear();
+  }
+
+  @Override
+  public String popSectionStack() {
+    int last = sectionStack.size() - 1;
+    if (last == -1)
+      return null;
+    String v = sectionStack.get(last);
+    sectionStack.remove(last);
+    return v;
+  }
+
+  @Override
+  public void pushSectionStack(String idx) {
+    sectionStack.add(idx);
   }
 
   @Override

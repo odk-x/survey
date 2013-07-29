@@ -14,36 +14,18 @@
 
 package org.opendatakit.survey.android.views;
 
-import java.io.File;
-import java.util.LinkedList;
-
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.opendatakit.common.android.provider.FileProvider;
-import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.logic.FormIdStruct;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
 import android.util.AttributeSet;
-import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.webkit.WebSettings;
-import android.webkit.WebSettings.PluginState;
-import android.webkit.WebSettings.RenderPriority;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.TableLayout;
 
 /**
- * The WebKit used to display all forms.
+ * The wrapper for the (singleton) ODKWebView
+ * used to display all forms.
  *
  * @author mitchellsundt@gmail.com
  */
@@ -53,80 +35,54 @@ public class JQueryODKView extends FrameLayout {
   // starter random number for view IDs
   private static final String t = "JQueryODKView";
 
-  private static WebView mWebView = null;
+  private static ODKWebView mWebView = null;
 
-  private static synchronized void assertWebView(Context context, String appName) {
-	  if ( mWebView == null ) {
-		mWebView = new WebView(context);
-		mWebView.setId(984732);
-		TableLayout.LayoutParams params = new TableLayout.LayoutParams();
-		params.setMargins(7, 5, 7, 5);
-		mWebView.setLayoutParams(params);
+  private final WebLogger log;
 
-		// for development -- always draw from source...
-	    WebSettings ws = mWebView.getSettings();
-	    ws.setAllowFileAccess(true);
-	    ws.setAppCacheEnabled(true);
-	    ws.setAppCacheMaxSize(1024L * 1024L * 200L);
-	    ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
-	    ws.setCacheMode(WebSettings.LOAD_NORMAL);
-	    ws.setDatabaseEnabled(true);
-	    ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
-	    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
-	    ws.setDefaultFontSize(Survey.getQuestionFontsize());
-	    ws.setDomStorageEnabled(true);
-	    ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
-	    ws.setGeolocationEnabled(true);
-	    ws.setJavaScriptCanOpenWindowsAutomatically(true);
-	    ws.setJavaScriptEnabled(true);
-	    ws.setPluginState(PluginState.ON);
-	    ws.setRenderPriority(RenderPriority.HIGH);
+  /**
+   * Ensure that the static mWebView is initialized.
+   *
+   * @param context
+   * @param view
+   * @return
+   */
+  private static synchronized boolean assertWebView(Context context, JQueryODKView view) {
 
-	    // disable to try to solve touch/mouse/swipe issues
-	    ws.setBuiltInZoomControls(false);
-	    ws.setSupportZoom(false);
+    boolean outcome = false;
 
-	    mWebView.setFocusable(true);
-	    mWebView.setFocusableInTouchMode(true);
-	    mWebView.setInitialScale(100);
-
-	    // questionable value...
-	    mWebView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
-	    mWebView.setSaveEnabled(true);
-	  }
+    if (mWebView == null) {
+      view.log.i(t, "FIRST TIME: Creating new ODKWebView");
+      mWebView = new ODKWebView(context);
+      outcome = true;
+    } else if ( !mWebView.getContext().equals(context)) {
+      view.log.i(t, "CHANGED CONTEXT: Creating new ODKWebView");
+      mWebView = new ODKWebView(context);
+      outcome = true;
+    } else {
+      view.log.i(t, "SAME CONTEXT: Reusing ODKWebView");
+    }
+    return outcome;
   }
 
-  private WebLogger log;
-  private boolean isLoadPageFinished = false;
-  private boolean isJavascriptFlushActive = false;
-  private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
+
   public JQueryODKView(Context context, AttributeSet set) {
     super(context, set);
+
     ODKActivity a = (ODKActivity) context;
     String appName = a.getAppName();
-
     log = WebLogger.getLogger(appName);
-    assertWebView(context, appName);
 
-    mWebView.setWebChromeClient(new ODKWebChromeClient(a));
-    WebViewClient wvc = new ODKWebViewClient(this, appName);
-    mWebView.setWebViewClient(wvc);
-
+    if (assertWebView(context, this)) {
+      // we have already reset or loaded the page, just let it be whatever it was...
+    }
 
     FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
-    		LayoutParams.MATCH_PARENT);
+        LayoutParams.MATCH_PARENT);
     addView(mWebView, fp);
 
     InputMethodManager imm = (InputMethodManager) context
         .getSystemService(Context.INPUT_METHOD_SERVICE);
     imm.showSoftInput(mWebView, InputMethodManager.SHOW_IMPLICIT);
-  }
-
-  // /////////////////////////////////////////////////////////////////////////////////////////
-  // /////////////////////////////////////////////////////////////////////////////////////////
-
-  public void setJavascriptCallback(JQueryJavascriptCallback jsCallback) {
-    mWebView.addJavascriptInterface(jsCallback, "shim");
   }
 
   public void triggerSaveAnswers(boolean asComplete) {
@@ -146,121 +102,15 @@ public class JQueryODKView extends FrameLayout {
 
   // called to invoke a javascript method inside the webView
   public void loadJavascriptUrl(String javascriptUrl) {
-    if ( isLoadPageFinished || isJavascriptFlushActive ) {
-        log.i(t, "loadUrl: " + javascriptUrl);
-        mWebView.loadUrl(javascriptUrl);
-    } else {
-        log.i(t, "loadJavascriptUrl: QUEUING: " + javascriptUrl);
-    	javascriptRequestsWaitingForPageLoad.add(javascriptUrl);
-    }
-  }
-
-  public void loadPageFinished() {
-	  if ( !isLoadPageFinished && !isJavascriptFlushActive ) {
-		  isJavascriptFlushActive = true;
-		  while ( isJavascriptFlushActive &&
-				  !javascriptRequestsWaitingForPageLoad.isEmpty() ) {
-			  String s = javascriptRequestsWaitingForPageLoad.removeFirst();
-			  loadJavascriptUrl(s);
-		  }
-		  isLoadPageFinished = true;
-		  isJavascriptFlushActive = false;
-	  }
-  }
-
-  public void resetLoadPageStatus() {
-	  isLoadPageFinished = false;
-	  isJavascriptFlushActive = false;
-	  while ( !javascriptRequestsWaitingForPageLoad.isEmpty() ) {
-		  String s = javascriptRequestsWaitingForPageLoad.removeFirst();
-		    log.i(t, "resetLoadPageStatus: DISCARDING javascriptUrl: " + s);
-	  }
+    mWebView.loadJavascriptUrl(javascriptUrl);
   }
 
   /**
-   *
-   * @param appName
-   *          -- appName to use when FormIdStruct is null
-   * @param s
-   *          -- FormIdStruct of the form to open -- may be null
-   * @param instanceID
-   * @param pageRef
-   * @param auxillaryHash
+   * Loads whatever page is currently active according to the ODKActivity...
    */
-  public void loadPage(String appName, FormIdStruct s, String instanceID, String pageRef,
-      String auxillaryHash) {
-
-    String url = getHtmlUrl(((s == null) ? appName : s.appName), s, instanceID, pageRef,
-        auxillaryHash);
-    if (url == null)
-      return;
-    log.i(t, "loadUrl: " + url);
-	resetLoadPageStatus();
-    mWebView.loadUrl(url);
+  public void loadPage() {
+    mWebView.loadPage();
     mWebView.requestFocus();
-  }
-
-  private String getHtmlUrl(String appName, FormIdStruct s, String instanceID, String pageRef,
-      String auxillaryHash) {
-
-    // Find the formPath for the default form with the most recent
-    // version...
-    // we need this so that we can load the index.html and main javascript
-    // code
-    String formPath = null;
-
-    Cursor c = null;
-    try {
-      //
-      // the default form is named 'default' ...
-      String selection = FormsColumns.FORM_ID + "=?";
-      String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
-      String orderBy = FormsColumns.FORM_VERSION + " DESC"; // use the
-      // most
-      // recently
-      // created
-      // of the
-      // matches
-      // (in case
-      // DB
-      // corrupted)
-      c = getContext().getContentResolver().query(
-          Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, selection,
-          selectionArgs, orderBy);
-
-      if (c.getCount() > 0) {
-        // we found a match...
-        c.moveToFirst();
-        formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
-      }
-
-    } finally {
-      if (c != null && !c.isClosed()) {
-        c.close();
-      }
-    }
-
-    if (formPath == null)
-      return null;
-
-    // formPath always begins ../../ -- strip that off to get explicit path
-    // suffix...
-    File mediaFolder = new File(new File(ODKFileUtils.getAppFolder(appName)), formPath.substring(6));
-
-    // File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
-    File htmlFile = new File(mediaFolder, "index.html");
-
-    if (!htmlFile.exists())
-      return null;
-
-    String fullPath = FileProvider.getAsUrl(getContext(), htmlFile);
-    String htmlUrl = fullPath + "#formPath="
-        + StringEscapeUtils.escapeHtml4((s == null) ? formPath : s.formPath)
-        + ((instanceID == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceID))
-        + ((pageRef == null) ? "" : "&pageRef=" + StringEscapeUtils.escapeHtml4(pageRef))
-        + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
-
-    return htmlUrl;
   }
 
 }

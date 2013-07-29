@@ -28,19 +28,46 @@ import android.view.View;
  */
 public interface ODKActivity {
 
+  public static class FrameworkFormPathInfo {
+    // the FormsColumns.DATE field.
+    public final Long lastModified;
+    // the FormsColumns.FORM_PATH field
+    // a relative path always beginning with ../../
+    public final String relativePath;
+
+    FrameworkFormPathInfo(String relativePath, Long lastModified) {
+      this.relativePath = relativePath;
+      this.lastModified = lastModified;
+    }
+  };
+
+  public FrameworkFormPathInfo getFrameworkFormPathInfo();
+
+  public String getUrlBaseLocation(boolean ifChanged);
+
+  public String getUrlLocationHash();
+
   public String getAppName();
 
   public void setInstanceId(String instanceId);
 
-  public void setPageRef(String pageRef);
+  public void setScreenPath(String setScreenPath);
 
-  public boolean hasPromptHistory();
+  public boolean hasScreenHistory();
 
-  public void clearPromptHistory();
+  public void clearScreenHistory();
 
-  public String popPromptHistory();
+  public String popScreenHistory();
 
-  public void pushPromptHistory(String idx);
+  public void pushScreenHistory(String idx);
+
+  public boolean hasSectionStack();
+
+  public void clearSectionStack();
+
+  public String popSectionStack();
+
+  public void pushSectionStack(String idx);
 
   public void setAuxillaryHash(String hash);
 
