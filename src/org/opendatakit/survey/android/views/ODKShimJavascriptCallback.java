@@ -103,84 +103,6 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void setInstanceId(String instanceId) {
-    mActivity.setInstanceId(instanceId);
-  }
-
-  // @JavascriptInterface
-  public void setScreenPath(String screenPath) {
-    mActivity.setScreenPath(screenPath);
-  }
-
-  // @JavascriptInterface
-  public boolean hasScreenHistory() {
-    return mActivity.hasScreenHistory();
-  }
-
-  // @JavascriptInterface
-  public void clearScreenHistory() {
-    mActivity.clearScreenHistory();
-  }
-
-  // @JavascriptInterface
-  public String popScreenHistory() {
-    return mActivity.popScreenHistory();
-  }
-
-  // @JavascriptInterface
-  public void pushScreenHistory(String idx) {
-    mActivity.pushScreenHistory(idx);
-  }
-
-  // @JavascriptInterface
-  public boolean hasSectionStack() {
-    return mActivity.hasSectionStack();
-  }
-
-  // @JavascriptInterface
-  public void clearSectionStack() {
-    mActivity.clearSectionStack();
-  }
-
-  // @JavascriptInterface
-  public String popSectionStack() {
-    return mActivity.popSectionStack();
-  }
-
-  // @JavascriptInterface
-  public void pushSectionStack(String sectionName) {
-    mActivity.pushSectionStack(sectionName);
-  }
-
-  // @JavascriptInterface
-  public void setAuxillaryHash(String auxillaryHash) {
-    // NOTE: not currently used...
-    mActivity.setAuxillaryHash(auxillaryHash);
-  }
-
-  // @JavascriptInterface
-  public void ignoreAllChangesCompleted(String formId, String instanceId) {
-    mActivity.ignoreAllChangesCompleted(formId, instanceId);
-  }
-
-  // @JavascriptInterface
-  public void ignoreAllChangesFailed(String formId, String instanceId) {
-    mActivity.ignoreAllChangesFailed(formId, instanceId);
-  }
-
-  // @JavascriptInterface
-  public void saveAllChangesCompleted(String formId, String instanceId, boolean asComplete) {
-    // go through the FC because there are additional keys that should be
-    // set here...
-    mActivity.saveAllChangesCompleted(formId, instanceId, asComplete);
-  }
-
-  // @JavascriptInterface
-  public void saveAllChangesFailed(String formId, String instanceId) {
-    mActivity.saveAllChangesFailed(formId, instanceId);
-  }
-
-  // @JavascriptInterface
   public void log(String level, String loggingString) {
     char l = (level == null) ? 'I' : level.charAt(0);
     switch (l) {
@@ -212,7 +134,201 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public String doAction(String page, String path, String action, String jsonMap) {
+  public void clearInstanceId(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: clearInstanceId(" + refId + ")");
+      return;
+    }
+    log.d("shim", "DO: clearInstanceId(" + refId + ")");
+    mActivity.setInstanceId(null);
+  }
+
+  /**
+   * If formId is null, clears the instanceId.
+   * If formId matches the current formId, sets the instanceId.
+   *
+   * @param formId
+   * @param instanceId
+   */
+  // @JavascriptInterface
+  public void setInstanceId(String refId, String instanceId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: setInstanceId(" + refId + ", " + instanceId + ")");
+      return;
+    }
+    log.d("shim", "DO: setInstanceId(" + refId + ", " + instanceId + ")");
+    mActivity.setInstanceId(instanceId);
+  }
+
+  // @JavascriptInterface
+  public void clearScreenPath(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: clearScreenPath(" + refId + ")");
+      return;
+    }
+    log.d("shim", "DO: clearScreenPath(" + refId + ")");
+    mActivity.setScreenPath(null);
+  }
+
+  // @JavascriptInterface
+  public void setScreenPath(String refId, String screenPath) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: setScreenPath(" + refId + ", " + screenPath + ")");
+      return;
+    }
+    log.d("shim", "DO: setScreenPath(" + refId + ", " + screenPath + ")");
+    mActivity.setScreenPath(screenPath);
+  }
+
+  // @JavascriptInterface
+  public String getScreenPath(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: getScreenPath(" + refId + ")");
+      return null;
+    }
+    log.d("shim", "DO: getScreenPath(" + refId + ")");
+    return mActivity.getScreenPath();
+  }
+
+  // @JavascriptInterface
+  public boolean hasScreenHistory(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: hasScreenHistory(" + refId + ")");
+      return false;
+    }
+    log.d("shim", "DO: hasScreenHistory(" + refId + ")");
+    return mActivity.hasScreenHistory();
+  }
+
+  // @JavascriptInterface
+  public void clearScreenHistory(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: clearScreenHistory(" + refId + ")");
+      return;
+    }
+    log.d("shim", "DO: clearScreenHistory(" + refId + ")");
+    mActivity.clearScreenHistory();
+  }
+
+  // @JavascriptInterface
+  public String popScreenHistory(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: popScreenHistory(" + refId + ")");
+      return null;
+    }
+    log.d("shim", "DO: popScreenHistory(" + refId + ")");
+    return mActivity.popScreenHistory();
+  }
+
+  // @JavascriptInterface
+  public void pushScreenHistory(String refId, String idx) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: pushScreenHistory(" + refId + ", " + idx + ")");
+      return;
+    }
+    log.d("shim", "DO: pushScreenHistory(" + refId + ", " + idx + ")");
+    mActivity.pushScreenHistory(idx);
+  }
+
+  // @JavascriptInterface
+  public boolean hasSectionStack(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: hasSectionStack(" + refId + ")");
+      return false;
+    }
+    log.d("shim", "DO: hasSectionStack(" + refId + ")");
+    return mActivity.hasSectionStack();
+  }
+
+  // @JavascriptInterface
+  public void clearSectionStack(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: clearSectionStack(" + refId + ")");
+      return;
+    }
+    log.d("shim", "DO: clearSectionStack(" + refId + ")");
+    mActivity.clearSectionStack();
+  }
+
+  // @JavascriptInterface
+  public String popSectionStack(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: popSectionStack(" + refId + ")");
+      return null;
+    }
+    log.d("shim", "DO: popSectionStack(" + refId + ")");
+    return mActivity.popSectionStack();
+  }
+
+  // @JavascriptInterface
+  public void pushSectionStack(String refId, String sectionName) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: pushSectionStack(" + refId + ", " + sectionName + ")");
+      return;
+    }
+    log.d("shim", "DO: pushSectionStack(" + refId + ", " + sectionName + ")");
+    mActivity.pushSectionStack(sectionName);
+  }
+
+  // @JavascriptInterface
+  public void setAuxillaryHash(String refId, String auxillaryHash) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: setAuxillaryHash(" + refId + ", " + auxillaryHash + ")");
+      return;
+    }
+    log.d("shim", "DO: setAuxillaryHash(" + refId + ", " + auxillaryHash + ")");
+    // NOTE: not currently used...
+    mActivity.setAuxillaryHash(auxillaryHash);
+  }
+
+  // @JavascriptInterface
+  public void ignoreAllChangesCompleted(String refId, String instanceId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: ignoreAllChangesCompleted(" + refId + ", " + instanceId + ")");
+      return;
+    }
+    log.d("shim", "DO: ignoreAllChangesCompleted(" + refId + ", " + instanceId + ")");
+    mActivity.ignoreAllChangesCompleted(instanceId);
+  }
+
+  // @JavascriptInterface
+  public void ignoreAllChangesFailed(String refId, String instanceId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: ignoreAllChangesFailed(" + refId + ", " + instanceId + ")");
+      return;
+    }
+    log.d("shim", "DO: ignoreAllChangesFailed(" + refId + ", " + instanceId + ")");
+    mActivity.ignoreAllChangesFailed(instanceId);
+  }
+
+  // @JavascriptInterface
+  public void saveAllChangesCompleted(String refId, String instanceId, boolean asComplete) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete + ")");
+      return;
+    }
+    // go through the FC because there are additional keys that should be
+    // set here...
+    log.d("shim", "DO: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete + ")");
+    mActivity.saveAllChangesCompleted(instanceId, asComplete);
+  }
+
+  // @JavascriptInterface
+  public void saveAllChangesFailed(String refId, String instanceId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: saveAllChangesFailed(" + refId + ", " + instanceId + ")");
+      return;
+    }
+    log.d("shim", "DO: saveAllChangesFailed(" + refId + ", " + instanceId + ")");
+    mActivity.saveAllChangesFailed(instanceId);
+  }
+
+  // @JavascriptInterface
+  public String doAction(String refId, String page, String path, String action, String jsonMap) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: doAction(" + refId + ", " + page + ", " + path + ", " + action + ", ...)");
+      return "IGNORE";
+    }
 
     JSONObject valueMap = null;
     try {
@@ -221,9 +337,11 @@ public class ODKShimJavascriptCallback {
       }
     } catch (JSONException e) {
       e.printStackTrace();
-      return e.toString();
+      log.e("shim", "ERROR: doAction(" + refId + ", " + page + ", " + path + ", " + action + ", ...) " + e.toString());
+      return "ERROR";
     }
 
+    log.d("shim", "DO: doAction(" + refId + ", " + page + ", " + path + ", " + action + ", ...)");
     return mActivity.doAction(page, path, action, valueMap);
   }
 

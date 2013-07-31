@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
@@ -194,12 +195,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private String pathWaitingForData = null;
   private String actionWaitingForData = null;
 
-  private boolean webkitStateValid = false;
-
   private String appName = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
   private String screenPath = null;
+  private String refId = UUID.randomUUID().toString();
   private String auxillaryHash = null;
 
   private String frameworkBaseUrl = null;
@@ -287,7 +287,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
+    JQueryODKView wkt = (JQueryODKView) findViewById(R.id.webkit_view);
+    // reload the page...
+    wkt.loadPage();
 
     if (nestedScreen == ScreenList.FORM_CHOOSER || nestedScreen == ScreenList.FORM_DOWNLOADER
         || nestedScreen == ScreenList.FORM_DELETER || nestedScreen == ScreenList.INSTANCE_UPLOADER
@@ -455,6 +457,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
         + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
         + ((screenPath == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(screenPath))
+        + "&refId=" + StringEscapeUtils.escapeHtml4(refId)
         + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
     return hashUrl;
@@ -463,6 +466,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   public void setAppName(String appName) {
     this.appName = appName;
+  }
+
+  public String getRefId() {
+    return this.refId;
   }
 
   public String getAuxillaryHash() {
@@ -647,22 +654,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public void onRestart() {
-	super.onRestart();
-	//	webkitStateValid = true;  // TODO: disable this? or make WebKit a non-static again?
-  }
-
-  @Override
-  public void onStart() {
-	super.onStart();
-	if ( !webkitStateValid ) {
-	  JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
-      // we are loading a new page -- call loadPage...
-      view.loadPage();
-	}
-  }
-
-  @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
     boolean formIsLoaded = (getInstanceId() != null && getCurrentForm() != null);
@@ -805,17 +796,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public void onBackPressed() {
-    if (currentScreen == ScreenList.WEBKIT && nestedScreen == ScreenList.WEBKIT
-        && getInstanceId() != null) {
-      JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
-      view.goBack();
+    FragmentManager mgr = getSupportFragmentManager();
+    if (mgr.getBackStackEntryCount() == 1) {
+      finish();
     } else {
-      FragmentManager mgr = getSupportFragmentManager();
-      if (mgr.getBackStackEntryCount() == 1) {
-        finish();
-      } else {
-        super.onBackPressed();
-      }
+      super.onBackPressed();
     }
   }
 
@@ -1108,23 +1093,23 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public void saveAllChangesCompleted(String tableId, String instanceId, final boolean asComplete) {
+  public void saveAllChangesCompleted(String instanceId, final boolean asComplete) {
     hideWebkitView();
   }
 
   @Override
-  public void saveAllChangesFailed(String tableId, String instanceId) {
+  public void saveAllChangesFailed(String instanceId) {
     // probably keep the webkit view?
     // hideWebkitView();
   }
 
   @Override
-  public void ignoreAllChangesCompleted(String tableId, String instanceId) {
+  public void ignoreAllChangesCompleted(String instanceId) {
     hideWebkitView();
   }
 
   @Override
-  public void ignoreAllChangesFailed(String tableId, String instanceId) {
+  public void ignoreAllChangesFailed(String instanceId) {
     // probably keep the webkit view?
     // hideWebkitView();
   }
@@ -1228,13 +1213,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
         Log.i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
-        view.loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
-            + "','" + pathWaitingForData + "','" + actionWaitingForData + "', '" + jsonObject
-            + "' )");
+        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData, jsonObject );
       } catch (Exception e) {
-        view.loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
-            + "','" + pathWaitingForData + "','" + actionWaitingForData
-            + "', '{ \"status\":0, \"result\":\"" + e.toString() + "\"}' )");
+        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
+            "{ \"status\":0, \"result\":\"" + e.toString() + "\"}");
       } finally {
         pathWaitingForData = null;
         pageWaitingForData = null;

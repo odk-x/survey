@@ -49,9 +49,13 @@ public interface ODKActivity {
 
   public String getAppName();
 
+  public String getRefId();
+
   public void setInstanceId(String instanceId);
 
   public void setScreenPath(String setScreenPath);
+
+  public String getScreenPath();
 
   public boolean hasScreenHistory();
 
@@ -71,13 +75,13 @@ public interface ODKActivity {
 
   public void setAuxillaryHash(String hash);
 
-  public void saveAllChangesCompleted(String tableId, String instanceId, boolean asComplete);
+  public void saveAllChangesCompleted(String instanceId, boolean asComplete);
 
-  public void saveAllChangesFailed(String tableId, String instanceId);
+  public void saveAllChangesFailed(String instanceId);
 
-  public void ignoreAllChangesCompleted(String tableId, String instanceId);
+  public void ignoreAllChangesCompleted(String instanceId);
 
-  public void ignoreAllChangesFailed(String tableId, String instanceId);
+  public void ignoreAllChangesFailed(String instanceId);
 
   public String doAction(String page, String path, String action, JSONObject valueMap);
 

@@ -94,8 +94,6 @@ public class ODKWebView extends WebView {
     // stomp on the shim object...
     shim = new ODKShimJavascriptCallback(activity);
     addJavascriptInterface(shim, "shim");
-
-    loadPage();
   }
 
   public final WebLogger getLogger() {
@@ -128,8 +126,10 @@ public class ODKWebView extends WebView {
 
     if ( baseUrl != null ) {
       resetLoadPageStatus(baseUrl);
+      log.i(t, "loadPage: full reload: " + baseUrl + hash);
       loadUrl(baseUrl + hash);
     } else if ( loadPageUrl != null ) {
+      log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
       gotoUrlHash(hash);
     } else {
       log.w(t, "loadPage: no framework -- cannot load anything!");
