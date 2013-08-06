@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.views;
 
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
+import android.media.MediaPlayer.OnPreparedListener;
 import android.view.View;
 import android.webkit.ConsoleMessage;
 import android.webkit.JsResult;
@@ -27,15 +28,38 @@ import android.widget.FrameLayout;
 import android.widget.VideoView;
 
 public class ODKWebChromeClient extends WebChromeClient implements
-    MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener {
+    MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, OnPreparedListener {
 
   private static final String t = "ODKWebChromeClient";
   private ODKWebView wrappedWebView;
   private VideoView video = null;
+  private MediaPlayer mediaPlayer = null;
   private WebChromeClient.CustomViewCallback callback = null;
+
+  private static VideoView lastVideo = null;
+  private static MediaPlayer lastMediaPlayer = null;
 
   public ODKWebChromeClient(ODKWebView wrappedWebView) {
     this.wrappedWebView = wrappedWebView;
+    if ( lastVideo != null ) {
+      if ( lastVideo.isPlaying() ) {
+        lastVideo.stopPlayback();
+      }
+      safeReset(lastMediaPlayer);
+    }
+  }
+
+  private static void safeReset(MediaPlayer mp) {
+    if (mp != null) {
+      try {
+        if ( mp.isPlaying() ) {
+          mp.stop();
+        }
+      } catch ( IllegalStateException e) {
+        // ignore
+      }
+      mp.reset();
+    }
   }
 
   @Override
@@ -49,8 +73,15 @@ public class ODKWebChromeClient extends WebChromeClient implements
       if (frame.getFocusedChild() instanceof VideoView) {
         wrappedWebView.getLogger().i(t, "onShowCustomView: FrameLayout Video");
         video = (VideoView) frame.getFocusedChild();
+        if ( lastVideo != null && lastVideo != video) {
+          if ( lastVideo.isPlaying() ) {
+            lastVideo.stopPlayback();
+          }
+        }
+        lastVideo = video;
         video.setOnCompletionListener(this);
         video.setOnErrorListener(this);
+        video.setOnPreparedListener(this);
         wrappedWebView.swapToCustomView(view);
         super.onShowCustomView(view, callback);
         // video.seekTo(0);// reset to start of video...
@@ -72,7 +103,7 @@ public class ODKWebChromeClient extends WebChromeClient implements
   public void onHideCustomView() {
     wrappedWebView.getLogger().d(t, "onHideCustomView");
     wrappedWebView.swapOffCustomView();
-    if (video != null) {
+    if (video != null && video.isPlaying()) {
       video.stopPlayback();
     }
     video = null;
@@ -83,22 +114,26 @@ public class ODKWebChromeClient extends WebChromeClient implements
   }
 
   @Override
+  public void onPrepared(MediaPlayer mp) {
+    wrappedWebView.getLogger().d(t, "Video prepared");
+    lastMediaPlayer = mp;
+  }
+
+  @Override
   public void onCompletion(MediaPlayer mp) {
     wrappedWebView.getLogger().d(t, "Video ended");
-    if (mp.isPlaying()) {
-      mp.stop();
-    }
-    mp.reset();
+    safeReset(lastMediaPlayer);
+    lastMediaPlayer = mp;
+    safeReset(mp);
     onHideCustomView();
   }
 
   @Override
   public boolean onError(MediaPlayer mp, int what, int extra) {
     wrappedWebView.getLogger().w(t, "Video error");
-    if (mp.isPlaying()) {
-      mp.stop();
-    }
-    mp.reset();
+    safeReset(lastMediaPlayer);
+    lastMediaPlayer = mp;
+    safeReset(mp);
     onHideCustomView();
     return true;
   }
