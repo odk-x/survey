@@ -204,6 +204,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   private String frameworkBaseUrl = null;
   private Long frameworkLastModifiedDate = 0L;
+  // DO NOT USE THESE -- only used to determine if the current form has changed.
+  private String trackingFormPath = null;
+  private Long trackingFormLastModifiedDate = 0L;
 
   private ArrayList<String> screenHistory = new ArrayList<String>();
   private ArrayList<String> sectionStack = new ArrayList<String>();
@@ -422,7 +425,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
     String formPath = info.relativePath;
-    Long lastModified = info.lastModified;
 
     // formPath always begins ../../ -- strip that off to get explicit path
     // suffix...
@@ -441,15 +443,37 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
 
-    if (frameworkBaseUrl != null &&
-        frameworkBaseUrl.equals(fullPath) && lastModified.equals(frameworkLastModifiedDate)) {
-      // no need to change the base page...
-      return ifChanged ? null : frameworkBaseUrl;
+    Long frameworkLastModified = info.lastModified;
+
+    boolean changed = false;
+
+    if (ifChanged &&
+        frameworkBaseUrl != null &&
+        frameworkBaseUrl.equals(fullPath)) {
+      // determine if there are any changes in the framework
+      // or in the form. If there are, reload. Otherwise,
+      // return null.
+
+      changed = (!frameworkLastModified.equals(frameworkLastModifiedDate));
+    }
+
+    if ( currentForm == null ) {
+      trackingFormPath = null;
+      trackingFormLastModifiedDate = 0L;
+      changed = true;
+    } else if ( trackingFormPath == null ||
+      !trackingFormPath.equals(currentForm.formPath)) {
+      trackingFormPath = currentForm.formPath;
+      trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
+    } else {
+      changed = changed || (Long.valueOf(trackingFormLastModifiedDate)
+          .compareTo(currentForm.lastDownloadDate.getTime()) < 0);
+      trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
     }
 
     frameworkBaseUrl = fullPath;
-    frameworkLastModifiedDate = lastModified;
-    return frameworkBaseUrl;
+    frameworkLastModifiedDate = frameworkLastModified;
+    return (ifChanged && !changed) ? null : frameworkBaseUrl;
   }
 
   @Override
@@ -797,10 +821,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   @Override
   public void onBackPressed() {
     FragmentManager mgr = getSupportFragmentManager();
-    if (mgr.getBackStackEntryCount() == 1) {
+    int idxLast = mgr.getBackStackEntryCount()-2;
+    if (idxLast < 0) {
       finish();
     } else {
-      super.onBackPressed();
+      BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
+      swapToFragmentView(ScreenList.valueOf(entry.getName()));
     }
   }
 
