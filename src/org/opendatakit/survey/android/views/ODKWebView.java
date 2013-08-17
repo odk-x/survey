@@ -62,7 +62,7 @@ public class ODKWebView extends WebView {
     ws.setAppCacheEnabled(true);
     ws.setAppCacheMaxSize(1024L * 1024L * 200L);
     ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
-    ws.setCacheMode(WebSettings.LOAD_NORMAL);
+    ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
     ws.setDatabaseEnabled(true);
     ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
     ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
@@ -101,7 +101,7 @@ public class ODKWebView extends WebView {
   }
 
   // called to invoke a javascript method inside the webView
-  public void loadJavascriptUrl(String javascriptUrl) {
+  public synchronized void loadJavascriptUrl(String javascriptUrl) {
     if (isLoadPageFinished || isJavascriptFlushActive) {
       log.i(t, "loadJavascriptUrl: IMMEDIATE: " + javascriptUrl);
       loadUrl(javascriptUrl);
@@ -116,11 +116,12 @@ public class ODKWebView extends WebView {
     loadJavascriptUrl("javascript:window.landing.opendatakitChangeUrlHash('" + hash + "')");
   }
 
-  public void loadPage() {
+  public synchronized void loadPage() {
     /**
      * NOTE: Reload the web framework only if it has changed.
      */
 
+    log.i(t, "loadPage: current loadPageUrl: " + loadPageUrl);
     String baseUrl = activity.getUrlBaseLocation(loadPageUrl != null);
     String hash = activity.getUrlLocationHash();
 
@@ -136,19 +137,23 @@ public class ODKWebView extends WebView {
     }
   }
 
-  void loadPageFinished() {
+  synchronized void loadPageFinished() {
     if (!isLoadPageFinished && !isJavascriptFlushActive) {
+      log.i(t, "loadPageFinished: BEGINNING FLUSH refId: " + activity.getRefId());
       isJavascriptFlushActive = true;
       while (isJavascriptFlushActive && !javascriptRequestsWaitingForPageLoad.isEmpty()) {
         String s = javascriptRequestsWaitingForPageLoad.removeFirst();
+        log.i(t, "loadPageFinished: DISPATCHING javascriptUrl: " + s);
         loadJavascriptUrl(s);
       }
       isLoadPageFinished = true;
       isJavascriptFlushActive = false;
+    } else {
+      log.i(t, "loadPageFinished: IGNORING completion event refId: " + activity.getRefId());
     }
   }
 
-  private void resetLoadPageStatus(String baseUrl) {
+  private synchronized void resetLoadPageStatus(String baseUrl) {
     isLoadPageFinished = false;
     loadPageUrl = baseUrl;
     isJavascriptFlushActive = false;

@@ -53,27 +53,25 @@ public interface ODKActivity {
 
   public void setInstanceId(String instanceId);
 
-  public void setScreenPath(String setScreenPath);
+  public void pushSectionScreenState();
+
+  public void setSectionScreenState(String screenPath, String state);
+
+  public void clearSectionScreenState();
+
+  public String getControllerState();
 
   public String getScreenPath();
 
   public boolean hasScreenHistory();
 
-  public void clearScreenHistory();
-
   public String popScreenHistory();
 
-  public void pushScreenHistory(String idx);
+  public String popScreenHistoryUntilState(String state);
 
   public boolean hasSectionStack();
 
-  public void clearSectionStack();
-
   public String popSectionStack();
-
-  public void pushSectionStack(String idx);
-
-  public void setAuxillaryHash(String hash);
 
   public void saveAllChangesCompleted(String instanceId, boolean asComplete);
 

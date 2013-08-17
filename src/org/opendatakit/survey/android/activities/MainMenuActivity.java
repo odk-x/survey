@@ -26,8 +26,8 @@ import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -55,6 +55,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentManager.BackStackEntry;
@@ -108,9 +110,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String FORM_URI = "formUri";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
+  private static final String CONTROLLER_STATE = "controllerState";
   private static final String AUXILLARY_HASH = "auxillaryHash";
-  private static final String SCREEN_HISTORY = "screenHistory";
-  private static final String SECTION_STACK = "sectionStack";
+
+  private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
   private static final String CURRENT_SCREEN = "currentScreen";
   private static final String NESTED_SCREEN = "nestedScreen";
@@ -182,6 +185,84 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
   }
 
+  private static class ScreenState {
+    String screenPath;
+    String state;
+
+    ScreenState(String screenPath, String state) {
+      this.screenPath = screenPath;
+      this.state = state;
+    }
+  }
+
+  private static class SectionScreenStateHistory implements Parcelable {
+    ScreenState currentScreen = new ScreenState(null,null);
+    ArrayList<ScreenState> history = new ArrayList<ScreenState>();
+
+    public ScreenState popHistory() {
+      if ( history.size() == 0 ) {
+        return null;
+      }
+
+      ScreenState top = history.get(history.size()-1);
+      history.remove(history.size()-1);
+      return top;
+    }
+
+    public ScreenState peekHistory() {
+      if ( history.size() == 0 ) {
+        return null;
+      }
+
+      ScreenState top = history.get(history.size()-1);
+      return top;
+    }
+
+    @Override
+    public int describeContents() {
+      return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+      dest.writeString(currentScreen.screenPath);
+      dest.writeString(currentScreen.state);
+
+      dest.writeInt(history.size());
+      for ( int i = 0 ; i < history.size() ; ++i ) {
+        ScreenState screen = history.get(i);
+        dest.writeString(screen.screenPath);
+        dest.writeString(screen.state);
+      }
+    }
+
+    public static final Parcelable.Creator<SectionScreenStateHistory> CREATOR
+            = new Parcelable.Creator<SectionScreenStateHistory>() {
+        public SectionScreenStateHistory createFromParcel(Parcel in) {
+          SectionScreenStateHistory cur = new SectionScreenStateHistory();
+          String screenPath = in.readString();
+          String state = in.readString();
+          cur.currentScreen = new ScreenState(screenPath, state);
+          int count = in.readInt();
+          for ( int i = 0 ; i < count ; ++i ) {
+            screenPath = in.readString();
+            state = in.readString();
+            cur.history.add(new ScreenState(screenPath, state));
+          }
+          return cur;
+        }
+
+        @Override
+        public SectionScreenStateHistory[] newArray(int size) {
+          SectionScreenStateHistory[] array = new SectionScreenStateHistory[size];
+          for ( int i = 0 ; i < size ; ++i ) {
+            array[i] = null;
+          }
+          return array;
+        }
+    };
+  }
+
   /**
    * Member variables that are saved and restored across orientation changes.
    */
@@ -198,7 +279,10 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private String appName = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
-  private String screenPath = null;
+
+  private ArrayList<SectionScreenStateHistory> sectionScreenStateHistory =
+      new ArrayList<SectionScreenStateHistory>();
+
   private String refId = UUID.randomUUID().toString();
   private String auxillaryHash = null;
 
@@ -207,9 +291,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   // DO NOT USE THESE -- only used to determine if the current form has changed.
   private String trackingFormPath = null;
   private Long trackingFormLastModifiedDate = 0L;
-
-  private ArrayList<String> screenHistory = new ArrayList<String>();
-  private ArrayList<String> sectionStack = new ArrayList<String>();
 
   /**
    * Member variables that do not need to be perserved across orientation
@@ -231,9 +312,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   protected void onPause() {
-    if (mAlertDialog != null && mAlertDialog.isShowing()) {
-      mAlertDialog.dismiss();
-    }
+//    if (mAlertDialog != null && mAlertDialog.isShowing()) {
+//      mAlertDialog.dismiss();
+//    }
     super.onPause();
   }
 
@@ -264,6 +345,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (getScreenPath() != null) {
       outState.putString(SCREEN_PATH, getScreenPath());
     }
+    if (getControllerState() != null) {
+      outState.putString(CONTROLLER_STATE, getControllerState());
+    }
     if (getAuxillaryHash() != null) {
       outState.putString(AUXILLARY_HASH, getAuxillaryHash());
     }
@@ -271,8 +355,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       outState.putString(APP_NAME, getAppName());
     }
 
-    outState.putStringArrayList(SCREEN_HISTORY, screenHistory);
-    outState.putStringArrayList(SECTION_STACK, sectionStack);
+    outState.putParcelableArrayList(SECTION_STATE_SCREEN_HISTORY, sectionScreenStateHistory);
   }
 
   @Override
@@ -285,8 +368,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  protected void onResume() {
-    super.onResume();
+  protected void onStart() {
+    super.onStart();
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
@@ -354,15 +437,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   public String getInstanceId() {
     return this.instanceId;
-  }
-
-  public void setScreenPath(String screenPath) {
-    WebLogger.getLogger(getAppName()).i(t, "setScreenPath: " + screenPath);
-    this.screenPath = screenPath;
-  }
-
-  public String getScreenPath() {
-    return this.screenPath;
   }
 
   public void setAuxillaryHash(String auxillaryHash) {
@@ -480,8 +554,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public String getUrlLocationHash() {
     String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
         + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-        + ((screenPath == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(screenPath))
-        + "&refId=" + StringEscapeUtils.escapeHtml4(refId)
+        + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
+        + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
         + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
     return hashUrl;
@@ -550,7 +624,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
                 String[] keyValue = pargs[i].split("=");
                 if ("setScreenPath".equals(keyValue[0])) {
                   if (keyValue.length == 2) {
-                    setScreenPath(StringEscapeUtils.unescapeHtml4(keyValue[1]));
+                    setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]),null);
                   }
                   break;
                 }
@@ -636,25 +710,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       }
       setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
           .getString(INSTANCE_ID) : getInstanceId());
-      setScreenPath(savedInstanceState.containsKey(SCREEN_PATH) ? savedInstanceState.getString(SCREEN_PATH)
-          : getScreenPath());
+
+      String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ?
+          savedInstanceState.getString(SCREEN_PATH) : getScreenPath();
+      String tmpControllerState = savedInstanceState.containsKey(CONTROLLER_STATE) ?
+          savedInstanceState.getString(CONTROLLER_STATE) : getControllerState();
+      setSectionScreenState(tmpScreenPath, tmpControllerState);
+
       setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ? savedInstanceState
           .getString(AUXILLARY_HASH) : getAuxillaryHash());
 
-      if (savedInstanceState.containsKey(SCREEN_HISTORY)) {
-        screenHistory = savedInstanceState.getStringArrayList(SCREEN_HISTORY);
+      if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
+        sectionScreenStateHistory = savedInstanceState.getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
       }
-      if (savedInstanceState.containsKey(SECTION_STACK)) {
-        sectionStack = savedInstanceState.getStringArrayList(SECTION_STACK);
-      }
-    }
-
-    if (screenHistory == null) {
-      screenHistory = new ArrayList<String>();
-    }
-
-    if (sectionStack == null) {
-      sectionStack = new ArrayList<String>();
     }
 
     Log.i(t, "Starting up, creating directories");
@@ -686,7 +754,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
     item.setIcon(R.drawable.forms).setShowAsAction(
         MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-    if (currentScreen == ScreenList.WEBKIT || formIsLoaded) {
+    if (currentScreen != ScreenList.WEBKIT && formIsLoaded) {
       // we are editing something...
       item = menu.add(Menu.NONE, MENU_EDIT_INSTANCE, Menu.NONE, getString(R.string.review_data));
       item.setIcon(R.drawable.form).setShowAsAction(
@@ -802,12 +870,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       // keep the same instance... just switch back to the WebKit view
     } else {
       setCurrentForm(newForm);
+      setInstanceId(null);
+      clearSectionScreenState();
+      setAuxillaryHash(null);
       if (lf != null) {
         lf.changeForm(newForm);
       }
-      setInstanceId(null);
-      setScreenPath(null);
-      setAuxillaryHash(null);
       webkitView.loadPage();
     }
 
@@ -928,11 +996,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         WebLogger.getLogger(getAppName()).i(t, "hideWebkitView");
         // In the fragment UI, we want to return to not having any
         // instanceId defined.
-        JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
-        setInstanceId(null);
-        setScreenPath(null);
-        setAuxillaryHash(null);
-        webkitView.loadPage();
+//        JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
+//        setInstanceId(null);
+//        setSectionScreenState(null,null);
+//        setAuxillaryHash(null);
+//        webkitView.loadPage();
         invalidateOptionsMenu();
       }
     });
@@ -1068,54 +1136,170 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     invalidateOptionsMenu();
   }
 
-  @Override
-  public boolean hasScreenHistory() {
-    return !screenHistory.isEmpty();
+  /***********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * Interfaces to Javascript layer (also used in Java).
+   */
+
+  private void dumpScreenStateHistory() {
+    WebLogger l = WebLogger.getLogger(getAppName());
+
+    l.d(t, "-------------*start* dumpScreenStateHistory--------------------");
+    if ( sectionScreenStateHistory.isEmpty() ) {
+      l.d(t, "sectionScreenStateHistory EMPTY");
+    } else {
+      for ( int i = sectionScreenStateHistory.size()-1 ; i >= 0 ; --i ) {
+        SectionScreenStateHistory thisSection = sectionScreenStateHistory.get(i);
+        l.d(t, "[" + i + "] screenPath: " + thisSection.currentScreen.screenPath );
+        l.d(t, "[" + i + "] state:      " + thisSection.currentScreen.state );
+        if ( thisSection.history.isEmpty() ) {
+          l.d(t, "[" + i + "] history[] EMPTY" );
+        } else {
+          for ( int j = thisSection.history.size()-1 ; j >= 0 ; --j ) {
+            ScreenState ss = thisSection.history.get(j);
+            l.d(t, "[" + i + "] history[" + j + "] screenPath: " + ss.screenPath );
+            l.d(t, "[" + i + "] history[" + j + "] state:      " + ss.state );
+          }
+        }
+      }
+    }
+    l.d(t, "------------- *end*  dumpScreenStateHistory--------------------");
   }
 
   @Override
-  public void clearScreenHistory() {
-    screenHistory.clear();
+  public void pushSectionScreenState() {
+    if (sectionScreenStateHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(t, "pushSectionScreenState: NULL!");
+      return;
+    }
+    SectionScreenStateHistory top = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+    if ( top.currentScreen.screenPath == null ) {
+      WebLogger.getLogger(getAppName()).e(t, "pushSectionScreenState: NULL currentScreen.screenPath!");
+      return;
+    }
+    top.history.add(new ScreenState(top.currentScreen.screenPath, top.currentScreen.state));
+  }
+
+  @Override
+  public void setSectionScreenState(String screenPath, String state) {
+    if ( screenPath == null ) {
+      WebLogger.getLogger(getAppName()).e(t, "pushSectionScreenState: NULL currentScreen.screenPath!");
+      return;
+    } else {
+      String[] splits = screenPath.split("/");
+      String sectionName = splits[0] + "/";
+
+      SectionScreenStateHistory lastSection;
+      if (sectionScreenStateHistory.isEmpty()) {
+        sectionScreenStateHistory.add(new SectionScreenStateHistory());
+        lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+        lastSection.currentScreen.screenPath = screenPath;
+        lastSection.currentScreen.state = state;
+      } else {
+        lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+        if ( lastSection.currentScreen.screenPath.startsWith(sectionName) ) {
+          lastSection.currentScreen.screenPath = screenPath;
+          lastSection.currentScreen.state = state;
+        } else {
+          sectionScreenStateHistory.add(new SectionScreenStateHistory());
+          lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+          lastSection.currentScreen.screenPath = screenPath;
+          lastSection.currentScreen.state = state;
+        }
+      }
+    }
+  }
+
+  @Override
+  public void clearSectionScreenState() {
+    sectionScreenStateHistory.clear();
+    sectionScreenStateHistory.add(new SectionScreenStateHistory());
+    SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+    lastSection.currentScreen.screenPath = "initial/0";
+    lastSection.currentScreen.state = null;
+  }
+
+  @Override
+  public String getControllerState() {
+    if (sectionScreenStateHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(t, "getControllerState: NULL!");
+      return null;
+    }
+    SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+    return lastSection.currentScreen.state;
+  }
+
+  public String getScreenPath() {
+    dumpScreenStateHistory();
+    if (sectionScreenStateHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(t, "getScreenPath: NULL!");
+      return null;
+    }
+    SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+    return lastSection.currentScreen.screenPath;
+  }
+
+  @Override
+  public boolean hasScreenHistory() {
+    for ( int i = 0 ; i < sectionScreenStateHistory.size() ; ++i ) {
+      SectionScreenStateHistory thisSection = sectionScreenStateHistory.get(i);
+      if ( !thisSection.history.isEmpty() ) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
   public String popScreenHistory() {
-    int last = screenHistory.size() - 1;
-    if (last == -1)
-      return null;
-    String v = screenHistory.get(last);
-    screenHistory.remove(last);
-    return v;
+    while (!sectionScreenStateHistory.isEmpty()) {
+      SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+      if ( !lastSection.history.isEmpty() ) {
+        ScreenState lastHistory = lastSection.history.remove(lastSection.history.size()-1);
+        lastSection.currentScreen.screenPath = lastHistory.screenPath;
+        lastSection.currentScreen.state = lastHistory.state;
+        return lastSection.currentScreen.screenPath;
+      }
+      sectionScreenStateHistory.remove(sectionScreenStateHistory.size()-1);
+    }
+    return null;
   }
 
   @Override
-  public void pushScreenHistory(String idx) {
-    screenHistory.add(idx);
+  public String popScreenHistoryUntilState(String state) {
+    for(;;) {
+      String screenPath = popScreenHistory();
+      if ( screenPath == null ) {
+        return null;
+      }
+      SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+      if ( lastSection.currentScreen.state.equals(state) ) {
+        return screenPath;
+      }
+    }
   }
 
   @Override
   public boolean hasSectionStack() {
-    return !sectionStack.isEmpty();
-  }
-
-  @Override
-  public void clearSectionStack() {
-    sectionStack.clear();
+    return !sectionScreenStateHistory.isEmpty();
   }
 
   @Override
   public String popSectionStack() {
-    int last = sectionStack.size() - 1;
-    if (last == -1)
-      return null;
-    String v = sectionStack.get(last);
-    sectionStack.remove(last);
-    return v;
-  }
+    if (!sectionScreenStateHistory.isEmpty()) {
+      sectionScreenStateHistory.remove(sectionScreenStateHistory.size()-1);
+    }
 
-  @Override
-  public void pushSectionStack(String idx) {
-    sectionStack.add(idx);
+    if (!sectionScreenStateHistory.isEmpty()) {
+      SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
+      return lastSection.currentScreen.screenPath;
+    }
+
+    return null;
   }
 
   @Override
@@ -1140,10 +1324,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // hideWebkitView();
   }
 
-  public boolean isWaitingForBinaryData() {
-    return actionWaitingForData != null;
-  }
-
   /**
    * Invoked from within Javascript to launch an activity.
    *
@@ -1156,6 +1336,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
    * @param valueMap
    *          -- parameters to pass to the intent
    */
+  @Override
   public String doAction(String page, String path, String action, JSONObject valueMap) {
 
     if (isWaitingForBinaryData()) {
@@ -1223,6 +1404,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       Log.e(t, "Unable to launch activity: " + ex.toString());
       return "Application not found";
     }
+  }
+
+  /*
+   * END - Interfaces to Javascript layer (also used in Java).
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   ***********************************************************************/
+
+  public boolean isWaitingForBinaryData() {
+    return actionWaitingForData != null;
   }
 
   @Override

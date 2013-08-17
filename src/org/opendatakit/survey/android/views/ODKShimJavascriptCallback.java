@@ -161,23 +161,43 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void clearScreenPath(String refId) {
+  public void pushSectionScreenState(String refId) {
     if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: clearScreenPath(" + refId + ")");
+      log.w("shim", "IGNORED: pushSectionScreenState(" + refId + ")");
       return;
     }
-    log.d("shim", "DO: clearScreenPath(" + refId + ")");
-    mActivity.setScreenPath(null);
+    log.d("shim", "DO: pushSectionScreenState(" + refId + ")");
+    mActivity.pushSectionScreenState();
   }
 
   // @JavascriptInterface
-  public void setScreenPath(String refId, String screenPath) {
+  public void setSectionScreenState(String refId, String screenPath, String state) {
     if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: setScreenPath(" + refId + ", " + screenPath + ")");
+      log.w("shim", "IGNORED: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
       return;
     }
-    log.d("shim", "DO: setScreenPath(" + refId + ", " + screenPath + ")");
-    mActivity.setScreenPath(screenPath);
+    log.d("shim", "DO: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
+    mActivity.setSectionScreenState(screenPath, state);
+  }
+
+  // @JavascriptInterface
+  public void clearSectionScreenState(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: clearSectionScreenState(" + refId + ")");
+      return;
+    }
+    log.d("shim", "DO: clearSectionScreenState(" + refId + ")");
+    mActivity.clearSectionScreenState();
+  }
+
+  // @JavascriptInterface
+  public String getControllerState(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: getControllerState(" + refId + ")");
+      return null;
+    }
+    log.d("shim", "DO: getControllerState(" + refId + ")");
+    return mActivity.getControllerState();
   }
 
   // @JavascriptInterface
@@ -201,16 +221,6 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void clearScreenHistory(String refId) {
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: clearScreenHistory(" + refId + ")");
-      return;
-    }
-    log.d("shim", "DO: clearScreenHistory(" + refId + ")");
-    mActivity.clearScreenHistory();
-  }
-
-  // @JavascriptInterface
   public String popScreenHistory(String refId) {
     if ( !mActivity.getRefId().equals(refId) ) {
       log.w("shim", "IGNORED: popScreenHistory(" + refId + ")");
@@ -221,13 +231,13 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void pushScreenHistory(String refId, String idx) {
+  public String popScreenHistoryUntilState(String refId, String state) {
     if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: pushScreenHistory(" + refId + ", " + idx + ")");
-      return;
+      log.w("shim", "IGNORED: popScreenHistoryUntilState(" + refId + ", " + state + ")");
+      return null;
     }
-    log.d("shim", "DO: pushScreenHistory(" + refId + ", " + idx + ")");
-    mActivity.pushScreenHistory(idx);
+    log.d("shim", "DO: popScreenHistoryUntilState(" + refId + ", " + state + ")");
+    return mActivity.popScreenHistoryUntilState(state);
   }
 
   // @JavascriptInterface
@@ -241,16 +251,6 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void clearSectionStack(String refId) {
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: clearSectionStack(" + refId + ")");
-      return;
-    }
-    log.d("shim", "DO: clearSectionStack(" + refId + ")");
-    mActivity.clearSectionStack();
-  }
-
-  // @JavascriptInterface
   public String popSectionStack(String refId) {
     if ( !mActivity.getRefId().equals(refId) ) {
       log.w("shim", "IGNORED: popSectionStack(" + refId + ")");
@@ -258,27 +258,6 @@ public class ODKShimJavascriptCallback {
     }
     log.d("shim", "DO: popSectionStack(" + refId + ")");
     return mActivity.popSectionStack();
-  }
-
-  // @JavascriptInterface
-  public void pushSectionStack(String refId, String sectionName) {
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: pushSectionStack(" + refId + ", " + sectionName + ")");
-      return;
-    }
-    log.d("shim", "DO: pushSectionStack(" + refId + ", " + sectionName + ")");
-    mActivity.pushSectionStack(sectionName);
-  }
-
-  // @JavascriptInterface
-  public void setAuxillaryHash(String refId, String auxillaryHash) {
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: setAuxillaryHash(" + refId + ", " + auxillaryHash + ")");
-      return;
-    }
-    log.d("shim", "DO: setAuxillaryHash(" + refId + ", " + auxillaryHash + ")");
-    // NOTE: not currently used...
-    mActivity.setAuxillaryHash(auxillaryHash);
   }
 
   // @JavascriptInterface
