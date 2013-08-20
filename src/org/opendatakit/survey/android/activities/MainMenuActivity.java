@@ -1181,6 +1181,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       WebLogger.getLogger(getAppName()).e(t, "pushSectionScreenState: NULL currentScreen.screenPath!");
       return;
     }
+    if ( top.currentScreen.state != null && top.currentScreen.state.equals("a") ) {
+      WebLogger.getLogger(getAppName()).i(t, "pushSectionScreenState: SKIPPED('" +
+          top.currentScreen.screenPath + "','a')");
+      return;
+    }
+
     top.history.add(new ScreenState(top.currentScreen.screenPath, top.currentScreen.state));
   }
 
