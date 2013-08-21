@@ -1276,20 +1276,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public String popScreenHistoryUntilState(String state) {
-    for(;;) {
-      String screenPath = popScreenHistory();
-      if ( screenPath == null ) {
-        return null;
-      }
-      SectionScreenStateHistory lastSection = sectionScreenStateHistory.get(sectionScreenStateHistory.size()-1);
-      if ( lastSection.currentScreen.state.equals(state) ) {
-        return screenPath;
-      }
-    }
-  }
-
-  @Override
   public boolean hasSectionStack() {
     return !sectionScreenStateHistory.isEmpty();
   }

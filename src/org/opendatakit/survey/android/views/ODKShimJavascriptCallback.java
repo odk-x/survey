@@ -231,16 +231,6 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public String popScreenHistoryUntilState(String refId, String state) {
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: popScreenHistoryUntilState(" + refId + ", " + state + ")");
-      return null;
-    }
-    log.d("shim", "DO: popScreenHistoryUntilState(" + refId + ", " + state + ")");
-    return mActivity.popScreenHistoryUntilState(state);
-  }
-
-  // @JavascriptInterface
   public boolean hasSectionStack(String refId) {
     if ( !mActivity.getRefId().equals(refId) ) {
       log.w("shim", "IGNORED: hasSectionStack(" + refId + ")");

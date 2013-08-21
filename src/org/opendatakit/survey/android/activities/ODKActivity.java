@@ -67,8 +67,6 @@ public interface ODKActivity {
 
   public String popScreenHistory();
 
-  public String popScreenHistoryUntilState(String state);
-
   public boolean hasSectionStack();
 
   public String popSectionStack();
