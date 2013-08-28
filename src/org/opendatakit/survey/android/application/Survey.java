@@ -14,7 +14,6 @@
 package org.opendatakit.survey.android.application;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -122,7 +121,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
   /**
    * Creates required directories on the SDCard (or other external storage)
    *
-   * @return true if there are forms present
+   * @return true if there are tables present
    * @throws RuntimeException
    *           if there is no SDCard or the directory exists as a non directory
    */
@@ -130,39 +129,9 @@ public class Survey extends Application implements LicenseCheckerCallback {
 
     ODKFileUtils.verifyExternalStorageAvailability();
 
-    String[] dirs = { ODKFileUtils.getAppFolder(appName), ODKFileUtils.getFormsFolder(appName),
-        ODKFileUtils.getStaleFormsFolder(appName), ODKFileUtils.getFrameworkFolder(appName),
-        ODKFileUtils.getStaleFrameworkFolder(appName), ODKFileUtils.getLoggingFolder(appName),
-        ODKFileUtils.getMetadataFolder(appName), ODKFileUtils.getAppCacheFolder(appName),
-        ODKFileUtils.getGeoCacheFolder(appName), ODKFileUtils.getWebDbFolder(appName) };
+    ODKFileUtils.assertDirectoryStructure(appName);
 
-    for (String dirName : dirs) {
-      File dir = new File(dirName);
-      if (!dir.exists()) {
-        if (!dir.mkdirs()) {
-          RuntimeException e = new RuntimeException("ODK reports :: Cannot create directory: "
-              + dirName);
-          throw e;
-        }
-      } else {
-        if (!dir.isDirectory()) {
-          RuntimeException e = new RuntimeException("ODK reports :: " + dirName
-              + " exists, but is not a directory");
-          throw e;
-        }
-      }
-    }
-
-    File[] files = new File(ODKFileUtils.getFormsFolder(appName)).listFiles(new FileFilter() {
-
-      @Override
-      public boolean accept(File pathname) {
-        return pathname.isDirectory()
-            && new File(pathname, ODKFileUtils.FORMDEF_JSON_FILENAME).exists();
-      }
-    });
-
-    return (files.length != 0);
+    return ODKFileUtils.isConfiguredApp(appName);
   }
 
   @Override

@@ -500,9 +500,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
     String formPath = info.relativePath;
 
-    // formPath always begins ../../ -- strip that off to get explicit path
+    // formPath always begins ../ -- strip that off to get explicit path
     // suffix...
-    File mediaFolder = new File(new File(ODKFileUtils.getAppFolder(appName)), formPath.substring(6));
+    File mediaFolder = new File(new File(ODKFileUtils.getAppFolder(appName)), formPath.substring(3));
 
     // File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
     File htmlFile = new File(mediaFolder, "index.html");
@@ -1325,11 +1325,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
    *          -- prompt requesting the action
    * @param action
    *          -- the intent to be launched
-   * @param valueMap
-   *          -- parameters to pass to the intent
+   * @param valueContentMap
+   *          -- parameters to pass to the intent { uri: uriValue, extras: extrasMap }
    */
   @Override
-  public String doAction(String page, String path, String action, JSONObject valueMap) {
+  public String doAction(String page, String path, String action, JSONObject valueContentMap) {
 
     if (isWaitingForBinaryData()) {
       Log.w(t, "Already waiting for data -- ignoring");
@@ -1337,6 +1337,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     Intent i;
+
     if (action.startsWith("org.opendatakit.survey")) {
       Class<?> clazz;
       try {
@@ -1351,6 +1352,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     try {
+      JSONObject valueMap = null;
+      if (valueContentMap != null) {
+        if ( valueContentMap.has("uri") ) {
+          String v = valueContentMap.getString("uri");
+          if ( v != null ) {
+            Uri uri = Uri.parse(v);
+            i.setData(uri);
+          }
+        }
+        if ( valueContentMap.has("extras") ) {
+          valueMap = valueContentMap.getJSONObject("extras");
+        }
+      }
+
       if (valueMap != null) {
         Bundle b;
         final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),

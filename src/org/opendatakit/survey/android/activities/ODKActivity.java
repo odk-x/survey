@@ -32,7 +32,7 @@ public interface ODKActivity {
     // the FormsColumns.DATE field.
     public final Long lastModified;
     // the FormsColumns.FORM_PATH field
-    // a relative path always beginning with ../../
+    // a relative path always beginning with ../
     public final String relativePath;
 
     FrameworkFormPathInfo(String relativePath, Long lastModified) {

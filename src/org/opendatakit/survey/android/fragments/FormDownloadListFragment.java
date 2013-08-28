@@ -89,7 +89,7 @@ public class FormDownloadListFragment extends ListFragment implements
 
 	private boolean mToggled = false;
 	private boolean mDownloadEnabled = false;
-	private HashMap<String, FormDetails> mFormNamesAndURLs;
+	private HashMap<String, FormDetails> mFormIdsAndDetails;
 	private String mAlertTitle;
 	private String mAlertMsg;
 	private DialogState mDialogState = DialogState.None;
@@ -181,7 +181,7 @@ public class FormDownloadListFragment extends ListFragment implements
 			// If the screen has rotated, the hashmap with the form ids and urls
 			// is passed here.
 			if (savedInstanceState.containsKey(BUNDLE_FORM_MAP)) {
-				mFormNamesAndURLs = (HashMap<String, FormDetails>) savedInstanceState
+				mFormIdsAndDetails = (HashMap<String, FormDetails>) savedInstanceState
 						.getSerializable(BUNDLE_FORM_MAP);
 			}
 
@@ -246,7 +246,7 @@ public class FormDownloadListFragment extends ListFragment implements
 					Toast.LENGTH_SHORT).show();
 		} else {
 
-			mFormNamesAndURLs = new HashMap<String, FormDetails>();
+			mFormIdsAndDetails = new HashMap<String, FormDetails>();
 			showProgressDialog(DialogState.ProgressFormList);
 
 			BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager()
@@ -260,7 +260,7 @@ public class FormDownloadListFragment extends ListFragment implements
 		super.onSaveInstanceState(outState);
 		outState.putBoolean(TOGGLED_KEY, mToggled);
 		outState.putBoolean(DOWNLOAD_ENABLED, mDownloadEnabled);
-		outState.putSerializable(BUNDLE_FORM_MAP, mFormNamesAndURLs);
+		outState.putSerializable(BUNDLE_FORM_MAP, mFormIdsAndDetails);
 		outState.putString(DIALOG_TITLE, mAlertTitle);
 		outState.putString(DIALOG_MSG, mAlertMsg);
 		outState.putString(DIALOG_STATE, mDialogState.name());
@@ -297,7 +297,7 @@ public class FormDownloadListFragment extends ListFragment implements
 			if (sba.get(i, false)) {
 				HashMap<String, String> item = (HashMap<String, String>) getListAdapter()
 						.getItem(i);
-				filesToDownload.add(mFormNamesAndURLs.get(item
+				filesToDownload.add(mFormIdsAndDetails.get(item
 						.get(FORMDETAIL_KEY)));
 			}
 		}
@@ -397,15 +397,15 @@ public class FormDownloadListFragment extends ListFragment implements
 			createAlertDialog(dialogTitle, dialogMessage);
 		} else {
 			// Everything worked. Clear the list and add the results.
-			mFormNamesAndURLs = result;
+			mFormIdsAndDetails = result;
 
 			mFormList.clear();
 
 			ArrayList<String> ids = new ArrayList<String>(
-					mFormNamesAndURLs.keySet());
+					mFormIdsAndDetails.keySet());
 			for (int i = 0; i < result.size(); i++) {
 				String formDetailsKey = ids.get(i);
-				FormDetails details = mFormNamesAndURLs.get(formDetailsKey);
+				FormDetails details = mFormIdsAndDetails.get(formDetailsKey);
 				HashMap<String, String> item = new HashMap<String, String>();
 				item.put(FORMNAME, details.formName);
 				item.put(FORMID_DISPLAY, ((details.formVersion == null) ? ""
@@ -422,7 +422,7 @@ public class FormDownloadListFragment extends ListFragment implements
 					for (j = 0; j < mFormList.size(); j++) {
 						HashMap<String, String> compareMe = mFormList.get(j);
 						String name = compareMe.get(FORMNAME);
-						if (name.compareTo(mFormNamesAndURLs.get(ids.get(i)).formName) > 0) {
+						if (name.compareTo(mFormIdsAndDetails.get(ids.get(i)).formName) > 0) {
 							break;
 						}
 					}

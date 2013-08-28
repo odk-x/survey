@@ -111,15 +111,14 @@ public class DownloadFormsTask extends
 			FormDetails fd = values[i];
 
 			if (isCancelled()) {
-				result.put(fd.formName, "cancelled");
+				result.put(fd.formID, "cancelled");
 				return result;
 			}
 
-			publishProgress(fd.formName, Integer.valueOf(count).toString(),
+			publishProgress(fd.formID, Integer.valueOf(count).toString(),
 					Integer.valueOf(total).toString());
 
 			String message = "";
-
 			/*
 			 * Downloaded forms are placed in a staging directory
 			 * (STALE_FORMS_PATH). Once they are deemed complete, they are
@@ -137,13 +136,13 @@ public class DownloadFormsTask extends
 			File formPath = null;
 			/* downloaded then moved here... under FORMS_PATH */
 			File mediaPath = null;
-			/*
+			try {
+	         /*
 			 * path to the directory containing the newly downloaded or stale
 			 * data
 			 */
 			String baseStaleMediaPath;
-			/* path to the directory containing the live data */
-			String baseMediaPath;
+			boolean isFramework;
 			if (fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID)) {
 				/*
 				 * the Common Javascript Framework is stored in the Framework
@@ -151,47 +150,45 @@ public class DownloadFormsTask extends
 				 */
 				baseStaleMediaPath = ODKFileUtils
 						.getStaleFrameworkFolder(getAppName()) + File.separator;
-				baseMediaPath = ODKFileUtils.getFrameworkFolder(getAppName())
-						+ File.separator;
+				isFramework = true;
 			} else {
 				baseStaleMediaPath = ODKFileUtils
 						.getStaleFormsFolder(getAppName()) + File.separator;
-				baseMediaPath = ODKFileUtils.getFormsFolder(getAppName())
-						+ File.separator;
+				isFramework = false;
 			}
+//         /* path to the directory containing the live data */
+//         String baseMediaPath;
+//			if ( isFramework ) {
+//            baseMediaPath = ODKFileUtils.getFrameworkFolder(getAppName())
+//                + File.separator;
+//			} else
+//				baseMediaPath = ODKFileUtils.getFormsFolder(getAppName(), tableId, formId)
+//						+ File.separator;
+//			}
 
 			try {
-				try {
-					// determine names for the form file and media directory on
-					// the device that do not collide with any existing names
-
-					{
 						// clean up friendly form name...
-						String rootName = fd.formName.replaceAll(
-								"[^\\p{L}\\p{Digit}]", " "); // remove
-						// non-alpha-numerics
-						rootName = rootName.replaceAll("\\p{javaWhitespace}+",
-								""); // eliminate
-										// white
-										// space...
-						rootName = rootName.trim();
+						String rootName = fd.formID;
+						if ( !rootName.matches("^\\p{L}\\p{M}*(\\p{L}\\p{M}*|\\p{Nd}|_)*$") ) {
+						  // error!
+	                  message += appContext.getString(R.string.invalid_form_id, fd.formID, fd.formName);
+	                  Log.e(t, "Invalid form_id: " + fd.formID + " for: " + fd.formName);
+						} else {
 
-						int rev = 2;
-						{
-							// proposed name of form 'media' directory and form
-							// file...
-							String tempMediaPathName = baseStaleMediaPath
-									+ rootName;
-							String mediaPathName = baseMediaPath + rootName;
+						  // figure out what to name this when we move it
+						  // out of /odk/appname/tables/tableId/forms/formId...
+						  int rev = 2;
+						  {
+  							// proposed name of form 'media' directory and form
+  							// file...
+  							String tempMediaPathName = baseStaleMediaPath
+  									+ rootName;
 
-							tempMediaPath = new File(tempMediaPathName);
-							tempFormPath = new File(tempMediaPath,
-									ODKFileUtils.FILENAME_XFORMS_XML);
-							mediaPath = new File(mediaPathName);
-							formPath = new File(mediaPath,
-									ODKFileUtils.FILENAME_XFORMS_XML);
+  							tempMediaPath = new File(tempMediaPathName);
+  							tempFormPath = new File(tempMediaPath,
+  									ODKFileUtils.FILENAME_XFORMS_XML);
 
-							while (tempMediaPath.exists() || mediaPath.exists()) {
+							while (tempMediaPath.exists()) {
 								try {
 									if (tempMediaPath.exists()) {
 										FileUtils
@@ -211,14 +208,9 @@ public class DownloadFormsTask extends
 								tempMediaPath = new File(tempMediaPathName);
 								tempFormPath = new File(tempMediaPath,
 										ODKFileUtils.FILENAME_XFORMS_XML);
-								mediaPathName = baseMediaPath + rootName + "_"
-										+ rev;
-								mediaPath = new File(mediaPathName);
-								formPath = new File(mediaPath,
-										ODKFileUtils.FILENAME_XFORMS_XML);
 								rev++;
 							}
-						}
+						  }
 
 						// and find a name that any existing directory could be
 						// renamed to... (continuing rev counter)
@@ -244,7 +236,6 @@ public class DownloadFormsTask extends
 							staleMediaPath = new File(staleMediaPathName);
 							rev++;
 						}
-					}
 
 					// we have a candidate mediaPath and formPath.
 					// If this is a replacement for an identical existing form,
@@ -310,8 +301,8 @@ public class DownloadFormsTask extends
 
 					if (fd.manifestUrl == null) {
 						message += appContext.getString(R.string.no_manifest,
-								fd.formName);
-						Log.e(t, "No Manifest for: " + fd.formName);
+								fd.formID);
+						Log.e(t, "No Manifest for: " + fd.formID);
 					} else {
 						// download the media files -- it is an error if there
 						// are none...
@@ -327,11 +318,11 @@ public class DownloadFormsTask extends
 								message += appContext.getString(
 										R.string.xforms_file_exists,
 										ODKFileUtils.FILENAME_XFORMS_XML,
-										fd.formName);
+										fd.formID);
 								Log.e(t,
 										ODKFileUtils.FILENAME_XFORMS_XML
 												+ " was present in exploded download of "
-												+ fd.formName);
+												+ fd.formID);
 							} else {
 								// OK so far -- download the form definition
 								// file
@@ -339,6 +330,7 @@ public class DownloadFormsTask extends
 								downloadXform(fd, tempFormPath, formPath);
 							}
 						}
+					}
 					}
 				} catch (SocketTimeoutException se) {
 					se.printStackTrace();
@@ -361,10 +353,10 @@ public class DownloadFormsTask extends
 
 						if (!formDef.exists()) {
 							message = appContext.getString(
-									R.string.no_formdef_json, fd.formName);
+									R.string.no_formdef_json, fd.formID);
 							Log.e(t, ODKFileUtils.FORMDEF_JSON_FILENAME
 									+ " was not found in exploded download of "
-									+ fd.formName);
+									+ fd.formID);
 						} else {
 							// move the current directory to the stale tree.
 							// move the temp directory to the current location.
@@ -418,7 +410,7 @@ public class DownloadFormsTask extends
 				}
 			}
 			count++;
-			result.put(fd.formName, message);
+			result.put(fd.formID, message);
 		}
 
 		return result;
@@ -451,7 +443,7 @@ public class DownloadFormsTask extends
 					ZipEntry entry = entries.nextElement();
 					File tempFile = new File(tempMediaPath, entry.getName());
 					String formattedString = appContext.getString(
-							R.string.form_download_unzipping, fd.formName,
+							R.string.form_download_unzipping, fd.formID,
 							zipfile.getName(), Integer.valueOf(zipCount)
 									.toString(), Integer.valueOf(zips.length)
 									.toString(), entry.getName());
@@ -656,7 +648,7 @@ public class DownloadFormsTask extends
 			return null;
 
 		publishProgress(appContext.getString(R.string.fetching_manifest,
-				fd.formName), Integer.valueOf(count).toString(), Integer
+				fd.formID), Integer.valueOf(count).toString(), Integer
 				.valueOf(total).toString());
 
 		List<MediaFile> files = new ArrayList<MediaFile>();
@@ -765,7 +757,7 @@ public class DownloadFormsTask extends
 				}
 				++mediaCount;
 				publishProgress(appContext.getString(
-						R.string.form_download_progress, fd.formName,
+						R.string.form_download_progress, fd.formID,
 						toDownload.filename, Integer.valueOf(mediaCount)
 								.toString(), Integer.valueOf(files.size())
 								.toString()),
@@ -796,7 +788,7 @@ public class DownloadFormsTask extends
 				}
 			}
 		} else {
-			return appContext.getString(R.string.no_manifest, fd.formName);
+			return appContext.getString(R.string.no_manifest, fd.formID);
 		}
 		return null;
 	}
