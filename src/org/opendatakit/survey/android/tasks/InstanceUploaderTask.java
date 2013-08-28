@@ -421,7 +421,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
     setAuth(auth);
 
-    FormInfo fi = new FormInfo(appContext, uploadingForm.formDefFile);
+    FormInfo fi = new FormInfo(appContext, uploadingForm.appName, uploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
     HttpContext localContext = WebUtils.getHttpContext();

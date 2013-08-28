@@ -430,11 +430,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     return this.currentForm;
   }
 
+  @Override
   public void setInstanceId(String instanceId) {
     WebLogger.getLogger(getAppName()).i(t, "setInstanceId: " + instanceId);
     this.instanceId = instanceId;
   }
 
+  @Override
   public String getInstanceId() {
     return this.instanceId;
   }

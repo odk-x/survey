@@ -161,6 +161,16 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
+  public String getInstanceId(String refId) {
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: getInstanceId(" + refId + ")");
+      return null;
+    }
+    log.d("shim", "DO: getInstanceId(" + refId + ")");
+    return mActivity.getInstanceId();
+  }
+
+  // @JavascriptInterface
   public void pushSectionScreenState(String refId) {
     if ( !mActivity.getRefId().equals(refId) ) {
       log.w("shim", "IGNORED: pushSectionScreenState(" + refId + ")");

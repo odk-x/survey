@@ -53,6 +53,8 @@ public interface ODKActivity {
 
   public void setInstanceId(String instanceId);
 
+  public String getInstanceId();
+
   public void pushSectionScreenState();
 
   public void setSectionScreenState(String screenPath, String state);
