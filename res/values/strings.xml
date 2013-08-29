@@ -10,7 +10,7 @@
 		the specific language governing permissions and limitations under the
 		License.
 	-->
-<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
 <string name="accept_location">Record Location</string>
 <string name="activity_not_found">No activity found to handle: %s</string>
 <string name="app_name">ODK Survey</string>
