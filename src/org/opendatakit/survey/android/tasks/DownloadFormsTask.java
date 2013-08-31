@@ -281,7 +281,11 @@ public class DownloadFormsTask extends
 										FormsProviderAPI.CONTENT_URI, appName),
 								projection, selection, selectionArgs, orderBy);
 
-						if (alreadyExists.getCount() > 0) {
+						if (alreadyExists == null) {
+	                  message += appContext.getString(R.string.invalid_app_name,
+	                      appName);
+	                  Log.e(t, "Invalid appName: " + appName);
+						} else if (alreadyExists.getCount() > 0) {
 							// we found a match...
 							alreadyExists.moveToFirst();
 							int formFilePath = alreadyExists

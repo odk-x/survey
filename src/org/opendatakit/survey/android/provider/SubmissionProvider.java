@@ -363,7 +363,7 @@ public class SubmissionProvider extends CommonContentProvider {
               fc = getContext().getContentResolver().query(
                   Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, formSelection,
                   formSelectionArgs, null);
-              if (fc.moveToFirst() && fc.getCount() == 1) {
+              if (fc != null && fc.moveToFirst() && fc.getCount() == 1) {
 
                 FormInfo f = new FormInfo(fc, false);
                 fc.close();

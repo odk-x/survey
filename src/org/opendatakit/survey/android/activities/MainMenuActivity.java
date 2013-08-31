@@ -471,7 +471,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
           Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, selection,
           selectionArgs, orderBy);
 
-      if (c.getCount() > 0) {
+      if (c != null && c.getCount() > 0) {
         // we found a match...
         c.moveToFirst();
         formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));

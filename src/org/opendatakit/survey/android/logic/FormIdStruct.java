@@ -73,7 +73,7 @@ public class FormIdStruct {
     Cursor c = null;
     try {
       c = resolver.query(formUri, null, null, null, null);
-      if (c.getCount() == 1) {
+      if (c != null && c.getCount() == 1) {
         int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
         int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
         int formId = c.getColumnIndex(FormsColumns.FORM_ID);
