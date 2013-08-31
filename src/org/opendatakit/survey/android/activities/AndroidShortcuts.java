@@ -114,7 +114,7 @@ public class AndroidShortcuts extends Activity {
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName()), null, null, null,
             null);
 
-        if (c.getCount() > 0) {
+        if (c != null && c.getCount() > 0) {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
             if (first) {
