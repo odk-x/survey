@@ -38,6 +38,7 @@ public class ODKWebView extends WebView {
   private WebLogger log;
   private ODKShimJavascriptCallback shim;
   private String loadPageUrl = null;
+  private boolean isLoadPageFrameworkFinished = false;
   private boolean isLoadPageFinished = false;
   private boolean isJavascriptFlushActive = false;
   private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
@@ -92,7 +93,7 @@ public class ODKWebView extends WebView {
     setWebViewClient(new ODKWebViewClient(this));
 
     // stomp on the shim object...
-    shim = new ODKShimJavascriptCallback(activity);
+    shim = new ODKShimJavascriptCallback(this,activity);
     addJavascriptInterface(shim, "shim");
   }
 
@@ -122,22 +123,25 @@ public class ODKWebView extends WebView {
      */
 
     log.i(t, "loadPage: current loadPageUrl: " + loadPageUrl);
-    String baseUrl = activity.getUrlBaseLocation(loadPageUrl != null);
+    String baseUrl = activity.getUrlBaseLocation(isLoadPageFrameworkFinished && loadPageUrl != null);
     String hash = activity.getUrlLocationHash();
 
     if ( baseUrl != null ) {
       resetLoadPageStatus(baseUrl);
+
       log.i(t, "loadPage: full reload: " + baseUrl + hash);
+
       loadUrl(baseUrl + hash);
-    } else if ( loadPageUrl != null ) {
+    } else if ( isLoadPageFrameworkFinished ) {
       log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
       gotoUrlHash(hash);
     } else {
-      log.w(t, "loadPage: no framework -- cannot load anything!");
+      log.w(t, "loadPage: framework did not load -- cannot load anything!");
     }
   }
 
-  synchronized void loadPageFinished() {
+  synchronized void frameworkHasLoaded() {
+    isLoadPageFrameworkFinished = true;
     if (!isLoadPageFinished && !isJavascriptFlushActive) {
       log.i(t, "loadPageFinished: BEGINNING FLUSH refId: " + activity.getRefId());
       isJavascriptFlushActive = true;
@@ -154,6 +158,7 @@ public class ODKWebView extends WebView {
   }
 
   private synchronized void resetLoadPageStatus(String baseUrl) {
+    isLoadPageFrameworkFinished = false;
     isLoadPageFinished = false;
     loadPageUrl = baseUrl;
     isJavascriptFlushActive = false;

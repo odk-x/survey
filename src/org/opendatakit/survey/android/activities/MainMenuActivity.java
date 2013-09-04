@@ -554,14 +554,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public String getUrlLocationHash() {
-    String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
-        + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-        + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
-        + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
-        + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+    if ( currentForm == null ) {
+      // we want framework...
+      FrameworkFormPathInfo info = getFrameworkFormPathInfo();
+      if ( info == null ) {
+        return "";
+      }
+      String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4(info.relativePath)
+          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
+          + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
+          + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
+          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+      return hashUrl;
+    } else {
+      String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
+          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
+          + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
+          + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
+          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
-    return hashUrl;
-
+      return hashUrl;
+    }
   }
 
   public void setAppName(String appName) {
@@ -615,38 +628,41 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
           if (newForm != null) {
             setAppName(newForm.appName);
             setCurrentForm(newForm);
-            if (segments.size() > 2) {
-              String instanceId = segments.get(2);
-              setInstanceId(instanceId);
-              // and process the fragment to find the setScreenPath, if any...
-              String fragment = uri.getFragment();
+            clearSectionScreenState();
+            String fragment = uri.getFragment();
+            if ( fragment != null && fragment.length() != 0 ) {
+              // and process the fragment to find the instanceId, screenPath and other kv pairs
               String[] pargs = fragment.split("&");
+              boolean first = true;
+              StringBuilder b = new StringBuilder();
               int i;
               for (i = 0; i < pargs.length; ++i) {
                 String[] keyValue = pargs[i].split("=");
-                if ("setScreenPath".equals(keyValue[0])) {
+                if ("instanceId".equals(keyValue[0])) {
+                  if (keyValue.length == 2) {
+                     setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
+                  }
+                } else if ("screenPath".equals(keyValue[0])) {
                   if (keyValue.length == 2) {
                     setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]),null);
                   }
-                  break;
+                } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
+                  // ignore
+                } else {
+                  if (!first) {
+                    b.append("&");
+                  }
+                  first = false;
+                  b.append(pargs[i]);
                 }
-              }
-              // now construct the auxillary hash string from the other parts
-              boolean first = true;
-              StringBuilder b = new StringBuilder();
-              for (int j = 0; j < pargs.length; ++j) {
-                if (j == i)
-                  continue;
-                if (!first) {
-                  b.append("&");
-                }
-                first = false;
-                b.append(pargs[j]);
               }
               String aux = b.toString();
               if (aux.length() != 0) {
                 setAuxillaryHash(aux);
               }
+            } else {
+              setInstanceId(null);
+              setAuxillaryHash(null);
             }
             currentScreen = ScreenList.WEBKIT;
             nestedScreen = ScreenList.WEBKIT;

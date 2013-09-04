@@ -48,11 +48,7 @@ public class FormIdStruct {
     this.formId = formId;
     this.formVersion = formVersion;
     this.tableId = tableId;
-    this.appName = formDefFile.getParentFile()/* formFolder */.getParentFile()/*
-                                                                               * forms
-                                                                               * folder
-                                                                               */.getParentFile()
-        /* app */.getName();
+    this.appName = ODKFileUtils.extractAppNameFromPath(formDefFile);
     this.lastDownloadDate = lastModifiedDate;
   }
 
