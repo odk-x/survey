@@ -14,8 +14,6 @@
 
 package org.opendatakit.survey.android.views;
 
-import org.apache.commons.lang3.StringUtils;
-
 import android.os.Message;
 import android.view.KeyEvent;
 import android.webkit.WebView;

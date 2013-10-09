@@ -442,6 +442,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   public void setAuxillaryHash(String auxillaryHash) {
+    WebLogger.getLogger(getAppName()).i(t, "setAuxillaryHash: " + auxillaryHash);
     this.auxillaryHash = auxillaryHash;
   }
 
