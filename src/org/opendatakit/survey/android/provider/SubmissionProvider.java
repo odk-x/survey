@@ -209,8 +209,8 @@ public class SubmissionProvider extends CommonContentProvider {
       StringBuilder b = new StringBuilder();
       b.append("SELECT * FROM ").append(dbTableName).append(" WHERE ").append(DataTableColumns.ID)
           .append("=?").append(" group by ").append(DataTableColumns.ID).append(" having ")
-          .append(DataTableColumns.TIMESTAMP).append("=max(").append(DataTableColumns.TIMESTAMP)
-          .append(")").append(" and ").append(DataTableColumns.SAVED).append("=?");
+          .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append("=max(").append(DataTableColumns.SAVEPOINT_TIMESTAMP)
+          .append(")").append(" and ").append(DataTableColumns.SAVEPOINT_TYPE).append("=?");
 
       String[] selectionArgs = new String[] { instanceId, "COMPLETE" };
       Cursor c = null;
@@ -269,7 +269,7 @@ public class SubmissionProvider extends CommonContentProvider {
                 putElementValue(values, defn, obj);
               }
 
-            } else if (columnName.equals(DataTableColumns.TIMESTAMP)) {
+            } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
               timestamp = c.getLong(i);
             } else if (columnName.equals(DataTableColumns.INSTANCE_NAME)) {
               instanceName = c.getString(i);
@@ -431,7 +431,7 @@ public class SubmissionProvider extends CommonContentProvider {
 
                 // we may want to track incomplete or partial submissions in the
                 // future...
-                v = d.createElement(XML_DEFAULT_NAMESPACE, "saved");
+                v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointType");
                 v.addChild(0, Node.TEXT, "COMPLETE");
                 meta.addChild(idx++, Node.ELEMENT, v);
                 meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);

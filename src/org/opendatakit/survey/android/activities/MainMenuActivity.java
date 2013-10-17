@@ -44,6 +44,7 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.JQueryODKView;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
@@ -1020,7 +1021,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 //        setSectionScreenState(null,null);
 //        setAuxillaryHash(null);
 //        webkitView.loadPage();
-        invalidateOptionsMenu();
+        levelSafeInvalidateOptionsMenu();
       }
     });
   }
@@ -1054,7 +1055,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       frags.setVisibility(View.VISIBLE);
       wkt.setVisibility(View.GONE);
     }
-    invalidateOptionsMenu();
+    levelSafeInvalidateOptionsMenu();
   }
 
   public void swapToFragmentView(ScreenList newNestedView) {
@@ -1152,6 +1153,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       trans.disallowAddToBackStack();
     }
     trans.commit();
+    levelSafeInvalidateOptionsMenu();
+  }
+
+  /**
+   * Android Lint complains, but we are using Sherlock,
+   * so this does exist for down-level devices.
+   */
+  @SuppressLint("NewApi")
+  private void levelSafeInvalidateOptionsMenu() {
     invalidateOptionsMenu();
   }
 
