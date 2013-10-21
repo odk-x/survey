@@ -37,6 +37,7 @@ import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
+import org.opendatakit.common.android.database.DataModelDatabaseHelper.IdInstanceNameStruct;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
@@ -203,6 +204,9 @@ public class SubmissionProvider extends CommonContentProvider {
       // get map of (elementKey -> ColumnDefinition)
       Map<String, ColumnDefinition> defns = DataModelDatabaseHelper.getColumnDefinitions(db,
           tableId);
+      // get the id struct
+      IdInstanceNameStruct ids = DataModelDatabaseHelper.getIds(db, formId);
+
       HashMap<String, Object> values = new HashMap<String, Object>();
 
       // issue query to retrieve the instanceId
@@ -229,6 +233,9 @@ public class SubmissionProvider extends CommonContentProvider {
             String columnName = c.getColumnName(i);
             ColumnDefinition defn = defns.get(columnName);
             if (defn != null && !c.isNull(i)) {
+              if ( defn.elementName == ids.instanceName ) {
+                instanceName = c.getString(i);
+              }
               // user-defined column
               Log.i(t, "element type: " + defn.elementType);
               if (defn.elementType.equals("string")) {
@@ -271,8 +278,6 @@ public class SubmissionProvider extends CommonContentProvider {
 
             } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
               timestamp = c.getLong(i);
-            } else if (columnName.equals(DataTableColumns.INSTANCE_NAME)) {
-              instanceName = c.getString(i);
             } else if (columnName.equals(DataTableColumns.FORM_ID)) {
               formStateId = c.getString(i);
             }
@@ -418,10 +423,12 @@ public class SubmissionProvider extends CommonContentProvider {
                 meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
                 // these are extra metadata tags...
-                v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
-                v.addChild(0, Node.TEXT, instanceName);
-                meta.addChild(idx++, Node.ELEMENT, v);
-                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+                if ( instanceName != null ) {
+                  v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
+                  v.addChild(0, Node.TEXT, instanceName);
+                  meta.addChild(idx++, Node.ELEMENT, v);
+                  meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+                }
 
                 // these are extra metadata tags...
                 v = d.createElement(XML_DEFAULT_NAMESPACE, "formID");
@@ -547,7 +554,9 @@ public class SubmissionProvider extends CommonContentProvider {
             wrapper.put("data", values);
             wrapper.put("metadata", new HashMap<String, Object>());
             HashMap<String, Object> elem = (HashMap<String, Object>) wrapper.get("metadata");
-            elem.put("instanceName", instanceName);
+            if ( instanceName != null ) {
+              elem.put("instanceName", instanceName);
+            }
             elem.put("saved", "COMPLETE");
             String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
                 .format(new Date(timestamp));
