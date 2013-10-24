@@ -38,10 +38,6 @@ public class JQueryODKView extends FrameLayout {
     FrameLayout.LayoutParams fp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT,
         LayoutParams.MATCH_PARENT);
     addView(mWebView, fp);
-
-    InputMethodManager imm = (InputMethodManager) context
-        .getSystemService(Context.INPUT_METHOD_SERVICE);
-    imm.showSoftInput(mWebView, InputMethodManager.SHOW_IMPLICIT);
   }
 
   public void doActionResult(String pageWaitingForData, String pathWaitingForData, String actionWaitingForData, String jsonObject ) {

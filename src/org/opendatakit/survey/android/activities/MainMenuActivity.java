@@ -911,6 +911,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     FragmentManager mgr = getSupportFragmentManager();
     int idxLast = mgr.getBackStackEntryCount()-2;
     if (idxLast < 0) {
+      Intent result = new Intent();
+      // TODO: unclear what to put in the result intent...
+      this.setResult(RESULT_OK, result);
       finish();
     } else {
       BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
