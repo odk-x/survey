@@ -35,6 +35,7 @@ import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
+import org.opendatakit.survey.android.fragments.InstanceUploaderFormChooserListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
@@ -92,7 +93,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
   };
 
   // Extra returned from gp activity
@@ -128,10 +129,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final int MENU_PREFERENCES = Menu.FIRST + 3;
   private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
   private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
-  private static final int MENU_PUSH_INSTANCES = Menu.FIRST + 6;
+  private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
+  private static final int MENU_PUSH_INSTANCES = Menu.FIRST + 7;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
+  private static final int INTERNAL_ACTIVITY_CODE = 21;
 
   private static final boolean EXIT = true;
 
@@ -379,8 +382,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     wkt.loadPage();
 
     if (nestedScreen == ScreenList.FORM_CHOOSER || nestedScreen == ScreenList.FORM_DOWNLOADER
-        || nestedScreen == ScreenList.FORM_DELETER || nestedScreen == ScreenList.INSTANCE_UPLOADER
-        || nestedScreen == ScreenList.COPY_EXPANSION_FILES) {
+        || nestedScreen == ScreenList.FORM_DELETER || nestedScreen == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
+        || nestedScreen == ScreenList.INSTANCE_UPLOADER || nestedScreen == ScreenList.COPY_EXPANSION_FILES) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
@@ -759,66 +762,58 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     setContentView(R.layout.main_screen);
 
     ActionBar actionBar = getSupportActionBar();
-    actionBar.setIcon(R.drawable.odk_logo);
-    actionBar.setDisplayShowTitleEnabled(false);
-    actionBar.setDisplayShowHomeEnabled(false);
-    actionBar.setDisplayHomeAsUpEnabled(false);
+    actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
+    actionBar.show();
   }
 
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
-    boolean formIsLoaded = (getInstanceId() != null && getCurrentForm() != null);
 
+    int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
-    item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
-    item.setIcon(R.drawable.forms).setShowAsAction(
-        MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-    if (currentScreen != ScreenList.WEBKIT && formIsLoaded) {
-      // we are editing something...
-      item = menu.add(Menu.NONE, MENU_EDIT_INSTANCE, Menu.NONE, getString(R.string.review_data));
-      item.setIcon(R.drawable.form).setShowAsAction(
-          MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-    }
+    if (currentScreen != ScreenList.WEBKIT) {
+      ActionBar actionBar = getSupportActionBar();
+      actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
+      actionBar.show();
 
-    if (currentScreen == ScreenList.MAIN_SCREEN) {
+      item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
+      item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
+
       boolean get = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_GET_BLANK, true);
       if (get) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
-        item.setIcon(R.drawable.down_arrow).setShowAsAction(
-            MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+        item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
+      }
+
+      boolean send = mAdminPreferences
+          .getBoolean(AdminPreferencesActivity.KEY_SEND_FINALIZED, true);
+      if (send) {
+        item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
+        item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
       }
 
       boolean manage = mAdminPreferences
           .getBoolean(AdminPreferencesActivity.KEY_MANAGE_FORMS, true);
       if (manage) {
         item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
-        item.setIcon(R.drawable.trash).setShowAsAction(
-            MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
+        item.setIcon(R.drawable.trash).setShowAsAction(showOption);
       }
 
+      boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS,
+          true);
+      if (settings) {
+        item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
+            getString(R.string.general_preferences));
+        item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
+      }
+      item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
+          getString(R.string.admin_preferences));
+      item.setIcon(R.drawable.ic_action_device_access_accounts).setShowAsAction(showOption);
     } else {
-      boolean send = mAdminPreferences
-          .getBoolean(AdminPreferencesActivity.KEY_SEND_FINALIZED, true);
-      if (send) {
-        item = menu.add(Menu.NONE, MENU_PUSH_INSTANCES, Menu.NONE, getString(R.string.send_data));
-        item.setIcon(R.drawable.up_arrow).setShowAsAction(
-            MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-      }
+      ActionBar actionBar = getSupportActionBar();
+      actionBar.hide();
     }
-
-    boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS,
-        true);
-    if (settings) {
-      item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
-          getString(R.string.general_preferences));
-      item.setIcon(android.R.drawable.ic_menu_preferences).setShowAsAction(
-          MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
-    }
-    item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
-        getString(R.string.admin_preferences));
-    item.setIcon(R.drawable.ic_menu_login).setShowAsAction(
-        MenuItem.SHOW_AS_ACTION_IF_ROOM | MenuItem.SHOW_AS_ACTION_WITH_TEXT);
 
     return true;
   }
@@ -837,8 +832,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     } else if (item.getItemId() == MENU_EDIT_INSTANCE) {
       swapToFragmentView(ScreenList.WEBKIT);
       return true;
-    } else if (item.getItemId() == MENU_PUSH_INSTANCES) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
+    } else if (item.getItemId() == MENU_PUSH_FORMS) {
+      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER);
       return true;
     } else if (item.getItemId() == MENU_PREFERENCES) {
       // PreferenceFragment missing from support library...
@@ -863,6 +858,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public void chooseForm(Uri formUri) {
+
+    Intent i = new Intent(Intent.ACTION_EDIT, formUri, this, MainMenuActivity.class);
+    startActivityForResult(i, INTERNAL_ACTIVITY_CODE);
+    return;
+    // TODO: launch as startActivityForResult()...
+
     /*
      * WAS: String action = getActivity().getIntent().getAction(); if
      * (Intent.ACTION_PICK.equals(action)) { // caller is waiting on a picked
@@ -870,12 +871,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
      * Intent().setData(formUri)); } else { startActivity(new
      * Intent(Intent.ACTION_EDIT, formUri)); }
      */
-
+/*
     boolean success = true;
     FragmentManager mgr = getSupportFragmentManager();
-
-    InstanceUploaderListFragment lf = (InstanceUploaderListFragment) mgr
-        .findFragmentById(InstanceUploaderListFragment.ID);
 
     JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
     // webkitView.setActivity(this);
@@ -893,14 +891,39 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       setInstanceId(null);
       clearSectionScreenState();
       setAuxillaryHash(null);
-      if (lf != null) {
-        lf.changeForm(newForm);
-      }
       webkitView.loadPage();
     }
 
     if (success) {
       swapToFragmentView(ScreenList.WEBKIT);
+    } else {
+      Toast.makeText(this, getString(R.string.form_load_error), Toast.LENGTH_SHORT).show();
+    }
+    */
+  }
+
+  @Override
+  public void chooseInstanceUploaderForm(Uri formUri) {
+    boolean success = true;
+
+    JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
+
+    FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+
+    // create this from the datastore
+    if (newForm == null) {
+      success = false;
+    } else {
+      // always loose the current instance...
+      setCurrentForm(newForm);
+      setInstanceId(null);
+      clearSectionScreenState();
+      setAuxillaryHash(null);
+      webkitView.clearPage();
+    }
+
+    if (success) {
+      swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
     } else {
       Toast.makeText(this, getString(R.string.form_load_error), Toast.LENGTH_SHORT).show();
     }
@@ -1101,13 +1124,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         f = new FormDownloadListFragment();
       }
       newCurrentView = ScreenList.MAIN_SCREEN;
+    } else if (newNestedView == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER) {
+      f = mgr.findFragmentById(InstanceUploaderFormChooserListFragment.ID);
+      if (f == null) {
+        f = new InstanceUploaderFormChooserListFragment();
+      }
+      newCurrentView = ScreenList.MAIN_SCREEN;
     } else if (newNestedView == ScreenList.INSTANCE_UPLOADER) {
       f = mgr.findFragmentById(InstanceUploaderListFragment.ID);
       if (f == null) {
         f = new InstanceUploaderListFragment();
       }
       ((InstanceUploaderListFragment) f).changeForm(getCurrentForm());
-      newCurrentView = ScreenList.WEBKIT;
+      newCurrentView = ScreenList.MAIN_SCREEN;
     } else if (newNestedView == ScreenList.WEBKIT) {
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {

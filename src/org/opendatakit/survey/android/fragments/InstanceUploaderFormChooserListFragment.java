@@ -41,14 +41,16 @@ import android.widget.TextView;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormChooserListFragment extends ListFragment implements
+public class InstanceUploaderFormChooserListFragment extends ListFragment implements
     LoaderManager.LoaderCallbacks<Cursor> {
 
   @SuppressWarnings("unused")
-  private static final String t = "FormChooserListFragment";
-  private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
+  private static final String t = "InstanceUploaderFormChooserListFragment";
+  private static final int INSTANCE_UPLOADER_FORM_CHOOSER_LIST_LOADER = 0x04;
 
   public static final int ID = R.layout.form_chooser_list;
+
+  // keys for the data being persisted
 
   // data to persist across orientation changes
 
@@ -76,14 +78,16 @@ public class FormChooserListFragment extends ListFragment implements
     setListAdapter(mInstances);
     // getListView().setBackgroundColor(Color.WHITE);
 
-    getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
+    getLoaderManager().initLoader(INSTANCE_UPLOADER_FORM_CHOOSER_LIST_LOADER, null, this);
   }
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     view = inflater.inflate(ID, container, false);
+
     TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
+    tv.setText(R.string.choose_form_to_upload);
+
     return view;
   }
 
@@ -92,7 +96,7 @@ public class FormChooserListFragment extends ListFragment implements
     super.onResume();
 
     TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
+    tv.setText(R.string.choose_form_to_upload);
   }
 
   @Override
@@ -111,7 +115,7 @@ public class FormChooserListFragment extends ListFragment implements
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
             ((ODKActivity) getActivity()).getAppName()), formId);
 
-    ((ODKActivity) getActivity()).chooseForm(formUri);
+    ((ODKActivity) getActivity()).chooseInstanceUploaderForm(formUri);
   }
 
   @Override

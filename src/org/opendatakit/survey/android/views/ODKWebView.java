@@ -140,6 +140,29 @@ public class ODKWebView extends WebView {
     }
   }
 
+  public synchronized void clearPage() {
+    /**
+     * NOTE: Reload the web framework only if it has changed.
+     */
+    return;/*
+    log.i(t, "clearPage: current loadPageUrl: " + loadPageUrl);
+    String baseUrl = activity.getUrlBaseLocation(isLoadPageFrameworkFinished && loadPageUrl != null);
+
+    if ( baseUrl != null ) {
+      resetLoadPageStatus(baseUrl);
+
+      log.i(t, "clearPage: full reload: " + baseUrl);
+
+      loadUrl(baseUrl);
+    } else if ( isLoadPageFrameworkFinished ) {
+      log.i(t,  "clearPage: delegate to gotoUrlHash('')");
+      gotoUrlHash("");
+    } else {
+      log.w(t, "clearPage: framework did not load -- cannot load anything!");
+    }
+    */
+  }
+
   synchronized void frameworkHasLoaded() {
     isLoadPageFrameworkFinished = true;
     if (!isLoadPageFinished && !isJavascriptFlushActive) {

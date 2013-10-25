@@ -558,7 +558,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     Uri baseUri;
     if (currentForm != null) {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-          + currentForm.tableId);
+          + currentForm.formId);
     } else {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
           ((ODKActivity) getActivity()).getAppName());

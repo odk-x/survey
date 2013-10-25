@@ -65,12 +65,10 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   // keys for the data being persisted
 
   private static final String DIALOG_STATE = "dialogState";
-  private static final String SYNC_MSG_KEY = "syncMsgKey";
   private static final String SELECTED = "selected";
 
   // data to persist across orientation changes
 
-  private String mSyncStatusText = "";
   private DialogState mDialogState = DialogState.None;
   private ArrayList<String> mSelected = new ArrayList<String>();
 
@@ -123,10 +121,6 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     });
 
     if (savedInstanceState != null) {
-      if (savedInstanceState.containsKey(SYNC_MSG_KEY)) {
-        mSyncStatusText = savedInstanceState.getString(SYNC_MSG_KEY);
-      }
-
       // to restore alert dialog.
       if (savedInstanceState.containsKey(DIALOG_STATE)) {
         mDialogState = DialogState.valueOf(savedInstanceState.getString(DIALOG_STATE));
@@ -141,7 +135,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     }
 
     TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(mSyncStatusText);
+    tv.setText(R.string.select_form_to_delete);
 
     mDeleteButton.setEnabled(!(mSelected.size() == 0));
 
@@ -156,7 +150,6 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       selectedArray[i] = mSelected.get(i);
     }
     outState.putStringArray(SELECTED, selectedArray);
-    outState.putString(SYNC_MSG_KEY, mSyncStatusText);
     outState.putString(DIALOG_STATE, mDialogState.name());
   }
 
@@ -186,7 +179,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     f.establishDeleteFormsListener(this);
 
     TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(mSyncStatusText);
+    tv.setText(R.string.select_form_to_delete);
 
     if (mDialogState == DialogState.Confirmation) {
       restoreConfirmationDialog();

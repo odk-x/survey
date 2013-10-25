@@ -164,4 +164,8 @@
 <string name="loading_video">Loading video &#8230;</string>
 <string name="application">(Application)</string>
 <string name="invalid_app_name">Invalid application name: %1$s</string>
+<string name="select_form_to_edit">Select the form to open</string>
+<string name="choose_form_to_upload">Choose form data to upload</string>
+<string name="choose_form_instance_to_upload">Select the instances to upload</string>
+<string name="select_form_to_delete">Select the form definition to delete</string>
 </resources>

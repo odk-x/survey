@@ -29,6 +29,7 @@
     <application
         android:name="org.opendatakit.survey.android.application.Survey"
         android:icon="@drawable/snotes"
+      	android:logo="@drawable/odk_logo"
         android:label="@string/app_name"
         android:theme="@style/Survey"
         android:installLocation="auto"

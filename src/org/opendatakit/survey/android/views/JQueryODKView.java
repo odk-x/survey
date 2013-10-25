@@ -55,4 +55,10 @@ public class JQueryODKView extends FrameLayout {
     mWebView.requestFocus();
   }
 
+  /**
+   * Clear the current form (reset to framework)...
+   */
+  public void clearPage() {
+    mWebView.clearPage();
+  }
 }

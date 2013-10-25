@@ -97,6 +97,8 @@ public interface ODKActivity {
   // for FormChooserListFragment
   public void chooseForm(Uri formUri);
 
+  // for InstanceUploaderFormChooserListFragment
+  public void chooseInstanceUploaderForm(Uri formUri);
   /**
    * Use the Activity implementation of this.
    *
