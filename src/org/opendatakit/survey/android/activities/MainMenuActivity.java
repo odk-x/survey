@@ -117,8 +117,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
-  private static final String CURRENT_SCREEN = "currentScreen";
-  private static final String NESTED_SCREEN = "nestedScreen";
+  private static final String CURRENT_FRAGMENT = "currentFragment";
   private static final String PROCESS_APK_EXPANSION_FILES = "processAPKExpansionFiles";
 
   // menu options
@@ -130,7 +129,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
   private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
   private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
-  private static final int MENU_PUSH_INSTANCES = Menu.FIRST + 7;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
@@ -271,8 +269,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
    * Member variables that are saved and restored across orientation changes.
    */
 
-  private ScreenList currentScreen = ScreenList.MAIN_SCREEN;
-  private ScreenList nestedScreen = ScreenList.FORM_CHOOSER;
+  private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
 
   private boolean mProcessAPKExpansionFiles = false;
 
@@ -336,8 +333,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (actionWaitingForData != null) {
       outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
     }
-    outState.putString(CURRENT_SCREEN, currentScreen.name());
-    outState.putString(NESTED_SCREEN, nestedScreen.name());
+    outState.putString(CURRENT_FRAGMENT, currentFragment.name());
     outState.putBoolean(PROCESS_APK_EXPANSION_FILES, mProcessAPKExpansionFiles);
 
     if (getCurrentForm() != null) {
@@ -367,8 +363,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // whether we have can cancelled or completed update,
     // remember to not do the expansion files check next time through
     mProcessAPKExpansionFiles = false;
-    nestedScreen = ScreenList.valueOf(fragmentToShowNext);
-    swapToFragmentView(nestedScreen);
+    currentFragment = ScreenList.valueOf(fragmentToShowNext);
+    swapToFragmentView(currentFragment);
   }
 
   @Override
@@ -381,19 +377,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // reload the page...
     wkt.loadPage();
 
-    if (nestedScreen == ScreenList.FORM_CHOOSER || nestedScreen == ScreenList.FORM_DOWNLOADER
-        || nestedScreen == ScreenList.FORM_DELETER || nestedScreen == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
-        || nestedScreen == ScreenList.INSTANCE_UPLOADER || nestedScreen == ScreenList.COPY_EXPANSION_FILES) {
+    if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
+        || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
+        || currentFragment == ScreenList.INSTANCE_UPLOADER || currentFragment == ScreenList.COPY_EXPANSION_FILES) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
-    } else if (nestedScreen == ScreenList.WEBKIT) {
+    } else if (currentFragment == ScreenList.WEBKIT) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
       frags.setVisibility(View.GONE);
-    } else if (nestedScreen == ScreenList.CUSTOM_VIEW) {
+    } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
       shadow.setVisibility(View.VISIBLE);
       // shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
@@ -402,9 +398,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     FragmentManager mgr = this.getSupportFragmentManager();
     if (mgr.getBackStackEntryCount() == 0) {
-      swapToFragmentView(nestedScreen);
+      swapToFragmentView(currentFragment);
       // we are not recovering...
-      if ((nestedScreen != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles) {
+      if ((currentFragment != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles) {
         // no form files -- see if we can explode an APK Expansion file
         ArrayList<Map<String, Object>> files = Survey.getInstance().expansionFiles();
         if (files != null || Survey.debugAPKExpansionFile() != null) {
@@ -669,8 +665,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
               setInstanceId(null);
               setAuxillaryHash(null);
             }
-            currentScreen = ScreenList.WEBKIT;
-            nestedScreen = ScreenList.WEBKIT;
+            currentFragment = ScreenList.WEBKIT;
           } else {
             // cancel action if the form is not found...
             String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
@@ -710,12 +705,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ? savedInstanceState
           .getString(ACTION_WAITING_FOR_DATA) : null;
 
-      currentScreen = ScreenList
-          .valueOf(savedInstanceState.containsKey(CURRENT_SCREEN) ? savedInstanceState
-              .getString(CURRENT_SCREEN) : currentScreen.name());
-      nestedScreen = ScreenList
-          .valueOf(savedInstanceState.containsKey(NESTED_SCREEN) ? savedInstanceState
-              .getString(NESTED_SCREEN) : nestedScreen.name());
+      currentFragment = ScreenList
+          .valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ? savedInstanceState
+              .getString(CURRENT_FRAGMENT) : currentFragment.name());
       if (savedInstanceState.containsKey(PROCESS_APK_EXPANSION_FILES)) {
         mProcessAPKExpansionFiles = savedInstanceState.getBoolean(PROCESS_APK_EXPANSION_FILES);
       }
@@ -762,7 +754,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     setContentView(R.layout.main_screen);
 
     ActionBar actionBar = getSupportActionBar();
-    actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
+    actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO);
     actionBar.show();
   }
 
@@ -772,7 +764,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
-    if (currentScreen != ScreenList.WEBKIT) {
+    if (currentFragment != ScreenList.WEBKIT) {
       ActionBar actionBar = getSupportActionBar();
       actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
       actionBar.show();
@@ -861,45 +853,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     Intent i = new Intent(Intent.ACTION_EDIT, formUri, this, MainMenuActivity.class);
     startActivityForResult(i, INTERNAL_ACTIVITY_CODE);
-    return;
-    // TODO: launch as startActivityForResult()...
-
-    /*
-     * WAS: String action = getActivity().getIntent().getAction(); if
-     * (Intent.ACTION_PICK.equals(action)) { // caller is waiting on a picked
-     * form getActivity().setResult(Activity.RESULT_OK, new
-     * Intent().setData(formUri)); } else { startActivity(new
-     * Intent(Intent.ACTION_EDIT, formUri)); }
-     */
-/*
-    boolean success = true;
-    FragmentManager mgr = getSupportFragmentManager();
-
-    JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
-    // webkitView.setActivity(this);
-    FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri); // create
-                                                                                             // this
-    // from the
-    // datastore
-    FormIdStruct oldForm = getCurrentForm();
-    if (newForm == null) {
-      success = false;
-    } else if (oldForm != null && newForm.formPath.equals(oldForm.formPath)) {
-      // keep the same instance... just switch back to the WebKit view
-    } else {
-      setCurrentForm(newForm);
-      setInstanceId(null);
-      clearSectionScreenState();
-      setAuxillaryHash(null);
-      webkitView.loadPage();
-    }
-
-    if (success) {
-      swapToFragmentView(ScreenList.WEBKIT);
-    } else {
-      Toast.makeText(this, getString(R.string.form_load_error), Toast.LENGTH_SHORT).show();
-    }
-    */
   }
 
   @Override
@@ -935,7 +888,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     int idxLast = mgr.getBackStackEntryCount()-2;
     if (idxLast < 0) {
       Intent result = new Intent();
-      // TODO: unclear what to put in the result intent...
+      // If we are in a WEBKIT, return the instanceId and the savepoint_type...
+      if ( this.getInstanceId() != null && currentFragment == ScreenList.WEBKIT ) {
+        result.putExtra("instanceId", getInstanceId());
+        // in this case, the savepoint_type is null (a checkpoint).
+      }
       this.setResult(RESULT_OK, result);
       finish();
     } else {
@@ -1062,8 +1019,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     frags.setVisibility(View.GONE);
     wkt.setVisibility(View.GONE);
     shadow.setVisibility(View.VISIBLE);
-    currentScreen = ScreenList.WEBKIT;
-    nestedScreen = ScreenList.CUSTOM_VIEW;
+    currentFragment = ScreenList.CUSTOM_VIEW;
   }
 
   @Override
@@ -1073,76 +1029,62 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     View wkt = findViewById(R.id.webkit_view);
     shadow.setVisibility(View.GONE);
     shadow.removeAllViews();
-    if (currentScreen == ScreenList.WEBKIT) {
-      frags.setVisibility(View.GONE);
-      wkt.setVisibility(View.VISIBLE);
-      nestedScreen = ScreenList.WEBKIT;
-    } else {
-      frags.setVisibility(View.VISIBLE);
-      wkt.setVisibility(View.GONE);
-    }
+    frags.setVisibility(View.GONE);
+    wkt.setVisibility(View.VISIBLE);
+    currentFragment = ScreenList.WEBKIT;
     levelSafeInvalidateOptionsMenu();
   }
 
-  public void swapToFragmentView(ScreenList newNestedView) {
-    Log.i(t, "swapToFragmentView: " + newNestedView.toString());
-    ScreenList newCurrentView;
+  public void swapToFragmentView(ScreenList newFragment) {
+    Log.i(t, "swapToFragmentView: " + newFragment.toString());
     FragmentManager mgr = getSupportFragmentManager();
     Fragment f;
-    if (newNestedView == ScreenList.MAIN_SCREEN) {
+    if (newFragment == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");
-    } else if (newNestedView == ScreenList.CUSTOM_VIEW) {
+    } else if (newFragment == ScreenList.CUSTOM_VIEW) {
       Log.w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {
         f = new WebViewFragment();
       }
-      newNestedView = ScreenList.WEBKIT;
-      newCurrentView = ScreenList.WEBKIT;
-    } else if (newNestedView == ScreenList.FORM_CHOOSER) {
+      newFragment = ScreenList.WEBKIT;
+    } else if (newFragment == ScreenList.FORM_CHOOSER) {
       f = mgr.findFragmentById(FormChooserListFragment.ID);
       if (f == null) {
         f = new FormChooserListFragment();
       }
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.COPY_EXPANSION_FILES) {
+    } else if (newFragment == ScreenList.COPY_EXPANSION_FILES) {
       f = mgr.findFragmentById(CopyExpansionFilesFragment.ID);
       if (f == null) {
         f = new CopyExpansionFilesFragment();
       }
-      ((CopyExpansionFilesFragment) f).setFragmentToShowNext(nestedScreen.name());
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.FORM_DELETER) {
+      ((CopyExpansionFilesFragment) f).setFragmentToShowNext(currentFragment.name());
+    } else if (newFragment == ScreenList.FORM_DELETER) {
       f = mgr.findFragmentById(FormDeleteListFragment.ID);
       if (f == null) {
         f = new FormDeleteListFragment();
       }
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.FORM_DOWNLOADER) {
+    } else if (newFragment == ScreenList.FORM_DOWNLOADER) {
       f = mgr.findFragmentById(FormDownloadListFragment.ID);
       if (f == null) {
         f = new FormDownloadListFragment();
       }
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER) {
+    } else if (newFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER) {
       f = mgr.findFragmentById(InstanceUploaderFormChooserListFragment.ID);
       if (f == null) {
         f = new InstanceUploaderFormChooserListFragment();
       }
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.INSTANCE_UPLOADER) {
+    } else if (newFragment == ScreenList.INSTANCE_UPLOADER) {
       f = mgr.findFragmentById(InstanceUploaderListFragment.ID);
       if (f == null) {
         f = new InstanceUploaderListFragment();
       }
       ((InstanceUploaderListFragment) f).changeForm(getCurrentForm());
-      newCurrentView = ScreenList.MAIN_SCREEN;
-    } else if (newNestedView == ScreenList.WEBKIT) {
+    } else if (newFragment == ScreenList.WEBKIT) {
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {
         f = new WebViewFragment();
       }
-      newCurrentView = ScreenList.WEBKIT;
     } else {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
@@ -1152,26 +1094,25 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     View wkt = findViewById(R.id.webkit_view);
     shadow.setVisibility(View.GONE);
     shadow.removeAllViews();
-    if (newNestedView == ScreenList.WEBKIT) {
+    if (newFragment == ScreenList.WEBKIT) {
       frags.setVisibility(View.GONE);
       wkt.setVisibility(View.VISIBLE);
     } else {
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
     }
-    currentScreen = newCurrentView;
-    nestedScreen = newNestedView;
+    currentFragment = newFragment;
     BackStackEntry entry = null;
     for (int i = 0; i < mgr.getBackStackEntryCount(); ++i) {
       BackStackEntry e = mgr.getBackStackEntryAt(i);
-      if (e.getName().equals(nestedScreen.name())) {
+      if (e.getName().equals(currentFragment.name())) {
         entry = e;
         break;
       }
     }
     if (entry != null) {
       // flush backward, including the screen want to go back to
-      mgr.popBackStackImmediate(nestedScreen.name(), FragmentManager.POP_BACK_STACK_INCLUSIVE);
+      mgr.popBackStackImmediate(currentFragment.name(), FragmentManager.POP_BACK_STACK_INCLUSIVE);
     }
 
     // add transaction to show the screen we want
@@ -1179,8 +1120,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     trans.replace(R.id.main_content, f);
     // never put the copy-expansion-files fragment on the
     // back stack it is always a transient screen.
-    if (nestedScreen != ScreenList.COPY_EXPANSION_FILES) {
-      trans.addToBackStack(nestedScreen.name());
+    if (currentFragment != ScreenList.COPY_EXPANSION_FILES) {
+      trans.addToBackStack(currentFragment.name());
     } else {
       trans.disallowAddToBackStack();
     }
@@ -1357,24 +1298,32 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public void saveAllChangesCompleted(String instanceId, final boolean asComplete) {
-    hideWebkitView();
+    Intent result = new Intent();
+    result.putExtra("instanceId", instanceId);
+    result.putExtra("savepoint_type", "COMPLETE");
+    // TODO: unclear what to put in the result intent...
+    this.setResult(RESULT_OK, result);
+    finish();
   }
 
   @Override
   public void saveAllChangesFailed(String instanceId) {
-    // probably keep the webkit view?
-    // hideWebkitView();
+    // should we message anything?
   }
 
   @Override
   public void ignoreAllChangesCompleted(String instanceId) {
-    hideWebkitView();
+    Intent result = new Intent();
+    result.putExtra("instanceId", instanceId);
+    result.putExtra("savepoint_type", "INCOMPLETE");
+    // TODO: unclear what to put in the result intent...
+    this.setResult(RESULT_OK, result);
+    finish();
   }
 
   @Override
   public void ignoreAllChangesFailed(String instanceId) {
-    // probably keep the webkit view?
-    // hideWebkitView();
+    // should we message anything?
   }
 
   /**

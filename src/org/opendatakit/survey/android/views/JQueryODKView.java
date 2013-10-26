@@ -16,7 +16,6 @@ package org.opendatakit.survey.android.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.FrameLayout;
 
 /**
