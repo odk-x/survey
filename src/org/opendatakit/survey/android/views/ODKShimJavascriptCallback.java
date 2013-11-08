@@ -334,6 +334,34 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
+  public void setSessionVariable( String refId, String elementPath, String jsonValue ) {
+    if ( mWebView == null ) {
+      log.w("shim", "setSessionVariable -- interface removed");
+      return;
+    }
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: setSessionVariable(" + refId + ", " + elementPath + ",...)");
+      return;
+    }
+    log.d("shim", "DO: setSessionVariable(" + refId + ", " + elementPath + ",...)");
+    mActivity.setSessionVariable(elementPath, jsonValue);
+  }
+
+  // @JavascriptInterface
+  public String getSessionVariable( String refId, String elementPath ) {
+    if ( mWebView == null ) {
+      log.w("shim", "getSessionVariable -- interface removed");
+      return null;
+    }
+    if ( !mActivity.getRefId().equals(refId) ) {
+      log.w("shim", "IGNORED: getSessionVariable(" + refId + ", " + elementPath + ")");
+      return null;
+    }
+    log.d("shim", "DO: getSessionVariable(" + refId + ", " + elementPath + ")");
+    return mActivity.getSessionVariable(elementPath);
+  }
+
+  // @JavascriptInterface
   public void frameworkHasLoaded(String refId, boolean outcome) {
     if ( mWebView == null ) {
       log.w("shim", "frameworkHasLoaded -- interface removed");

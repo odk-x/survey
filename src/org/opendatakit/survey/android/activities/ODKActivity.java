@@ -73,6 +73,10 @@ public interface ODKActivity {
 
   public String popSectionStack();
 
+  public void setSessionVariable( String elementPath, String jsonValue );
+
+  public String getSessionVariable( String elementPath );
+
   public void saveAllChangesCompleted(String instanceId, boolean asComplete);
 
   public void saveAllChangesFailed(String instanceId);
