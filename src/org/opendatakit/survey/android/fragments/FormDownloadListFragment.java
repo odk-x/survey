@@ -75,7 +75,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	private static final String FORMDETAIL_KEY = "formdetailkey";
 	private static final String FORMID_DISPLAY = "formiddisplay";
 
-	// keys for the data being persisted
+	// keys for the data being retained
 
 	private static final String TOGGLED_KEY = "toggled";
 	private static final String DOWNLOAD_ENABLED = "downloadEnabled";
@@ -85,7 +85,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	private static final String DIALOG_STATE = "dialogState";
 	private static final String FORMLIST = "formlist";
 
-	// data to persist across orientation changes
+	// data to retain across orientation changes
 
 	private boolean mToggled = false;
 	private boolean mDownloadEnabled = false;
@@ -95,7 +95,7 @@ public class FormDownloadListFragment extends ListFragment implements
 	private DialogState mDialogState = DialogState.None;
 	private ArrayList<HashMap<String, String>> mFormList = new ArrayList<HashMap<String, String>>();
 
-	// data that is not persisted
+	// data that is not retained
 
 	private Button mDownloadButton;
 	private Button mToggleButton;

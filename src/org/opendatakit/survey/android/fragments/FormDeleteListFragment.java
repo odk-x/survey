@@ -62,17 +62,17 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     Confirmation, None
   };
 
-  // keys for the data being persisted
+  // keys for the data being retained
 
   private static final String DIALOG_STATE = "dialogState";
   private static final String SELECTED = "selected";
 
-  // data to persist across orientation changes
+  // data to retain across orientation changes
 
   private DialogState mDialogState = DialogState.None;
   private ArrayList<String> mSelected = new ArrayList<String>();
 
-  // data that is not persisted
+  // data that is not retained
 
   private Button mDeleteButton;
 

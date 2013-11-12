@@ -75,7 +75,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     Progress, Alert, None
   };
 
-  // keys for the data being persisted
+  // keys for the data being retained
 
   private static final String BUNDLE_SELECTED_ITEMS_KEY = "selected_items";
   private static final String BUNDLE_TOGGLED_KEY = "toggled";
@@ -86,7 +86,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private static final String URL = "url";
   private static final String FORM_URI = "formUri";
 
-  // data to persist across orientation changes
+  // data to retain across orientation changes
 
   private ArrayList<String> mSelected = new ArrayList<String>();
   private boolean mToggled = false;
@@ -97,7 +97,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private URI mUrl;
   private FormIdStruct currentForm = null; // via uri
 
-  // data that is not persisted
+  // data that is not retained
 
   private Button mUploadButton;
   private Button mToggleButton;

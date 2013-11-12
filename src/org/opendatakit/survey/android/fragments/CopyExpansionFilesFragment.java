@@ -47,21 +47,21 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
     Progress, Alert, None
   };
 
-  // keys for the data being persisted
+  // keys for the data being retained
 
   private static final String DIALOG_TITLE = "dialogTitle";
   private static final String DIALOG_MSG = "dialogMsg";
   private static final String DIALOG_STATE = "dialogState";
   private static final String FRAGMENT_TO_SHOW_NEXT = "fragmentToShowNext";
 
-  // data to persist across orientation changes
+  // data to retain across orientation changes
 
   private String mAlertTitle;
   private String mAlertMsg;
   private DialogState mDialogState = DialogState.None;
   private String mFragmentToShowNext;
 
-  // data that is not persisted
+  // data that is not retained
 
   private View view;
 

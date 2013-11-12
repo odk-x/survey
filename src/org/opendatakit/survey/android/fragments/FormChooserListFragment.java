@@ -50,9 +50,9 @@ public class FormChooserListFragment extends ListFragment implements
 
   public static final int ID = R.layout.form_chooser_list;
 
-  // data to persist across orientation changes
+  // data to retain across orientation changes
 
-  // data that is not persisted
+  // data that is not retained
 
   private CursorAdapter mInstances;
   private View view;

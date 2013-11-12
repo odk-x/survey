@@ -216,7 +216,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
     if (mAPKExpansionPolicy.isUpdatedFromServer()) {
       // we got a response from the server, as opposed to a cached entry
       // (a cached entry does not have the expansion info).
-      // Gather and persist the expansion file info into the user
+      // Gather and retain the expansion file info into the user
       // preferences.
       File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
       f.mkdirs();
@@ -244,16 +244,16 @@ public class Survey extends Application implements LicenseCheckerCallback {
             .getInstance());
 
         settings.edit().putString(PreferencesActivity.KEY_APK_EXPANSIONS, expansionDefs).commit();
-        Log.i(t, "persisted the expansion file list (" + expansions.size() + " expansion files)");
+        Log.i(t, "retained the expansion file list (" + expansions.size() + " expansion files)");
       } catch (JsonGenerationException e) {
         e.printStackTrace();
-        Log.e(t, "unable to persist expected APK Expansion information");
+        Log.e(t, "unable to retain expected APK Expansion information");
       } catch (JsonMappingException e) {
         e.printStackTrace();
-        Log.e(t, "unable to persist expected APK Expansion information");
+        Log.e(t, "unable to retain expected APK Expansion information");
       } catch (IOException e) {
         e.printStackTrace();
-        Log.e(t, "unable to persist expected APK Expansion information");
+        Log.e(t, "unable to retain expected APK Expansion information");
       }
     }
   }
