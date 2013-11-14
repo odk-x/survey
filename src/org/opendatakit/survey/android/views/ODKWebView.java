@@ -10,6 +10,8 @@ import org.opendatakit.survey.android.application.Survey;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebSettings.PluginState;
@@ -32,7 +34,9 @@ import android.widget.TableLayout;
  */
 @SuppressLint("SetJavaScriptEnabled")
 public class ODKWebView extends WebView {
-  private static String t = "WrappedWebView";
+  private static String t = "ODKWebView";
+  private static final String BASE_STATE = "BASE_STATE";
+  private static final String JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD = "JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD";
 
   private final ODKActivity activity;
   private WebLogger log;
@@ -41,7 +45,48 @@ public class ODKWebView extends WebView {
   private boolean isLoadPageFrameworkFinished = false;
   private boolean isLoadPageFinished = false;
   private boolean isJavascriptFlushActive = false;
+  private boolean isFirstPageLoad = true;
   private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
+
+  // TODO: the interaction with the landing.js needs to be updated
+  // this is not 100% reliable because of that interaction.
+
+  @Override
+  protected Parcelable onSaveInstanceState () {
+    Parcelable baseState = super.onSaveInstanceState();
+    Bundle savedState = new Bundle();
+    if ( baseState != null ) {
+      savedState.putParcelable(BASE_STATE, baseState);
+    }
+    if ( javascriptRequestsWaitingForPageLoad.size() == 0 ) {
+      return savedState;
+    }
+    String[] waitQueue = new String[javascriptRequestsWaitingForPageLoad.size()];
+    int i = 0;
+    for ( String s : javascriptRequestsWaitingForPageLoad ) {
+      waitQueue[i++] = s;
+    }
+    savedState.putStringArray(JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD, waitQueue);
+    return savedState;
+  }
+
+  @Override
+  protected void onRestoreInstanceState (Parcelable state) {
+    Bundle savedState = (Bundle) state;
+    if ( savedState.containsKey(JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD)) {
+      String[] waitQueue = savedState.getStringArray(JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD);
+      for ( String s : waitQueue ) {
+        javascriptRequestsWaitingForPageLoad.add(s);
+      }
+    }
+    isFirstPageLoad = true;
+
+    if ( savedState.containsKey(BASE_STATE) ) {
+      Parcelable baseState = savedState.getParcelable(BASE_STATE);
+      super.onRestoreInstanceState(baseState);
+    }
+    loadPage();
+  }
 
   public ODKWebView(Context context) {
     super(context);
@@ -52,7 +97,7 @@ public class ODKWebView extends WebView {
     String appName = activity.getAppName();
     log = WebLogger.getLogger(appName);
 
-    setId(984732);
+    setId(98103);
     TableLayout.LayoutParams params = new TableLayout.LayoutParams();
     params.setMargins(7, 5, 7, 5);
     setLayoutParams(params);
@@ -95,6 +140,7 @@ public class ODKWebView extends WebView {
     // stomp on the shim object...
     shim = new ODKShimJavascriptCallback(this,activity);
     addJavascriptInterface(shim, "shim");
+    loadPage();
   }
 
   public final WebLogger getLogger() {
@@ -165,6 +211,7 @@ public class ODKWebView extends WebView {
       }
       isLoadPageFinished = true;
       isJavascriptFlushActive = false;
+      isFirstPageLoad = false;
     } else {
       log.i(t, "loadPageFinished: IGNORING completion event refId: " + activity.getRefId());
     }
@@ -175,9 +222,13 @@ public class ODKWebView extends WebView {
     isLoadPageFinished = false;
     loadPageUrl = baseUrl;
     isJavascriptFlushActive = false;
-    while (!javascriptRequestsWaitingForPageLoad.isEmpty()) {
-      String s = javascriptRequestsWaitingForPageLoad.removeFirst();
-      log.i(t, "resetLoadPageStatus: DISCARDING javascriptUrl: " + s);
+    // do not purge the list of actions if this is the first page load.
+    // keep them queued until they can be issued.
+    if ( !isFirstPageLoad ) {
+      while (!javascriptRequestsWaitingForPageLoad.isEmpty()) {
+        String s = javascriptRequestsWaitingForPageLoad.removeFirst();
+        log.i(t, "resetLoadPageStatus: DISCARDING javascriptUrl: " + s);
+      }
     }
   }
 
@@ -188,6 +239,7 @@ public class ODKWebView extends WebView {
    * NOTE: Only Invoked by ODKWebChromeClient.
    */
   void swapOffCustomView() {
+    log.i(t, "swapOffCustomView");
     activity.swapOffCustomView();
   }
 
@@ -200,6 +252,7 @@ public class ODKWebView extends WebView {
    * @param view
    */
   void swapToCustomView(View view) {
+    log.i(t, "swapToCustomView");
     activity.swapToCustomView(view);
   }
 

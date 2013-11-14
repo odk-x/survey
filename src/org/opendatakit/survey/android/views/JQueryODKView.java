@@ -39,18 +39,23 @@ public class JQueryODKView extends FrameLayout {
     addView(mWebView, fp);
   }
 
+  /**
+   * Communicates the results for an action callback to the webkit.
+   *
+   * @param pageWaitingForData
+   * @param pathWaitingForData
+   * @param actionWaitingForData
+   * @param jsonObject
+   */
   public void doActionResult(String pageWaitingForData, String pathWaitingForData, String actionWaitingForData, String jsonObject ) {
     // NOTE: this is asynchronous
     mWebView.loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
         + "','" + pathWaitingForData + "','" + actionWaitingForData + "', '" + jsonObject
         + "' )");
+    mWebView.requestFocus();
   }
 
-  /**
-   * Loads whatever page is currently active according to the ODKActivity...
-   */
-  public void loadPage() {
-    mWebView.loadPage();
+  public void requestPageFocus() {
     mWebView.requestFocus();
   }
 

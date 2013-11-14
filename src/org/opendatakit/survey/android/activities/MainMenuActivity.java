@@ -276,22 +276,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private Long trackingFormLastModifiedDate = 0L;
 
   /**
-   * Member variables that do not need to be perserved across orientation
+   * Member variables that do not need to be preserved across orientation
    * changes, etc.
    */
-  private PropertyManager mPropertyManager; // no need to preserve
 
-  private AlertDialog mAlertDialog; // no need to preserve
-
-  private SharedPreferences mAdminPreferences; // cached for efficiency only
-  // -- no need to preserve
-
-  private Bitmap mDefaultVideoPoster = null; // cached for efficiency only --
   // no need to preserve
+  private PropertyManager mPropertyManager;
 
-  private View mVideoProgressView = null; // cached for efficiency only -- no
+  // no need to preserve
+  private AlertDialog mAlertDialog;
 
-  // need to preserve
+  // cached for efficiency only -- no need to preserve
+  private SharedPreferences mAdminPreferences;
+
+  // cached for efficiency only -- no need to preserve
+  private Bitmap mDefaultVideoPoster = null;
+
+  // cached for efficiency only -- no need to preserve
+  private View mVideoProgressView = null;
 
   @Override
   protected void onPause() {
@@ -357,8 +359,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     JQueryODKView wkt = (JQueryODKView) findViewById(R.id.webkit_view);
-    // reload the page...
-    wkt.loadPage();
 
     if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
         || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
@@ -371,6 +371,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
+      wkt.requestPageFocus();
       frags.setVisibility(View.GONE);
     } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
       shadow.setVisibility(View.VISIBLE);
