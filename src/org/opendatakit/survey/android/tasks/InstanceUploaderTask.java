@@ -107,7 +107,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    *
    * @param urlString
    *          destination URL
-   * @param id
+   * @param id -- _ID in the InstanceColumns table.
    * @param instanceFilePath
    * @param httpclient
    *          - client connection
@@ -442,12 +442,13 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
         if (c.getCount() == 1 && c.moveToFirst()) {
 
-          String id = c.getString(c.getColumnIndex(DataTableColumns.ID));
+          String id = c.getString(c.getColumnIndex(InstanceColumns._ID));
+          String dataTableInstanceId = c.getString(c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
           c.close();
 
           FileSet instanceFiles;
           try {
-            instanceFiles = constructSubmissionFiles(fi, id);
+            instanceFiles = constructSubmissionFiles(fi, dataTableInstanceId);
             String urlString = fi.xmlSubmissionUrl;
             if (urlString == null) {
               urlString = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
@@ -464,15 +465,15 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
             }
           } catch (JsonParseException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + id + " :: details: "
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
                 + e.toString());
           } catch (JsonMappingException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + id + " :: details: "
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
                 + e.toString());
           } catch (IOException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + id + " :: details: "
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
                 + e.toString());
           }
         } else {

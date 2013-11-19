@@ -169,6 +169,12 @@ public class SubmissionProvider extends CommonContentProvider {
     return idx;
   }
 
+  /**
+   * The incoming URI is of the form:
+   * ..../appName/tableId/instanceId?formId=&formVersion=
+   *
+   * where instanceId is the DataTableColumns._ID
+   */
   @SuppressWarnings("unchecked")
   @Override
   public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
