@@ -42,13 +42,13 @@ public class FormIdStruct {
 
   public FormIdStruct(Uri formUri, File formDefFile, String formPath, String formId,
       String formVersion, String tableId, Date lastModifiedDate) {
+    this.appName = FormsColumns.extractAppNameFromFormsUri(formUri);
     this.formUri = formUri;
     this.formDefFile = formDefFile;
     this.formPath = formPath;
     this.formId = formId;
     this.formVersion = formVersion;
     this.tableId = tableId;
-    this.appName = ODKFileUtils.extractAppNameFromPath(formDefFile);
     this.lastDownloadDate = lastModifiedDate;
   }
 
@@ -64,13 +64,15 @@ public class FormIdStruct {
   }
 
   public static final FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
-    if (formUri == null)
+    if (formUri == null) {
       return null;
+    }
+    String appName = FormsColumns.extractAppNameFromFormsUri(formUri);
     Cursor c = null;
     try {
       c = resolver.query(formUri, null, null, null, null);
       if (c != null && c.getCount() == 1) {
-        int formMedia = c.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
+        int appRelativeFormMedia = c.getColumnIndex(FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH);
         int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
         int formId = c.getColumnIndex(FormsColumns.FORM_ID);
         int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
@@ -78,8 +80,12 @@ public class FormIdStruct {
         int date = c.getColumnIndex(FormsColumns.DATE);
 
         c.moveToFirst();
-        FormIdStruct newForm = new FormIdStruct(formUri, new File(c.getString(formMedia),
-            ODKFileUtils.FORMDEF_JSON_FILENAME), c.getString(formPath), c.getString(formId),
+
+        File formMediaDirectory = ODKFileUtils.asAppFile(appName, c.getString(appRelativeFormMedia));
+        File formDefJsonFile = new File(formMediaDirectory, ODKFileUtils.FORMDEF_JSON_FILENAME);
+
+        FormIdStruct newForm = new FormIdStruct(formUri, formDefJsonFile,
+            ODKFileUtils.getRelativeFormPath(appName, formDefJsonFile), c.getString(formId),
             c.getString(formVersion), c.getString(tableId), new Date(c.getLong(date)));
         return newForm;
       }

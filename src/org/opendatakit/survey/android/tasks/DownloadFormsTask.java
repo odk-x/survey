@@ -247,8 +247,8 @@ public class DownloadFormsTask extends
 					Cursor alreadyExists = null;
 					try {
 						String[] projection = { FormsColumns.FORM_ID,
-								FormsColumns.FORM_FILE_PATH,
-								FormsColumns.FORM_MEDIA_PATH,
+								FormsColumns.APP_RELATIVE_FORM_FILE_PATH,
+								FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH,
 								FormsColumns.FORM_VERSION };
 						//
 						// find if there is already a form definition with the
@@ -288,14 +288,14 @@ public class DownloadFormsTask extends
 						} else if (alreadyExists.getCount() > 0) {
 							// we found a match...
 							alreadyExists.moveToFirst();
-							int formFilePath = alreadyExists
-									.getColumnIndex(FormsColumns.FORM_FILE_PATH);
-							int formMediaPath = alreadyExists
-									.getColumnIndex(FormsColumns.FORM_MEDIA_PATH);
-							formPath = new File(
-									alreadyExists.getString(formFilePath));
-							mediaPath = new File(
-									alreadyExists.getString(formMediaPath));
+							int appRelativeFormFilePathIdx = alreadyExists
+									.getColumnIndex(FormsColumns.APP_RELATIVE_FORM_FILE_PATH);
+							int appRelativeFormMediaPathIdx = alreadyExists
+									.getColumnIndex(FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH);
+							formPath = ODKFileUtils.asAppFile(appName,
+									alreadyExists.getString(appRelativeFormFilePathIdx));
+							mediaPath = ODKFileUtils.asAppFile(appName,
+									alreadyExists.getString(appRelativeFormMediaPathIdx));
 						}
 					} finally {
 						if (alreadyExists != null) {

@@ -80,5 +80,4 @@ public class ProgressDialogFragment extends DialogFragment {
         loadingButtonListener);
     return mProgressDialog;
   }
-
 }

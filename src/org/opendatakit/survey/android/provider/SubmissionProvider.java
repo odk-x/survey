@@ -370,7 +370,7 @@ public class SubmissionProvider extends CommonContentProvider {
                   formSelectionArgs, null);
               if (fc != null && fc.moveToFirst() && fc.getCount() == 1) {
 
-                FormInfo f = new FormInfo(fc, false);
+                FormInfo f = new FormInfo(appName, fc, false);
                 fc.close();
 
                 String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
