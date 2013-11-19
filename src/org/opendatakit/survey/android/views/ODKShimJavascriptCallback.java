@@ -52,7 +52,7 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String getBaseUrl() {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.i(t, "getBaseUrl -- interface removed");
       return "";
     }
@@ -82,15 +82,16 @@ public class ODKShimJavascriptCallback {
    */
   // @JavascriptInterface
   public String getPlatformInfo() {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.i(t, "getPlatformInfo -- interface removed");
       return "{}";
     }
-    log("I","getPlatformInfo");
+    log("I", "getPlatformInfo");
     // @formatter:off
 	 return "{\"container\":\"Android\"," +
 		      "\"version\":\""	+ Build.VERSION.RELEASE + "\"," +
-            "\"appName\":\"" + mActivity.getAppName() + "\"}";
+            "\"appName\":\"" + mActivity.getAppName() + "\"," +
+	         "\"logLevel\":\"D\"}";
     // @formatter:on
   }
 
@@ -115,11 +116,11 @@ public class ODKShimJavascriptCallback {
    */
   // @JavascriptInterface
   public String getDatabaseSettings() {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.i(t, "getDatabaseSettings -- interface removed");
       return "{}";
     }
-    log("I","getDatabaseSettings");
+    log("I", "getDatabaseSettings");
     // maxSize is in bytes
     return "{\"shortName\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME
         + "\",\"version\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_VERSION
@@ -160,11 +161,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void clearInstanceId(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "clearInstanceId -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: clearInstanceId(" + refId + ")");
       return;
     }
@@ -173,19 +174,19 @@ public class ODKShimJavascriptCallback {
   }
 
   /**
-   * If formId is null, clears the instanceId.
-   * If formId matches the current formId, sets the instanceId.
+   * If formId is null, clears the instanceId. If formId matches the current
+   * formId, sets the instanceId.
    *
    * @param formId
    * @param instanceId
    */
   // @JavascriptInterface
   public void setInstanceId(String refId, String instanceId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "setInstanceId -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: setInstanceId(" + refId + ", " + instanceId + ")");
       return;
     }
@@ -195,11 +196,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String getInstanceId(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "getInstanceId -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: getInstanceId(" + refId + ")");
       return null;
     }
@@ -209,11 +210,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void pushSectionScreenState(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "pushSectionScreenState -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: pushSectionScreenState(" + refId + ")");
       return;
     }
@@ -223,12 +224,13 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void setSectionScreenState(String refId, String screenPath, String state) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "setSectionScreenState -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
+    if (!mActivity.getRefId().equals(refId)) {
+      log.w("shim", "IGNORED: setSectionScreenState(" + refId + ", " + screenPath + ", " + state
+          + ")");
       return;
     }
     log.d("shim", "DO: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
@@ -237,11 +239,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void clearSectionScreenState(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "clearSectionScreenState -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: clearSectionScreenState(" + refId + ")");
       return;
     }
@@ -251,11 +253,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String getControllerState(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "getControllerState -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: getControllerState(" + refId + ")");
       return null;
     }
@@ -265,11 +267,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String getScreenPath(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "getScreenPath -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: getScreenPath(" + refId + ")");
       return null;
     }
@@ -279,11 +281,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public boolean hasScreenHistory(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "hasScreenHistory -- interface removed");
       return false;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: hasScreenHistory(" + refId + ")");
       return false;
     }
@@ -293,11 +295,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String popScreenHistory(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "popScreenHistory -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: popScreenHistory(" + refId + ")");
       return null;
     }
@@ -307,11 +309,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public boolean hasSectionStack(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "hasSectionStack -- interface removed");
       return false;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: hasSectionStack(" + refId + ")");
       return false;
     }
@@ -321,11 +323,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String popSectionStack(String refId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "popSectionStack -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: popSectionStack(" + refId + ")");
       return null;
     }
@@ -334,12 +336,12 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public void setSessionVariable( String refId, String elementPath, String jsonValue ) {
-    if ( mWebView == null ) {
+  public void setSessionVariable(String refId, String elementPath, String jsonValue) {
+    if (mWebView == null) {
       log.w("shim", "setSessionVariable -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: setSessionVariable(" + refId + ", " + elementPath + ",...)");
       return;
     }
@@ -348,12 +350,12 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
-  public String getSessionVariable( String refId, String elementPath ) {
-    if ( mWebView == null ) {
+  public String getSessionVariable(String refId, String elementPath) {
+    if (mWebView == null) {
       log.w("shim", "getSessionVariable -- interface removed");
       return null;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: getSessionVariable(" + refId + ", " + elementPath + ")");
       return null;
     }
@@ -363,11 +365,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void frameworkHasLoaded(String refId, boolean outcome) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "frameworkHasLoaded -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: frameworkHasLoaded(" + refId + ", " + outcome + ")");
       return;
     }
@@ -377,11 +379,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void ignoreAllChangesCompleted(String refId, String instanceId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "ignoreAllChangesCompleted -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: ignoreAllChangesCompleted(" + refId + ", " + instanceId + ")");
       return;
     }
@@ -391,11 +393,11 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void ignoreAllChangesFailed(String refId, String instanceId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "ignoreAllChangesFailed -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: ignoreAllChangesFailed(" + refId + ", " + instanceId + ")");
       return;
     }
@@ -405,27 +407,29 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public void saveAllChangesCompleted(String refId, String instanceId, boolean asComplete) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "saveAllChangesCompleted -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete + ")");
+    if (!mActivity.getRefId().equals(refId)) {
+      log.w("shim", "IGNORED: saveAllChangesCompleted(" + refId + ", " + instanceId + ", "
+          + asComplete + ")");
       return;
     }
     // go through the FC because there are additional keys that should be
     // set here...
-    log.d("shim", "DO: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete + ")");
+    log.d("shim", "DO: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete
+        + ")");
     mActivity.saveAllChangesCompleted(instanceId, asComplete);
   }
 
   // @JavascriptInterface
   public void saveAllChangesFailed(String refId, String instanceId) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "saveAllChangesFailed -- interface removed");
       return;
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
+    if (!mActivity.getRefId().equals(refId)) {
       log.w("shim", "IGNORED: saveAllChangesFailed(" + refId + ", " + instanceId + ")");
       return;
     }
@@ -435,12 +439,13 @@ public class ODKShimJavascriptCallback {
 
   // @JavascriptInterface
   public String doAction(String refId, String page, String path, String action, String jsonMap) {
-    if ( mWebView == null ) {
+    if (mWebView == null) {
       log.w("shim", "doAction -- interface removed");
       return "IGNORE";
     }
-    if ( !mActivity.getRefId().equals(refId) ) {
-      log.w("shim", "IGNORED: doAction(" + refId + ", " + page + ", " + path + ", " + action + ", ...)");
+    if (!mActivity.getRefId().equals(refId)) {
+      log.w("shim", "IGNORED: doAction(" + refId + ", " + page + ", " + path + ", " + action
+          + ", ...)");
       return "IGNORE";
     }
 
@@ -451,7 +456,8 @@ public class ODKShimJavascriptCallback {
       }
     } catch (JSONException e) {
       e.printStackTrace();
-      log.e("shim", "ERROR: doAction(" + refId + ", " + page + ", " + path + ", " + action + ", ...) " + e.toString());
+      log.e("shim", "ERROR: doAction(" + refId + ", " + page + ", " + path + ", " + action
+          + ", ...) " + e.toString());
       return "ERROR";
     }
 
