@@ -38,6 +38,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
@@ -65,6 +66,8 @@ import android.widget.Toast;
 public class InstanceUploaderListFragment extends ListFragment implements OnLongClickListener,
     LoaderManager.LoaderCallbacks<Cursor>, InstanceUploaderListener, ConfirmAlertDialog,
     CancelProgressDialog {
+  private static final String PROGRESS_DIALOG_TAG = "progressDialog";
+
   private static final String t = "InstanceUploaderListFragment";
 
   private static final int INSTANCE_UPLOADER_LIST_LOADER = 0x03;
@@ -106,6 +109,9 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
   private View view;
 
+  private Handler handler = new Handler();
+  private ProgressDialogFragment progressDialog = null;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -120,7 +126,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     int[] view = new int[] { R.id.text1, R.id.text2 };
 
     // render total instance view
-    mInstances = new SimpleCursorAdapter(getActivity(), R.layout.two_item_multiple_choice, null,
+    mInstances = new SimpleCursorAdapter(getActivity(), R.layout.upload_multiple_choice, null,
         data, view, 0);
     setListAdapter(mInstances);
 
@@ -325,11 +331,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     if (alertDialog != null) {
       alertDialog.dismiss();
     }
-    ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
-        .findFragmentByTag("progressDialog");
-    if (progressDialog != null) {
-      progressDialog.dismiss();
-    }
+    dismissProgressDialog();
     super.onPause();
   }
 
@@ -347,24 +349,27 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       ((AlertDialogFragment) alert).dismiss();
     }
 
-    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
+    if ( mDialogState == DialogState.Progress ) {
+      Fragment dialog = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
 
-    if (dialog != null && ((ProgressDialogFragment) dialog).getDialog() != null) {
-      mDialogState = DialogState.Progress;
-      ((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
-      ((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
-
-    } else {
-
-      ProgressDialogFragment f = ProgressDialogFragment
-          .newInstance(getId(), mAlertTitle, mAlertMsg);
-
-      mDialogState = DialogState.Progress;
-      f.show(getFragmentManager(), "progressDialog");
+      if (dialog != null && ((ProgressDialogFragment) dialog).getDialog() != null) {
+        ((ProgressDialogFragment) dialog).getDialog().setTitle(mAlertTitle);
+        ((ProgressDialogFragment) dialog).setMessage(mAlertMsg);
+      } else if (progressDialog != null && progressDialog.getDialog() != null) {
+        progressDialog.getDialog().setTitle(mAlertTitle);
+        progressDialog.setMessage(mAlertMsg);
+      } else {
+        if ( progressDialog != null ) {
+          dismissProgressDialog();
+        }
+        progressDialog = ProgressDialogFragment.newInstance(getId(), mAlertTitle, mAlertMsg);
+        progressDialog.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
+      }
     }
   }
 
   private void showProgressDialog() {
+    mDialogState = DialogState.Progress;
     mAlertTitle = getString(R.string.uploading_data);
     mAlertMsg = getString(R.string.please_wait);
     restoreProgressDialog();
@@ -375,25 +380,45 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       mAlertTitle = getString(R.string.uploading_data);
       mAlertMsg = message;
       restoreProgressDialog();
+    } else {
+      mDialogState = DialogState.None;
+      dismissProgressDialog();
     }
   }
 
-  private void dismissProgressDialog() {
-    if (mDialogState == DialogState.Progress) {
-      mDialogState = DialogState.None;
-    }
 
-    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
-    if (dialog != null) {
-      ((ProgressDialogFragment) dialog).dismiss();
+  private void dismissProgressDialog() {
+    final Fragment dialog = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
+    if (dialog != null && dialog != progressDialog) {
+      // the UI may not yet have resolved the showing of the dialog.
+      // use a handler to add the dismiss to the end of the queue.
+      handler.post(new Runnable() {
+        @Override
+        public void run() {
+          ((ProgressDialogFragment) dialog).dismiss();
+        }
+      });
+    }
+    if (progressDialog != null) {
+      final ProgressDialogFragment scopedReference = progressDialog;
+      progressDialog = null;
+      // the UI may not yet have resolved the showing of the dialog.
+      // use a handler to add the dismiss to the end of the queue.
+      handler.post(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            scopedReference.dismiss();
+          } catch ( Exception e ) {
+            // ignore... we tried!
+          }
+        }
+      });
     }
   }
 
   private void restoreAlertDialog() {
-    Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
-    if (progress != null) {
-      ((ProgressDialogFragment) progress).dismiss();
-    }
+    dismissProgressDialog();
 
     Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
 
@@ -438,6 +463,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   @Override
   public void uploadingComplete(InstanceUploadOutcome outcome) {
     try {
+      mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (Exception e) {
       e.printStackTrace();

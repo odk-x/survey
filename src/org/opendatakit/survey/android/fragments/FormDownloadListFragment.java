@@ -123,11 +123,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
     int[] view = new int[] { R.id.text1, R.id.text2 };
 
     mFormListAdapter = new SimpleAdapter(getActivity(), mFormList,
-        R.layout.two_item_multiple_choice, data, view);
-    // // need white background before load
-    // getListView().setBackgroundColor(Color.WHITE);
-    // getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
-    // getListView().setItemsCanFocus(false);
+        R.layout.download_multiple_choice, data, view);
 
     setListAdapter(mFormListAdapter);
 
@@ -502,7 +498,11 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       handler.post(new Runnable() {
         @Override
         public void run() {
-          scopedReference.dismiss();
+          try {
+            scopedReference.dismiss();
+          } catch ( Exception e ) {
+            // we tried...
+          }
         }
       });
     }

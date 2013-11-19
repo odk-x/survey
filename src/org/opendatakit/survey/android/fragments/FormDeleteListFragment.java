@@ -95,7 +95,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     // render total instance view
     mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
-        R.layout.two_item_multiple_choice, data, viewParams);
+        R.layout.delete_multiple_choice, data, viewParams);
     setListAdapter(mInstances);
 
     getLoaderManager().initLoader(FORM_DELETE_LIST_LOADER, null, this);

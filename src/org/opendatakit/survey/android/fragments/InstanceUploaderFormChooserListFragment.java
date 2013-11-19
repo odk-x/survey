@@ -74,7 +74,7 @@ public class InstanceUploaderFormChooserListFragment extends ListFragment implem
 
     // render total instance view
     mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
-        R.layout.two_item, data, viewParams);
+        R.layout.upload_choose_form, data, viewParams);
     setListAdapter(mInstances);
     // getListView().setBackgroundColor(Color.WHITE);
 
