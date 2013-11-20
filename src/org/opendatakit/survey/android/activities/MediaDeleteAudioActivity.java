@@ -14,6 +14,8 @@
 
 package org.opendatakit.survey.android.activities;
 
+import java.io.File;
+
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 
@@ -27,41 +29,52 @@ import android.util.Log;
  *
  * Called from javascript with: shim.doAction(promptPath, internalPromptContext,
  * "org.opendatakit.survey.android.activities.MediaDeleteAudioActivity",
- * JSON.stringify({ mediaPath: uriFromDatabase }));
+ * JSON.stringify({ appName: 'myApp', uriFragment: uriFromDatabase }));
  *
  * @author mitchellsundt@gmail.com
  *
  */
 public class MediaDeleteAudioActivity extends Activity {
   private static final String t = "MediaDeleteAudioActivity";
-  private static final String MEDIA_PATH = "mediaPath";
+  private static final String APP_NAME = "appName";
+  private static final String URI_FRAGMENT = "uriFragment";
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    String binaryName = null;
+    String appName = null;
+    String uriFragmentToMedia = null;
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-    	binaryName = extras.getString(MEDIA_PATH);
+      appName = extras.getString(APP_NAME);
+      uriFragmentToMedia = extras.getString(URI_FRAGMENT);
     }
 
     if (savedInstanceState != null) {
-    	binaryName = savedInstanceState.getString(MEDIA_PATH);
+      appName = savedInstanceState.getString(APP_NAME);
+      uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
     }
 
-    if (binaryName == null) {
-        throw new IllegalArgumentException("Expected " + MEDIA_PATH
+    if (appName == null) {
+      throw new IllegalArgumentException("Expected " + APP_NAME
             + " key in intent bundle. Not found.");
     }
 
-    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, FileProvider.getAsFile(this, binaryName)
-        .getAbsolutePath());
-    Log.i(t, "Deleted " + del + " matching entries for " + MEDIA_PATH + ": " + binaryName);
+    if (uriFragmentToMedia == null) {
+        throw new IllegalArgumentException("Expected " + URI_FRAGMENT
+            + " key in intent bundle. Not found.");
+    }
+
+    File f = FileProvider.getAsFile(this,
+        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+
+    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, f.getAbsolutePath());
+    Log.i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);
 
     Intent i = new Intent();
 
-    i.putExtra(MEDIA_PATH, binaryName);
+    i.putExtra(URI_FRAGMENT, uriFragmentToMedia);
     i.putExtra("deleteCount", del);
     setResult(Activity.RESULT_OK, i);
     finish();

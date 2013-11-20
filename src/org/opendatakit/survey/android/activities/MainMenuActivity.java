@@ -436,6 +436,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
+  public String getContentProviderUri() {
+    Uri u = FileProvider.getContentUri(this);
+    return u.toString() + "/";
+  }
+
+  @Override
   public FrameworkFormPathInfo getFrameworkFormPathInfo() {
 
     // Find the formPath for the default form with the most recent
@@ -498,7 +504,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
 
-    String fullPath = FileProvider.getAsUrl(this, htmlFile);
+    String fullPath = FileProvider.getAsUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;

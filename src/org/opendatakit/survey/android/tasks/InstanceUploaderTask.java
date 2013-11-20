@@ -35,7 +35,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.opendatakit.common.android.logic.FormInfo;
-import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
@@ -405,7 +404,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
 
-    FileSet f = FileSet.parse(appContext, is);
+    FileSet f = FileSet.parse(appContext, fi.appName, is);
     return f;
   }
 

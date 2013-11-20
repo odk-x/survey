@@ -40,6 +40,7 @@ public class FileSet {
   private static final String URI = "uri";
   private static final String CONTENT_TYPE = "contentType";
   public File instanceFile = null;
+  public final String appName;
 
   public static final class MimeFile {
     public File file;
@@ -48,7 +49,8 @@ public class FileSet {
 
   public ArrayList<MimeFile> attachmentFiles = new ArrayList<MimeFile>();
 
-  public FileSet() {
+  public FileSet(String appName) {
+    this.appName = appName;
   }
 
   public void addAttachmentFile(File file, String contentType) {
@@ -63,12 +65,12 @@ public class FileSet {
 
     HashMap<String, String> map;
     map = new HashMap<String, String>();
-    map.put(URI, FileProvider.getAsUrl(context, instanceFile));
+    map.put(URI, FileProvider.getAsUri(context, appName, ODKFileUtils.asUriFragment(appName, instanceFile)));
     map.put(CONTENT_TYPE, APPLICATION_XML);
     str.add(map);
     for (MimeFile f : attachmentFiles) {
       map = new HashMap<String, String>();
-      map.put(URI, FileProvider.getAsUrl(context, f.file));
+      map.put(URI, FileProvider.getAsUri(context, appName, ODKFileUtils.asUriFragment(appName, f.file)));
       map.put(CONTENT_TYPE, f.contentType);
       str.add(map);
     }
@@ -77,12 +79,12 @@ public class FileSet {
     return serializedString;
   }
 
-  public static final FileSet parse(Context context, InputStream src) throws JsonParseException,
+  public static final FileSet parse(Context context, String appName, InputStream src) throws JsonParseException,
       JsonMappingException, IOException {
     @SuppressWarnings("unchecked")
     ArrayList<Map<String, String>> str = ODKFileUtils.mapper.readValue(src, ArrayList.class);
 
-    FileSet fs = new FileSet();
+    FileSet fs = new FileSet(appName);
     Map<String, String> map;
     map = (Map<String, String>) str.get(0);
     fs.instanceFile = FileProvider.getAsFile(context, map.get(URI));
