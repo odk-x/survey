@@ -250,7 +250,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
     f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this,
-        mSelected.toArray(new Long[mSelected.size()]));
+        mSelected.toArray(new String[mSelected.size()]));
   }
 
   @Override

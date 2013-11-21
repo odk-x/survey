@@ -385,7 +385,7 @@ public class SubmissionProvider extends CommonContentProvider {
                     .format(new Date(timestamp));
 
                 // For XML, we traverse the map to serialize it
-                Document d = new Document();
+                Document d = new Document(); 
                 d.setStandalone(true);
                 d.setEncoding("UTF-8");
                 Element e = d.createElement(XML_DEFAULT_NAMESPACE,
@@ -434,6 +434,12 @@ public class SubmissionProvider extends CommonContentProvider {
                 if ( instanceName != null ) {
                   v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
                   v.addChild(0, Node.TEXT, instanceName);
+                  meta.addChild(idx++, Node.ELEMENT, v);
+                  meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+                }
+                else{
+                  v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
+                  v.addChild(0, Node.TEXT, datestamp);
                   meta.addChild(idx++, Node.ELEMENT, v);
                   meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
                 }
