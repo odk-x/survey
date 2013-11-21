@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -42,12 +43,14 @@ public class MediaChooseImageActivity extends Activity {
   private static final String t = "MediaChooseImageActivity";
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "image/";
-  private static final String URI = "uri";
+  private static final String APP_NAME = "appName";
+  private static final String URI_FRAGMENT = "uriFragment";
 
-  private static final String NEW_FILE = "newFile";
+  private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
   private static final String CONTENT_TYPE = "contentType";
 
-  private String newFileBase = null;
+  private String appName = null;
+  private String uriFragmentNewFileBase = null;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -55,14 +58,22 @@ public class MediaChooseImageActivity extends Activity {
 
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-        newFileBase = extras.getString(NEW_FILE);
+      appName = extras.getString(APP_NAME);
+      uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (savedInstanceState != null) {
-      newFileBase = savedInstanceState.getString(NEW_FILE);
+      appName = savedInstanceState.getString(APP_NAME);
+      uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
-    if (newFileBase == null) {
-      throw new IllegalArgumentException("Expected " + NEW_FILE
+
+    if (appName == null) {
+      throw new IllegalArgumentException("Expected " + APP_NAME
+            + " key in intent bundle. Not found.");
+    }
+
+    if (uriFragmentNewFileBase == null) {
+      throw new IllegalArgumentException("Expected " + URI_FRAGMENT_NEW_FILE_BASE
           + " key in intent bundle. Not found.");
     }
 
@@ -82,7 +93,8 @@ public class MediaChooseImageActivity extends Activity {
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putString(NEW_FILE, newFileBase);
+    outState.putString(APP_NAME, appName);
+    outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
   }
 
   @Override
@@ -107,9 +119,8 @@ public class MediaChooseImageActivity extends Activity {
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-    String destMediaPath = newFileBase + extension;
-
-    File newMedia = new File(destMediaPath);
+    File newMedia = FileProvider.getAsFile(this,
+        FileProvider.getAsUri(this, appName, uriFragmentNewFileBase + extension));
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
@@ -145,7 +156,7 @@ public class MediaChooseImageActivity extends Activity {
 
       Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
-      i.putExtra(URI, FileProvider.getAsUrl(this, newMediaFromCP));
+      i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, newMediaFromCP));
       String name = newMediaFromCP.getName();
       i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);

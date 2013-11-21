@@ -71,12 +71,14 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
   }
 
   @Override
-  public String getNewInstanceFile(String extension) {
+  public String getUriFragmentNewInstanceFile(String uriDeviceId, String extension) {
     String mediaPath = ODKFileUtils.getInstanceFolder(appName, tableId, instanceId);
     File f = new File(mediaPath);
+    f.mkdirs();
     String chosenFileName;
     for (;;) {
-      final String fileName = Long.toString(System.currentTimeMillis());
+      String candidate = Long.toString(System.currentTimeMillis()) + "_" + uriDeviceId;
+      final String fileName = candidate.replaceAll("[\\p{Punct}\\p{Space}]", "_");
       chosenFileName = fileName;
       // see if there are any files with this fileName, with or without file
       // extensions
@@ -107,6 +109,6 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
     }
     String filePath = mediaPath + File.separator + chosenFileName
         + ((extension != null && extension.length() > 0) ? ("." + extension) : "");
-    return filePath;
+    return ODKFileUtils.asUriFragment(appName, new File(filePath));
   }
 }

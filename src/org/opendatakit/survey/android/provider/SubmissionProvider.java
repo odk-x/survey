@@ -224,7 +224,7 @@ public class SubmissionProvider extends CommonContentProvider {
 
       String[] selectionArgs = new String[] { instanceId, "COMPLETE" };
       Cursor c = null;
-      FileSet freturn = new FileSet();
+      FileSet freturn = new FileSet(appName);
 
       try {
         c = db.rawQuery(b.toString(), selectionArgs);
@@ -338,9 +338,11 @@ public class SubmissionProvider extends CommonContentProvider {
                       parent.put(defn.elementName, gpt);
                     } else if (defn.elementType.equals("mimeUri")) {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
-                      String uriFile = (String) mimeuri.get("uri");
+                      String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(getContext(), uriFile);
+
+                      File f = FileProvider.getAsFile(getContext(),
+                          FileProvider.getAsUri(getContext(), appName, uriFragment));
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -538,9 +540,10 @@ public class SubmissionProvider extends CommonContentProvider {
                   if (o != null) {
                     if (defn.elementType.equals("mimeUri")) {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
-                      String uriFile = (String) mimeuri.get("uri");
+                      String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(getContext(),uriFile);
+                      File f = FileProvider.getAsFile(getContext(),
+                          FileProvider.getAsUri(getContext(), appName, uriFragment));
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }

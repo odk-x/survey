@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -41,22 +42,23 @@ import android.widget.Toast;
  *
  */
 public class MediaCaptureVideoActivity extends Activity {
-
   private static final String t = "MediaCaptureVideoActivity";
 
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "video/";
-  private static final String URI = "uri";
+  private static final String APP_NAME = "appName";
+  private static final String URI_FRAGMENT = "uriFragment";
   private static final String CONTENT_TYPE = "contentType";
 
-  private static final String NEW_FILE = "newFile";
+  private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
   private static final String HAS_LAUNCHED = "hasLaunched";
   private static final String AFTER_RESULT = "afterResult";
   private static final String ERROR_NO_FILE = "Media file does not exist! ";
   private static final String ERROR_COPY_FILE = "Media file copy failed! ";
 
-  private String newFileBase = null;
-  private String mediaPath = null;
+  private String appName = null;
+  private String uriFragmentNewFileBase = null;
+  private String uriFragmentToMedia = null;
   private boolean afterResult = false;
   private boolean hasLaunched = false;
 
@@ -66,22 +68,29 @@ public class MediaCaptureVideoActivity extends Activity {
 
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-        mediaPath = extras.getString(URI);
-        hasLaunched = extras.getBoolean(HAS_LAUNCHED);
-        afterResult = extras.getBoolean(AFTER_RESULT);
-        newFileBase = extras.getString(NEW_FILE);
+      appName = extras.getString(APP_NAME);
+      uriFragmentToMedia = extras.getString(URI_FRAGMENT);
+      hasLaunched = extras.getBoolean(HAS_LAUNCHED);
+      afterResult = extras.getBoolean(AFTER_RESULT);
+      uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (savedInstanceState != null) {
-      mediaPath = savedInstanceState.getString(URI);
+      appName = savedInstanceState.getString(APP_NAME);
+      uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
-      newFileBase = savedInstanceState.getString(NEW_FILE);
+      uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
-    if (mediaPath == null) {
-      if (newFileBase == null) {
-        throw new IllegalArgumentException("Expected " + NEW_FILE
+    if (appName == null) {
+      throw new IllegalArgumentException("Expected " + APP_NAME
+            + " key in intent bundle. Not found.");
+    }
+
+    if (uriFragmentToMedia == null) {
+      if (uriFragmentNewFileBase == null) {
+        throw new IllegalArgumentException("Expected " + URI_FRAGMENT_NEW_FILE_BASE
             + " key in intent bundle. Not found.");
       }
       afterResult = false;
@@ -100,7 +109,8 @@ public class MediaCaptureVideoActivity extends Activity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
       // to make the name unique...
-      File f = new File(mediaPath == null ? newFileBase : mediaPath);
+      File f = FileProvider.getAsFile(this,
+          FileProvider.getAsUri(this, appName, (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia)));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
         i.putExtra(Video.Media.DISPLAY_NAME, f.getName());
@@ -124,18 +134,21 @@ public class MediaCaptureVideoActivity extends Activity {
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putString(URI, mediaPath);
-    outState.putString(NEW_FILE, newFileBase);
+    outState.putString(APP_NAME, appName);
+    outState.putString(URI_FRAGMENT, uriFragmentToMedia);
+    outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
     outState.putBoolean(AFTER_RESULT, afterResult);
   }
 
   private void deleteMedia() {
-    if (mediaPath == null) {
+    if (uriFragmentToMedia == null) {
       return;
     }
     // get the file path and delete the file
-    String path = mediaPath;
+    File f = FileProvider.getAsFile(this,
+        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteVideoFileFromMediaProvider(this, path);
     Log.i(t, "Deleted " + del + " rows from video media content provider");
@@ -201,18 +214,19 @@ public class MediaCaptureVideoActivity extends Activity {
     File source = new File(binaryPath);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
-    if (mediaPath == null) {
+    if (uriFragmentToMedia == null) {
       // use the newFileBase as a starting point...
-      mediaPath = newFileBase + extension;
+      uriFragmentToMedia = uriFragmentNewFileBase + extension;
     }
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = new File(mediaPath);
+    File f = FileProvider.getAsFile(this,
+        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
-    mediaPath = sourceMedia.getAbsolutePath();
+    uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
     deleteMedia();
 
     try {
@@ -237,7 +251,7 @@ public class MediaCaptureVideoActivity extends Activity {
       Uri MediaURI = getApplicationContext().getContentResolver().insert(
           Video.Media.EXTERNAL_CONTENT_URI, values);
       Log.i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
-      mediaPath = sourceMedia.getAbsolutePath();
+      uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
       Log.i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
 
       int delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
@@ -254,17 +268,18 @@ public class MediaCaptureVideoActivity extends Activity {
   }
 
   private void returnResult() {
-    File sourceMedia = (mediaPath != null) ? new File(mediaPath) : null;
+    File sourceMedia = (uriFragmentToMedia != null) ? FileProvider.getAsFile(this,
+        FileProvider.getAsUri(this, appName, uriFragmentToMedia)) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
-      i.putExtra(URI, FileProvider.getAsUrl(this, sourceMedia));
+      i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));
       String name = sourceMedia.getName();
       i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
       Log.e(t, ERROR_NO_FILE
-          + ((mediaPath != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
+          + ((uriFragmentToMedia != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();
