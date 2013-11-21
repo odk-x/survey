@@ -29,7 +29,7 @@ import android.util.Log;
  * @author mitchellsundt@gmail.com
  *
  */
-public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
+public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
   private static final String t = "DeleteFormsTask";
 
   private Application appContext;
@@ -39,7 +39,7 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
   private int successCount = 0;
 
   @Override
-  protected Integer doInBackground(Long... params) {
+  protected Integer doInBackground(String... params) {
     int deleted = 0;
 
     if (params == null || appContext == null || dl == null) {
@@ -53,11 +53,11 @@ public class DeleteFormsTask extends AsyncTask<Long, Void, Integer> {
       }
       try {
         Uri deleteForm = Uri.withAppendedPath(
-            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i].toString());
+            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
         deleted += appContext.getContentResolver().delete(deleteForm, null, null);
       } catch (Exception ex) {
         Log.e(t,
-            "Exception during delete of: " + params[i].toString() + " exception: " + ex.toString());
+            "Exception during delete of: " + params[i] + " exception: " + ex.toString());
       }
     }
     successCount = deleted;

@@ -220,7 +220,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   // ///////////////////////////////////////////////////
   // actions
 
-  public void deleteSelectedForms(String appName, DeleteFormsListener listener, Long[] toDelete) {
+  public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete) {
     mDeleteFormsListener = listener;
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
