@@ -8,16 +8,18 @@ import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebSettings.PluginState;
 import android.webkit.WebSettings.RenderPriority;
 import android.webkit.WebView;
-import android.widget.TableLayout;
 
 /**
  * NOTE: assumes that the Context implements ODKActivity.
@@ -53,6 +55,7 @@ public class ODKWebView extends WebView {
 
   @Override
   protected Parcelable onSaveInstanceState () {
+    log.i(t, "onSaveInstanceState()");
     Parcelable baseState = super.onSaveInstanceState();
     Bundle savedState = new Bundle();
     if ( baseState != null ) {
@@ -72,6 +75,7 @@ public class ODKWebView extends WebView {
 
   @Override
   protected void onRestoreInstanceState (Parcelable state) {
+    log.i(t, "onRestoreInstanceState()");
     Bundle savedState = (Bundle) state;
     if ( savedState.containsKey(JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD)) {
       String[] waitQueue = savedState.getStringArray(JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD);
@@ -88,19 +92,15 @@ public class ODKWebView extends WebView {
     loadPage();
   }
 
-  public ODKWebView(Context context) {
-    super(context);
+  public ODKWebView(Context context, AttributeSet attrs) {
+    super(context, attrs);
 
     // Context is ALWAYS an ODKActivity...
 
     activity = (ODKActivity) context;
     String appName = activity.getAppName();
     log = WebLogger.getLogger(appName);
-
-    setId(98103);
-    TableLayout.LayoutParams params = new TableLayout.LayoutParams();
-    params.setMargins(7, 5, 7, 5);
-    setLayoutParams(params);
+    log.i(t, "ODKWebView()");
 
     // for development -- always draw from source...
     WebSettings ws = getSettings();
@@ -147,8 +147,25 @@ public class ODKWebView extends WebView {
     return log;
   }
 
+  /**
+   * Communicates the results for an action callback to the webkit.
+   *
+   * @param pageWaitingForData
+   * @param pathWaitingForData
+   * @param actionWaitingForData
+   * @param jsonObject
+   */
+  public void doActionResult(String pageWaitingForData, String pathWaitingForData, String actionWaitingForData, String jsonObject ) {
+    // NOTE: this is asynchronous
+    log.i(t, "doActionResult(" + pageWaitingForData + ", " + pathWaitingForData + "," + actionWaitingForData + ",...)");
+    loadJavascriptUrl("javascript:window.landing.opendatakitCallback('" + pageWaitingForData
+        + "','" + pathWaitingForData + "','" + actionWaitingForData + "', '" + jsonObject
+        + "' )");
+    requestFocus();
+  }
+
   // called to invoke a javascript method inside the webView
-  public synchronized void loadJavascriptUrl(String javascriptUrl) {
+  private synchronized void loadJavascriptUrl(String javascriptUrl) {
     if (isLoadPageFinished || isJavascriptFlushActive) {
       log.i(t, "loadJavascriptUrl: IMMEDIATE: " + javascriptUrl);
       loadUrl(javascriptUrl);

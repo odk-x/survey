@@ -43,7 +43,7 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
-import org.opendatakit.survey.android.views.JQueryODKView;
+import org.opendatakit.survey.android.views.ODKWebView;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -253,7 +253,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
 
   private boolean mProcessAPKExpansionFiles = false;
-
   private String pageWaitingForData = null;
   private String pathWaitingForData = null;
   private String actionWaitingForData = null;
@@ -358,7 +357,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
-    JQueryODKView wkt = (JQueryODKView) findViewById(R.id.webkit_view);
+    ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
         || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
@@ -371,7 +370,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
-      wkt.requestPageFocus();
+      wkt.invalidate();
+      wkt.requestFocus();
       frags.setVisibility(View.GONE);
     } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
       shadow.setVisibility(View.VISIBLE);
@@ -856,7 +856,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public void chooseInstanceUploaderForm(Uri formUri) {
     boolean success = true;
 
-    JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
+    ODKWebView webkitView = (ODKWebView) findViewById(R.id.webkit_view);
 
     FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
 
@@ -1028,6 +1028,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     shadow.removeAllViews();
     frags.setVisibility(View.GONE);
     wkt.setVisibility(View.VISIBLE);
+    wkt.invalidate();
     currentFragment = ScreenList.WEBKIT;
     levelSafeInvalidateOptionsMenu();
   }
@@ -1094,6 +1095,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (newFragment == ScreenList.WEBKIT) {
       frags.setVisibility(View.GONE);
       wkt.setVisibility(View.VISIBLE);
+      wkt.invalidate();
     } else {
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
@@ -1454,7 +1456,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     Log.i(t, "onActivityResult");
-    JQueryODKView view = (JQueryODKView) findViewById(R.id.webkit_view);
+    ODKWebView view = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       try {
