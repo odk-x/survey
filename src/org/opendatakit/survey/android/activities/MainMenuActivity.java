@@ -371,7 +371,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
       wkt.invalidate();
-      wkt.requestFocus();
       frags.setVisibility(View.GONE);
     } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
       shadow.setVisibility(View.VISIBLE);

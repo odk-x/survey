@@ -435,7 +435,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       publishProgress(i + 1, toUpload.length);
 
       Uri toUpdate = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, uploadingForm.appName
-          + "/" + uploadingForm.tableId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
+          + "/" + uploadingForm.formId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
       Cursor c = null;
       try {
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
