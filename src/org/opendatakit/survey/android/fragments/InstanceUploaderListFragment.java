@@ -483,7 +483,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
         Cursor results = null;
         try {
           Uri uri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-              + currentForm.tableId + "/" + StringEscapeUtils.escapeHtml4(id));
+              + currentForm.formId + "/" + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
             String name = results.getString(results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
