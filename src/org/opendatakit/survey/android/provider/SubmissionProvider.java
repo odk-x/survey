@@ -69,8 +69,8 @@ public class SubmissionProvider extends CommonContentProvider {
 
   private static final String t = "SubmissionProvider";
 
-  public static final String XML_SUBMISSION_AUTHORITY = "org.opendatakit.survey.android.provider.submission.xml";
-  public static final String JSON_SUBMISSION_AUTHORITY = "org.opendatakit.survey.android.provider.submission.json";
+  public static final String XML_SUBMISSION_AUTHORITY = "org.opendatakit.common.android.provider.submission.xml";
+  public static final String JSON_SUBMISSION_AUTHORITY = "org.opendatakit.common.android.provider.submission.json";
 
   public static final String XML_SUBMISSION_URL_PREFIX = ContentResolver.SCHEME_CONTENT + "://"
       + SubmissionProvider.XML_SUBMISSION_AUTHORITY;
@@ -385,7 +385,7 @@ public class SubmissionProvider extends CommonContentProvider {
                     .format(new Date(timestamp));
 
                 // For XML, we traverse the map to serialize it
-                Document d = new Document(); 
+                Document d = new Document();
                 d.setStandalone(true);
                 d.setEncoding("UTF-8");
                 Element e = d.createElement(XML_DEFAULT_NAMESPACE,
