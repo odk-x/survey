@@ -50,7 +50,7 @@ public interface ODKActivity {
   public String getAppName();
 
   /** for completing the uriFragment of the media attachments */
-  public String getContentProviderUri();
+  public String getWebViewContentUri();
 
   public String getRefId();
 

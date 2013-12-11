@@ -66,8 +66,7 @@ public class MediaDeleteAudioActivity extends Activity {
             + " key in intent bundle. Not found.");
     }
 
-    File f = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
 
     int del = MediaUtils.deleteAudioFileFromMediaProvider(this, f.getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);

@@ -92,7 +92,7 @@ public class ODKShimJavascriptCallback {
 	 return "{\"container\":\"Android\"," +
 		      "\"version\":\""	+ Build.VERSION.RELEASE + "\"," +
             "\"appName\":\"" + mActivity.getAppName() + "\"," +
-            "\"baseUri\":\"" + mActivity.getContentProviderUri() + mActivity.getAppName() + "/\"," +
+            "\"baseUri\":\"" + mActivity.getWebViewContentUri() + mActivity.getAppName() + "/\"," +
             "\"formsUri\":\"" + FormsProviderAPI.CONTENT_URI.toString() + "\"," +
 	         "\"logLevel\":\"D\"}";
     // @formatter:on

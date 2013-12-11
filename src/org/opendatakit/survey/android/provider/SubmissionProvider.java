@@ -341,8 +341,7 @@ public class SubmissionProvider extends CommonContentProvider {
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
 
-                      File f = FileProvider.getAsFile(getContext(),
-                          FileProvider.getAsUri(getContext(), appName, uriFragment));
+                      File f = FileProvider.getAsFile(getContext(), appName, uriFragment);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -542,8 +541,7 @@ public class SubmissionProvider extends CommonContentProvider {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(getContext(),
-                          FileProvider.getAsUri(getContext(), appName, uriFragment));
+                      File f = FileProvider.getAsFile(getContext(), appName, uriFragment);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -583,7 +581,7 @@ public class SubmissionProvider extends CommonContentProvider {
             String doc = b.toString();
             exportFile(doc, submissionXml);
           }
-          exportFile(freturn.serialize(getContext()), manifest);
+          exportFile(freturn.serializeUriFragmentList(getContext()), manifest);
           return ParcelFileDescriptor.open(manifest, ParcelFileDescriptor.MODE_READ_ONLY);
 
         }
@@ -604,7 +602,7 @@ public class SubmissionProvider extends CommonContentProvider {
   }
 
   /**
-   * This method actually writes the xml to disk.
+   * This method actually writes the JSON appName-relative manifest to disk.
    *
    * @param payload
    * @param path

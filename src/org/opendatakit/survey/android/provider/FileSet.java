@@ -37,7 +37,7 @@ import android.content.Context;
  */
 public class FileSet {
   private static final String APPLICATION_XML = "application/xml";
-  private static final String URI = "uri";
+  private static final String URI_FRAGMENT = "uriFragment";
   private static final String CONTENT_TYPE = "contentType";
   public File instanceFile = null;
   public final String appName;
@@ -60,17 +60,17 @@ public class FileSet {
     attachmentFiles.add(f);
   }
 
-  public String serialize(Context context) throws JsonGenerationException, JsonMappingException, IOException {
+  public String serializeUriFragmentList(Context context) throws JsonGenerationException, JsonMappingException, IOException {
     ArrayList<HashMap<String, String>> str = new ArrayList<HashMap<String, String>>();
 
     HashMap<String, String> map;
     map = new HashMap<String, String>();
-    map.put(URI, FileProvider.getAsUri(context, appName, ODKFileUtils.asUriFragment(appName, instanceFile)));
+    map.put(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, instanceFile));
     map.put(CONTENT_TYPE, APPLICATION_XML);
     str.add(map);
     for (MimeFile f : attachmentFiles) {
       map = new HashMap<String, String>();
-      map.put(URI, FileProvider.getAsUri(context, appName, ODKFileUtils.asUriFragment(appName, f.file)));
+      map.put(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, f.file));
       map.put(CONTENT_TYPE, f.contentType);
       str.add(map);
     }
@@ -87,11 +87,11 @@ public class FileSet {
     FileSet fs = new FileSet(appName);
     Map<String, String> map;
     map = (Map<String, String>) str.get(0);
-    fs.instanceFile = FileProvider.getAsFile(context, map.get(URI));
+    fs.instanceFile = FileProvider.getAsFile(context, appName, map.get(URI_FRAGMENT));
     for (int i = 1; i < str.size(); ++i) {
       map = (Map<String, String>) str.get(i);
       MimeFile f = new MimeFile();
-      f.file = FileProvider.getAsFile(context, map.get(URI));
+      f.file = FileProvider.getAsFile(context, appName, map.get(URI_FRAGMENT));
       f.contentType = map.get(CONTENT_TYPE);
       fs.attachmentFiles.add(f);
     }

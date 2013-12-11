@@ -49,6 +49,7 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -435,8 +436,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public String getContentProviderUri() {
-    Uri u = FileProvider.getContentUri(this);
+  public String getWebViewContentUri() {
+    Uri u = FileProvider.getWebViewContentUri(this);
     return u.toString() + "/";
   }
 
@@ -503,7 +504,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
 
-    String fullPath = FileProvider.getAsUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
+    String fullPath = FileProvider.getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;
@@ -595,28 +596,32 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (uri != null) {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
-      String authority = uri.getAuthority();
-      if (authority.equalsIgnoreCase(FileProvider.getFileAuthority(this))) {
+      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
+      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + FileProvider.getFileAuthority(this) + " uri (" + uri.toString()
-              + "). Expected one segment (the application name).";
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
           Log.e(t, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
-      } else if (authority.equalsIgnoreCase(FormsProviderAPI.AUTHORITY)) {
+      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
           Uri simpleUri = Uri.withAppendedPath(
-              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), segments.get(1));
+              Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
           FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), simpleUri);
           if (newForm != null) {
             setAppName(newForm.appName);
@@ -660,8 +665,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             currentFragment = ScreenList.WEBKIT;
           } else {
             // cancel action if the form is not found...
-            String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
-                + "). Form not found.";
+            String err = "Invalid " + uri.toString() + " uri. Form not found.";
             Log.e(t, err);
             Intent i = new Intent();
             setResult(RESULT_CANCELED, i);
@@ -669,17 +673,35 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             return;
           }
         } else {
-          String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
-              + "). Expected two segments.";
+          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
           Log.e(t, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
+      } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
+          uri.getAuthority().equals(uriWebView.getAuthority()) &&
+          uri.getPort() == uriWebView.getPort()) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() == 1) {
+          String appName = segments.get(0);
+          setAppName(appName);
+        } else {
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+
       } else {
-        String err = "Unexpected " + authority + " uri. Only one of " + FileProvider.getFileAuthority(this)
-            + " or " + FormsProviderAPI.AUTHORITY + " allowed.";
+        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
+            uriWebView.toString() + " or " +
+            uriFileProvider.toString() + " or " +
+            uriFormsProvider.toString() + " allowed.";
         Log.e(t, err);
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
