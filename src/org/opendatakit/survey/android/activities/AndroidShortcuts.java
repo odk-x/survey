@@ -107,6 +107,10 @@ public class AndroidShortcuts extends Activity {
 
     File[] directories = ODKFileUtils.getAppFolders();
     for (File app : directories) {
+      String appName = app.getName();
+      Uri uri = Uri.withAppendedPath(FileProvider.getFileProviderContentUri(this), app.getName());
+      choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName));
+
       Cursor c = null;
       try {
         boolean first = true;
@@ -117,15 +121,9 @@ public class AndroidShortcuts extends Activity {
         if (c != null && c.getCount() > 0) {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
-            if (first) {
-              String appName = app.getName();
-              Uri uri = Uri.withAppendedPath(FileProvider.getFileProviderContentUri(this), app.getName());
-              choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName));
-              first = false;
-            }
             String formName = app.getName() + " > "
                 + c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-            Uri uri = Uri.withAppendedPath(
+            uri = Uri.withAppendedPath(
                 Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName()),
                 c.getString(c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName));
