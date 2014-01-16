@@ -44,15 +44,14 @@ import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
-import android.content.ContentResolver;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -285,9 +284,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   // no need to preserve
   private AlertDialog mAlertDialog;
-
-  // cached for efficiency only -- no need to preserve
-  private SharedPreferences mAdminPreferences;
 
   // cached for efficiency only -- no need to preserve
   private Bitmap mDefaultVideoPoster = null;
@@ -766,8 +762,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return;
     }
 
-    mAdminPreferences = this.getSharedPreferences(AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
-
     // This creates the WebKit. We need all our values initialized by this point
     setContentView(R.layout.main_screen);
 
@@ -780,6 +774,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
 
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
@@ -790,29 +786,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
-      boolean get = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_GET_BLANK, true);
-      if (get) {
+      // Using a file for this work now 
+      String get = propSingleton.getProperty(AdminPreferencesActivity.KEY_GET_BLANK);
+      if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
         item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
       }
 
-      boolean send = mAdminPreferences
-          .getBoolean(AdminPreferencesActivity.KEY_SEND_FINALIZED, true);
-      if (send) {
+      String send = propSingleton.getProperty(AdminPreferencesActivity.KEY_SEND_FINALIZED);
+      if (send.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
         item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
       }
 
-      boolean manage = mAdminPreferences
-          .getBoolean(AdminPreferencesActivity.KEY_MANAGE_FORMS, true);
-      if (manage) {
+      String manage = propSingleton.getProperty(AdminPreferencesActivity.KEY_MANAGE_FORMS);
+      if (manage.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
         item.setIcon(R.drawable.trash).setShowAsAction(showOption);
       }
 
-      boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS,
-          true);
-      if (settings) {
+      String settings = propSingleton.getProperty(AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
+      if (settings.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
             getString(R.string.general_preferences));
         item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
@@ -851,9 +845,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       startActivity(ig);
       return true;
     } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
-      SharedPreferences admin = this.getSharedPreferences(
-          AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
-      String pw = admin.getString(AdminPreferencesActivity.KEY_ADMIN_PW, "");
+    	PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    	String pw = propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
       if ("".equalsIgnoreCase(pw)) {
         Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
         startActivity(i);
@@ -961,7 +954,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int whichButton) {
             String value = input.getText().toString();
-            String pw = mAdminPreferences.getString(AdminPreferencesActivity.KEY_ADMIN_PW, "");
+            PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+            String pw = propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
             if (pw.compareTo(value) == 0) {
               Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
               startActivity(i);

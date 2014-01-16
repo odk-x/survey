@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.activities;
 
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.accounts.Account;
@@ -23,10 +24,8 @@ import android.accounts.AccountManager;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -73,9 +72,8 @@ public class AccountList extends ListActivity {
         }
         TextView vw = (TextView) row.findViewById(android.R.id.text1);
         vw.setTextSize(Survey.getQuestionFontsize());
-        SharedPreferences settings = PreferenceManager
-            .getDefaultSharedPreferences(getBaseContext());
-        String selected = settings.getString(PreferencesActivity.KEY_ACCOUNT, "");
+        PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+        String selected = propSingleton.getProperty(PreferencesActivity.KEY_ACCOUNT);
         if (accounts[position].name.equals(selected)) {
           vw.setBackgroundColor(Color.LTGRAY);
         } else {
@@ -94,11 +92,10 @@ public class AccountList extends ListActivity {
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     Account account = (Account) getListView().getItemAtPosition(position);
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.remove(PreferencesActivity.KEY_AUTH);
-    editor.putString(PreferencesActivity.KEY_ACCOUNT, account.name);
-    editor.commit();
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    propSingleton.removeProperty(PreferencesActivity.KEY_AUTH);
+    propSingleton.setProperty(PreferencesActivity.KEY_ACCOUNT, account.name);
+    propSingleton.writeProperties();
 
     Intent intent = new Intent(this, AccountInfo.class);
     intent.putExtra("account", account);

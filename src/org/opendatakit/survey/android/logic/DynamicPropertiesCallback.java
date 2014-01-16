@@ -22,14 +22,12 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.content.Context;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
 
 /**
  * Implements property access methods that return dynamic values
- *
+ * 
  * @author mitchellsundt@gmail.com
- *
+ * 
  */
 public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
 
@@ -47,16 +45,16 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
 
   @Override
   public String getUsername() {
-    // Get the user name from the settings
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(ctxt);
-    return settings.getString(PreferencesActivity.KEY_USERNAME, null);
+    // Get the user name
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    return propSingleton.getProperty(PreferencesActivity.KEY_USERNAME);
   }
 
   @Override
   public String getUserEmail() {
-    // Get the user email from the settings
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(ctxt);
-    return settings.getString(PreferencesActivity.KEY_ACCOUNT, null);
+    // Get the user email
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    return propSingleton.getProperty(PreferencesActivity.KEY_ACCOUNT);
   }
 
   @Override

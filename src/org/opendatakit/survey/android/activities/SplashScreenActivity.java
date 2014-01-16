@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Activity;
@@ -48,6 +49,9 @@ import android.widget.LinearLayout;
  *
  */
 public class SplashScreenActivity extends Activity {
+  
+  public static final String KEY_LAST_VERSION = "lastVersion";
+  public static final String KEY_FIRST_RUN = "firstRun";
 
   private int mImageMaxWidth;
   private int mSplashTimeout = 2000; // milliseconds
@@ -77,6 +81,7 @@ public class SplashScreenActivity extends Activity {
     // get the shared preferences object
     SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     Editor editor = mSharedPreferences.edit();
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
 
     // get the package info object with version number
     PackageInfo packageInfo = null;
@@ -87,24 +92,42 @@ public class SplashScreenActivity extends Activity {
       e.printStackTrace();
     }
 
-    boolean firstRun = mSharedPreferences.getBoolean(PreferencesActivity.KEY_FIRST_RUN, true);
-    boolean showSplash = mSharedPreferences.getBoolean(PreferencesActivity.KEY_SHOW_SPLASH, false);
-    String splashPath = mSharedPreferences.getString(PreferencesActivity.KEY_SPLASH_PATH,
-        getString(R.string.default_splash_path));
+    // TODO: Revisit if this splash screen implementation is correct - leaving it in SharedPreferences for now
+    boolean firstRun = mSharedPreferences.getBoolean(KEY_FIRST_RUN, true);
+    // boolean firstRun = (propSingleton.getProperty(PreferencesActivity.KEY_FIRST_RUN)).equals("true") ? true : false;
+    
+    boolean showSplash = (propSingleton.getProperty(PreferencesActivity.KEY_SHOW_SPLASH)).equals("true") ? true : false;
+    
+    // String splashPath = mSharedPreferences.getString(PreferencesActivity.KEY_SPLASH_PATH,
+    //    getString(R.string.default_splash_path));
+    String splashPath = propSingleton.getProperty(PreferencesActivity.KEY_SPLASH_PATH);
 
     // if you've increased version code, then update the version number and
     // set firstRun to true
-    if (mSharedPreferences.getLong(PreferencesActivity.KEY_LAST_VERSION, 0) < packageInfo.versionCode) {
-      editor.putLong(PreferencesActivity.KEY_LAST_VERSION, packageInfo.versionCode);
+    if (mSharedPreferences.getLong(KEY_LAST_VERSION, 0) < packageInfo.versionCode) {
+      editor.putLong(KEY_LAST_VERSION, packageInfo.versionCode);
       editor.commit();
 
       firstRun = true;
     }
+    
+    // String sKeyLastVer = propSingleton.getPropertyOrDefault(PreferencesActivity.KEY_LAST_VERSION, "0");
+    // String sKeyLastVer = propSingleton.getProperty(PreferencesActivity.KEY_LAST_VERSION);
+    /*
+    long keyLastVer =  Long.valueOf(sKeyLastVer);
+    if (keyLastVer < packageInfo.versionCode) {
+      propSingleton.setProperty(PreferencesActivity.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
+      propSingleton.writeProperties();
+
+      firstRun = true;
+    }*/
 
     // do all the first run things
     if (firstRun || showSplash) {
-      editor.putBoolean(PreferencesActivity.KEY_FIRST_RUN, false);
+      editor.putBoolean(KEY_FIRST_RUN, false);
+    	// propSingleton.setProperty(PreferencesActivity.KEY_FIRST_RUN, "false");
       editor.commit();
+    	// propSingleton.writeProperties();
       startSplashScreen(splashPath);
     } else {
       endSplashScreen();
