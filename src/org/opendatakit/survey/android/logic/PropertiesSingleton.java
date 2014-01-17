@@ -1,3 +1,17 @@
+/*
+ * Copyright (C) 2013-2014 University of Washington
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
 package org.opendatakit.survey.android.logic;
 
 import java.io.File;
@@ -36,10 +50,8 @@ public class PropertiesSingleton {
     defaults.setProperty(AdminPreferencesActivity.KEY_MANAGE_FORMS, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_ADMIN_PW, "");
-    // defaults.setProperty(PreferencesActivity.KEY_FIRST_RUN, "true");
     defaults.setProperty(PreferencesActivity.KEY_SHOW_SPLASH, "false");
     defaults.setProperty(PreferencesActivity.KEY_SPLASH_PATH, "ODK Default");
-    // defaults.setProperty(PreferencesActivity.KEY_LAST_VERSION, "0");
     defaults.setProperty(PreferencesActivity.KEY_FONT_SIZE, "21");
     defaults.setProperty(PreferencesActivity.KEY_SERVER_URL, "https://opendatakit-2.appspot.com");
     defaults.setProperty(PreferencesActivity.KEY_FORMLIST_URL, "/formList");
@@ -78,14 +90,6 @@ public class PropertiesSingleton {
     return retString;
   }
 
-  /*
-   * public String getPropertyOrDefault(String key, String defaultStr) { String
-   * retString = defaultStr;
-   * 
-   * if (mProps.containsKey(key)) { retString = mProps.getProperty(key); }
-   * return retString; }
-   */
-
   public void setProperty(String key, String value) {
     mProps.setProperty(key, value);
   }
@@ -109,7 +113,7 @@ public class PropertiesSingleton {
 
       FileInputStream configFileInputStream = new FileInputStream(mConfigFile);
 
-      mProps.load(configFileInputStream);
+      mProps.loadFromXML(configFileInputStream);
       configFileInputStream.close();
 
     } catch (Exception e) {
@@ -125,7 +129,7 @@ public class PropertiesSingleton {
       }
       FileOutputStream configFileOutputStream = new FileOutputStream(mTempConfigFile, false);
 
-      mProps.store(configFileOutputStream, null);
+      mProps.storeToXML(configFileOutputStream, null, "UTF-8"); 
       configFileOutputStream.close();
 
       if (mConfigFile == null) {
