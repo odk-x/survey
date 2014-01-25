@@ -21,5 +21,5 @@ package org.opendatakit.survey.android.listeners;
  * @author mitchellsundt@gmail.com
  */
 public interface DeleteFormsListener {
-  void deleteFormsComplete(int deletedForms);
+  void deleteFormsComplete(int deletedForms, boolean deleteFormAndData);
 }
