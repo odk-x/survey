@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.IOException;
 
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.accounts.Account;
@@ -28,9 +29,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 
 /**
  * Activity to authenticate against an account and generate a token into the
@@ -103,11 +102,11 @@ public class AccountInfo extends Activity {
    * If we failed to get an auth token.
    */
   protected void failedAuthToken() {
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.remove(PreferencesActivity.KEY_ACCOUNT);
-    editor.remove(PreferencesActivity.KEY_AUTH);
-    editor.commit();
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    propSingleton.removeProperty(PreferencesActivity.KEY_ACCOUNT);
+    propSingleton.removeProperty(PreferencesActivity.KEY_AUTH);
+    propSingleton.writeProperties();
+    
     dismissDialog(WAITING_ID);
     finish();
   }
@@ -120,10 +119,10 @@ public class AccountInfo extends Activity {
   protected void gotAuthToken(Bundle bundle) {
     // Set the authentication token and dismiss the dialog.
     String auth_token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.putString(PreferencesActivity.KEY_AUTH, auth_token);
-    editor.commit();
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    propSingleton.setProperty(PreferencesActivity.KEY_AUTH, auth_token);
+    propSingleton.writeProperties();
+    
     dismissDialog(WAITING_ID);
     finish();
   }

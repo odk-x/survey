@@ -25,18 +25,17 @@ import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelPro
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.ListFragment;
@@ -54,9 +53,9 @@ import android.widget.Toast;
 /**
  * Interface to the legacy OpenRosa compliant Form Discovery API (e.g., ODK
  * Aggregate forms listing).
- *
+ * 
  * @author mitchellsundt@gmail.com
- *
+ * 
  */
 public class FormDownloadListFragment extends ListFragment implements FormListDownloaderListener,
     FormDownloaderListener, ConfirmAlertDialog, CancelProgressDialog {
@@ -266,7 +265,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
 
   /**
    * returns the number of items currently selected in the list.
-   *
+   * 
    * @return
    */
   private int selectedItemCount() {
@@ -347,7 +346,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
    * Called when the form list has finished downloading. results will either
    * contain a set of <formname, formdetails> tuples, or one tuple of
    * DL.ERROR.MSG and the associated message.
-   *
+   * 
    * @param result
    */
   public void formListDownloadingComplete(HashMap<String, FormDetails> result) {
@@ -417,12 +416,11 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
   }
 
   private void showAuthDialog() {
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getActivity());
-    String server = settings.getString(PreferencesActivity.KEY_SERVER_URL,
-        getString(R.string.default_server_url));
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
 
-    final String url = server
-        + settings.getString(PreferencesActivity.KEY_FORMLIST_URL, "/formList");
+    String server = propSingleton.getProperty(PreferencesActivity.KEY_SERVER_URL);
+
+    final String url = server + propSingleton.getProperty(PreferencesActivity.KEY_FORMLIST_URL);
 
     AuthDialogFragment f = AuthDialogFragment.newInstance(getId(),
         getString(R.string.server_requires_auth), getString(R.string.server_auth_credentials, url),
@@ -447,7 +445,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
         progressDialog.getDialog().setTitle(mAlertTitle);
         progressDialog.setMessage(mAlertMsg);
       } else {
-        if ( progressDialog != null ) {
+        if (progressDialog != null) {
           dismissProgressDialog();
         }
         progressDialog = ProgressDialogFragment.newInstance(getId(), mAlertTitle, mAlertMsg);
@@ -500,7 +498,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
         public void run() {
           try {
             scopedReference.dismiss();
-          } catch ( Exception e ) {
+          } catch (Exception e) {
             // we tried...
           }
         }
@@ -547,7 +545,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
   /**
    * Creates an alert dialog with the given tite and message. If shouldExit is
    * set to true, the activity will exit when the user clicks "ok".
-   *
+   * 
    * @param title
    * @param shouldExit
    */
@@ -566,8 +564,8 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
   @Override
   public void formsDownloadingComplete(HashMap<String, String> result) {
     try {
-       mDialogState = DialogState.None;
-       dismissProgressDialog();
+      mDialogState = DialogState.None;
+      dismissProgressDialog();
     } catch (IllegalArgumentException e) {
       Log.i(t, "Attempting to close a dialog that was not previously opened");
     }

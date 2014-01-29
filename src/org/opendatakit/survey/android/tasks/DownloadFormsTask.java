@@ -48,15 +48,14 @@ import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -96,8 +95,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
   @Override
   protected HashMap<String, String> doInBackground(FormDetails... values) {
 
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(appContext);
-    String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    String auth = propSingleton.getProperty(PreferencesActivity.KEY_AUTH);
     setAuth(auth);
 
     int total = values.length;

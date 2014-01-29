@@ -176,7 +176,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
     // async task may have completed while we were reorienting...
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() == AsyncTask.Status.FINISHED) {
-      this.deleteFormsComplete(mBackgroundTasks.mDeleteFormsTask.getDeleteCount());
+      this.deleteFormsComplete(mBackgroundTasks.mDeleteFormsTask.getDeleteCount(), mBackgroundTasks.mDeleteFormsTask.getDeleteFormData());
     }
   }
 
@@ -220,7 +220,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   // ///////////////////////////////////////////////////
   // actions
 
-  public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete) {
+  public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
     mDeleteFormsListener = listener;
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -231,6 +231,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
       df.setApplication(getActivity().getApplication());
       df.setAppName(appName);
       df.setDeleteListener(this);
+      df.setDeleteFormData(deleteFormAndData);
       mBackgroundTasks.mDeleteFormsTask = df;
       executeTask(mBackgroundTasks.mDeleteFormsTask, toDelete);
     }
@@ -394,9 +395,9 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   // callbacks
 
   @Override
-  public void deleteFormsComplete(int deletedForms) {
+  public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
     if (mDeleteFormsListener != null) {
-      mDeleteFormsListener.deleteFormsComplete(deletedForms);
+      mDeleteFormsListener.deleteFormsComplete(deletedForms, deleteFormData);
     }
     mBackgroundTasks.mDeleteFormsTask = null;
   }

@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.fragments.ConfirmationDialogFragment.ConfirmConfirmationDialog;
+import org.opendatakit.survey.android.fragments.SelectConfirmationDialogFragment.SelectConfirmationDialog;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragmentSelection;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
@@ -53,7 +53,7 @@ import android.widget.Toast;
  *
  */
 public class FormDeleteListFragment extends ListFragment implements DeleteFormsListener,
-    ConfirmConfirmationDialog, LoaderManager.LoaderCallbacks<Cursor> {
+    SelectConfirmationDialog, LoaderManager.LoaderCallbacks<Cursor> {
 
   private static final String t = "FormDeleteListFragment";
   private static final int FORM_DELETE_LIST_LOADER = 0x01;
@@ -194,8 +194,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     FragmentManager mgr = getFragmentManager();
 
     // dismiss dialogs...
-    ConfirmationDialogFragment dialog = (ConfirmationDialogFragment) mgr
-        .findFragmentByTag("confirmationDialog");
+    SelectConfirmationDialogFragment dialog = (SelectConfirmationDialogFragment) mgr
+        .findFragmentByTag("selectConfirmationDialog");
     if (dialog != null) {
       dialog.dismiss();
     }
@@ -203,7 +203,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   }
 
   private void restoreConfirmationDialog() {
-    Fragment dialog = getFragmentManager().findFragmentByTag("confirmationDialog");
+    Fragment dialog = getFragmentManager().findFragmentByTag("selectConfirmationDialog");
     String alertMsg = getString(R.string.delete_confirm, mSelected.size());
     
     FormDeleteListFragmentSelection sel;
@@ -212,20 +212,20 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       alertMsg = alertMsg + "\n" + sel.formName + " id: " + sel.formId + " ver: " + sel.formVersion + "\n";
     }
     
-    if (dialog != null && ((ConfirmationDialogFragment) dialog).getDialog() != null) {
+    if (dialog != null && ((SelectConfirmationDialogFragment) dialog).getDialog() != null) {
       mDialogState = DialogState.Confirmation;
-      ((ConfirmationDialogFragment) dialog).getDialog().setTitle(getString(R.string.delete_file));
-      ((ConfirmationDialogFragment) dialog).setMessage(alertMsg);
+      ((SelectConfirmationDialogFragment) dialog).getDialog().setTitle(getString(R.string.delete_file));
+      ((SelectConfirmationDialogFragment) dialog).setMessage(alertMsg);
       // TODO: may need to set the ok/cancel button text if this is ever
       // reused?
     } else {
 
-      ConfirmationDialogFragment f = ConfirmationDialogFragment.newInstance(getId(),
+      SelectConfirmationDialogFragment f = SelectConfirmationDialogFragment.newInstance(getId(),
           getString(R.string.delete_file), alertMsg, getString(R.string.delete_yes),
-          getString(R.string.delete_no));
+          getString(R.string.delete_no), getString(R.string.delete_yes_with_options));
 
       mDialogState = DialogState.Confirmation;
-      f.show(getFragmentManager(), "confirmationDialog");
+      f.show(getFragmentManager(), "selectConfirmationDialog");
     }
   }
 
@@ -233,7 +233,14 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   public void okConfirmationDialog() {
     Log.i(t, "ok (delete) selected files");
     mDialogState = DialogState.None;
-    deleteSelectedForms();
+    deleteSelectedForms(false);
+  }
+  
+  @Override
+  public void okWithOptionsConfirmationDialog() {
+    Log.i(t, "ok (delete) selected files and data");
+    mDialogState = DialogState.None;
+    deleteSelectedForms(true);
   }
 
   @Override
@@ -254,7 +261,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
    * Deletes the selected files.First from the database then from the file
    * system
    */
-  private void deleteSelectedForms() {
+  private void deleteSelectedForms(boolean deleteFormAndData) {
     FragmentManager mgr = getFragmentManager();
     BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
    
@@ -263,7 +270,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       selectedFormIds[i] = mSelected.get(i).formId;
     }
 
-    f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this, selectedFormIds);
+    f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this, selectedFormIds, deleteFormAndData);
   }
 
   @Override
@@ -288,12 +295,19 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   }
 
   @Override
-  public void deleteFormsComplete(int deletedForms) {
+  public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
     Log.i(t, "Delete forms complete");
     if (deletedForms == mSelected.size()) {
-      // all deletes were successful
-      Toast.makeText(getActivity(), getString(R.string.file_deleted_ok, deletedForms),
-          Toast.LENGTH_SHORT).show();
+      if (deleteFormData) {
+        // all form deletes were successful
+        Toast.makeText(getActivity(), getString(R.string.file_and_data_deleted_ok, deletedForms),
+            Toast.LENGTH_SHORT).show();
+      } else {
+        // all form and data deletes were successful
+        Toast.makeText(getActivity(), getString(R.string.file_deleted_ok, deletedForms),
+            Toast.LENGTH_SHORT).show();
+      }
+
     } else {
       // had some failures
       Log.e(t, "Failed to delete " + (mSelected.size() - deletedForms) + " forms");

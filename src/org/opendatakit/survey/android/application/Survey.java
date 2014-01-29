@@ -27,13 +27,12 @@ import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 import com.google.android.vending.licensing.AESObfuscator;
@@ -45,9 +44,9 @@ import com.google.android.vending.licensing.util.Base64DecoderException;
 
 /**
  * Extends the Application class to implement
- *
+ * 
  * @author carlhartung
- *
+ * 
  */
 public class Survey extends Application implements LicenseCheckerCallback {
 
@@ -81,10 +80,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
   }
 
   public static int getQuestionFontsize() {
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String question_font = settings.getString(PreferencesActivity.KEY_FONT_SIZE,
-        Survey.DEFAULT_FONTSIZE);
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    String question_font = propSingleton.getProperty(PreferencesActivity.KEY_FONT_SIZE);
     int questionFontsize = Integer.valueOf(question_font);
     return questionFontsize;
   }
@@ -93,7 +90,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
    * For debugging APK expansion, we check for the existence and process the
    * local file without also confirming that it matches that on the Google Play
    * site.
-   *
+   * 
    * @return true if there is a test APK Expansion file present.
    */
   public static File debugAPKExpansionFile() {
@@ -120,7 +117,7 @@ public class Survey extends Application implements LicenseCheckerCallback {
 
   /**
    * Creates required directories on the SDCard (or other external storage)
-   *
+   * 
    * @return true if there are tables present
    * @throws RuntimeException
    *           if there is no SDCard or the directory exists as a non directory
@@ -138,20 +135,18 @@ public class Survey extends Application implements LicenseCheckerCallback {
   public void onCreate() {
     singleton = this;
     PropertyManager propertyManager = new PropertyManager(getApplicationContext());
-    PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-    PreferenceManager.setDefaultValues(this, R.xml.admin_preferences, false);
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+
     super.onCreate();
 
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String saltString = settings.getString(PreferencesActivity.KEY_SALT, null);
+    String saltString = propSingleton.getProperty(PreferencesActivity.KEY_SALT);
     do {
       if (saltString == null) {
         SecureRandom random = new SecureRandom();
         mSalt = new byte[20];
         random.nextBytes(mSalt);
         saltString = Base64.encode(mSalt);
-        settings.edit().putString(PreferencesActivity.KEY_SALT, saltString).commit();
+        propSingleton.setProperty(PreferencesActivity.KEY_SALT, saltString);
       } else {
         try {
           mSalt = Base64.decode(saltString);
@@ -239,11 +234,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
       String expansionDefs;
       try {
         expansionDefs = ODKFileUtils.mapper.writeValueAsString(expansions);
-
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(Survey
-            .getInstance());
-
-        settings.edit().putString(PreferencesActivity.KEY_APK_EXPANSIONS, expansionDefs).commit();
+        PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+        propSingleton.setProperty(PreferencesActivity.KEY_APK_EXPANSIONS, expansionDefs);
         Log.i(t, "retained the expansion file list (" + expansions.size() + " expansion files)");
       } catch (JsonGenerationException e) {
         e.printStackTrace();
@@ -263,9 +255,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
     File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
     f.mkdirs();
 
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String expansionDefs = settings.getString(PreferencesActivity.KEY_APK_EXPANSIONS, null);
+    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    String expansionDefs = propSingleton.getProperty(PreferencesActivity.KEY_APK_EXPANSIONS);
     if (expansionDefs != null) {
       try {
         return ODKFileUtils.mapper.readValue(expansionDefs, ArrayList.class);
