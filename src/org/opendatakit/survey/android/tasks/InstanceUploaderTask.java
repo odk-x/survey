@@ -75,8 +75,6 @@ import android.util.Log;
 public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUploadOutcome> {
 
   private static final String t = "InstanceUploaderTask";
-  // it can take up to 27 seconds to spin up Aggregate
-  private static final int CONNECTION_TIMEOUT = 45000;
   private static final String fail = "Error: ";
 
   private Application appContext;
@@ -423,7 +421,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     // get shared HttpContext so that authentication and cookies are
     // retained.
     HttpContext localContext = WebUtils.getHttpContext();
-    HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
+    HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
     Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 
