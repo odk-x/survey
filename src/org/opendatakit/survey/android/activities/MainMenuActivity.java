@@ -31,6 +31,7 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.fragments.AboutMenuFragment;
 import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
@@ -93,7 +94,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -129,6 +130,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
   private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
   private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
+  private static final int MENU_ABOUT = Menu.FIRST + 7;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
@@ -814,6 +816,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
           getString(R.string.admin_preferences));
       item.setIcon(R.drawable.ic_action_device_access_accounts).setShowAsAction(showOption);
+      
+      item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
+      item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
       ActionBar actionBar = getSupportActionBar();
       actionBar.hide();
@@ -854,7 +859,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         createPasswordDialog();
       }
       return true;
-
+    } else if (item.getItemId() == MENU_ABOUT) {
+      swapToFragmentView(ScreenList.ABOUT_MENU);
+      return true;
     }
     return super.onOptionsItemSelected(item);
   }
@@ -1098,6 +1105,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (f == null) {
         f = new WebViewFragment();
       }
+    } else if (newFragment == ScreenList.ABOUT_MENU) {
+      f = mgr.findFragmentById(AboutMenuFragment.ID);
+      if (f == null) {
+        f = new AboutMenuFragment();
+      }
+      
     } else {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }

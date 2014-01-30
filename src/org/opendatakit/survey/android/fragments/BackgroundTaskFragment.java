@@ -23,6 +23,7 @@ import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
+import org.opendatakit.survey.android.listeners.LicenseReaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
@@ -31,6 +32,7 @@ import org.opendatakit.survey.android.tasks.DeleteFormsTask;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 import org.opendatakit.survey.android.tasks.DownloadFormsTask;
 import org.opendatakit.survey.android.tasks.InstanceUploaderTask;
+import org.opendatakit.survey.android.tasks.LicenseReaderTask;
 
 import android.app.Activity;
 import android.os.AsyncTask;
@@ -48,11 +50,12 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class BackgroundTaskFragment extends Fragment implements DeleteFormsListener,
+public class BackgroundTaskFragment extends Fragment implements LicenseReaderListener, DeleteFormsListener,
     FormListDownloaderListener, FormDownloaderListener, InstanceUploaderListener,
     CopyExpansionFilesListener {
 
   public static final class BackgroundTasks {
+    LicenseReaderTask mLicenseReaderTask = null;
     DeleteFormsTask mDeleteFormsTask = null;
     DownloadFormListTask mDownloadFormListTask = null;
     DownloadFormsTask mDownloadFormsTask = null;
@@ -66,6 +69,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   public BackgroundTasks mBackgroundTasks; // handed across orientation
   // changes
 
+  public LicenseReaderListener mLicenseReaderListener = null;
   public DeleteFormsListener mDeleteFormsListener = null;
   public FormListDownloaderListener mFormListDownloaderListener = null;
   public FormDownloaderListener mFormDownloaderListener = null;
@@ -124,12 +128,16 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
 
   @Override
   public void onPause() {
+    mLicenseReaderListener = null;
     mDeleteFormsListener = null;
     mFormListDownloaderListener = null;
     mFormDownloaderListener = null;
     mInstanceUploaderListener = null;
     mCopyExpansionFilesListener = null;
-
+    
+    if (mBackgroundTasks.mLicenseReaderTask != null) {
+      mBackgroundTasks.mLicenseReaderTask.setLicenseReaderListener(null);
+    }
     if (mBackgroundTasks.mDeleteFormsTask != null) {
       mBackgroundTasks.mDeleteFormsTask.setDeleteListener(null);
     }
@@ -151,6 +159,9 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   @Override
   public void onResume() {
     super.onResume();
+    if (mBackgroundTasks.mLicenseReaderTask != null) {
+      mBackgroundTasks.mLicenseReaderTask.setLicenseReaderListener(this);
+    }
     if (mBackgroundTasks.mDeleteFormsTask != null) {
       mBackgroundTasks.mDeleteFormsTask.setDeleteListener(this);
     }
@@ -170,6 +181,15 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
 
   // /////////////////////////////////////////////////////////////////////////
   // registrations
+  
+  public void establishReadLicenseListener(LicenseReaderListener listener) {
+    mLicenseReaderListener = listener;
+    // async task may have completed while we were reorienting...
+    if (mBackgroundTasks.mLicenseReaderTask != null
+        && mBackgroundTasks.mLicenseReaderTask.getStatus() == AsyncTask.Status.FINISHED) {
+      this.readLicenseComplete(mBackgroundTasks.mLicenseReaderTask.getResult());
+    }
+  }
 
   public void establishDeleteFormsListener(DeleteFormsListener listener) {
     mDeleteFormsListener = listener;
@@ -219,6 +239,21 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
 
   // ///////////////////////////////////////////////////
   // actions
+  
+  public void readLicenseFile(String appName, LicenseReaderListener listener) {
+    mLicenseReaderListener = listener;
+    if (mBackgroundTasks.mLicenseReaderTask != null
+        && mBackgroundTasks.mLicenseReaderTask.getStatus() != AsyncTask.Status.FINISHED) {
+      Toast.makeText(this.getActivity(), getString(R.string.still_reading_license_file), Toast.LENGTH_LONG).show();
+    } else {
+      LicenseReaderTask lrt = new LicenseReaderTask();
+      lrt.setApplication(getActivity().getApplication());
+      lrt.setAppName(appName);
+      lrt.setLicenseReaderListener(this);
+      mBackgroundTasks.mLicenseReaderTask = lrt;
+      executeTask(mBackgroundTasks.mLicenseReaderTask);
+    }
+  }
 
   public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
     mDeleteFormsListener = listener;
@@ -393,6 +428,14 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
 
   // /////////////////////////////////////////////////////////////////////////
   // callbacks
+  
+  @Override
+  public void readLicenseComplete(String result) {
+    if (mLicenseReaderListener != null) {
+      mLicenseReaderListener.readLicenseComplete(result);
+    }
+    mBackgroundTasks.mLicenseReaderTask = null;
+  }
 
   @Override
   public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
