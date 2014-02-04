@@ -437,10 +437,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         getCurrentForm().tableId, getInstanceId());
 
     String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
-    if ( name == null ) {
+    if ( name == null || name.length() == 0) {
       name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
-      if ( name != null ) {
+      if ( name != null && name.length() != 0 ) {
         name = "username:" + name;
+      } else {
+        name = null;
       }
     } else {
       name = "mailto:" + name;
