@@ -49,6 +49,8 @@ public interface ODKActivity {
 
   public String getAppName();
 
+  public String getActiveUser();
+
   /** for completing the uriFragment of the media attachments */
   public String getWebViewContentUri();
 

@@ -14,8 +14,6 @@
 
 package org.opendatakit.survey.android.preferences;
 
-import java.util.Properties;
-
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
@@ -50,7 +48,7 @@ public class PasswordDialogPreference extends DialogPreference implements OnClic
     if (propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW) != null) {
     	adminPW =  propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
     }
-    
+
     // populate the fields if a pw exists
     if (!adminPW.equalsIgnoreCase("")) {
       passwordEditText.setText(adminPW);

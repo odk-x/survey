@@ -432,6 +432,23 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
+  public String getActiveUser() {
+    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
+        getCurrentForm().tableId, getInstanceId());
+
+    String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
+    if ( name == null ) {
+      name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
+      if ( name != null ) {
+        name = "username:" + name;
+      }
+    } else {
+      name = "mailto:" + name;
+    }
+    return name;
+  }
+
+  @Override
   public String getWebViewContentUri() {
     Uri u = FileProvider.getWebViewContentUri(this);
     return u.toString() + "/";
@@ -775,7 +792,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     super.onCreateOptionsMenu(menu);
 
     PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    
+
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
@@ -786,7 +803,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
-      // Using a file for this work now 
+      // Using a file for this work now
       String get = propSingleton.getProperty(AdminPreferencesActivity.KEY_GET_BLANK);
       if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));

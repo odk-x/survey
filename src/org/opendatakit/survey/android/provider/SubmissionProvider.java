@@ -35,6 +35,7 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
+import org.opendatakit.aggregate.odktables.rest.TableConstants;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.IdInstanceNameStruct;
@@ -231,7 +232,7 @@ public class SubmissionProvider extends CommonContentProvider {
         b.setLength(0);
 
         if (c.moveToFirst() && c.getCount() == 1) {
-          Long timestamp = null;
+          String timestamp = null;
           String instanceName = null;
           String formStateId = null;
           // OK. we have the record -- work through all the terms
@@ -283,7 +284,7 @@ public class SubmissionProvider extends CommonContentProvider {
               }
 
             } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
-              timestamp = c.getLong(i);
+              timestamp = c.getString(i);
             } else if (columnName.equals(DataTableColumns.FORM_ID)) {
               formStateId = c.getString(i);
             }
@@ -381,7 +382,7 @@ public class SubmissionProvider extends CommonContentProvider {
                 fc.close();
 
                 String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
-                    .format(new Date(timestamp));
+                    .format(new Date(TableConstants.milliSecondsFromNanos(timestamp)));
 
                 // For XML, we traverse the map to serialize it
                 Document d = new Document();
@@ -572,7 +573,7 @@ public class SubmissionProvider extends CommonContentProvider {
             }
             elem.put("saved", "COMPLETE");
             String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
-                .format(new Date(timestamp));
+                .format(new Date(TableConstants.milliSecondsFromNanos(timestamp)));
             elem.put("timestamp", datestamp);
 
             b.append(ODKFileUtils.mapper.writeValueAsString(wrapper));
