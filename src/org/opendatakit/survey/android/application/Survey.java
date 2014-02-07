@@ -44,6 +44,8 @@ import com.google.android.vending.licensing.LicenseCheckerCallback;
 import com.google.android.vending.licensing.util.Base64;
 import com.google.android.vending.licensing.util.Base64DecoderException;
 
+import fi.iki.elonen.SimpleWebServer;
+
 /**
  * Extends the Application class to implement
  *
@@ -75,6 +77,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
   private byte[] mSalt;
   private LicenseChecker mLicenseChecker;
   private APKExpansionPolicy mAPKExpansionPolicy;
+  private SimpleWebServer server = null;
+  private volatile Thread webServer = null;
 
   private static final boolean debugAPKExpansion = false;
 
@@ -82,6 +86,29 @@ public class Survey extends Application implements LicenseCheckerCallback {
 
   public static Survey getInstance() {
     return singleton;
+  }
+
+  private synchronized void startServer() {
+    if (server == null || !server.isAlive()) {
+      SimpleWebServer testing = new SimpleWebServer();
+      try {
+        testing.start();
+        server = testing;
+      } catch (IOException e) {
+        Log.e("Survey.Thread.WebServer", "Exception: " + e.toString());
+      }
+    }
+  }
+
+  private synchronized void stopServer() {
+    if (server != null) {
+      try {
+        server.stop();
+      } catch (Exception e) {
+        // ignore...
+      }
+      server = null;
+    }
   }
 
   public static int getQuestionFontsize(String appName) {
@@ -141,6 +168,24 @@ public class Survey extends Application implements LicenseCheckerCallback {
     PropertyManager propertyManager = new PropertyManager(getApplicationContext());
 
     super.onCreate();
+
+    webServer = new Thread(null, new Runnable() {
+      @Override
+      public void run() {
+        Thread mySelf = Thread.currentThread();
+        for (;webServer == mySelf;) {
+          startServer();
+          if ( !server.isAlive() && webServer == mySelf) {
+            try {
+              Thread.sleep(1000);
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+        stopServer();
+      }}, "WebServer");
+    webServer.start();
 
     SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -205,6 +250,15 @@ public class Survey extends Application implements LicenseCheckerCallback {
   @Override
   public void onTerminate() {
     mLicenseChecker.onDestroy();
+    Thread tmpThread = webServer;
+    webServer = null;
+    tmpThread.interrupt();
+    try {
+      // give it time to drain...
+      Thread.sleep(200);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     super.onTerminate();
     Log.i(t, "onTerminate");
   }
