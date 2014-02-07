@@ -54,10 +54,16 @@ public class PropertiesSingleton {
     return s;
   }
 
+  private static boolean isSecureProperty(String propertyName) {
+    return PreferencesActivity.KEY_AUTH.equals(propertyName) ||
+        AdminPreferencesActivity.KEY_ADMIN_PW.equals(propertyName);
+  }
+
   public static boolean containsKey(String appName, String propertyName) {
-    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+    if (isSecureProperty(propertyName)) {
       // this needs to be stored in a protected area
-      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey
+          .getInstance().getApplicationContext());
       return sharedPreferences.contains(appName + "_" + propertyName);
     } else {
       PropertiesSingleton s = getSingleton(appName);
@@ -66,9 +72,10 @@ public class PropertiesSingleton {
   }
 
   public static String getProperty(String appName, String propertyName) {
-    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+    if (isSecureProperty(propertyName)) {
       // this needs to be stored in a protected area
-      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey
+          .getInstance().getApplicationContext());
       return sharedPreferences.getString(appName + "_" + propertyName, null);
     } else {
       PropertiesSingleton s = getSingleton(appName);
@@ -77,9 +84,10 @@ public class PropertiesSingleton {
   }
 
   public static void removeProperty(String appName, String propertyName) {
-    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+    if (isSecureProperty(propertyName)) {
       // this needs to be stored in a protected area
-      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey
+          .getInstance().getApplicationContext());
       sharedPreferences.edit().remove(appName + "_" + propertyName).commit();
     } else {
       PropertiesSingleton s = getSingleton(appName);
@@ -88,9 +96,10 @@ public class PropertiesSingleton {
   }
 
   public static void setProperty(String appName, String propertyName, String value) {
-    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+    if (isSecureProperty(propertyName)) {
       // this needs to be stored in a protected area
-      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey
+          .getInstance().getApplicationContext());
       sharedPreferences.edit().putString(appName + "_" + propertyName, value).commit();
     } else {
       PropertiesSingleton s = getSingleton(appName);
@@ -121,7 +130,6 @@ public class PropertiesSingleton {
     defaults.setProperty(AdminPreferencesActivity.KEY_SEND_FINALIZED, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_MANAGE_FORMS, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, "true");
-    defaults.setProperty(AdminPreferencesActivity.KEY_ADMIN_PW, "");
     defaults.setProperty(PreferencesActivity.KEY_SHOW_SPLASH, "false");
     defaults.setProperty(PreferencesActivity.KEY_SPLASH_PATH,
         Survey.getInstance().getString(R.string.default_splash_path));
@@ -137,7 +145,6 @@ public class PropertiesSingleton {
     defaults.setProperty(AdminPreferencesActivity.KEY_CHANGE_FONT_SIZE, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_SHOW_SPLASH_SCREEN, "true");
-    defaults.setProperty(PreferencesActivity.KEY_AUTH, "");
     defaults.setProperty(PreferencesActivity.KEY_SUBMISSION_URL,
         Survey.getInstance().getString(R.string.default_odk_submission));
 
@@ -149,6 +156,25 @@ public class PropertiesSingleton {
         mProps.setProperty(entry.getKey().toString(), entry.getValue().toString());
         dirtyProps = true;
       }
+    }
+
+    // strip out the admin password and store it in the app layer.
+    if (mProps.containsKey(AdminPreferencesActivity.KEY_ADMIN_PW)) {
+      defaults.setProperty(AdminPreferencesActivity.KEY_ADMIN_PW, "");
+      String adminPW = mProps.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
+      // NOTE: can't use the static methods because this object is not yet fully created
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey
+          .getInstance().getApplicationContext());
+      sharedPreferences.edit()
+          .putString(mAppName + "_" + AdminPreferencesActivity.KEY_ADMIN_PW, adminPW).commit();
+      mProps.remove(AdminPreferencesActivity.KEY_ADMIN_PW);
+      dirtyProps = true;
+    }
+
+    // strip out the auth key
+    if (mProps.containsKey(PreferencesActivity.KEY_AUTH)) {
+      mProps.remove(PreferencesActivity.KEY_AUTH);
+      dirtyProps = true;
     }
 
     if (dirtyProps) {
