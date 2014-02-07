@@ -28,6 +28,8 @@ import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 public class PropertiesSingleton {
@@ -53,23 +55,47 @@ public class PropertiesSingleton {
   }
 
   public static boolean containsKey(String appName, String propertyName) {
-    PropertiesSingleton s = getSingleton(appName);
-    return s.containsKey(propertyName);
+    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+      // this needs to be stored in a protected area
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      return sharedPreferences.contains(appName + "_" + propertyName);
+    } else {
+      PropertiesSingleton s = getSingleton(appName);
+      return s.containsKey(propertyName);
+    }
   }
 
   public static String getProperty(String appName, String propertyName) {
-    PropertiesSingleton s = getSingleton(appName);
-    return s.getProperty(propertyName);
+    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+      // this needs to be stored in a protected area
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      return sharedPreferences.getString(appName + "_" + propertyName, null);
+    } else {
+      PropertiesSingleton s = getSingleton(appName);
+      return s.getProperty(propertyName);
+    }
   }
 
   public static void removeProperty(String appName, String propertyName) {
-    PropertiesSingleton s = getSingleton(appName);
-    s.removeProperty(propertyName);
+    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+      // this needs to be stored in a protected area
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      sharedPreferences.edit().remove(appName + "_" + propertyName).commit();
+    } else {
+      PropertiesSingleton s = getSingleton(appName);
+      s.removeProperty(propertyName);
+    }
   }
 
   public static void setProperty(String appName, String propertyName, String value) {
-    PropertiesSingleton s = getSingleton(appName);
-    s.setProperty(propertyName, value);
+    if (PreferencesActivity.KEY_AUTH.equals(propertyName)) {
+      // this needs to be stored in a protected area
+      SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(Survey.getInstance().getApplicationContext());
+      sharedPreferences.edit().putString(appName + "_" + propertyName, value).commit();
+    } else {
+      PropertiesSingleton s = getSingleton(appName);
+      s.setProperty(propertyName, value);
+    }
   }
 
   public static void writeProperties(String appName) {
