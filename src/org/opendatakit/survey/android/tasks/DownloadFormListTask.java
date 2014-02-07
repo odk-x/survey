@@ -38,7 +38,7 @@ import android.util.Log;
  * downloading tasks and it simplifies interfaces. If LIST_URL is passed to
  * doInBackground(), we fetch a form list. If a hashmap containing form/url
  * pairs is passed, we download those forms.
- * 
+ *
  * @author carlhartung
  */
 public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String, FormDetails>> {
@@ -50,6 +50,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
   public static final String DL_AUTH_REQUIRED = "dlauthrequired";
 
   private Application appContext;
+  private String appName;
   private FormListDownloaderListener mStateListener;
   private HashMap<String, FormDetails> mFormList;
 
@@ -59,17 +60,23 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
     return e.getNamespace().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_LIST);
   }
 
+  public DownloadFormListTask(String appName) {
+    super();
+    this.appName = appName;
+  }
+
   @Override
   protected HashMap<String, FormDetails> doInBackground(Void... values) {
     // Getting from a file now
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    String downloadListUrl = propSingleton.getProperty(PreferencesActivity.KEY_SERVER_URL);
+    String downloadListUrl = PropertiesSingleton.getProperty(appName,
+        PreferencesActivity.KEY_SERVER_URL);
 
     // NOTE: /formlist must not be translated! It is the well-known path on
     // the server.
-    String downloadPath = propSingleton.getProperty(PreferencesActivity.KEY_FORMLIST_URL);
+    String downloadPath = PropertiesSingleton.getProperty(appName,
+        PreferencesActivity.KEY_FORMLIST_URL);
     downloadListUrl += downloadPath;
-    String auth = propSingleton.getProperty(PreferencesActivity.KEY_AUTH);
+    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
 
     // We populate this with available forms from the specified server.
     // <formname, details>
@@ -256,5 +263,4 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
   public Application getApplication() {
     return appContext;
   }
-
 }

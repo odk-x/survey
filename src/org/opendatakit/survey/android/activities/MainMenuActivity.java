@@ -109,7 +109,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String PATH_WAITING_FOR_DATA = "pathWaitingForData";
   private static final String ACTION_WAITING_FOR_DATA = "actionWaitingForData";
 
-  private static final String APP_NAME = "appName";
+  public static final String APP_NAME = "appName";
   private static final String FORM_URI = "formUri";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
@@ -795,8 +795,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
 
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
@@ -808,25 +806,25 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
       // Using a file for this work now
-      String get = propSingleton.getProperty(AdminPreferencesActivity.KEY_GET_BLANK);
+      String get = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_GET_BLANK);
       if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
         item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
       }
 
-      String send = propSingleton.getProperty(AdminPreferencesActivity.KEY_SEND_FINALIZED);
+      String send = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_SEND_FINALIZED);
       if (send.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
         item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
       }
 
-      String manage = propSingleton.getProperty(AdminPreferencesActivity.KEY_MANAGE_FORMS);
+      String manage = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_MANAGE_FORMS);
       if (manage.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
         item.setIcon(R.drawable.trash).setShowAsAction(showOption);
       }
 
-      String settings = propSingleton.getProperty(AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
+      String settings = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
       if (settings.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
             getString(R.string.general_preferences));
@@ -835,7 +833,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
           getString(R.string.admin_preferences));
       item.setIcon(R.drawable.ic_action_device_access_accounts).setShowAsAction(showOption);
-      
+
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
       item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
@@ -866,13 +864,16 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     } else if (item.getItemId() == MENU_PREFERENCES) {
       // PreferenceFragment missing from support library...
       Intent ig = new Intent(this, PreferencesActivity.class);
+      // TODO: convert this activity into a preferences fragment
+      ig.putExtra(APP_NAME, getAppName());
       startActivity(ig);
       return true;
     } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
-    	PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    	String pw = propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
+    	String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
       if ("".equalsIgnoreCase(pw)) {
         Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
+        // TODO: convert this activity into a preferences fragment
+        i.putExtra(APP_NAME, getAppName());
         startActivity(i);
       } else {
         createPasswordDialog();
@@ -980,10 +981,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int whichButton) {
             String value = input.getText().toString();
-            PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-            String pw = propSingleton.getProperty(AdminPreferencesActivity.KEY_ADMIN_PW);
+            String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
             if (pw.compareTo(value) == 0) {
               Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
+              // TODO: convert this activity into a preferences fragment
+              i.putExtra(APP_NAME, getAppName());
               startActivity(i);
               input.setText("");
               passwordDialog.dismiss();
@@ -1129,7 +1131,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (f == null) {
         f = new AboutMenuFragment();
       }
-      
+
     } else {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
@@ -1411,18 +1413,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     Intent i;
-
+    boolean isSurveyApp = false;
+    boolean isTablesApp = false;
     if (action.startsWith("org.opendatakit.survey")) {
       Class<?> clazz;
       try {
         clazz = Class.forName(action);
         i = new Intent(this, clazz);
+        isSurveyApp = true;
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
         i = new Intent(action);
       }
     } else {
       i = new Intent(action);
+    }
+
+    if (action.startsWith("org.opendatakit.tables")) {
+      isTablesApp = true;
     }
 
     try {
@@ -1467,6 +1475,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         });
 
         i.putExtras(b);
+      }
+
+      if ( isSurveyApp || isTablesApp ) {
+        // ensure that we supply our appName...
+        if ( !i.hasExtra(APP_NAME) ) {
+          i.putExtra(APP_NAME, getAppName());
+          Log.w(t, "doAction into Survey or Tables does not supply an appName. Adding: " + getAppName());
+        }
       }
     } catch (Exception ex) {
       ex.printStackTrace();

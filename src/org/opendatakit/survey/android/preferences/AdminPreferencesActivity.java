@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.preferences;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.os.Bundle;
@@ -52,36 +53,42 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
   public static final String KEY_ACCESS_SETTINGS = "access_settings";
   public static final String KEY_CHANGE_LANGUAGE = "change_language";
   public static final String KEY_JUMP_TO = "jump_to";
-  
+
+  private String mAppName;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.admin_preferences));
+
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+
+    setTitle(mAppName + " > " + getString(R.string.admin_preferences));
 
     addPreferencesFromResource(R.xml.admin_preferences);
-    
+
     PreferenceScreen prefScreen = this.getPreferenceScreen();
-    
+
     initializeCheckBoxPreference(prefScreen);
   }
-  
+
   protected void initializeCheckBoxPreference(PreferenceGroup prefGroup) {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-  	
+
     for ( int i = 0; i < prefGroup.getPreferenceCount(); i++ ) {
       Preference pref = prefGroup.getPreference(i);
       Class c = pref.getClass();
       if (c == CheckBoxPreference.class) {
         CheckBoxPreference checkBoxPref = (CheckBoxPreference)pref;
-        if (propSingleton.containsKey(checkBoxPref.getKey())) {
-          String checked = propSingleton.getProperty(checkBoxPref.getKey());
+        if (PropertiesSingleton.containsKey(mAppName, checkBoxPref.getKey())) {
+          String checked = PropertiesSingleton.getProperty(mAppName, checkBoxPref.getKey());
           if (checked.equals("true")) {
             checkBoxPref.setChecked(true);
           } else {
             checkBoxPref.setChecked(false);
           }
-        }	
+        }
         // Set the listener
         checkBoxPref.setOnPreferenceChangeListener(this);
       } else if (c == PreferenceCategory.class) {
@@ -97,22 +104,19 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
    */
   @Override
   public boolean onPreferenceChange(Preference preference, Object newValue) {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.setProperty(preference.getKey(), newValue.toString());
+    PropertiesSingleton.setProperty(mAppName, preference.getKey(), newValue.toString());
     return true;
   }
-  
+
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.writeProperties();
+    PropertiesSingleton.writeProperties(mAppName);
   }
-  
+
   @Override
   public void finish() {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.writeProperties();
+	  PropertiesSingleton.writeProperties(mAppName);
     super.finish();
   }
 }

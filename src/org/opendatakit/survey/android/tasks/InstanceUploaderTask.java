@@ -413,8 +413,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     mOutcome.mResults = new HashMap<String, String>();
     mOutcome.mAuthRequestingServer = null;
 
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    String auth = propSingleton.getProperty(PreferencesActivity.KEY_AUTH);
+    String auth = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_AUTH);
     setAuth(auth);
 
     FormInfo fi = new FormInfo(appContext, uploadingForm.appName, uploadingForm.formDefFile);
@@ -447,10 +446,10 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
             instanceFiles = constructSubmissionFiles(fi, dataTableInstanceId);
             String urlString = fi.xmlSubmissionUrl;
             if (urlString == null) {
-              urlString = propSingleton.getProperty(PreferencesActivity.KEY_SERVER_URL);
+              urlString = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SERVER_URL);
               // NOTE: /submission must not be translated! It is
               // the well-known path on the server.
-              String submissionUrl = propSingleton.getProperty(PreferencesActivity.KEY_SUBMISSION_URL);
+              String submissionUrl = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SUBMISSION_URL);
               urlString = urlString + submissionUrl;
             }
 

@@ -30,6 +30,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 
 /**
  * Activity to authenticate against an account and generate a token into the
@@ -38,9 +39,12 @@ import android.os.Bundle;
  * @author cswenson@google.com (Christopher Swenson)
  */
 public class AccountInfo extends Activity {
+  private static final String t = "AccountInfo";
+
   final static int WAITING_ID = 1;
   final static String authString = "gather";
   boolean shownDialog = false;
+  private String mAppName;
 
   /**
    * Activity startup.
@@ -48,6 +52,12 @@ public class AccountInfo extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+    Log.i(t, t + " appName=" + mAppName);
   }
 
   /**
@@ -102,11 +112,10 @@ public class AccountInfo extends Activity {
    * If we failed to get an auth token.
    */
   protected void failedAuthToken() {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.removeProperty(PreferencesActivity.KEY_ACCOUNT);
-    propSingleton.removeProperty(PreferencesActivity.KEY_AUTH);
-    propSingleton.writeProperties();
-    
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_ACCOUNT);
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton.writeProperties(mAppName);
+
     dismissDialog(WAITING_ID);
     finish();
   }
@@ -119,10 +128,9 @@ public class AccountInfo extends Activity {
   protected void gotAuthToken(Bundle bundle) {
     // Set the authentication token and dismiss the dialog.
     String auth_token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.setProperty(PreferencesActivity.KEY_AUTH, auth_token);
-    propSingleton.writeProperties();
-    
+    PropertiesSingleton.setProperty(mAppName, PreferencesActivity.KEY_AUTH, auth_token);
+    PropertiesSingleton.writeProperties(mAppName);
+
     dismissDialog(WAITING_ID);
     finish();
   }

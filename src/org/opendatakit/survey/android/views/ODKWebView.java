@@ -109,8 +109,8 @@ public class ODKWebView extends WebView {
     ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
     ws.setDatabaseEnabled(true);
     ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
-    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
-    ws.setDefaultFontSize(Survey.getQuestionFontsize());
+    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize(appName));
+    ws.setDefaultFontSize(Survey.getQuestionFontsize(appName));
     ws.setDomStorageEnabled(true);
     ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
     ws.setGeolocationEnabled(true);

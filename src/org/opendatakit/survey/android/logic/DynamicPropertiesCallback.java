@@ -25,9 +25,9 @@ import android.content.Context;
 
 /**
  * Implements property access methods that return dynamic values
- * 
+ *
  * @author mitchellsundt@gmail.com
- * 
+ *
  */
 public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
 
@@ -46,15 +46,13 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
   @Override
   public String getUsername() {
     // Get the user name
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    return propSingleton.getProperty(PreferencesActivity.KEY_USERNAME);
+    return PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_USERNAME);
   }
 
   @Override
   public String getUserEmail() {
     // Get the user email
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    return propSingleton.getProperty(PreferencesActivity.KEY_ACCOUNT);
+    return PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_ACCOUNT);
   }
 
   @Override

@@ -53,9 +53,9 @@ import android.widget.Toast;
 /**
  * Interface to the legacy OpenRosa compliant Form Discovery API (e.g., ODK
  * Aggregate forms listing).
- * 
+ *
  * @author mitchellsundt@gmail.com
- * 
+ *
  */
 public class FormDownloadListFragment extends ListFragment implements FormListDownloaderListener,
     FormDownloaderListener, ConfirmAlertDialog, CancelProgressDialog {
@@ -247,7 +247,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
 
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
-      f.downloadFormList(this);
+      f.downloadFormList(((ODKActivity) getActivity()).getAppName(), this);
     }
   }
 
@@ -265,7 +265,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
 
   /**
    * returns the number of items currently selected in the list.
-   * 
+   *
    * @return
    */
   private int selectedItemCount() {
@@ -346,7 +346,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
    * Called when the form list has finished downloading. results will either
    * contain a set of <formname, formdetails> tuples, or one tuple of
    * DL.ERROR.MSG and the associated message.
-   * 
+   *
    * @param result
    */
   public void formListDownloadingComplete(HashMap<String, FormDetails> result) {
@@ -416,11 +416,13 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
   }
 
   private void showAuthDialog() {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
 
-    String server = propSingleton.getProperty(PreferencesActivity.KEY_SERVER_URL);
+    String appName = ((ODKActivity) getActivity()).getAppName();
 
-    final String url = server + propSingleton.getProperty(PreferencesActivity.KEY_FORMLIST_URL);
+    String server = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SERVER_URL);
+
+    final String url = server
+        + PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FORMLIST_URL);
 
     AuthDialogFragment f = AuthDialogFragment.newInstance(getId(),
         getString(R.string.server_requires_auth), getString(R.string.server_auth_credentials, url),
@@ -545,7 +547,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
   /**
    * Creates an alert dialog with the given tite and message. If shouldExit is
    * set to true, the activity will exit when the user clicks "ok".
-   * 
+   *
    * @param title
    * @param shouldExit
    */

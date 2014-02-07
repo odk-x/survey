@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
@@ -63,19 +64,19 @@ public class AuthDialogFragment extends DialogFragment {
     FragmentManager mgr = getFragmentManager();
     Fragment f = mgr.findFragmentById(fragmentId);
 
+    String appName = ((ODKActivity) getActivity()).getAppName();
+
     setTargetFragment(f, RequestCodes.AUTH_DIALOG.ordinal());
 
     LayoutInflater factory = LayoutInflater.from(getActivity());
     final View dialogView = factory.inflate(R.layout.server_auth_dialog, null);
 
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-
     EditText username = (EditText) dialogView.findViewById(R.id.username_edit);
-    String storedUsername = propSingleton.getProperty(PreferencesActivity.KEY_USERNAME);
+    String storedUsername = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_USERNAME);
     username.setText(storedUsername);
 
     EditText password = (EditText) dialogView.findViewById(R.id.password_edit);
-    String storedPassword = propSingleton.getProperty(PreferencesActivity.KEY_PASSWORD);
+    String storedPassword = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_PASSWORD);
     password.setText(storedPassword);
 
     AlertDialog dlg = new AlertDialog.Builder(getActivity()).setTitle(title).setMessage(message)

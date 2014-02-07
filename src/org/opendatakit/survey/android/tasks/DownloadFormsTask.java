@@ -95,8 +95,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
   @Override
   protected HashMap<String, String> doInBackground(FormDetails... values) {
 
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    String auth = propSingleton.getProperty(PreferencesActivity.KEY_AUTH);
+    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
     setAuth(auth);
 
     int total = values.length;

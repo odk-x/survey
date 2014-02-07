@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -40,7 +41,11 @@ import android.widget.TextView;
  * @author cswenson@google.com (Christopher Swenson)
  */
 public class AccountList extends ListActivity {
+  private static final String t = "AccountList";
+
   protected AccountManager accountManager;
+
+  private String mAppName;
 
   /**
    * Called to initialize the activity the first time it is run.
@@ -48,7 +53,14 @@ public class AccountList extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.google_account));
+
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+    Log.i(t, t + " appName=" + mAppName);
+
+    setTitle(mAppName + " > " + getString(R.string.google_account));
   }
 
   /**
@@ -71,9 +83,8 @@ public class AccountList extends ListActivity {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(android.R.id.text1);
-        vw.setTextSize(Survey.getQuestionFontsize());
-        PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-        String selected = propSingleton.getProperty(PreferencesActivity.KEY_ACCOUNT);
+        vw.setTextSize(Survey.getQuestionFontsize(mAppName));
+        String selected = PropertiesSingleton.getProperty(mAppName, PreferencesActivity.KEY_ACCOUNT);
         if (accounts[position].name.equals(selected)) {
           vw.setBackgroundColor(Color.LTGRAY);
         } else {
@@ -92,12 +103,13 @@ public class AccountList extends ListActivity {
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     Account account = (Account) getListView().getItemAtPosition(position);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.removeProperty(PreferencesActivity.KEY_AUTH);
-    propSingleton.setProperty(PreferencesActivity.KEY_ACCOUNT, account.name);
-    propSingleton.writeProperties();
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton.setProperty(mAppName, PreferencesActivity.KEY_ACCOUNT, account.name);
+    PropertiesSingleton.writeProperties(mAppName);
 
     Intent intent = new Intent(this, AccountInfo.class);
+    // TODO: convert this activity into a preferences fragment
+    intent.putExtra(MainMenuActivity.APP_NAME, mAppName);
     intent.putExtra("account", account);
     startActivity(intent);
     finish();

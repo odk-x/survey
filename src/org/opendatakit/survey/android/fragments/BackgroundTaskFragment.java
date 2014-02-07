@@ -134,7 +134,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mFormDownloaderListener = null;
     mInstanceUploaderListener = null;
     mCopyExpansionFilesListener = null;
-    
+
     if (mBackgroundTasks.mLicenseReaderTask != null) {
       mBackgroundTasks.mLicenseReaderTask.setLicenseReaderListener(null);
     }
@@ -181,7 +181,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
 
   // /////////////////////////////////////////////////////////////////////////
   // registrations
-  
+
   public void establishReadLicenseListener(LicenseReaderListener listener) {
     mLicenseReaderListener = listener;
     // async task may have completed while we were reorienting...
@@ -239,7 +239,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
 
   // ///////////////////////////////////////////////////
   // actions
-  
+
   public void readLicenseFile(String appName, LicenseReaderListener listener) {
     mLicenseReaderListener = listener;
     if (mBackgroundTasks.mLicenseReaderTask != null
@@ -272,14 +272,14 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void downloadFormList(FormListDownloaderListener listener) {
+  public void downloadFormList(String appName, FormListDownloaderListener listener) {
     mFormListDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormListTask != null
         && mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
       Toast.makeText(this.getActivity(), getString(R.string.download_in_progress),
           Toast.LENGTH_LONG).show();
     } else {
-      DownloadFormListTask df = new DownloadFormListTask();
+      DownloadFormListTask df = new DownloadFormListTask(appName);
       df.setApplication(getActivity().getApplication());
       df.setDownloaderListener(this);
       mBackgroundTasks.mDownloadFormListTask = df;
@@ -428,7 +428,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
 
   // /////////////////////////////////////////////////////////////////////////
   // callbacks
-  
+
   @Override
   public void readLicenseComplete(String result) {
     if (mLicenseReaderListener != null) {

@@ -60,12 +60,14 @@ public class AndroidShortcuts extends Activity {
     public final Bitmap icon;
     public final Uri command;
     public final String name;
+    public final String appName;
 
-    public Choice(int iconResourceId, Bitmap icon, Uri command, String name) {
+    public Choice(int iconResourceId, Bitmap icon, Uri command, String name, String appName) {
       this.iconResourceId = iconResourceId;
       this.icon = icon;
       this.command = command;
       this.name = name;
+      this.appName = appName;
     }
   }
 
@@ -109,13 +111,13 @@ public class AndroidShortcuts extends Activity {
     for (File app : directories) {
       String appName = app.getName();
       Uri uri = Uri.withAppendedPath(FileProvider.getFileProviderContentUri(this), app.getName());
-      choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName));
+      choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName, appName));
 
       Cursor c = null;
       try {
         boolean first = true;
         c = getContentResolver().query(
-            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName()), null, null, null,
+            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, null, null,
             null);
 
         if (c != null && c.getCount() > 0) {
@@ -124,9 +126,9 @@ public class AndroidShortcuts extends Activity {
             String formName = app.getName() + " > "
                 + c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
-                Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName()),
+                Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
                 c.getString(c.getColumnIndex(FormsColumns.FORM_ID)));
-            choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName));
+            choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }
       } finally {
@@ -149,7 +151,7 @@ public class AndroidShortcuts extends Activity {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(R.id.shortcut_title);
-        vw.setTextSize(Survey.getQuestionFontsize());
+        vw.setTextSize(Survey.getQuestionFontsize(getItem(position).appName));
         vw.setText(getItem(position).name);
 
         ImageView iv = (ImageView) row.findViewById(R.id.shortcut_icon);

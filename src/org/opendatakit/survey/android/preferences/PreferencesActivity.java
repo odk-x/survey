@@ -3,6 +3,7 @@ package org.opendatakit.survey.android.preferences;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.AccountList;
+import org.opendatakit.survey.android.activities.MainMenuActivity;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.app.AlertDialog;
@@ -15,11 +16,11 @@ import android.preference.CheckBoxPreference;
 import android.preference.EditTextPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
+import android.preference.Preference.OnPreferenceClickListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceScreen;
-import android.preference.Preference.OnPreferenceChangeListener;
-import android.preference.Preference.OnPreferenceClickListener;
 import android.provider.MediaStore.Images;
 import android.text.InputFilter;
 import android.text.Spanned;
@@ -31,14 +32,15 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
   protected static final int IMAGE_CHOOSER = 0;
 
-  // these keys are used in Survey to manage Google play licensing and APK
+  // keys used in Survey to manage Google play licensing and APK
   // Expansion files
-  public static final String KEY_SALT = "licenseSalt";
-  public static final String KEY_APK_EXPANSIONS = "apkExpansions";
+  // public static final String KEY_SALT = "licenseSalt";
+  // public static final String KEY_APK_EXPANSIONS = "apkExpansions";
 
-  // keys available for user configuration
-  // public static final String KEY_LAST_VERSION = "lastVersion";
-  // public static final String KEY_FIRST_RUN = "firstRun";
+  // keys used in SplashScreenActivity to manage splash screen
+  // presentation behavior.
+  public static final String KEY_LAST_VERSION = "lastVersion";
+  public static final String KEY_FIRST_RUN = "firstRun";
 
   public static final String KEY_PROTOCOL = "protocol";
 
@@ -75,13 +77,27 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   private CheckBoxPreference mShowSplashPreference;
   private PreferenceScreen mSplashPathPreference;
 
+  private String mAppName;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.general_preferences));
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if (mAppName == null || mAppName.length() == 0) {
+      mAppName = "survey";
+    }
+    // TODO: HACK HACK HACK HACK
+    // TODO: HACK HACK HACK HACK
+    // TODO: HACK HACK HACK HACK
+    // TODO: HACK HACK HACK HACK
+    // TODO: HACK HACK HACK HACK
+    // TODO: fix this hack -- we need to get appName into the PasswordDialogPreference
+    // but I don't know how to get it there, or how to access this activity from it.
+    //
+    PasswordDialogPreference.appName = mAppName;
 
-    final PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
+    setTitle(mAppName + " > " + getString(R.string.general_preferences));
 
     addPreferencesFromResource(R.xml.preferences);
 
@@ -90,19 +106,18 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     // would require code to access it
     boolean adminMode = getIntent().getBooleanExtra("adminMode", false);
 
-    boolean serverAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_CHANGE_SERVER)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean serverAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_CHANGE_SERVER)).equalsIgnoreCase("true") ? true : false;
 
     PreferenceCategory serverCategory = (PreferenceCategory) findPreference(getString(R.string.server_preferences));
 
     // Initialize the Server Protocol List Preference
     mServerProtocol = (ListPreference) findPreference(KEY_PROTOCOL);
-    if (propSingleton.containsKey(KEY_PROTOCOL)) {
+    if (PropertiesSingleton.containsKey(mAppName, KEY_PROTOCOL)) {
       CharSequence entryValues[] = mServerProtocol.getEntryValues();
       for (int i = 0; i < entryValues.length; i++) {
         String entry = entryValues[i].toString();
-        if (entry.equals(propSingleton.getProperty(KEY_PROTOCOL))) {
+        if (entry.equals(PropertiesSingleton.getProperty(mAppName, KEY_PROTOCOL))) {
           mServerProtocol.setValue(entry);
         }
       }
@@ -111,15 +126,15 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mServerProtocol.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
-        propSingleton.setProperty(KEY_PROTOCOL, newValue.toString());
+        PropertiesSingleton.setProperty(mAppName, KEY_PROTOCOL, newValue.toString());
         return true;
       }
     });
 
     // Initialize the Server URL Text Preference
     mServerUrlPreference = (EditTextPreference) findPreference(KEY_SERVER_URL);
-    if (propSingleton.containsKey(KEY_SERVER_URL)) {
-      String url = propSingleton.getProperty(KEY_SERVER_URL);
+    if (PropertiesSingleton.containsKey(mAppName, KEY_SERVER_URL)) {
+      String url = PropertiesSingleton.getProperty(mAppName, KEY_SERVER_URL);
       mServerUrlPreference.setSummary(url);
       mServerUrlPreference.setText(url);
     }
@@ -136,7 +151,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
         if (UrlUtils.isValidUrl(url)) {
           preference.setSummary(newValue.toString());
-          propSingleton.setProperty(KEY_SERVER_URL, newValue.toString());
+          PropertiesSingleton.setProperty(mAppName, KEY_SERVER_URL, newValue.toString());
           return true;
         } else {
           Toast.makeText(getApplicationContext(), R.string.url_error, Toast.LENGTH_SHORT).show();
@@ -154,8 +169,8 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     }
 
     mUsernamePreference = (EditTextPreference) findPreference(KEY_USERNAME);
-    if (propSingleton.containsKey(KEY_USERNAME)) {
-      String user = propSingleton.getProperty(KEY_USERNAME);
+    if (PropertiesSingleton.containsKey(mAppName, KEY_USERNAME)) {
+      String user = PropertiesSingleton.getProperty(mAppName, KEY_USERNAME);
       mUsernamePreference.setSummary(user);
       mUsernamePreference.setText(user);
     }
@@ -164,9 +179,8 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     mUsernamePreference.getEditText().setFilters(new InputFilter[] { getReturnFilter() });
 
-    boolean usernameAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_CHANGE_USERNAME)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean usernameAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_CHANGE_USERNAME)).equalsIgnoreCase("true") ? true : false;
     if (!(usernameAvailable || adminMode)) {
       serverCategory.removePreference(mUsernamePreference);
     }
@@ -182,22 +196,21 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         } else {
           mPasswordPreference.setSummary("");
         }
-        propSingleton.setProperty(KEY_PASSWORD, pw);
+        PropertiesSingleton.setProperty(mAppName, KEY_PASSWORD, pw);
 
         return true;
       }
     });
 
-    if (propSingleton.containsKey(KEY_PASSWORD)) {
-      String pwd = propSingleton.getProperty(KEY_PASSWORD);
+    if (PropertiesSingleton.containsKey(mAppName, KEY_PASSWORD)) {
+      String pwd = PropertiesSingleton.getProperty(mAppName, KEY_PASSWORD);
       if (pwd != null && pwd.length() > 0) {
         mPasswordPreference.setSummary("********");
       }
     }
 
-    boolean passwordAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_CHANGE_PASSWORD)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean passwordAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_CHANGE_PASSWORD)).equalsIgnoreCase("true") ? true : false;
     if (!(passwordAvailable || adminMode)) {
       serverCategory.removePreference(mPasswordPreference);
     }
@@ -207,18 +220,21 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       @Override
       public boolean onPreferenceClick(Preference preference) {
         Intent i = new Intent(getApplicationContext(), AccountList.class);
+        // TODO: convert this activity into a preferences
+        // fragment
+        i.putExtra(MainMenuActivity.APP_NAME, mAppName);
         startActivity(i);
         return true;
       }
     });
 
-    if (propSingleton.containsKey(KEY_SELECTED_GOOGLE_ACCOUNT)) {
-      mSelectedGoogleAccountPreference.setSummary(propSingleton
-          .getProperty(KEY_SELECTED_GOOGLE_ACCOUNT));
+    if (PropertiesSingleton.containsKey(mAppName, KEY_SELECTED_GOOGLE_ACCOUNT)) {
+      mSelectedGoogleAccountPreference.setSummary(PropertiesSingleton.getProperty(mAppName,
+          KEY_SELECTED_GOOGLE_ACCOUNT));
     }
 
-    boolean googleAccountAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_CHANGE_GOOGLE_ACCOUNT)).equalsIgnoreCase("true") ? true
+    boolean googleAccountAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_CHANGE_GOOGLE_ACCOUNT)).equalsIgnoreCase("true") ? true
         : false;
     if (!(googleAccountAvailable || adminMode)) {
       serverCategory.removePreference(mSelectedGoogleAccountPreference);
@@ -227,8 +243,8 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mFormListUrlPreference = (EditTextPreference) findPreference(KEY_FORMLIST_URL);
     mFormListUrlPreference.setOnPreferenceChangeListener(this);
 
-    if (propSingleton.containsKey(KEY_FORMLIST_URL)) {
-      String formListURL = propSingleton.getProperty(KEY_FORMLIST_URL);
+    if (PropertiesSingleton.containsKey(mAppName, KEY_FORMLIST_URL)) {
+      String formListURL = PropertiesSingleton.getProperty(mAppName, KEY_FORMLIST_URL);
       mFormListUrlPreference.setSummary(formListURL);
       mFormListUrlPreference.setText(formListURL);
     }
@@ -241,9 +257,10 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mSubmissionUrlPreference = (EditTextPreference) findPreference(KEY_SUBMISSION_URL);
     mSubmissionUrlPreference.setOnPreferenceChangeListener(this);
 
-    if (propSingleton.containsKey(KEY_SUBMISSION_URL)) {
-      String keySubmissionURL = propSingleton.getProperty(KEY_SUBMISSION_URL);
-      mSubmissionUrlPreference.setSummary(propSingleton.getProperty(keySubmissionURL));
+    if (PropertiesSingleton.containsKey(mAppName, KEY_SUBMISSION_URL)) {
+      String keySubmissionURL = PropertiesSingleton.getProperty(mAppName, KEY_SUBMISSION_URL);
+      mSubmissionUrlPreference.setSummary(PropertiesSingleton.getProperty(mAppName,
+          keySubmissionURL));
       mSubmissionUrlPreference.setText(keySubmissionURL);
     }
     mServerUrlPreference.getEditText().setFilters(
@@ -258,15 +275,14 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     PreferenceCategory clientCategory = (PreferenceCategory) findPreference(getString(R.string.client));
 
-    boolean fontAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_CHANGE_FONT_SIZE)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean fontAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_CHANGE_FONT_SIZE)).equalsIgnoreCase("true") ? true : false;
     mFontSizePreference = (ListPreference) findPreference(KEY_FONT_SIZE);
-    if (propSingleton.containsKey(KEY_FONT_SIZE)) {
+    if (PropertiesSingleton.containsKey(mAppName, KEY_FONT_SIZE)) {
       CharSequence entryValues[] = mFontSizePreference.getEntryValues();
       for (int i = 0; i < entryValues.length; i++) {
         String entry = entryValues[i].toString();
-        if (entry.equals(propSingleton.getProperty(KEY_FONT_SIZE))) {
+        if (entry.equals(PropertiesSingleton.getProperty(mAppName, KEY_FONT_SIZE))) {
           mFontSizePreference.setValue(entry);
         }
       }
@@ -279,7 +295,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         int index = ((ListPreference) preference).findIndexOfValue(newValue.toString());
         String entry = (String) ((ListPreference) preference).getEntries()[index];
         ((ListPreference) preference).setSummary(entry);
-        propSingleton.setProperty(KEY_FONT_SIZE, newValue.toString());
+        PropertiesSingleton.setProperty(mAppName, KEY_FONT_SIZE, newValue.toString());
         return true;
       }
     });
@@ -287,13 +303,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       clientCategory.removePreference(mFontSizePreference);
     }
 
-    boolean splashAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean splashAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
 
     mSplashPathPreference = (PreferenceScreen) findPreference(KEY_SPLASH_PATH);
-    if (propSingleton.containsKey(KEY_SPLASH_PATH)) {
-      mSplashPathPreference.setSummary(propSingleton.getProperty(KEY_SPLASH_PATH));
+    if (PropertiesSingleton.containsKey(mAppName, KEY_SPLASH_PATH)) {
+      mSplashPathPreference.setSummary(PropertiesSingleton.getProperty(mAppName, KEY_SPLASH_PATH));
     }
     mSplashPathPreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
@@ -346,13 +361,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       clientCategory.removePreference(mSplashPathPreference);
     }
 
-    boolean showSplashAvailable = (propSingleton
-        .getProperty(AdminPreferencesActivity.KEY_SHOW_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true
-        : false;
+    boolean showSplashAvailable = (PropertiesSingleton.getProperty(mAppName,
+        AdminPreferencesActivity.KEY_SHOW_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
 
     mShowSplashPreference = (CheckBoxPreference) findPreference(KEY_SHOW_SPLASH);
-    if (propSingleton.containsKey(KEY_SHOW_SPLASH)) {
-      String checked = propSingleton.getProperty(KEY_SHOW_SPLASH);
+    if (PropertiesSingleton.containsKey(mAppName, KEY_SHOW_SPLASH)) {
+      String checked = PropertiesSingleton.getProperty(mAppName, KEY_SHOW_SPLASH);
       if (checked.equals("true")) {
         mShowSplashPreference.setChecked(true);
       }
@@ -361,7 +375,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
-        propSingleton.setProperty(KEY_SHOW_SPLASH, newValue.toString());
+        PropertiesSingleton.setProperty(mAppName, KEY_SHOW_SPLASH, newValue.toString());
         return true;
       }
     });
@@ -379,14 +393,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   protected void onSaveInstanceState(Bundle outState) {
     // TODO Auto-generated method stub
     super.onSaveInstanceState(outState);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.writeProperties();
+    PropertiesSingleton.writeProperties(mAppName);
   }
 
   @Override
   public void finish() {
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.writeProperties();
+    PropertiesSingleton.writeProperties(mAppName);
 
     // TODO Auto-generated method stub
     super.finish();
@@ -396,8 +408,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     mSplashPathPreference = (PreferenceScreen) findPreference(KEY_SPLASH_PATH);
     mSplashPathPreference.setSummary(path);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.setProperty(KEY_SPLASH_PATH, path);
+    PropertiesSingleton.setProperty(mAppName, KEY_SPLASH_PATH, path);
   }
 
   @Override
@@ -439,7 +450,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
   /**
    * Disallows whitespace from user entry
-   * 
+   *
    * @return
    */
   private InputFilter getWhitespaceFilter() {
@@ -459,7 +470,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
   /**
    * Disallows carriage returns from user entry
-   * 
+   *
    * @return
    */
   private InputFilter getReturnFilter() {
@@ -483,8 +494,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   @Override
   public boolean onPreferenceChange(Preference preference, Object newValue) {
     preference.setSummary((CharSequence) newValue);
-    PropertiesSingleton propSingleton = PropertiesSingleton.INSTANCE;
-    propSingleton.setProperty(preference.getKey(), newValue.toString());
+    PropertiesSingleton.setProperty(mAppName, preference.getKey(), newValue.toString());
     return true;
   }
 }

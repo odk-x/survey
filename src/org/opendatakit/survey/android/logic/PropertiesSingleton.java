@@ -17,33 +17,79 @@ package org.opendatakit.survey.android.logic;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.util.Log;
 
 public class PropertiesSingleton {
-  public final static PropertiesSingleton INSTANCE = new PropertiesSingleton();
+
+  private static final String t = "PropertiesSingleton";
 
   private static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "config.properties";
 
   private static final String ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME = "config.temp";
 
-  public static final String t = "PropertiesSingleton";
+  private static final Map<String, PropertiesSingleton> singletons = new HashMap<String, PropertiesSingleton>();
 
+  private static synchronized PropertiesSingleton getSingleton(String appName) {
+    if (appName == null || appName.length() == 0) {
+      throw new IllegalArgumentException("Unexpectedly null or empty appName");
+    }
+    PropertiesSingleton s = singletons.get(appName);
+    if (s == null) {
+      s = new PropertiesSingleton(appName);
+      singletons.put(appName, s);
+    }
+    return s;
+  }
+
+  public static boolean containsKey(String appName, String propertyName) {
+    PropertiesSingleton s = getSingleton(appName);
+    return s.containsKey(propertyName);
+  }
+
+  public static String getProperty(String appName, String propertyName) {
+    PropertiesSingleton s = getSingleton(appName);
+    return s.getProperty(propertyName);
+  }
+
+  public static void removeProperty(String appName, String propertyName) {
+    PropertiesSingleton s = getSingleton(appName);
+    s.removeProperty(propertyName);
+  }
+
+  public static void setProperty(String appName, String propertyName, String value) {
+    PropertiesSingleton s = getSingleton(appName);
+    s.setProperty(propertyName, value);
+  }
+
+  public static void writeProperties(String appName) {
+    PropertiesSingleton s = getSingleton(appName);
+    s.writeProperties();
+  }
+
+  private String mAppName;
   private Properties mProps;
   private File mConfigFile;
   private File mTempConfigFile;
 
-  private PropertiesSingleton() {
+  private PropertiesSingleton(String appName) {
+    mAppName = appName;
     mProps = new Properties();
 
     // Set default values as necessary
     Properties defaults = new Properties();
+    defaults.setProperty(PreferencesActivity.KEY_LAST_VERSION, "0");
+    defaults.setProperty(PreferencesActivity.KEY_FIRST_RUN, "true");
     defaults.setProperty(PreferencesActivity.KEY_ACCOUNT, "");
     defaults.setProperty(AdminPreferencesActivity.KEY_GET_BLANK, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_SEND_FINALIZED, "true");
@@ -51,10 +97,13 @@ public class PropertiesSingleton {
     defaults.setProperty(AdminPreferencesActivity.KEY_ACCESS_SETTINGS, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_ADMIN_PW, "");
     defaults.setProperty(PreferencesActivity.KEY_SHOW_SPLASH, "false");
-    defaults.setProperty(PreferencesActivity.KEY_SPLASH_PATH, "ODK Default");
+    defaults.setProperty(PreferencesActivity.KEY_SPLASH_PATH,
+        Survey.getInstance().getString(R.string.default_splash_path));
     defaults.setProperty(PreferencesActivity.KEY_FONT_SIZE, "21");
-    defaults.setProperty(PreferencesActivity.KEY_SERVER_URL, "https://opendatakit-2.appspot.com");
-    defaults.setProperty(PreferencesActivity.KEY_FORMLIST_URL, "/formList");
+    defaults.setProperty(PreferencesActivity.KEY_SERVER_URL,
+        Survey.getInstance().getString(R.string.default_server_url));
+    defaults.setProperty(PreferencesActivity.KEY_FORMLIST_URL,
+        Survey.getInstance().getString(R.string.default_odk_formlist));
     defaults.setProperty(AdminPreferencesActivity.KEY_CHANGE_SERVER, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_CHANGE_USERNAME, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_CHANGE_PASSWORD, "true");
@@ -63,7 +112,8 @@ public class PropertiesSingleton {
     defaults.setProperty(AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN, "true");
     defaults.setProperty(AdminPreferencesActivity.KEY_SHOW_SPLASH_SCREEN, "true");
     defaults.setProperty(PreferencesActivity.KEY_AUTH, "");
-    defaults.setProperty(PreferencesActivity.KEY_SUBMISSION_URL, "/submission");
+    defaults.setProperty(PreferencesActivity.KEY_SUBMISSION_URL,
+        Survey.getInstance().getString(R.string.default_odk_submission));
 
     readProperties();
 
@@ -81,7 +131,11 @@ public class PropertiesSingleton {
 
   }
 
-  public String getProperty(String key) {
+  private boolean containsKey(String key) {
+    return mProps.containsKey(key);
+  }
+
+  private String getProperty(String key) {
     String retString = null;
 
     if (mProps.containsKey(key)) {
@@ -90,24 +144,20 @@ public class PropertiesSingleton {
     return retString;
   }
 
-  public void setProperty(String key, String value) {
-    mProps.setProperty(key, value);
-  }
-
-  public void removeProperty(String key) {
+  private void removeProperty(String key) {
     if (key != null) {
       mProps.remove(key);
     }
   }
 
-  public boolean containsKey(String key) {
-    return mProps.containsKey(key);
+  private void setProperty(String key, String value) {
+    mProps.setProperty(key, value);
   }
 
   private void readProperties() {
     try {
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder("survey"),
+        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
             ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
       }
 
@@ -121,19 +171,19 @@ public class PropertiesSingleton {
     }
   }
 
-  public void writeProperties() {
+  private void writeProperties() {
     try {
       if (mTempConfigFile == null) {
-        mTempConfigFile = new File(ODKFileUtils.getAppFolder("survey"),
+        mTempConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
             ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME);
       }
       FileOutputStream configFileOutputStream = new FileOutputStream(mTempConfigFile, false);
 
-      mProps.storeToXML(configFileOutputStream, null, "UTF-8"); 
+      mProps.storeToXML(configFileOutputStream, null, "UTF-8");
       configFileOutputStream.close();
 
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder("survey"),
+        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
             ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
       }
 
