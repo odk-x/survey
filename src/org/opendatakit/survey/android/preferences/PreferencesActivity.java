@@ -63,8 +63,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   public static final String KEY_AUTH = "auth";
   public static final String KEY_ACCOUNT = "account";
 
-  public static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "config.properties";
-
   private ListPreference mServerProtocol;
   private EditTextPreference mServerUrlPreference;
   private EditTextPreference mUsernamePreference;

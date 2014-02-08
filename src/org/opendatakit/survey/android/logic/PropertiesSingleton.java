@@ -36,9 +36,9 @@ public class PropertiesSingleton {
 
   private static final String t = "PropertiesSingleton";
 
-  private static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "config.properties";
+  private static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "survey.properties";
 
-  private static final String ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME = "config.temp";
+  private static final String ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME = "survey.temp";
 
   private static final Map<String, PropertiesSingleton> singletons = new HashMap<String, PropertiesSingleton>();
 

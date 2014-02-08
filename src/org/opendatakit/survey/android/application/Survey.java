@@ -173,14 +173,17 @@ public class Survey extends Application implements LicenseCheckerCallback {
       @Override
       public void run() {
         Thread mySelf = Thread.currentThread();
+        int retryCount = 0;
         for (;webServer == mySelf;) {
           startServer();
-          if ( !server.isAlive() && webServer == mySelf) {
-            try {
-              Thread.sleep(1000);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
+          try {
+            retryCount++;
+            Thread.sleep(1000);
+            if ( retryCount % 60 == 0 ) {
+              Log.d(t,"Survey.Thread.WebServer -- waking to confirm webserver is still working");
             }
+          } catch (InterruptedException e) {
+            e.printStackTrace();
           }
         }
         stopServer();
