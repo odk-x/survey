@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.LicenseReaderListener;
 
 import android.os.Bundle;
@@ -34,30 +35,33 @@ public class AboutMenuFragment extends Fragment implements LicenseReaderListener
 
   public static final int ID = R.layout.about_menu_layout;
   public static final String t = "AboutMenuFragment";
-  
+
   private TextView mTextView;
   private static String mLicenseText = null;
   private static String LICENSE_TEXT = "LICENSE_TEXT";
 
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-    
+
     View aboutMenuView = inflater.inflate(ID, container, false);
-    
+
+    TextView versionBox = (TextView) aboutMenuView.findViewById(R.id.versionText);
+    versionBox.setText(Survey.getInstance().getVersionedAppName());
+
     mTextView = (TextView)aboutMenuView.findViewById(R.id.text1);
     mTextView.setAutoLinkMask(Linkify.WEB_URLS);
     mTextView.setClickable(true);
-    
+
     if (savedInstanceState != null && savedInstanceState.containsKey(LICENSE_TEXT)) {
         mTextView.setText(Html.fromHtml(savedInstanceState.getString(LICENSE_TEXT)));
     } else {
-      readLicenseFile();      
+      readLicenseFile();
     }
 
 
     return aboutMenuView;
   }
-  
+
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
@@ -78,12 +82,12 @@ public class AboutMenuFragment extends Fragment implements LicenseReaderListener
       Toast.makeText(getActivity(), R.string.read_license_fail, Toast.LENGTH_LONG).show();
     }
   }
-  
+
   private void readLicenseFile() {
     FragmentManager mgr = getFragmentManager();
     BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
     f.readLicenseFile(((ODKActivity) getActivity()).getAppName(), this);
   }
-  
+
 }
