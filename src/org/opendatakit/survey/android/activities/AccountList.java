@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.activities;
 
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.accounts.Account;
@@ -23,10 +24,9 @@ import android.accounts.AccountManager;
 import android.app.ListActivity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,7 +41,11 @@ import android.widget.TextView;
  * @author cswenson@google.com (Christopher Swenson)
  */
 public class AccountList extends ListActivity {
+  private static final String t = "AccountList";
+
   protected AccountManager accountManager;
+
+  private String mAppName;
 
   /**
    * Called to initialize the activity the first time it is run.
@@ -49,7 +53,14 @@ public class AccountList extends ListActivity {
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.google_account));
+
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+    Log.i(t, t + " appName=" + mAppName);
+
+    setTitle(mAppName + " > " + getString(R.string.google_account));
   }
 
   /**
@@ -72,10 +83,8 @@ public class AccountList extends ListActivity {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(android.R.id.text1);
-        vw.setTextSize(Survey.getQuestionFontsize());
-        SharedPreferences settings = PreferenceManager
-            .getDefaultSharedPreferences(getBaseContext());
-        String selected = settings.getString(PreferencesActivity.KEY_ACCOUNT, "");
+        vw.setTextSize(Survey.getQuestionFontsize(mAppName));
+        String selected = PropertiesSingleton.getProperty(mAppName, PreferencesActivity.KEY_ACCOUNT);
         if (accounts[position].name.equals(selected)) {
           vw.setBackgroundColor(Color.LTGRAY);
         } else {
@@ -94,13 +103,13 @@ public class AccountList extends ListActivity {
   @Override
   protected void onListItemClick(ListView l, View v, int position, long id) {
     Account account = (Account) getListView().getItemAtPosition(position);
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.remove(PreferencesActivity.KEY_AUTH);
-    editor.putString(PreferencesActivity.KEY_ACCOUNT, account.name);
-    editor.commit();
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton.setProperty(mAppName, PreferencesActivity.KEY_ACCOUNT, account.name);
+    PropertiesSingleton.writeProperties(mAppName);
 
     Intent intent = new Intent(this, AccountInfo.class);
+    // TODO: convert this activity into a preferences fragment
+    intent.putExtra(MainMenuActivity.APP_NAME, mAppName);
     intent.putExtra("account", account);
     startActivity(intent);
     finish();

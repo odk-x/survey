@@ -21,6 +21,7 @@ import org.opendatakit.common.android.database.WebDbDatabaseHelper;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.activities.ODKActivity.FrameworkFormPathInfo;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.os.Build;
 
@@ -91,7 +92,9 @@ public class ODKShimJavascriptCallback {
 	 return "{\"container\":\"Android\"," +
 		      "\"version\":\""	+ Build.VERSION.RELEASE + "\"," +
             "\"appName\":\"" + mActivity.getAppName() + "\"," +
-            "\"baseUri\":\"" + mActivity.getContentProviderUri() + mActivity.getAppName() + "/\"," +
+		      "\"activeUser\":\"" + mActivity.getActiveUser() + "\"," +
+            "\"baseUri\":\"" + mActivity.getWebViewContentUri() + mActivity.getAppName() + "/\"," +
+            "\"formsUri\":\"" + FormsProviderAPI.CONTENT_URI.toString() + "\"," +
 	         "\"logLevel\":\"D\"}";
     // @formatter:on
   }

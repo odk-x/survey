@@ -15,12 +15,19 @@
 package org.opendatakit.survey.android.preferences;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.MainMenuActivity;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceManager;
+import android.preference.PreferenceCategory;
+import android.preference.PreferenceGroup;
+import android.preference.PreferenceScreen;
+import android.preference.Preference.OnPreferenceChangeListener;
 
-public class AdminPreferencesActivity extends PreferenceActivity {
+public class AdminPreferencesActivity extends PreferenceActivity implements OnPreferenceChangeListener{
 
   public static final String ADMIN_PREFERENCES = "admin_prefs";
 
@@ -47,16 +54,69 @@ public class AdminPreferencesActivity extends PreferenceActivity {
   public static final String KEY_CHANGE_LANGUAGE = "change_language";
   public static final String KEY_JUMP_TO = "jump_to";
 
+  private String mAppName;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.admin_preferences));
 
-    PreferenceManager prefMgr = getPreferenceManager();
-    prefMgr.setSharedPreferencesName(ADMIN_PREFERENCES);
-    prefMgr.setSharedPreferencesMode(MODE_WORLD_READABLE);
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+
+    setTitle(mAppName + " > " + getString(R.string.admin_preferences));
 
     addPreferencesFromResource(R.xml.admin_preferences);
+
+    PreferenceScreen prefScreen = this.getPreferenceScreen();
+
+    initializeCheckBoxPreference(prefScreen);
   }
 
+  protected void initializeCheckBoxPreference(PreferenceGroup prefGroup) {
+
+    for ( int i = 0; i < prefGroup.getPreferenceCount(); i++ ) {
+      Preference pref = prefGroup.getPreference(i);
+      Class c = pref.getClass();
+      if (c == CheckBoxPreference.class) {
+        CheckBoxPreference checkBoxPref = (CheckBoxPreference)pref;
+        if (PropertiesSingleton.containsKey(mAppName, checkBoxPref.getKey())) {
+          String checked = PropertiesSingleton.getProperty(mAppName, checkBoxPref.getKey());
+          if (checked.equals("true")) {
+            checkBoxPref.setChecked(true);
+          } else {
+            checkBoxPref.setChecked(false);
+          }
+        }
+        // Set the listener
+        checkBoxPref.setOnPreferenceChangeListener(this);
+      } else if (c == PreferenceCategory.class) {
+        // Find CheckBoxPreferences in this category
+        PreferenceCategory prefCat = (PreferenceCategory)pref;
+        initializeCheckBoxPreference(prefCat);
+      }
+    }
+  }
+
+  /**
+   * Generic listener that sets the summary to the newly selected/entered value
+   */
+  @Override
+  public boolean onPreferenceChange(Preference preference, Object newValue) {
+    PropertiesSingleton.setProperty(mAppName, preference.getKey(), newValue.toString());
+    return true;
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    PropertiesSingleton.writeProperties(mAppName);
+  }
+
+  @Override
+  public void finish() {
+	  PropertiesSingleton.writeProperties(mAppName);
+    super.finish();
+  }
 }

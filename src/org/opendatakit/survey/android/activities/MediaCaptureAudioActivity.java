@@ -108,8 +108,8 @@ public class MediaCaptureAudioActivity extends Activity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(Audio.Media.RECORD_SOUND_ACTION);
       // to make the name unique...
-      String uriString = FileProvider.getAsUri(this, appName, (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
-      File f = FileProvider.getAsFile(this, uriString);
+      File f = FileProvider.getAsFile(this, appName,
+          (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
         i.putExtra(Audio.Media.DISPLAY_NAME, f.getName());
@@ -145,8 +145,7 @@ public class MediaCaptureAudioActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteAudioFileFromMediaProvider(this, path);
@@ -220,8 +219,7 @@ public class MediaCaptureAudioActivity extends Activity {
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
@@ -267,8 +265,8 @@ public class MediaCaptureAudioActivity extends Activity {
   }
 
   private void returnResult() {
-    File sourceMedia = (uriFragmentToMedia != null) ? FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia)) : null;
+    File sourceMedia = (uriFragmentToMedia != null) ?
+        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));

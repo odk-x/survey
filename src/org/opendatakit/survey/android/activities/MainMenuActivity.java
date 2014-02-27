@@ -31,6 +31,7 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.fragments.AboutMenuFragment;
 import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
@@ -44,6 +45,7 @@ import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -51,7 +53,6 @@ import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -93,7 +94,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -108,7 +109,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String PATH_WAITING_FOR_DATA = "pathWaitingForData";
   private static final String ACTION_WAITING_FOR_DATA = "actionWaitingForData";
 
-  private static final String APP_NAME = "appName";
+  public static final String APP_NAME = "appName";
   private static final String FORM_URI = "formUri";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
@@ -129,6 +130,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
   private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
   private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
+  private static final int MENU_ABOUT = Menu.FIRST + 7;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
@@ -286,9 +288,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private AlertDialog mAlertDialog;
 
   // cached for efficiency only -- no need to preserve
-  private SharedPreferences mAdminPreferences;
-
-  // cached for efficiency only -- no need to preserve
   private Bitmap mDefaultVideoPoster = null;
 
   // cached for efficiency only -- no need to preserve
@@ -435,8 +434,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public String getContentProviderUri() {
-    Uri u = FileProvider.getContentUri(this);
+  public String getActiveUser() {
+    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
+        getCurrentForm().tableId, getInstanceId());
+
+    String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
+    if ( name == null || name.length() == 0) {
+      name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
+      if ( name != null && name.length() != 0 ) {
+        name = "username:" + name;
+      } else {
+        name = null;
+      }
+    } else {
+      name = "mailto:" + name;
+    }
+    return name;
+  }
+
+  @Override
+  public String getWebViewContentUri() {
+    Uri u = FileProvider.getWebViewContentUri(this);
     return u.toString() + "/";
   }
 
@@ -503,7 +521,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
 
-    String fullPath = FileProvider.getAsUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
+    String fullPath = FileProvider.getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;
@@ -595,28 +613,32 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     if (uri != null) {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
-      String authority = uri.getAuthority();
-      if (authority.equalsIgnoreCase(FileProvider.getFileAuthority(this))) {
+      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
+      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + FileProvider.getFileAuthority(this) + " uri (" + uri.toString()
-              + "). Expected one segment (the application name).";
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
           Log.e(t, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
-      } else if (authority.equalsIgnoreCase(FormsProviderAPI.AUTHORITY)) {
+      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
           Uri simpleUri = Uri.withAppendedPath(
-              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), segments.get(1));
+              Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
           FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), simpleUri);
           if (newForm != null) {
             setAppName(newForm.appName);
@@ -660,8 +682,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             currentFragment = ScreenList.WEBKIT;
           } else {
             // cancel action if the form is not found...
-            String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
-                + "). Form not found.";
+            String err = "Invalid " + uri.toString() + " uri. Form not found.";
             Log.e(t, err);
             Intent i = new Intent();
             setResult(RESULT_CANCELED, i);
@@ -669,17 +690,35 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
             return;
           }
         } else {
-          String err = "Invalid " + FormsProviderAPI.AUTHORITY + " uri (" + uri.toString()
-              + "). Expected two segments.";
+          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
           Log.e(t, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
+      } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
+          uri.getAuthority().equals(uriWebView.getAuthority()) &&
+          uri.getPort() == uriWebView.getPort()) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() == 1) {
+          String appName = segments.get(0);
+          setAppName(appName);
+        } else {
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+
       } else {
-        String err = "Unexpected " + authority + " uri. Only one of " + FileProvider.getFileAuthority(this)
-            + " or " + FormsProviderAPI.AUTHORITY + " allowed.";
+        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
+            uriWebView.toString() + " or " +
+            uriFileProvider.toString() + " or " +
+            uriFormsProvider.toString() + " allowed.";
         Log.e(t, err);
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
@@ -744,8 +783,6 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return;
     }
 
-    mAdminPreferences = this.getSharedPreferences(AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
-
     // This creates the WebKit. We need all our values initialized by this point
     setContentView(R.layout.main_screen);
 
@@ -768,29 +805,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
-      boolean get = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_GET_BLANK, true);
-      if (get) {
+      // Using a file for this work now
+      String get = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_GET_BLANK);
+      if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
         item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
       }
 
-      boolean send = mAdminPreferences
-          .getBoolean(AdminPreferencesActivity.KEY_SEND_FINALIZED, true);
-      if (send) {
+      String send = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_SEND_FINALIZED);
+      if (send.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
         item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
       }
 
-      boolean manage = mAdminPreferences
-          .getBoolean(AdminPreferencesActivity.KEY_MANAGE_FORMS, true);
-      if (manage) {
+      String manage = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_MANAGE_FORMS);
+      if (manage.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
         item.setIcon(R.drawable.trash).setShowAsAction(showOption);
       }
 
-      boolean settings = mAdminPreferences.getBoolean(AdminPreferencesActivity.KEY_ACCESS_SETTINGS,
-          true);
-      if (settings) {
+      String settings = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
+      if (settings.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
             getString(R.string.general_preferences));
         item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
@@ -798,6 +833,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
           getString(R.string.admin_preferences));
       item.setIcon(R.drawable.ic_action_device_access_accounts).setShowAsAction(showOption);
+
+      item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
+      item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
       ActionBar actionBar = getSupportActionBar();
       actionBar.hide();
@@ -826,20 +864,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     } else if (item.getItemId() == MENU_PREFERENCES) {
       // PreferenceFragment missing from support library...
       Intent ig = new Intent(this, PreferencesActivity.class);
+      // TODO: convert this activity into a preferences fragment
+      ig.putExtra(APP_NAME, getAppName());
       startActivity(ig);
       return true;
     } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
-      SharedPreferences admin = this.getSharedPreferences(
-          AdminPreferencesActivity.ADMIN_PREFERENCES, 0);
-      String pw = admin.getString(AdminPreferencesActivity.KEY_ADMIN_PW, "");
+    	String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
       if ("".equalsIgnoreCase(pw)) {
         Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
+        // TODO: convert this activity into a preferences fragment
+        i.putExtra(APP_NAME, getAppName());
         startActivity(i);
       } else {
         createPasswordDialog();
       }
       return true;
-
+    } else if (item.getItemId() == MENU_ABOUT) {
+      swapToFragmentView(ScreenList.ABOUT_MENU);
+      return true;
     }
     return super.onOptionsItemSelected(item);
   }
@@ -939,9 +981,11 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int whichButton) {
             String value = input.getText().toString();
-            String pw = mAdminPreferences.getString(AdminPreferencesActivity.KEY_ADMIN_PW, "");
+            String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
             if (pw.compareTo(value) == 0) {
               Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
+              // TODO: convert this activity into a preferences fragment
+              i.putExtra(APP_NAME, getAppName());
               startActivity(i);
               input.setText("");
               passwordDialog.dismiss();
@@ -1082,6 +1126,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (f == null) {
         f = new WebViewFragment();
       }
+    } else if (newFragment == ScreenList.ABOUT_MENU) {
+      f = mgr.findFragmentById(AboutMenuFragment.ID);
+      if (f == null) {
+        f = new AboutMenuFragment();
+      }
+
     } else {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
@@ -1363,18 +1413,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     Intent i;
-
+    boolean isSurveyApp = false;
+    boolean isTablesApp = false;
     if (action.startsWith("org.opendatakit.survey")) {
       Class<?> clazz;
       try {
         clazz = Class.forName(action);
         i = new Intent(this, clazz);
+        isSurveyApp = true;
       } catch (ClassNotFoundException e) {
         e.printStackTrace();
         i = new Intent(action);
       }
     } else {
       i = new Intent(action);
+    }
+
+    if (action.startsWith("org.opendatakit.tables")) {
+      isTablesApp = true;
     }
 
     try {
@@ -1419,6 +1475,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         });
 
         i.putExtras(b);
+      }
+
+      if ( isSurveyApp || isTablesApp ) {
+        // ensure that we supply our appName...
+        if ( !i.hasExtra(APP_NAME) ) {
+          i.putExtra(APP_NAME, getAppName());
+          Log.w(t, "doAction into Survey or Tables does not supply an appName. Adding: " + getAppName());
+        }
       }
     } catch (Exception ex) {
       ex.printStackTrace();

@@ -53,6 +53,7 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FileSet;
 import org.opendatakit.survey.android.provider.FileSet.MimeFile;
@@ -61,11 +62,9 @@ import org.opendatakit.survey.android.provider.SubmissionProvider;
 
 import android.app.Application;
 import android.content.ContentValues;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -76,8 +75,6 @@ import android.util.Log;
 public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUploadOutcome> {
 
   private static final String t = "InstanceUploaderTask";
-  // it can take up to 27 seconds to spin up Aggregate
-  private static final int CONNECTION_TIMEOUT = 45000;
   private static final String fail = "Error: ";
 
   private Application appContext;
@@ -416,15 +413,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     mOutcome.mResults = new HashMap<String, String>();
     mOutcome.mAuthRequestingServer = null;
 
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(appContext);
-    String auth = settings.getString(PreferencesActivity.KEY_AUTH, "");
+    String auth = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_AUTH);
     setAuth(auth);
 
     FormInfo fi = new FormInfo(appContext, uploadingForm.appName, uploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
     HttpContext localContext = WebUtils.getHttpContext();
-    HttpClient httpclient = WebUtils.createHttpClient(CONNECTION_TIMEOUT);
+    HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
     Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 
@@ -450,11 +446,10 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
             instanceFiles = constructSubmissionFiles(fi, dataTableInstanceId);
             String urlString = fi.xmlSubmissionUrl;
             if (urlString == null) {
-              urlString = settings.getString(PreferencesActivity.KEY_SERVER_URL, null);
+              urlString = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SERVER_URL);
               // NOTE: /submission must not be translated! It is
               // the well-known path on the server.
-              String submissionUrl = settings.getString(PreferencesActivity.KEY_SUBMISSION_URL,
-                  "/submission");
+              String submissionUrl = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SUBMISSION_URL);
               urlString = urlString + submissionUrl;
             }
 

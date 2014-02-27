@@ -29,9 +29,11 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Toast;
 
 public class GeoPointActivity extends Activity implements LocationListener {
+  private static final String t = "GeoPointActivity";
 
   // default location accuracy
   private static final double LOCATION_ACCURACY = 5;
@@ -41,12 +43,19 @@ public class GeoPointActivity extends Activity implements LocationListener {
   private Location mLocation;
   private boolean mGPSOn = false;
   private boolean mNetworkOn = false;
+  private String mAppName;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.get_location));
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+      mAppName = "survey";
+    }
+    Log.i(t, t + " appName=" + mAppName);
+
+    setTitle(mAppName + " > " + getString(R.string.get_location));
 
     mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 

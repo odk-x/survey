@@ -18,24 +18,27 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
 
+import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
@@ -48,6 +51,8 @@ import android.widget.LinearLayout;
  *
  */
 public class SplashScreenActivity extends Activity {
+
+  private static final String t = "SplashScreenActivity";
 
   private int mImageMaxWidth;
   private int mSplashTimeout = 2000; // milliseconds
@@ -74,9 +79,70 @@ public class SplashScreenActivity extends Activity {
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.splash_screen);
 
-    // get the shared preferences object
-    SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-    Editor editor = mSharedPreferences.edit();
+    // external intent
+    String appName = "survey";
+    Uri uri = getIntent().getData();
+    if (uri != null) {
+      // initialize to the URI, then we will customize further based upon the
+      // savedInstanceState...
+      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
+      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() == 1) {
+          appName = segments.get(0);
+        } else {
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() >= 2) {
+          appName = segments.get(0);
+        } else {
+          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+      } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
+          uri.getAuthority().equals(uriWebView.getAuthority()) &&
+          uri.getPort() == uriWebView.getPort()) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() == 1) {
+          appName = segments.get(0);
+        } else {
+          String err = "Invalid " + uri.toString() +
+              " uri. Expected one segment (the application name).";
+          Log.e(t, err);
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
+          return;
+        }
+      } else {
+        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
+            uriWebView.toString() + " or " +
+            uriFileProvider.toString() + " or " +
+            uriFormsProvider.toString() + " allowed.";
+        Log.e(t, err);
+        Intent i = new Intent();
+        setResult(RESULT_CANCELED, i);
+        finish();
+        return;
+      }
+    }
+    Log.i(t, "SplashScreenActivity appName: " + appName);
 
     // get the package info object with version number
     PackageInfo packageInfo = null;
@@ -87,24 +153,26 @@ public class SplashScreenActivity extends Activity {
       e.printStackTrace();
     }
 
-    boolean firstRun = mSharedPreferences.getBoolean(PreferencesActivity.KEY_FIRST_RUN, true);
-    boolean showSplash = mSharedPreferences.getBoolean(PreferencesActivity.KEY_SHOW_SPLASH, false);
-    String splashPath = mSharedPreferences.getString(PreferencesActivity.KEY_SPLASH_PATH,
-        getString(R.string.default_splash_path));
+    boolean firstRun = (PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FIRST_RUN)).equals("true") ? true : false;
 
-    // if you've increased version code, then update the version number and
-    // set firstRun to true
-    if (mSharedPreferences.getLong(PreferencesActivity.KEY_LAST_VERSION, 0) < packageInfo.versionCode) {
-      editor.putLong(PreferencesActivity.KEY_LAST_VERSION, packageInfo.versionCode);
-      editor.commit();
+    boolean showSplash = (PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SHOW_SPLASH)).equals("true") ? true : false;
+
+    String splashPath = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SPLASH_PATH);
+
+    // if you've increased version code, then update the version number and set firstRun to true
+    String sKeyLastVer = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_LAST_VERSION);
+    long keyLastVer =  Long.valueOf(sKeyLastVer);
+    if (keyLastVer < packageInfo.versionCode) {
+    	PropertiesSingleton.setProperty(appName, PreferencesActivity.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
+    	PropertiesSingleton.writeProperties(appName);
 
       firstRun = true;
     }
 
     // do all the first run things
     if (firstRun || showSplash) {
-      editor.putBoolean(PreferencesActivity.KEY_FIRST_RUN, false);
-      editor.commit();
+      PropertiesSingleton.setProperty(appName, PreferencesActivity.KEY_FIRST_RUN, "false");
+      PropertiesSingleton.writeProperties(appName);
       startSplashScreen(splashPath);
     } else {
       endSplashScreen();

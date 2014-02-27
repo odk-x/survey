@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.IOException;
 
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.accounts.Account;
@@ -28,9 +29,8 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.util.Log;
 
 /**
  * Activity to authenticate against an account and generate a token into the
@@ -39,9 +39,12 @@ import android.preference.PreferenceManager;
  * @author cswenson@google.com (Christopher Swenson)
  */
 public class AccountInfo extends Activity {
+  private static final String t = "AccountInfo";
+
   final static int WAITING_ID = 1;
   final static String authString = "gather";
   boolean shownDialog = false;
+  private String mAppName;
 
   /**
    * Activity startup.
@@ -49,6 +52,12 @@ public class AccountInfo extends Activity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+
+    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( mAppName == null || mAppName.length() == 0 ) {
+    	mAppName = "survey";
+    }
+    Log.i(t, t + " appName=" + mAppName);
   }
 
   /**
@@ -103,11 +112,10 @@ public class AccountInfo extends Activity {
    * If we failed to get an auth token.
    */
   protected void failedAuthToken() {
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.remove(PreferencesActivity.KEY_ACCOUNT);
-    editor.remove(PreferencesActivity.KEY_AUTH);
-    editor.commit();
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_ACCOUNT);
+    PropertiesSingleton.removeProperty(mAppName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton.writeProperties(mAppName);
+
     dismissDialog(WAITING_ID);
     finish();
   }
@@ -120,10 +128,9 @@ public class AccountInfo extends Activity {
   protected void gotAuthToken(Bundle bundle) {
     // Set the authentication token and dismiss the dialog.
     String auth_token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-    SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(getBaseContext());
-    SharedPreferences.Editor editor = settings.edit();
-    editor.putString(PreferencesActivity.KEY_AUTH, auth_token);
-    editor.commit();
+    PropertiesSingleton.setProperty(mAppName, PreferencesActivity.KEY_AUTH, auth_token);
+    PropertiesSingleton.writeProperties(mAppName);
+
     dismissDialog(WAITING_ID);
     finish();
   }

@@ -119,8 +119,7 @@ public class MediaChooseVideoActivity extends Activity {
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-    File newMedia = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentNewFileBase + extension));
+    File newMedia = FileProvider.getAsFile(this, appName, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {

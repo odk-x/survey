@@ -116,8 +116,7 @@ public class MediaCaptureImageActivity extends Activity {
         uriFragmentToMedia = uriFragmentNewFileBase + TMP_EXTENSION;
       }
       // to make the name unique...
-      File mediaFile = FileProvider.getAsFile(this,
-          FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+      File mediaFile = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
       if (!mediaFile.exists()) {
         boolean success = false;
         String errorString = " Could not create: " + mediaFile.getAbsolutePath();
@@ -171,8 +170,7 @@ public class MediaCaptureImageActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteImageFileFromMediaProvider(this, path);
@@ -229,8 +227,7 @@ public class MediaCaptureImageActivity extends Activity {
       return;
     }
 
-    File f = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia));
+    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
     Uri mediaUri = Uri.fromFile(f);
     // we never have to deal with deleting, as the Camera is overwriting
     // this...
@@ -240,8 +237,7 @@ public class MediaCaptureImageActivity extends Activity {
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
     File source = new File(binaryPath);
-    File sourceMedia = FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentNewFileBase + extension));
+    File sourceMedia = FileProvider.getAsFile(this, appName, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
@@ -285,8 +281,8 @@ public class MediaCaptureImageActivity extends Activity {
   }
 
   private void returnResult() {
-    File sourceMedia = (uriFragmentToMedia != null) ? FileProvider.getAsFile(this,
-        FileProvider.getAsUri(this, appName, uriFragmentToMedia)) : null;
+    File sourceMedia = (uriFragmentToMedia != null) ?
+        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));

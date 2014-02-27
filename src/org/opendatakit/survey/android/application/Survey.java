@@ -27,6 +27,7 @@ import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.app.Application;
 import android.content.SharedPreferences;
@@ -43,6 +44,8 @@ import com.google.android.vending.licensing.LicenseCheckerCallback;
 import com.google.android.vending.licensing.util.Base64;
 import com.google.android.vending.licensing.util.Base64DecoderException;
 
+import fi.iki.elonen.SimpleWebServer;
+
 /**
  * Extends the Application class to implement
  *
@@ -57,12 +60,15 @@ public class Survey extends Application implements LicenseCheckerCallback {
       + "n5NjWN4maX08IroXWDBGjhPtdngWOnoR8GoJ96M8k0eAM1LJ84eB/v9LnQZlrZjBdtUEhXlGKVudo41vmp1sC1OpRLYMbshhst7dzQIDAQAB";
   public static final String t = "Survey";
 
+  // these keys are stored in the shared preferences
+  // to manage Google play licensing and APK Expansion files
+  public static final String KEY_SALT = "licenseSalt";
+  public static final String KEY_APK_EXPANSIONS = "apkExpansions";
+
   // keys for expansion files
   public static final String EXPANSION_FILE_PATH = "path";
   public static final String EXPANSION_FILE_LENGTH = "length";
   public static final String EXPANSION_FILE_URL = "url";
-
-  public static final String APP_NAME = "app";
 
   // private values
   private static final String DEFAULT_FONTSIZE = "21";
@@ -71,6 +77,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
   private byte[] mSalt;
   private LicenseChecker mLicenseChecker;
   private APKExpansionPolicy mAPKExpansionPolicy;
+  private SimpleWebServer server = null;
+  private volatile Thread webServer = null;
 
   private static final boolean debugAPKExpansion = false;
 
@@ -80,11 +88,31 @@ public class Survey extends Application implements LicenseCheckerCallback {
     return singleton;
   }
 
-  public static int getQuestionFontsize() {
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String question_font = settings.getString(PreferencesActivity.KEY_FONT_SIZE,
-        Survey.DEFAULT_FONTSIZE);
+  private synchronized void startServer() {
+    if (server == null || !server.isAlive()) {
+      SimpleWebServer testing = new SimpleWebServer();
+      try {
+        testing.start();
+        server = testing;
+      } catch (IOException e) {
+        Log.e("Survey.Thread.WebServer", "Exception: " + e.toString());
+      }
+    }
+  }
+
+  private synchronized void stopServer() {
+    if (server != null) {
+      try {
+        server.stop();
+      } catch (Exception e) {
+        // ignore...
+      }
+      server = null;
+    }
+  }
+
+  public static int getQuestionFontsize(String appName) {
+    String question_font = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FONT_SIZE);
     int questionFontsize = Integer.valueOf(question_font);
     return questionFontsize;
   }
@@ -138,20 +166,40 @@ public class Survey extends Application implements LicenseCheckerCallback {
   public void onCreate() {
     singleton = this;
     PropertyManager propertyManager = new PropertyManager(getApplicationContext());
-    PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-    PreferenceManager.setDefaultValues(this, R.xml.admin_preferences, false);
+
     super.onCreate();
 
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String saltString = settings.getString(PreferencesActivity.KEY_SALT, null);
+    webServer = new Thread(null, new Runnable() {
+      @Override
+      public void run() {
+        Thread mySelf = Thread.currentThread();
+        int retryCount = 0;
+        for (;webServer == mySelf;) {
+          startServer();
+          try {
+            retryCount++;
+            Thread.sleep(1000);
+            if ( retryCount % 60 == 0 ) {
+              Log.d(t,"Survey.Thread.WebServer -- waking to confirm webserver is still working");
+            }
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+        stopServer();
+      }}, "WebServer");
+    webServer.start();
+
+    SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+    String saltString = mSharedPreferences.getString(KEY_SALT, null);
     do {
       if (saltString == null) {
         SecureRandom random = new SecureRandom();
         mSalt = new byte[20];
         random.nextBytes(mSalt);
         saltString = Base64.encode(mSalt);
-        settings.edit().putString(PreferencesActivity.KEY_SALT, saltString).commit();
+        mSharedPreferences.edit().putString(KEY_SALT, saltString).commit();
       } else {
         try {
           mSalt = Base64.decode(saltString);
@@ -205,6 +253,15 @@ public class Survey extends Application implements LicenseCheckerCallback {
   @Override
   public void onTerminate() {
     mLicenseChecker.onDestroy();
+    Thread tmpThread = webServer;
+    webServer = null;
+    tmpThread.interrupt();
+    try {
+      // give it time to drain...
+      Thread.sleep(200);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     super.onTerminate();
     Log.i(t, "onTerminate");
   }
@@ -239,11 +296,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
       String expansionDefs;
       try {
         expansionDefs = ODKFileUtils.mapper.writeValueAsString(expansions);
-
-        SharedPreferences settings = PreferenceManager.getDefaultSharedPreferences(Survey
-            .getInstance());
-
-        settings.edit().putString(PreferencesActivity.KEY_APK_EXPANSIONS, expansionDefs).commit();
+        SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        mSharedPreferences.edit().putString(KEY_APK_EXPANSIONS, expansionDefs).commit();
         Log.i(t, "retained the expansion file list (" + expansions.size() + " expansion files)");
       } catch (JsonGenerationException e) {
         e.printStackTrace();
@@ -263,9 +317,8 @@ public class Survey extends Application implements LicenseCheckerCallback {
     File f = new File(ODKFileUtils.getAndroidObbFolder(getPackageName()));
     f.mkdirs();
 
-    SharedPreferences settings = PreferenceManager
-        .getDefaultSharedPreferences(Survey.getInstance());
-    String expansionDefs = settings.getString(PreferencesActivity.KEY_APK_EXPANSIONS, null);
+    SharedPreferences mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+    String expansionDefs = mSharedPreferences.getString(KEY_APK_EXPANSIONS, null);
     if (expansionDefs != null) {
       try {
         return ODKFileUtils.mapper.readValue(expansionDefs, ArrayList.class);

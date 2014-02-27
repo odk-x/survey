@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.preferences;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -29,6 +30,15 @@ import android.widget.Toast;
 
 public class PasswordDialogPreference extends DialogPreference implements OnClickListener {
 
+  private static final String t = "PasswordDialogPreference";
+
+  // TODO: HACK HACK HACK HACK
+  // TODO: HACK HACK HACK HACK
+  // TODO: HACK HACK HACK HACK
+  // TODO: HACK HACK HACK HACK
+  // TODO: HACK HACK HACK HACK
+  public static String appName;
+
   private EditText passwordEditText;
   private EditText verifyEditText;
 
@@ -39,10 +49,15 @@ public class PasswordDialogPreference extends DialogPreference implements OnClic
 
   @Override
   public void onBindDialogView(View view) {
+
     passwordEditText = (EditText) view.findViewById(R.id.pwd_field);
     verifyEditText = (EditText) view.findViewById(R.id.verify_field);
 
-    final String adminPW = getPersistedString("");
+    String adminPW = "";
+    if (PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW) != null) {
+    	adminPW =  PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
+    }
+
     // populate the fields if a pw exists
     if (!adminPW.equalsIgnoreCase("")) {
       passwordEditText.setText(adminPW);
@@ -60,12 +75,14 @@ public class PasswordDialogPreference extends DialogPreference implements OnClic
 
         if (!pw.equalsIgnoreCase("") && !ver.equalsIgnoreCase("") && pw.equals(ver)) {
           // passwords are the same
-          persistString(pw);
+        	PropertiesSingleton.setProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW, pw);
+        	PropertiesSingleton.writeProperties(appName);
+
           Toast.makeText(PasswordDialogPreference.this.getContext(),
               R.string.admin_password_changed, Toast.LENGTH_SHORT).show();
           PasswordDialogPreference.this.getDialog().dismiss();
         } else if (pw.equalsIgnoreCase("") && ver.equalsIgnoreCase("")) {
-          persistString("");
+        	PropertiesSingleton.setProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW, "");
           Toast.makeText(PasswordDialogPreference.this.getContext(),
               R.string.admin_password_disabled, Toast.LENGTH_SHORT).show();
           PasswordDialogPreference.this.getDialog().dismiss();

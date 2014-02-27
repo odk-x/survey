@@ -8,10 +8,8 @@ import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -111,8 +109,8 @@ public class ODKWebView extends WebView {
     ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
     ws.setDatabaseEnabled(true);
     ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
-    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize());
-    ws.setDefaultFontSize(Survey.getQuestionFontsize());
+    ws.setDefaultFixedFontSize(Survey.getQuestionFontsize(appName));
+    ws.setDefaultFontSize(Survey.getQuestionFontsize(appName));
     ws.setDomStorageEnabled(true);
     ws.setGeolocationDatabasePath(ODKFileUtils.getGeoCacheFolder(appName));
     ws.setGeolocationEnabled(true);

@@ -163,4 +163,10 @@ License.
 <string name="expansion_failed">Unable to expand APK expansion files</string>
 <string name="loading_video">Loading video &#8230;</string>
 <string name="application">(Application)</string>
+<string name="delete_yes_with_options">Delete Forms &amp; Data</string>
+<string name="file_and_data_deleted_ok">%s form(s) and data successfully deleted!</string>
+<string name="still_reading_license_file">Sorry, the license file is still being read.</string>
+<string name="about">About</string>
+<string name="read_license_success">Read license file successfully</string>
+<string name="read_license_fail">Failed to read license file</string>
 </resources>

@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opendatakit.survey.android"
-    android:versionCode="116"
+    android:versionCode="120"
     android:versionName="2.0" >
 
     <uses-sdk
@@ -39,20 +39,29 @@
 		<!--  FileProvider provides read-only access to files specified by: appName/filepath -->
 	    <provider
 	        android:exported="true"
-	        android:name="org.opendatakit.survey.android.provider.FileProvider"
-	        android:authorities="org.opendatakit.survey.android.provider.file" />
+	        android:syncable="false"
+	        android:initOrder="1"
+	        android:authorities="org.opendatakit.common.android.provider.files"
+	        android:name="org.opendatakit.survey.android.provider.FileProvider" />
+	    <provider
+            android:exported="true"
+	        android:syncable="false"
+	        android:initOrder="2"
+            android:authorities="org.opendatakit.common.android.provider.forms"
+            android:name="org.opendatakit.survey.android.provider.FormsProvider" />
         <provider
             android:exported="true"
-            android:name="org.opendatakit.survey.android.provider.FormsProvider"
-            android:authorities="org.opendatakit.survey.android.provider.forms" />
+	        android:syncable="false"
+	        android:initOrder="3"
+            android:authorities="org.opendatakit.common.android.provider.instances"
+            android:name="org.opendatakit.survey.android.provider.InstanceProvider" />
         <provider
             android:exported="true"
-            android:name="org.opendatakit.survey.android.provider.InstanceProvider"
-            android:authorities="org.opendatakit.survey.android.provider.instances" />
-        <provider
-            android:exported="true"
+	        android:syncable="false"
+	        android:initOrder="4"
+            android:authorities="org.opendatakit.common.android.provider.submission.xml;org.opendatakit.common.android.provider.submission.json"
             android:name="org.opendatakit.survey.android.provider.SubmissionProvider"
-            android:authorities="org.opendatakit.survey.android.provider.submission.xml;org.opendatakit.survey.android.provider.submission.json" />
+            />
 
         <activity
             android:name=".activities.MainMenuActivity"
