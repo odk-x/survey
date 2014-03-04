@@ -66,6 +66,7 @@ import android.util.Log;
  *
  */
 public class SubmissionProvider extends CommonContentProvider {
+  private static final String ISO8601_DATE_ONLY_FORMAT = "yyyy-MM-dd";
   private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
   private static final String t = "SubmissionProvider";
@@ -259,10 +260,14 @@ public class SubmissionProvider extends CommonContentProvider {
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("date")) {
                 String value = c.getString(i);
-                putElementValue(values, defn, value);
+                String datestamp = (new SimpleDateFormat(ISO8601_DATE_ONLY_FORMAT, Locale.ENGLISH))
+                    .format(new Date(TableConstants.milliSecondsFromNanos(value)));
+                putElementValue(values, defn, datestamp);
               } else if (defn.elementType.equals("dateTime")) {
                 String value = c.getString(i);
-                putElementValue(values, defn, value);
+                String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
+                    .format(new Date(TableConstants.milliSecondsFromNanos(value)));
+                putElementValue(values, defn, datestamp);
               } else if (defn.elementType.equals("time")) {
                 String value = c.getString(i);
                 putElementValue(values, defn, value);
