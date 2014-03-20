@@ -455,7 +455,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   @Override
   public String getWebViewContentUri() {
     Uri u = FileProvider.getWebViewContentUri(this);
-    return u.toString() + "/";
+    
+    String uriString = u.toString();
+    
+    // Ensures that the string always ends with '/'
+    if (uriString.charAt(uriString.length() - 1) != '/') {
+      return uriString + "/";
+    } else {
+        return uriString;
+    }
   }
 
   @Override
