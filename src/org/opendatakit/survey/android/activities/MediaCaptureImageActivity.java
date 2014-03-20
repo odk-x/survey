@@ -177,30 +177,6 @@ public class MediaCaptureImageActivity extends Activity {
     Log.i(t, "Deleted " + del + " rows from image media content provider");
   }
 
-  private String getPathFromUri(Uri uri) {
-    if (uri.toString().startsWith("file://")) {
-      return uri.toString().substring(7);
-    } else {
-      String[] mediaProjection = { Images.Media.DATA };
-      String mediaPath = null;
-      Cursor c = null;
-      try {
-        c = getApplicationContext().getContentResolver().query(uri, mediaProjection, null, null,
-            null);
-        int column_index = c.getColumnIndexOrThrow(Images.Media.DATA);
-        if (c.getCount() > 0) {
-          c.moveToFirst();
-          mediaPath = c.getString(column_index);
-        }
-        return mediaPath;
-      } finally {
-        if (c != null) {
-          c.close();
-        }
-      }
-    }
-  }
-
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
@@ -233,7 +209,7 @@ public class MediaCaptureImageActivity extends Activity {
     // this...
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = getPathFromUri((Uri) mediaUri);
+    String binaryPath = MediaUtils.getPathFromUri(this, (Uri)mediaUri, Images.Media.DATA);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
     File source = new File(binaryPath);
