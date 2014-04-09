@@ -162,6 +162,10 @@
             </intent-filter>
         </activity>
 
+        <service android:enabled="true" android:name=".provider.DbShimService"
+            	android:exported="false"
+            	android:permission="org.opendatakit.survey.android.W3C_SQL_SHIM_SERVICE" />
+
         <uses-library
             android:name="com.google.android.maps"
             android:required="false" />

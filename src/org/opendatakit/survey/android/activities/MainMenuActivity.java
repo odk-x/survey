@@ -41,23 +41,29 @@ import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.logic.FormIdStruct;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.provider.DbShimService;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.v4.app.Fragment;
@@ -293,6 +299,26 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   // cached for efficiency only -- no need to preserve
   private View mVideoProgressView = null;
 
+  private ServiceConnection mConnection = new ServiceConnection() {
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+      if ( wkt != null ) {
+        wkt.onServiceConnected(name, service);
+      }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+      if ( wkt != null ) {
+        wkt.onServiceDisconnected(name);
+      }
+    }
+
+  };
+
   @Override
   protected void onPause() {
 //    if (mAlertDialog != null && mAlertDialog.isShowing()) {
@@ -351,8 +377,26 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
+  protected void onStop() {
+    super.onStop();
+    ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+    if ( wkt != null ) {
+      wkt.beforeDbShimServiceDisconnected();
+    }
+    unbindService(mConnection);
+  }
+
+  @SuppressLint("InlinedApi")
+  @Override
   protected void onStart() {
     super.onStart();
+
+    // ensure the DbShimService is started
+    Intent intent = new Intent(this, DbShimService.class);
+    this.startService(intent);
+
+    this.bindService(intent,  mConnection,
+        Context.BIND_AUTO_CREATE | ((Build.VERSION.SDK_INT >= 14) ? Context.BIND_ADJUST_WITH_ACTIVITY : 0));
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
@@ -455,9 +499,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   @Override
   public String getWebViewContentUri() {
     Uri u = FileProvider.getWebViewContentUri(this);
-    
+
     String uriString = u.toString();
-    
+
     // Ensures that the string always ends with '/'
     if (uriString.charAt(uriString.length() - 1) != '/') {
       return uriString + "/";

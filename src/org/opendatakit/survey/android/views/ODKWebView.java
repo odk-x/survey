@@ -6,11 +6,18 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.provider.DbShimService;
+import org.opendatakit.survey.android.provider.DbShimService.DbShimBinder;
 
 import android.annotation.SuppressLint;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -33,7 +40,8 @@ import android.webkit.WebView;
  *
  */
 @SuppressLint("SetJavaScriptEnabled")
-public class ODKWebView extends WebView {
+public class ODKWebView extends WebView implements ServiceConnection {
+
   private static String t = "ODKWebView";
   private static final String BASE_STATE = "BASE_STATE";
   private static final String JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD = "JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD";
@@ -41,6 +49,7 @@ public class ODKWebView extends WebView {
   private final ODKActivity activity;
   private WebLogger log;
   private ODKShimJavascriptCallback shim;
+  private ODKDbShimJavascriptCallback dbShim;
   private String loadPageUrl = null;
   private boolean isLoadPageFrameworkFinished = false;
   private boolean isLoadPageFinished = false;
@@ -48,6 +57,28 @@ public class ODKWebView extends WebView {
   private boolean isFirstPageLoad = true;
   private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
 
+  @Override
+  public void onServiceConnected(ComponentName name, IBinder service) {
+    dbShim = new ODKDbShimJavascriptCallback(ODKWebView.this, activity, (DbShimBinder) service);
+    if ( Build.VERSION.SDK_INT >= 11 ) {
+      // use the native implementation pre-3.0
+      addJavascriptInterface(dbShim, "dbshim");
+    }
+    loadPage();
+  }
+
+  @Override
+  public void onServiceDisconnected(ComponentName name) {
+    log.w(t,  "ODKWebView ServiceConnection.onServiceDisconnected() - disconnected from DbShimService!");
+    dbShim = null;
+    resetLoadPageStatus(loadPageUrl);
+  }
+
+  public void beforeDbShimServiceDisconnected() {
+    if ( dbShim != null ) {
+      dbShim.immediateRollbackOutstandingTransactions();
+    }
+  }
   // TODO: the interaction with the landing.js needs to be updated
   // this is not 100% reliable because of that interaction.
 
@@ -90,6 +121,12 @@ public class ODKWebView extends WebView {
     loadPage();
   }
 
+  @Override
+  @SuppressLint("NewApi")
+  public void onPause() {
+    super.onPause();
+  }
+
   public ODKWebView(Context context, AttributeSet attrs) {
     super(context, attrs);
 
@@ -104,7 +141,6 @@ public class ODKWebView extends WebView {
     WebSettings ws = getSettings();
     ws.setAllowFileAccess(true);
     ws.setAppCacheEnabled(true);
-    ws.setAppCacheMaxSize(1024L * 1024L * 200L);
     ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
     ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
     ws.setDatabaseEnabled(true);
@@ -116,8 +152,6 @@ public class ODKWebView extends WebView {
     ws.setGeolocationEnabled(true);
     ws.setJavaScriptCanOpenWindowsAutomatically(true);
     ws.setJavaScriptEnabled(true);
-    ws.setPluginState(PluginState.ON);
-    ws.setRenderPriority(RenderPriority.HIGH);
 
     // disable to try to solve touch/mouse/swipe issues
     ws.setBuiltInZoomControls(false);
@@ -138,7 +172,6 @@ public class ODKWebView extends WebView {
     // stomp on the shim object...
     shim = new ODKShimJavascriptCallback(this,activity);
     addJavascriptInterface(shim, "shim");
-    loadPage();
   }
 
   public final WebLogger getLogger() {
@@ -182,6 +215,11 @@ public class ODKWebView extends WebView {
     /**
      * NOTE: Reload the web framework only if it has changed.
      */
+
+    if ( dbShim == null ) {
+      // do not initiate reload until we have the dbShim set up...
+      return;
+    }
 
     log.i(t, "loadPage: current loadPageUrl: " + loadPageUrl);
     String baseUrl = activity.getUrlBaseLocation(isLoadPageFrameworkFinished && loadPageUrl != null);
