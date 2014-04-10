@@ -15,10 +15,9 @@
 package org.opendatakit.survey.android.tasks;
 
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.provider.impl.CommonContentProvider;
+import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
-
 
 import android.app.Application;
 import android.database.sqlite.SQLiteDatabase;
@@ -58,7 +57,7 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
       }
       try {
         if (deleteFormData) {
-          SQLiteDatabase db = CommonContentProvider.getDbHelper(appContext.getApplicationContext(), appName).getWritableDatabase();
+          SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(appContext.getApplicationContext(), appName).getWritableDatabase();
           DataModelDatabaseHelper.deleteTableAndData(db, params[i]);
         }
         Uri deleteForm = Uri.withAppendedPath(
@@ -121,13 +120,13 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
   public Application getApplication() {
     return appContext;
   }
-  
+
   public void setDeleteFormData(boolean shouldFormDataBeDeleted) {
     synchronized (this) {
       this.deleteFormData = shouldFormDataBeDeleted;
     }
   }
-  
+
   public boolean getDeleteFormData() {
     return deleteFormData;
   }

@@ -39,24 +39,25 @@ import org.opendatakit.aggregate.odktables.rest.TableConstants;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.IdInstanceNameStruct;
+import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.provider.impl.CommonContentProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.utilities.EncryptionUtils;
 import org.opendatakit.survey.android.utilities.EncryptionUtils.EncryptedFormInformation;
 
+import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
-import android.util.Log;
 
 /**
  * The WebKit does better if there is a content provider vending files to it.
@@ -65,7 +66,7 @@ import android.util.Log;
  * @author mitchellsundt@gmail.com
  *
  */
-public class SubmissionProvider extends CommonContentProvider {
+public class SubmissionProvider extends ContentProvider {
   private static final String ISO8601_DATE_ONLY_FORMAT = "yyyy-MM-dd";
   private static final String ISO8601_DATE_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
 
@@ -119,13 +120,13 @@ public class SubmissionProvider extends CommonContentProvider {
 
   @SuppressWarnings("unchecked")
   private static final int generateXmlHelper(Document d, Element data, int idx, String key,
-      Map<String, Object> values) {
+      Map<String, Object> values, WebLogger log) {
     Object o = values.get(key);
 
     Element e = d.createElement(XML_DEFAULT_NAMESPACE, key);
 
     if (o == null) {
-      Log.e(t, "Unexpected null value");
+      log.e(t, "Unexpected null value");
     } else if (o instanceof Integer) {
       e.addChild(0, Node.TEXT, ((Integer) o).toString());
     } else if (o instanceof Double) {
@@ -161,7 +162,7 @@ public class SubmissionProvider extends CommonContentProvider {
       entryNames.addAll(m.keySet());
       Collections.sort(entryNames);
       for (String name : entryNames) {
-        nidx = generateXmlHelper(d, e, nidx, name, m);
+        nidx = generateXmlHelper(d, e, nidx, name, m, log);
       }
     } else {
       throw new IllegalArgumentException("Unexpected object type in XML submission serializer");
@@ -195,11 +196,13 @@ public class SubmissionProvider extends CommonContentProvider {
     }
 
     final String appName = segments.get(0);
+    WebLogger log = WebLogger.getLogger(appName);
+
     final String tableId = segments.get(1);
     final String instanceId = (segments.size() >= 3 ? segments.get(2) : null);
     final String formId = uri.getQueryParameter("formId");
     final String formVersion = uri.getQueryParameter("formVersion");
-    final SQLiteDatabase db = getDbHelper(getContext(), appName).getReadableDatabase();
+    final SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName).getReadableDatabase();
 
     String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
     if (tableName == null) {
@@ -245,7 +248,7 @@ public class SubmissionProvider extends CommonContentProvider {
                 instanceName = c.getString(i);
               }
               // user-defined column
-              Log.i(t, "element type: " + defn.elementType);
+              log.i(t, "element type: " + defn.elementType);
               if (defn.elementType.equals("string")) {
                 String value = c.getString(i);
                 putElementValue(values, defn, value);
@@ -281,7 +284,7 @@ public class SubmissionProvider extends CommonContentProvider {
                     HashMap.class);
                 putElementValue(values, defn, obj);
               } else /* user-defined */{
-                Log.i(t, "user-defined element type: " + defn.elementType);
+                log.i(t, "user-defined element type: " + defn.elementType);
                 String valueString = c.getString(i);
                 HashMap<String, Object> obj = ODKFileUtils.mapper.readValue(valueString,
                     HashMap.class);
@@ -470,7 +473,7 @@ public class SubmissionProvider extends CommonContentProvider {
                 entryNames.addAll(values.keySet());
                 Collections.sort(entryNames);
                 for (String name : entryNames) {
-                  idx = generateXmlHelper(d, e, idx, name, values);
+                  idx = generateXmlHelper(d, e, idx, name, values, log);
                 }
 
                 KXmlSerializer serializer = new KXmlSerializer();
@@ -511,7 +514,7 @@ public class SubmissionProvider extends CommonContentProvider {
                   // been re-written with the encrypted media
                   // and xml files.
                 } else {
-                  exportFile(doc, submissionXml);
+                  exportFile(doc, submissionXml, log);
                 }
               }
             } finally {
@@ -585,9 +588,9 @@ public class SubmissionProvider extends CommonContentProvider {
 
             // OK we have the document in the builder (b).
             String doc = b.toString();
-            exportFile(doc, submissionXml);
+            exportFile(doc, submissionXml, log);
           }
-          exportFile(freturn.serializeUriFragmentList(getContext()), manifest);
+          exportFile(freturn.serializeUriFragmentList(getContext()), manifest, log);
           return ParcelFileDescriptor.open(manifest, ParcelFileDescriptor.MODE_READ_ONLY);
 
         }
@@ -614,7 +617,7 @@ public class SubmissionProvider extends CommonContentProvider {
    * @param path
    * @return
    */
-  private static boolean exportFile(String payload, File outputFilePath) {
+  private static boolean exportFile(String payload, File outputFilePath, WebLogger log) {
     // write xml file
     FileOutputStream os = null;
     OutputStreamWriter osw = null;
@@ -627,7 +630,7 @@ public class SubmissionProvider extends CommonContentProvider {
       return true;
 
     } catch (IOException e) {
-      Log.e(t, "Error writing file");
+      log.e(t, "Error writing file");
       e.printStackTrace();
       try {
         osw.close();

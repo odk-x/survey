@@ -14,7 +14,6 @@
 
 package org.opendatakit.survey.android.provider;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -25,14 +24,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.database.WebDbDefinition;
-import org.opendatakit.common.android.database.WebSqlDatabaseHelper;
+import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 
 import android.annotation.SuppressLint;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -56,54 +53,6 @@ public class DbShimService extends Service {
   }
 
   private static final String t = "DbShimService";
-
-  // array of the underlying database handles used by all the content provider
-  // instances
-  private static final Map<String, DataModelDatabaseHelper> dbHelpers = new HashMap<String, DataModelDatabaseHelper>();
-
-  /**
-   * Shared accessor to get a database handle.
-   *
-   * @param appName
-   * @return an entry in dbHelpers
-   */
-  private synchronized static DataModelDatabaseHelper getDbHelper(Context context, String appName) {
-    WebLogger log = WebLogger.getLogger(appName);
-
-    try {
-      ODKFileUtils.verifyExternalStorageAvailability();
-    } catch ( Exception e ) {
-      log.e("DbShimService", "External storage not available -- purging dbHelpers");
-      dbHelpers.clear();
-      return null;
-    }
-
-    String path = ODKFileUtils.getWebDbFolder(appName);
-    File webDb = new File(path);
-    if ( !webDb.exists() || !webDb.isDirectory()) {
-      ODKFileUtils.assertDirectoryStructure(appName);
-    }
-
-    // the assert above should have created it...
-    if ( !webDb.exists() || !webDb.isDirectory()) {
-      log.e("DbShimService", "webDb directory not available -- purging dbHelpers");
-      dbHelpers.clear();
-      return null;
-    }
-
-    DataModelDatabaseHelper dbHelper = dbHelpers.get(appName);
-    if (dbHelper == null) {
-      WebSqlDatabaseHelper h;
-      h = new WebSqlDatabaseHelper(context, path);
-      WebDbDefinition defn = h.getWebKitDatabaseInfoHelper();
-      if (defn != null) {
-        defn.dbFile.getParentFile().mkdirs();
-        dbHelper = new DataModelDatabaseHelper(defn.dbFile.getParent(), defn.dbFile.getName());
-        dbHelpers.put(appName, dbHelper);
-      }
-    }
-    return dbHelper;
-  }
 
   /**
    * Open database transactions by appName and database generation.
@@ -421,7 +370,7 @@ public class DbShimService extends Service {
         return;
       }
 
-      DataModelDatabaseHelper dbh = getDbHelper(DbShimService.this.getApplicationContext(), appName);
+      DataModelDatabaseHelper dbh = DataModelDatabaseHelperFactory.getDbHelper(DbShimService.this.getApplicationContext(), appName);
       db = dbh.getWritableDatabase();
       appContext.transactions.put(thisTransactionGeneration, db);
       db.beginTransaction();
