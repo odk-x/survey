@@ -38,13 +38,6 @@
         android:hardwareAccelerated="true">
 
         <!--  TODO: shouldn't this be established by androidcommon directly -->
-		<!--  FileProvider provides read-only access to files specified by: appName/filepath -->
-	    <provider
-	        android:exported="true"
-	        android:syncable="false"
-	        android:initOrder="1"
-	        android:authorities="org.opendatakit.common.android.provider.files"
-	        android:name="org.opendatakit.survey.android.provider.FileProvider" />
 	    <provider
             android:exported="true"
 	        android:syncable="false"
