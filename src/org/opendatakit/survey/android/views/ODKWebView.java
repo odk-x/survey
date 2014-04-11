@@ -6,13 +6,11 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.DbShimService;
 import org.opendatakit.survey.android.provider.DbShimService.DbShimBinder;
 
 import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.os.Build;
@@ -22,8 +20,6 @@ import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
 import android.webkit.WebSettings;
-import android.webkit.WebSettings.PluginState;
-import android.webkit.WebSettings.RenderPriority;
 import android.webkit.WebView;
 
 /**
