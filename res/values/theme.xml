@@ -5,6 +5,7 @@
 	    <item name="android:scrollbarThumbVertical">@+drawable/thumb</item>
 	    <item name="android:scrollbarSize">2.5mm</item>
 	    <item name="android:scrollbarAlwaysDrawVerticalTrack">true</item>
+	    <item name="android:scrollbarAlwaysDrawHorizontalTrack">true</item>
 	    <item name="android:fadeScrollbars">false</item>
 	</style>
 </resources>
