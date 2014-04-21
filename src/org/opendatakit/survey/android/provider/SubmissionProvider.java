@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.kxml2.io.KXmlSerializer;
@@ -395,7 +396,7 @@ public class SubmissionProvider extends ContentProvider {
                 // For XML, we traverse the map to serialize it
                 Document d = new Document();
                 d.setStandalone(true);
-                d.setEncoding("UTF-8");
+                d.setEncoding(CharEncoding.UTF_8);
                 Element e = d.createElement(XML_DEFAULT_NAMESPACE,
                     (f.xmlRootElementName == null) ? "data" : f.xmlRootElementName);
                 e.setPrefix("jr", XML_OPENROSA_NAMESPACE);
@@ -479,7 +480,7 @@ public class SubmissionProvider extends ContentProvider {
                 KXmlSerializer serializer = new KXmlSerializer();
 
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                serializer.setOutput(bo, "UTF-8");
+                serializer.setOutput(bo, CharEncoding.UTF_8);
                 // setting the response content type emits the
                 // xml header.
                 // just write the body here...
@@ -487,7 +488,7 @@ public class SubmissionProvider extends ContentProvider {
                 serializer.flush();
                 bo.close();
 
-                b.append(bo.toString("UTF-8"));
+                b.append(bo.toString(CharEncoding.UTF_8));
 
                 // OK we have the document in the builder (b).
                 String doc = b.toString();
@@ -623,7 +624,7 @@ public class SubmissionProvider extends ContentProvider {
     OutputStreamWriter osw = null;
     try {
       os = new FileOutputStream(outputFilePath, false);
-      osw = new OutputStreamWriter(os, "UTF-8");
+      osw = new OutputStreamWriter(os, CharEncoding.UTF_8);
       osw.write(payload);
       osw.flush();
       osw.close();

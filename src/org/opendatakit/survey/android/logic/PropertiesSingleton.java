@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -231,7 +232,7 @@ public class PropertiesSingleton {
       }
       FileOutputStream configFileOutputStream = new FileOutputStream(mTempConfigFile, false);
 
-      mProps.storeToXML(configFileOutputStream, null, "UTF-8");
+      mProps.storeToXML(configFileOutputStream, null, CharEncoding.UTF_8);
       configFileOutputStream.close();
 
       if (mConfigFile == null) {

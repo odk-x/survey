@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -120,7 +121,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     ContentValues cv = new ContentValues();
     URI u = null;
     try {
-      URL url = new URL(URLDecoder.decode(urlString, "utf-8"));
+      URL url = new URL(URLDecoder.decode(urlString, CharEncoding.UTF_8));
       u = url.toURI();
     } catch (MalformedURLException e) {
       e.printStackTrace();
@@ -174,7 +175,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
           WebUtils.discardEntityBytes(response);
           if (locations != null && locations.length == 1) {
             try {
-              URL url = new URL(URLDecoder.decode(locations[0].getValue(), "utf-8"));
+              URL url = new URL(URLDecoder.decode(locations[0].getValue(), CharEncoding.UTF_8));
               URI uNew = url.toURI();
               if (u.getHost().equalsIgnoreCase(uNew.getHost())) {
                 // trust the server to tell us a new location
@@ -323,7 +324,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
             // the next file would exceed the 10MB threshold...
             Log.i(t, "Extremely long post is being split into multiple posts");
             try {
-              StringBody sb = new StringBody("yes", Charset.forName("UTF-8"));
+              StringBody sb = new StringBody("yes", Charset.forName(CharEncoding.UTF_8));
               entity.addPart("*isIncomplete*", sb);
             } catch (Exception e) {
               e.printStackTrace(); // never happens...
@@ -389,15 +390,15 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
     Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
         + "/"
-        + URLEncoder.encode(fi.appName, "UTF-8")
+        + URLEncoder.encode(fi.appName, CharEncoding.UTF_8)
         + "/"
-        + URLEncoder.encode(fi.tableId, "UTF-8")
+        + URLEncoder.encode(fi.tableId, CharEncoding.UTF_8)
         + "/"
-        + URLEncoder.encode(instanceId, "UTF-8")
+        + URLEncoder.encode(instanceId, CharEncoding.UTF_8)
         + "?formId="
-        + URLEncoder.encode(fi.formId, "UTF-8")
+        + URLEncoder.encode(fi.formId, CharEncoding.UTF_8)
         + ((fi.formVersion == null) ? "" : "&formVersion="
-            + URLEncoder.encode(fi.formVersion, "UTF-8")));
+            + URLEncoder.encode(fi.formVersion, CharEncoding.UTF_8)));
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
 

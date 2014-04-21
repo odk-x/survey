@@ -44,6 +44,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
@@ -70,7 +71,6 @@ public class EncryptionUtils {
   // SHA-256
   public static final String ASYMMETRIC_ALGORITHM = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
   public static final String SYMMETRIC_ALGORITHM = "AES/CFB/PKCS5Padding";
-  public static final String UTF_8 = "UTF-8";
   public static final int SYMMETRIC_KEY_LENGTH = 256;
   public static final int IV_BYTE_LENGTH = 16;
 
@@ -128,7 +128,7 @@ public class EncryptionUtils {
       // this is the md5 hash of the instanceID and the symmetric key
       try {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(instanceId.getBytes(UTF_8));
+        md.update(instanceId.getBytes(CharEncoding.UTF_8));
         md.update(key);
         byte[] messageDigest = md.digest();
         ivSeedArray = new byte[IV_BYTE_LENGTH];
@@ -222,7 +222,7 @@ public class EncryptionUtils {
       byte[] messageDigest;
       try {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(elementSignatureSource.toString().getBytes(UTF_8));
+        md.update(elementSignatureSource.toString().getBytes(CharEncoding.UTF_8));
         messageDigest = md.digest();
       } catch (NoSuchAlgorithmException e) {
         Log.e(t, e.toString());
@@ -402,7 +402,7 @@ public class EncryptionUtils {
       fout = new FileOutputStream(encryptedFile);
       fout = new CipherOutputStream(fout, c);
       InputStream fin;
-      fin = new ByteArrayInputStream(contents.getBytes("UTF-8"));
+      fin = new ByteArrayInputStream(contents.getBytes(CharEncoding.UTF_8));
       byte[] buffer = new byte[2048];
       int len = fin.read(buffer);
       while (len != -1) {
@@ -548,7 +548,7 @@ public class EncryptionUtils {
 
     Document d = new Document();
     d.setStandalone(true);
-    d.setEncoding(UTF_8);
+    d.setEncoding(CharEncoding.UTF_8);
     Element e = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, DATA);
     e.setPrefix(null, XML_ENCRYPTED_TAG_NAMESPACE);
     e.setAttribute(null, ID, formInfo.formId);
@@ -594,7 +594,7 @@ public class EncryptionUtils {
     FileOutputStream out;
     try {
       out = new FileOutputStream(submissionXml);
-      OutputStreamWriter writer = new OutputStreamWriter(out, UTF_8);
+      OutputStreamWriter writer = new OutputStreamWriter(out, CharEncoding.UTF_8);
 
       KXmlSerializer serializer = new KXmlSerializer();
       serializer.setOutput(writer);
