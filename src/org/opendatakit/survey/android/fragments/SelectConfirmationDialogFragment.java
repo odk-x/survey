@@ -16,11 +16,11 @@ package org.opendatakit.survey.android.fragments;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 
 
 public class SelectConfirmationDialogFragment extends DialogFragment {
@@ -29,10 +29,10 @@ public class SelectConfirmationDialogFragment extends DialogFragment {
     public void okConfirmationDialog();
 
     public void cancelConfirmationDialog();
-    
+
     public void okWithOptionsConfirmationDialog();
   };
-  
+
   public static SelectConfirmationDialogFragment newInstance(int fragmentId, String title,
     String message, String okButton, String cancelButton, String okWithOptionsButton) {
     SelectConfirmationDialogFragment frag = new SelectConfirmationDialogFragment();

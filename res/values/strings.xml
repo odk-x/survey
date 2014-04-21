@@ -158,7 +158,7 @@
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>
 <string name="expanding_expansion_files">Processing APK expansion files</string>
 <string name="expansion_complete">APK expansion files successfully expanded</string>
-<string name="expansion_unzipping">Unzipping: %1$s. Destination: %2$s</string>
+<string name="expansion_unzipping">Unzipping resources. Destination: %1$s</string>
 <string name="expanding_file">Accessing APK expansion file: %1$s</string>
 <string name="expansion_progress">%1$s\n\n(%2$s of %3$s).</string>
 <string name="expansion_failed">Unable to expand APK expansion files</string>

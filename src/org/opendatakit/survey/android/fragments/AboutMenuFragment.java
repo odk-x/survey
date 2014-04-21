@@ -19,9 +19,9 @@ import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.LicenseReaderListener;
 
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 import android.text.Html;
 import android.text.util.Linkify;
 import android.util.Log;

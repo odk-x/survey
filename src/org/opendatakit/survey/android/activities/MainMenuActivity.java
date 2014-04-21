@@ -49,8 +49,14 @@ import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.ActionBar.Tab;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentManager.BackStackEntry;
+import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.Context;
@@ -66,27 +72,19 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentManager.BackStackEntry;
-import android.support.v4.app.FragmentTransaction;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
-
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.ActionBar.Tab;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches
@@ -95,7 +93,7 @@ import com.actionbarsherlock.view.MenuItem;
  * @author Carl Hartung (carlhartung@gmail.com)
  * @author Yaw Anokwa (yanokwa@gmail.com)
  */
-public class MainMenuActivity extends SherlockFragmentActivity implements ODKActivity {
+public class MainMenuActivity extends Activity implements ODKActivity {
 
   private static final String t = "MainMenuActivity";
 
@@ -422,25 +420,22 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       frags.setVisibility(View.GONE);
     }
 
-    FragmentManager mgr = this.getSupportFragmentManager();
+    FragmentManager mgr = getFragmentManager();
     if (mgr.getBackStackEntryCount() == 0) {
       swapToFragmentView(currentFragment);
       // we are not recovering...
       if ((currentFragment != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles) {
         // no form files -- see if we can explode an APK Expansion file
-        ArrayList<Map<String, Object>> files = Survey.getInstance().expansionFiles();
-        if (files != null || Survey.debugAPKExpansionFile() != null) {
-          // double-check that we have no forms...
-          try {
-            mProcessAPKExpansionFiles = !Survey.createODKDirs(getAppName());
-          } catch (RuntimeException e) {
-            createErrorDialog(e.getMessage(), EXIT);
-            return;
-          }
-          if (mProcessAPKExpansionFiles) {
-            // OK we should swap to the CopyExpansionFiles view
-            swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
-          }
+        try {
+          Survey.createODKDirs(getAppName());
+          mProcessAPKExpansionFiles = !ODKFileUtils.isConfiguredSurveyApp(getAppName(), Survey.getInstance().getVersionCodeString());
+        } catch (RuntimeException e) {
+          createErrorDialog(e.getMessage(), EXIT);
+          return;
+        }
+        if (mProcessAPKExpansionFiles) {
+          // OK we should swap to the CopyExpansionFiles view
+          swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
         }
       }
     }
@@ -829,7 +824,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     Log.i(t, "Starting up, creating directories");
     try {
-      mProcessAPKExpansionFiles = !Survey.createODKDirs(getAppName());
+      Survey.createODKDirs(getAppName());
+      mProcessAPKExpansionFiles = !ODKFileUtils.isConfiguredSurveyApp(getAppName(), Survey.getInstance().getVersionCodeString());
     } catch (RuntimeException e) {
       createErrorDialog(e.getMessage(), EXIT);
       return;
@@ -838,7 +834,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // This creates the WebKit. We need all our values initialized by this point
     setContentView(R.layout.main_screen);
 
-    ActionBar actionBar = getSupportActionBar();
+    ActionBar actionBar = getActionBar();
     actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO);
     actionBar.show();
   }
@@ -850,7 +846,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
-      ActionBar actionBar = getSupportActionBar();
+      ActionBar actionBar = getActionBar();
       actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
       actionBar.show();
 
@@ -889,7 +885,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
       item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
-      ActionBar actionBar = getSupportActionBar();
+      ActionBar actionBar = getActionBar();
       actionBar.hide();
     }
 
@@ -974,7 +970,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public void onBackPressed() {
-    FragmentManager mgr = getSupportFragmentManager();
+    FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount()-2;
     if (idxLast < 0) {
       Intent result = new Intent();
@@ -1130,7 +1126,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   public void swapToFragmentView(ScreenList newFragment) {
     Log.i(t, "swapToFragmentView: " + newFragment.toString());
-    FragmentManager mgr = getSupportFragmentManager();
+    FragmentManager mgr = getFragmentManager();
     Fragment f;
     if (newFragment == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");

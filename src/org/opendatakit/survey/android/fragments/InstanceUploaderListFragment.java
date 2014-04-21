@@ -31,21 +31,20 @@ import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 
 import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.ListFragment;
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.ListFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -54,6 +53,7 @@ import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 /**
@@ -64,8 +64,8 @@ import android.widget.Toast;
  *
  */
 public class InstanceUploaderListFragment extends ListFragment implements OnLongClickListener,
-    LoaderManager.LoaderCallbacks<Cursor>, InstanceUploaderListener, ConfirmAlertDialog,
-    CancelProgressDialog {
+    InstanceUploaderListener, ConfirmAlertDialog, CancelProgressDialog,
+    LoaderManager.LoaderCallbacks<Cursor> {
   private static final String PROGRESS_DIALOG_TAG = "progressDialog";
 
   private static final String t = "InstanceUploaderListFragment";

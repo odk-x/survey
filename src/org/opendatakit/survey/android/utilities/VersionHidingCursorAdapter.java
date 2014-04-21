@@ -18,8 +18,8 @@ import org.opendatakit.survey.android.R;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 /**

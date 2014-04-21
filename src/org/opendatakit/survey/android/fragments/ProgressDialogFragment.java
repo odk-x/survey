@@ -17,12 +17,12 @@ package org.opendatakit.survey.android.fragments;
 import org.opendatakit.survey.android.R;
 
 import android.app.Dialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
 
 /**
  * Fragment-version of Progress dialog
