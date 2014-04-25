@@ -13,30 +13,19 @@
  */
 package org.opendatakit.survey.android.application;
 
-import java.io.File;
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
+import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Application;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
-import android.preference.PreferenceManager;
 import android.util.Log;
-
 import fi.iki.elonen.SimpleWebServer;
 
 /**

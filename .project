@@ -3,6 +3,8 @@
 	<name>ODKSurvey</name>
 	<comment></comment>
 	<projects>
+		<project>opendatakit.androidcommon</project>
+		<project>opendatakit.playservices</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

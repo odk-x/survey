@@ -17,7 +17,6 @@ package org.opendatakit.survey.android.activities;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -1080,7 +1079,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   public void hideWebkitView() {
     // This is a callback thread.
     // We must invalidate the options menu on the UI thread
-    // (this may be an issue with the Sherlock compatibility library)
     this.runOnUiThread(new Runnable() {
       @Override
       public void run() {
@@ -1225,11 +1223,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     levelSafeInvalidateOptionsMenu();
   }
 
-  /**
-   * Android Lint complains, but we are using Sherlock,
-   * so this does exist for down-level devices.
-   */
-  @SuppressLint("NewApi")
   private void levelSafeInvalidateOptionsMenu() {
     invalidateOptionsMenu();
   }
