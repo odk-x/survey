@@ -26,6 +26,7 @@ import java.util.zip.ZipInputStream;
 
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.CopyExpansionFilesListener;
 
 import android.app.Application;
@@ -109,6 +110,8 @@ public class CopyExpansionFilesTask extends AsyncTask<Void, String, ArrayList<St
             message = appContext.getString(R.string.success);
             result.add(entry.getName() + " " + message);
           }
+
+          ODKFileUtils.assertConfiguredSurveyApp(getAppName(), Survey.getInstance().getVersionCodeString());
         } catch (IOException e) {
           e.printStackTrace();
           mPendingSuccess = false;
