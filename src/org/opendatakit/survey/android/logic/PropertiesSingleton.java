@@ -37,10 +37,6 @@ public class PropertiesSingleton {
 
   private static final String t = "PropertiesSingleton";
 
-  private static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "survey.properties";
-
-  private static final String ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME = "survey.temp";
-
   private static final Map<String, PropertiesSingleton> singletons = new HashMap<String, PropertiesSingleton>();
 
   private static synchronized PropertiesSingleton getSingleton(String appName) {
@@ -210,8 +206,7 @@ public class PropertiesSingleton {
   private void readProperties() {
     try {
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
+        mConfigFile = new File(ODKFileUtils.getSurveyConfigurationFile(mAppName));
       }
 
       FileInputStream configFileInputStream = new FileInputStream(mConfigFile);
@@ -227,8 +222,7 @@ public class PropertiesSingleton {
   private void writeProperties() {
     try {
       if (mTempConfigFile == null) {
-        mTempConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME);
+        mTempConfigFile = new File(ODKFileUtils.getSurveyTempConfigurationFile(mAppName));
       }
       FileOutputStream configFileOutputStream = new FileOutputStream(mTempConfigFile, false);
 
@@ -236,8 +230,7 @@ public class PropertiesSingleton {
       configFileOutputStream.close();
 
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
+        mConfigFile = new File(ODKFileUtils.getSurveyConfigurationFile(mAppName));
       }
 
       boolean fileSuccess = mTempConfigFile.renameTo(mConfigFile);
