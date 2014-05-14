@@ -197,6 +197,8 @@ public class SubmissionProvider extends ContentProvider {
     }
 
     final String appName = segments.get(0);
+    ODKFileUtils.verifyExternalStorageAvailability();
+    ODKFileUtils.assertDirectoryStructure(appName);
     WebLogger log = WebLogger.getLogger(appName);
 
     final String tableId = segments.get(1);
