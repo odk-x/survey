@@ -283,6 +283,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
    */
 
   // no need to preserve
+  private boolean formFailedLaunchInitializationTask = false;
+
+  // no need to preserve
   private PropertyManager mPropertyManager;
 
   // no need to preserve
@@ -366,7 +369,83 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     // whether we have can cancelled or completed update,
     // remember to not do the expansion files check next time through
     currentFragment = ScreenList.valueOf(fragmentToShowNext);
-    swapToFragmentView(currentFragment);
+    if ( currentFragment == ScreenList.WEBKIT && getCurrentForm() == null ) {
+      // we were sent off to the initialization dialog to try to
+      // discover the form. We need to inquire about the form again
+      // and, if we cannot find it, report an error to the user.
+      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+      Uri uri = getIntent().getData();
+      Uri formUri = null;
+
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() >= 2) {
+          String appName = segments.get(0);
+          setAppName(appName);
+          formUri = Uri.withAppendedPath(
+              Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
+        } else {
+          createErrorDialog(getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
+          return;
+        }
+        // request specifies a specific formUri -- try to open that
+        FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+        if (newForm == null) {
+          // error
+          createErrorDialog(getString(R.string.form_not_found, segments.get(1)), EXIT);
+          return;
+        } else {
+          transitionToFormHelper(uri, newForm);
+          swapToFragmentView(currentFragment);
+        }
+      }
+    } else {
+      swapToFragmentView(currentFragment);
+    }
+  }
+
+  private void transitionToFormHelper(Uri uri, FormIdStruct newForm) {
+    // work through switching to that form
+    setAppName(newForm.appName);
+    setCurrentForm(newForm);
+    clearSectionScreenState();
+    String fragment = uri.getFragment();
+    if ( fragment != null && fragment.length() != 0 ) {
+      // and process the fragment to find the instanceId, screenPath and other kv pairs
+      String[] pargs = fragment.split("&");
+      boolean first = true;
+      StringBuilder b = new StringBuilder();
+      int i;
+      for (i = 0; i < pargs.length; ++i) {
+        String[] keyValue = pargs[i].split("=");
+        if ("instanceId".equals(keyValue[0])) {
+          if (keyValue.length == 2) {
+             setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
+          }
+        } else if ("screenPath".equals(keyValue[0])) {
+          if (keyValue.length == 2) {
+            setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]),null);
+          }
+        } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
+          // ignore
+        } else {
+          if (!first) {
+            b.append("&");
+          }
+          first = false;
+          b.append(pargs[i]);
+        }
+      }
+      String aux = b.toString();
+      if (aux.length() != 0) {
+        setAuxillaryHash(aux);
+      }
+    } else {
+      setInstanceId(null);
+      setAuxillaryHash(null);
+    }
+    currentFragment = ScreenList.WEBKIT;
   }
 
   @Override
@@ -420,9 +499,11 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       swapToFragmentView(currentFragment);
       // we are not recovering...
       if ((currentFragment != ScreenList.INITIALIZATION_DIALOG) &&
-          Survey.getInstance().shouldRunInitializationTask(getAppName())) {
+          (formFailedLaunchInitializationTask ||
+           Survey.getInstance().shouldRunInitializationTask(getAppName()))) {
         // and immediately clear the should-run flag...
         Survey.getInstance().clearRunInitializationTask(getAppName());
+        formFailedLaunchInitializationTask = false;
         // OK we should swap to the InitializationFragment view
         swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
       }
@@ -639,12 +720,16 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    // android.os.Debug.waitForDebugger();
+
     mPropertyManager = new PropertyManager(this);
 
     // must be at the beginning of any activity that can be called from an
     // external intent
     setAppName("survey");
     Uri uri = getIntent().getData();
+    Uri formUri = null;
+
     if (uri != null) {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
@@ -658,12 +743,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
+          assignContentView();
+          createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()), EXIT);
           return;
         }
       } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
@@ -672,64 +753,11 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
-          Uri simpleUri = Uri.withAppendedPath(
+          formUri = Uri.withAppendedPath(
               Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
-          FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), simpleUri);
-          if (newForm != null) {
-            setAppName(newForm.appName);
-            setCurrentForm(newForm);
-            clearSectionScreenState();
-            String fragment = uri.getFragment();
-            if ( fragment != null && fragment.length() != 0 ) {
-              // and process the fragment to find the instanceId, screenPath and other kv pairs
-              String[] pargs = fragment.split("&");
-              boolean first = true;
-              StringBuilder b = new StringBuilder();
-              int i;
-              for (i = 0; i < pargs.length; ++i) {
-                String[] keyValue = pargs[i].split("=");
-                if ("instanceId".equals(keyValue[0])) {
-                  if (keyValue.length == 2) {
-                     setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
-                  }
-                } else if ("screenPath".equals(keyValue[0])) {
-                  if (keyValue.length == 2) {
-                    setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]),null);
-                  }
-                } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
-                  // ignore
-                } else {
-                  if (!first) {
-                    b.append("&");
-                  }
-                  first = false;
-                  b.append(pargs[i]);
-                }
-              }
-              String aux = b.toString();
-              if (aux.length() != 0) {
-                setAuxillaryHash(aux);
-              }
-            } else {
-              setInstanceId(null);
-              setAuxillaryHash(null);
-            }
-            currentFragment = ScreenList.WEBKIT;
-          } else {
-            // cancel action if the form is not found...
-            String err = "Invalid " + uri.toString() + " uri. Form not found.";
-            Log.e(t, err);
-            Intent i = new Intent();
-            setResult(RESULT_CANCELED, i);
-            finish();
-            return;
-          }
         } else {
-          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
+          assignContentView();
+          createErrorDialog(getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
           return;
         }
       } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
@@ -740,29 +768,44 @@ public class MainMenuActivity extends Activity implements ODKActivity {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
+          assignContentView();
+          createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()), EXIT);
           return;
         }
 
       } else {
-        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
-            uriWebView.toString() + " or " +
-            uriFileProvider.toString() + " or " +
-            uriFormsProvider.toString() + " allowed.";
-        Log.e(t, err);
-        Intent i = new Intent();
-        setResult(RESULT_CANCELED, i);
-        finish();
+        assignContentView();
+        createErrorDialog(getString(R.string.unrecognized_uri,
+            uri.toString(),
+            uriWebView.toString(),
+            uriFileProvider.toString(),
+            uriFormsProvider.toString()), EXIT);
         return;
       }
     }
 
     if (savedInstanceState != null) {
+      // if appName is explicitly set, use it...
+      setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
+          : getAppName());
+    }
+
+
+    Log.i(t, "Starting up, creating directories");
+    try {
+      String appName = getAppName();
+      if ( appName != null && appName.length() != 0 ) {
+        ODKFileUtils.verifyExternalStorageAvailability();
+        ODKFileUtils.assertDirectoryStructure(appName);
+      }
+    } catch (RuntimeException e) {
+      assignContentView();
+      createErrorDialog(e.getMessage(), EXIT);
+      return;
+    }
+
+    if (savedInstanceState != null) {
+      // if we are restoring, assume that initialization has already occurred.
 
       pageWaitingForData = savedInstanceState.containsKey(PAGE_WAITING_FOR_DATA) ? savedInstanceState
           .getString(PAGE_WAITING_FOR_DATA) : null;
@@ -775,9 +818,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
           .valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ? savedInstanceState
               .getString(CURRENT_FRAGMENT) : currentFragment.name());
 
-      // if appName is explicitly set, use it...
-      setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
-          : getAppName());
       if (savedInstanceState.containsKey(FORM_URI)) {
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(),
             Uri.parse(savedInstanceState.getString(FORM_URI)));
@@ -805,17 +845,26 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
         sectionStateScreenHistory = savedInstanceState.getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
       }
+    } else if ( formUri != null ) {
+      // request specifies a specific formUri -- try to open that
+      FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+      if (newForm == null) {
+        // can't find it -- launch the initialization dialog to hopefully discover it.
+        formFailedLaunchInitializationTask = true;
+        currentFragment = ScreenList.WEBKIT;
+      } else {
+        transitionToFormHelper(uri, newForm);
+      }
     }
 
-    Log.i(t, "Starting up, creating directories");
-    try {
-      Survey.createODKDirs(getAppName());
-    } catch (RuntimeException e) {
-      createErrorDialog(e.getMessage(), EXIT);
-      return;
-    }
+    assignContentView();
+  }
 
-    // This creates the WebKit. We need all our values initialized by this point
+  /**
+   * This creates the WebKit.
+   * We need all our values initialized by this point.
+   */
+  private void assignContentView() {
     setContentView(R.layout.main_screen);
 
     ActionBar actionBar = getActionBar();
@@ -972,6 +1021,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   private void createErrorDialog(String errorMsg, final boolean shouldExit) {
+    Log.e(t, errorMsg);
     if (mAlertDialog != null) {
       mAlertDialog.dismiss();
       mAlertDialog = null;
@@ -981,10 +1031,12 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     mAlertDialog.setMessage(errorMsg);
     DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
       @Override
-      public void onClick(DialogInterface dialog, int i) {
-        switch (i) {
+      public void onClick(DialogInterface dialog, int button) {
+        switch (button) {
         case DialogInterface.BUTTON_POSITIVE:
           if (shouldExit) {
+            Intent i = new Intent();
+            setResult(RESULT_CANCELED, i);
             finish();
           }
           break;

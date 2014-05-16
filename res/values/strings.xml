@@ -130,6 +130,10 @@
 <string name="disksync_in_progress">Sorry, a disk sync is already in progress!</string>
 <string name="form_download_unzipping">%1$s. Unzipping: %2$s (%3$s of %4$s). File: %5$s</string>
 <string name="no_manifest">%1$s. No manifest or empty manifest</string>
+<string name="form_not_found">The requested form is missing: %1$s</string>
+<string name="invalid_uri_expecting_one_segment">Invalid %1$s uri. Expecting one segment (the appName).</string>
+<string name="invalid_uri_expecting_n_segments">Invalid %1$s uri. Expecting %2$d segments.</string>
+<string name="unrecognized_uri">Unrecognized %1$s uri. Only one of %2$s or %3$s or %4$s allowed.</string>
 <string name="no_formdef_json">%1$s. No formDef.json</string>
 <string name="mark_as_finished">Finalizing forms</string>
 <string name="user_access_main_menu">User can access Main Menu items:</string>
@@ -159,7 +163,7 @@
 <string name="expansion_unzipping_begins">Unzipping resources. Scanning zip directory.</string>
 <string name="expansion_unzipping_without_detail">Unzipping resources. Extracting %1$s (%2$d of %3$d)</string>
 <string name="expansion_create_dir_detail">Creating directory</string>
-<string name="expansion_unzipping_detail">at byte %1$d out of %2$d overall</string>
+<string name="expansion_unzipping_detail">at byte %1$d out of %2$d compressed bytes overall</string>
 <string name="expansion_unzipping_complete">Unzipping resources completed.</string>
 <string name="searching_for_form_defs">Searching for new form definitions &#8230;</string>
 <string name="searching_for_deleted_forms">Searching for deleted forms &#8230;</string>

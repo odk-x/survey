@@ -65,7 +65,9 @@ public class AlertDialogFragment extends DialogFragment {
           FragmentManager mgr = getFragmentManager();
           Fragment f = mgr.findFragmentById(fragmentId);
 
-          ((ConfirmAlertDialog) f).okAlertDialog();
+          if ( f instanceof ConfirmAlertDialog ) {
+            ((ConfirmAlertDialog) f).okAlertDialog();
+          }
           dialog.dismiss();
           break;
         }
