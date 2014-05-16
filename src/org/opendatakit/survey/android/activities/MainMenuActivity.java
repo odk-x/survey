@@ -31,7 +31,7 @@ import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.AboutMenuFragment;
-import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
+import org.opendatakit.survey.android.fragments.InitializationFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
@@ -97,7 +97,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -122,7 +122,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
   private static final String CURRENT_FRAGMENT = "currentFragment";
-  private static final String PROCESS_APK_EXPANSION_FILES = "processAPKExpansionFiles";
 
   // menu options
 
@@ -257,7 +256,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
 
-  private boolean mProcessAPKExpansionFiles = false;
   private String pageWaitingForData = null;
   private String pathWaitingForData = null;
   private String actionWaitingForData = null;
@@ -339,7 +337,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
     }
     outState.putString(CURRENT_FRAGMENT, currentFragment.name());
-    outState.putBoolean(PROCESS_APK_EXPANSION_FILES, mProcessAPKExpansionFiles);
 
     if (getCurrentForm() != null) {
       outState.putString(FORM_URI, getCurrentForm().formUri.toString());
@@ -365,10 +362,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   @Override
-  public void expansionFilesCopied(String fragmentToShowNext) {
+  public void initializationCompleted(String fragmentToShowNext) {
     // whether we have can cancelled or completed update,
     // remember to not do the expansion files check next time through
-    mProcessAPKExpansionFiles = false;
     currentFragment = ScreenList.valueOf(fragmentToShowNext);
     swapToFragmentView(currentFragment);
   }
@@ -401,7 +397,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
     if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
         || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
-        || currentFragment == ScreenList.INSTANCE_UPLOADER || currentFragment == ScreenList.COPY_EXPANSION_FILES) {
+        || currentFragment == ScreenList.INSTANCE_UPLOADER || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
@@ -423,19 +419,12 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     if (mgr.getBackStackEntryCount() == 0) {
       swapToFragmentView(currentFragment);
       // we are not recovering...
-      if ((currentFragment != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles) {
-        // no form files -- see if we can explode an APK Expansion file
-        try {
-          Survey.createODKDirs(getAppName());
-          mProcessAPKExpansionFiles = !ODKFileUtils.isConfiguredSurveyApp(getAppName(), Survey.getInstance().getVersionCodeString());
-        } catch (RuntimeException e) {
-          createErrorDialog(e.getMessage(), EXIT);
-          return;
-        }
-        if (mProcessAPKExpansionFiles) {
-          // OK we should swap to the CopyExpansionFiles view
-          swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
-        }
+      if ((currentFragment != ScreenList.INITIALIZATION_DIALOG) &&
+          Survey.getInstance().shouldRunInitializationTask(getAppName())) {
+        // and immediately clear the should-run flag...
+        Survey.getInstance().clearRunInitializationTask(getAppName());
+        // OK we should swap to the InitializationFragment view
+        swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
       }
     }
   }
@@ -785,9 +774,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       currentFragment = ScreenList
           .valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ? savedInstanceState
               .getString(CURRENT_FRAGMENT) : currentFragment.name());
-      if (savedInstanceState.containsKey(PROCESS_APK_EXPANSION_FILES)) {
-        mProcessAPKExpansionFiles = savedInstanceState.getBoolean(PROCESS_APK_EXPANSION_FILES);
-      }
 
       // if appName is explicitly set, use it...
       setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
@@ -824,7 +810,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     Log.i(t, "Starting up, creating directories");
     try {
       Survey.createODKDirs(getAppName());
-      mProcessAPKExpansionFiles = !ODKFileUtils.isConfiguredSurveyApp(getAppName(), Survey.getInstance().getVersionCodeString());
     } catch (RuntimeException e) {
       createErrorDialog(e.getMessage(), EXIT);
       return;
@@ -1140,12 +1125,12 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (f == null) {
         f = new FormChooserListFragment();
       }
-    } else if (newFragment == ScreenList.COPY_EXPANSION_FILES) {
-      f = mgr.findFragmentById(CopyExpansionFilesFragment.ID);
+    } else if (newFragment == ScreenList.INITIALIZATION_DIALOG) {
+      f = mgr.findFragmentById(InitializationFragment.ID);
       if (f == null) {
-        f = new CopyExpansionFilesFragment();
+        f = new InitializationFragment();
       }
-      ((CopyExpansionFilesFragment) f).setFragmentToShowNext(currentFragment.name());
+      ((InitializationFragment) f).setFragmentToShowNext(currentFragment.name());
     } else if (newFragment == ScreenList.FORM_DELETER) {
       f = mgr.findFragmentById(FormDeleteListFragment.ID);
       if (f == null) {
@@ -1214,7 +1199,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     trans.replace(R.id.main_content, f);
     // never put the copy-expansion-files fragment on the
     // back stack it is always a transient screen.
-    if (currentFragment != ScreenList.COPY_EXPANSION_FILES) {
+    if (currentFragment != ScreenList.INITIALIZATION_DIALOG) {
       trans.addToBackStack(currentFragment.name());
     } else {
       trans.disallowAddToBackStack();

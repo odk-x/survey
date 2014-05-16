@@ -14,6 +14,8 @@
 package org.opendatakit.survey.android.application;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
@@ -39,6 +41,8 @@ public class Survey extends Application {
 
   // private values
   private static final String DEFAULT_FONTSIZE = "21";
+
+  private Set<String> appNameHasBeenInitialized = new HashSet<String>();
 
   private SimpleWebServer server = null;
   private volatile Thread webServer = null;
@@ -76,6 +80,14 @@ public class Survey extends Application {
     String question_font = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FONT_SIZE);
     int questionFontsize = Integer.valueOf(question_font);
     return questionFontsize;
+  }
+
+  public boolean shouldRunInitializationTask(String appName) {
+    return !appNameHasBeenInitialized.contains(appName);
+  }
+
+  public void clearRunInitializationTask(String appName) {
+    appNameHasBeenInitialized.add(appName);
   }
 
   public String getVersionCodeString() {

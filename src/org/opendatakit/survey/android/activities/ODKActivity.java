@@ -101,7 +101,7 @@ public interface ODKActivity {
   public Bitmap getDefaultVideoPoster();
 
   // for CopyExpansionFilesFragment
-  public void expansionFilesCopied(String fragmentToShowNext);
+  public void initializationCompleted(String fragmentToShowNext);
 
   // for FormChooserListFragment
   public void chooseForm(Uri formUri);
