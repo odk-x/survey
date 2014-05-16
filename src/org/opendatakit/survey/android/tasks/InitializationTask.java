@@ -73,13 +73,13 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
 
     /////////////////////////////////////////////////
     // check that the framework zip has been exploded
-    if (!ODKFileUtils.isConfiguredTablesApp(appName, Survey.getInstance().getVersionCodeString()) ) {
+    if (!ODKFileUtils.isConfiguredSurveyApp(appName, Survey.getInstance().getVersionCodeString()) ) {
       publishProgress(appContext.getString(R.string.expansion_unzipping_begins), null);
 
       extractFromRawZip(R.raw.frameworkzip, true, result);
       extractFromRawZip(R.raw.assetszip, false, result);
 
-      ODKFileUtils.assertConfiguredTablesApp(appName, Survey.getInstance().getVersionCodeString());
+      ODKFileUtils.assertConfiguredSurveyApp(appName, Survey.getInstance().getVersionCodeString());
     }
 
     ///////////////////////////////////////////
