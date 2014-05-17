@@ -218,9 +218,6 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
               publishProgress(formattedString, detail);
             }
             Log.i(t, "Extracted ZipEntry: " + entry.getName());
-
-            message = appContext.getString(R.string.success);
-            result.add(entry.getName() + " " + message);
           }
 
           String completionString = appContext.getString(R.string.expansion_unzipping_complete, totalFiles);
