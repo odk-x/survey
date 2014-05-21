@@ -183,6 +183,18 @@ public class InitializationFragment extends Fragment implements InitializationLi
         "background");
     f.clearInitializationTask();
 
+    if ( overallSuccess && result.isEmpty() ) {
+      // do not require an OK if everything went well
+      Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+      if (progress != null) {
+        ((ProgressDialogFragment) progress).dismiss();
+        mDialogState = DialogState.None;
+      }
+
+      ((ODKActivity) getActivity()).initializationCompleted(mFragmentToShowNext);
+      return;
+    }
+
     StringBuilder b = new StringBuilder();
     for (String k : result) {
       b.append(k);
