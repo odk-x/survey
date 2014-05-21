@@ -23,6 +23,7 @@ import java.util.List;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
@@ -38,6 +39,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.SyncStateContract.Constants;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -57,6 +59,7 @@ public class SplashScreenActivity extends Activity {
   private int mImageMaxWidth;
   private int mSplashTimeout = 2000; // milliseconds
 
+  private String appName;
   private AlertDialog mAlertDialog;
   private static final boolean EXIT = true;
 
@@ -80,7 +83,11 @@ public class SplashScreenActivity extends Activity {
     setContentView(R.layout.splash_screen);
 
     // external intent
-    String appName = "survey";
+    appName = getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    if ( appName == null ) {
+      appName = "survey";
+    }
+
     Uri uri = getIntent().getData();
     if (uri != null) {
       // initialize to the URI, then we will customize further based upon the
@@ -170,8 +177,17 @@ public class SplashScreenActivity extends Activity {
   private void endSplashScreen() {
 
     // launch new activity and close splash screen
-    Intent i = (Intent) this.getIntent().clone();
-    i.setClass(this, MainMenuActivity.class);
+    Uri data = getIntent().getData();
+    Bundle extras = getIntent().getExtras();
+
+    Intent i = new Intent(this, MainMenuActivity.class);
+    if ( data != null ) {
+      i.setData(data);
+    }
+    if ( extras != null ) {
+      i.putExtras(extras);
+    }
+    i.putExtra(MainMenuActivity.APP_NAME, appName);
     startActivity(i);
     finish();
   }
