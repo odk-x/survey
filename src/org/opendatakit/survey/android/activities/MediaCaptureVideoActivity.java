@@ -16,6 +16,9 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.utilities.MediaUtils;
@@ -27,7 +30,9 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
 import android.util.Log;
@@ -53,6 +58,11 @@ public class MediaCaptureVideoActivity extends Activity {
   private static final String AFTER_RESULT = "afterResult";
   private static final String ERROR_NO_FILE = "Media file does not exist! ";
   private static final String ERROR_COPY_FILE = "Media file copy failed! ";
+  
+  private static final String NEXUS7 = "Nexus 7";
+  public static final int MEDIA_TYPE_IMAGE = 1;
+  public static final int MEDIA_TYPE_VIDEO = 2;
+  private Uri nexus7Uri;
 
   private String appName = null;
   private String uriFragmentNewFileBase = null;
@@ -114,6 +124,17 @@ public class MediaCaptureVideoActivity extends Activity {
         i.putExtra(Video.Media.DISPLAY_NAME, f.getName());
       } else {
         i.putExtra(Video.Media.DISPLAY_NAME, f.getName().substring(0, idx));
+      }
+      
+      // Need to have this ugly code to account for 
+      // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
+      // of the intent - using the MediaStore.EXTRA_OUTPUT to get the data
+      // Have it saving to an intermediate location instead of final destination
+      // to allow the current location to catch issues with the intermediate file
+      Log.i(t, "The build of this device is " + android.os.Build.MODEL);
+      if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
+        nexus7Uri = getOutputMediaFileUri(MEDIA_TYPE_VIDEO);  
+        i.putExtra(MediaStore.EXTRA_OUTPUT, nexus7Uri);
       }
 
       try {
@@ -225,8 +246,17 @@ public class MediaCaptureVideoActivity extends Activity {
       Log.i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
       uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
       Log.i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
-
-      int delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      
+      // Need to have this ugly code to account for 
+      // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
+      // of the intent - uri in this case is a file 
+      int delCount = 0;
+      if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
+        File fileToDelete = new File(mediaUri.getPath());
+        delCount = fileToDelete.delete() ? 1 : 0;
+      } else {
+        delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      }
       Log.i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
       Log.e(t, "Inserting Video file FAILED");
@@ -263,6 +293,53 @@ public class MediaCaptureVideoActivity extends Activity {
     hasLaunched = false;
     afterResult = true;
     super.finish();
+  }
+
+  /*
+   * Create a file Uri for saving an image or video 
+   * For Nexus 7 fix ... 
+   * See http://developer.android.com/guide/topics/media/camera.html for more info
+   */
+  private static Uri getOutputMediaFileUri(int type){
+        return Uri.fromFile(getOutputMediaFile(type));
+  }
+
+  /*
+   *  Create a File for saving an image or video 
+   *  For Nexus 7 fix ... 
+   *  See http://developer.android.com/guide/topics/media/camera.html for more info
+   */
+  private static File getOutputMediaFile(int type){
+      // To be safe, you should check that the SDCard is mounted
+      // using Environment.getExternalStorageState() before doing this.
+
+      File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), "MyCameraApp");
+      // This location works best if you want the created images to be shared
+      // between applications and persist after your app has been uninstalled.
+
+      // Create the storage directory if it does not exist
+      if (! mediaStorageDir.exists()){
+          if (! mediaStorageDir.mkdirs()){
+              Log.d("MyCameraApp", "failed to create directory");
+              return null;
+          }
+      }
+
+      // Create a media file name
+      String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSSZ", Locale.US).format(new Date());
+      File mediaFile;
+      if (type == MEDIA_TYPE_IMAGE){
+          mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+          "IMG_"+ timeStamp + ".jpg");
+      } else if(type == MEDIA_TYPE_VIDEO) {
+          mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+          "VID_"+ timeStamp + ".mp4");
+      } else {
+          return null;
+      }
+
+      return mediaFile;
   }
 
 }
