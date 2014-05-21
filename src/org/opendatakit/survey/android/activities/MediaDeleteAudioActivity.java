@@ -16,8 +16,8 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -66,7 +66,7 @@ public class MediaDeleteAudioActivity extends Activity {
             + " key in intent bundle. Not found.");
     }
 
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
 
     int del = MediaUtils.deleteAudioFileFromMediaProvider(this, f.getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);

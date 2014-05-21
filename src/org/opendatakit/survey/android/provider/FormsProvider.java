@@ -17,8 +17,6 @@ package org.opendatakit.survey.android.provider;
 
 import org.opendatakit.common.android.provider.impl.FormsProviderImpl;
 
-import android.net.Uri;
-
 /**
  *
  */
@@ -26,9 +24,5 @@ public class FormsProvider extends FormsProviderImpl {
 
   public String getFormsAuthority() {
     return FormsProviderAPI.AUTHORITY;
-  }
-
-  public Uri getFormsContentUri() {
-    return FormsProviderAPI.CONTENT_URI;
   }
 }

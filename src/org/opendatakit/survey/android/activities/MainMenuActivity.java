@@ -22,19 +22,19 @@ import java.util.UUID;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.common.android.logic.PropertyManager;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.AboutMenuFragment;
-import org.opendatakit.survey.android.fragments.InitializationFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
+import org.opendatakit.survey.android.fragments.InitializationFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderFormChooserListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
@@ -562,7 +562,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   @Override
   public String getWebViewContentUri() {
-    Uri u = FileProvider.getWebViewContentUri(this);
+    Uri u = UrlUtils.getWebViewContentUri(this);
 
     String uriString = u.toString();
 
@@ -637,7 +637,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       return null;
     }
 
-    String fullPath = FileProvider.getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
+    String fullPath = UrlUtils.getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;
@@ -734,23 +734,14 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
-      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
-      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
+      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
-        } else {
-          assignContentView();
-          createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()), EXIT);
-          return;
-        }
-      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() >= 2) {
+        } else if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
           formUri = Uri.withAppendedPath(
@@ -778,7 +769,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         createErrorDialog(getString(R.string.unrecognized_uri,
             uri.toString(),
             uriWebView.toString(),
-            uriFileProvider.toString(),
             uriFormsProvider.toString()), EXIT);
         return;
       }

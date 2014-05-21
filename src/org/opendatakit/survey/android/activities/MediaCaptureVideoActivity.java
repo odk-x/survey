@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
@@ -108,7 +107,7 @@ public class MediaCaptureVideoActivity extends Activity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
       // to make the name unique...
-      File f = FileProvider.getAsFile(this, appName,
+      File f = ODKFileUtils.getAsFile(appName,
           (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
@@ -145,7 +144,7 @@ public class MediaCaptureVideoActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteVideoFileFromMediaProvider(this, path);
@@ -195,7 +194,7 @@ public class MediaCaptureVideoActivity extends Activity {
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
@@ -242,7 +241,7 @@ public class MediaCaptureVideoActivity extends Activity {
 
   private void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
-        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
+        ODKFileUtils.getAsFile(appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));

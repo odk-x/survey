@@ -70,8 +70,7 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
 
-                <!-- file argument specifies app -->
-                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.file" />
+                <data android:mimeType="vnd.android.cursor.dir/vnd.opendatakit.form" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.form" />
                 <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.instance" />
             </intent-filter>
@@ -141,6 +140,10 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.LAUNCHER" />
+
+                <data android:mimeType="vnd.android.cursor.dir/vnd.opendatakit.form" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.form" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.instance" />
             </intent-filter>
         </activity>
         <!-- Enable Shortcuts for Command Actions -->

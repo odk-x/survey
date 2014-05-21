@@ -20,8 +20,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
@@ -86,26 +86,13 @@ public class SplashScreenActivity extends Activity {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
-      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
-      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
+      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
+          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           appName = segments.get(0);
-        } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
-          return;
-        }
-      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() >= 2) {
+        } else if (segments != null && segments.size() >= 2) {
           appName = segments.get(0);
         } else {
           String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
@@ -131,10 +118,10 @@ public class SplashScreenActivity extends Activity {
           return;
         }
       } else {
-        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
-            uriWebView.toString() + " or " +
-            uriFileProvider.toString() + " or " +
-            uriFormsProvider.toString() + " allowed.";
+        String err = getString(R.string.unrecognized_uri,
+            uri.toString(),
+            uriWebView.toString(),
+            uriFormsProvider.toString());
         Log.e(t, err);
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
@@ -183,7 +170,9 @@ public class SplashScreenActivity extends Activity {
   private void endSplashScreen() {
 
     // launch new activity and close splash screen
-    startActivity(new Intent(SplashScreenActivity.this, MainMenuActivity.class));
+    Intent i = (Intent) this.getIntent().clone();
+    i.setClass(this, MainMenuActivity.class);
+    startActivity(i);
     finish();
   }
 

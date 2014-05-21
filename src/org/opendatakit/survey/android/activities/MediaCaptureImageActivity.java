@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
@@ -115,7 +114,7 @@ public class MediaCaptureImageActivity extends Activity {
         uriFragmentToMedia = uriFragmentNewFileBase + TMP_EXTENSION;
       }
       // to make the name unique...
-      File mediaFile = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+      File mediaFile = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
       if (!mediaFile.exists()) {
         boolean success = false;
         String errorString = " Could not create: " + mediaFile.getAbsolutePath();
@@ -169,7 +168,7 @@ public class MediaCaptureImageActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteImageFileFromMediaProvider(this, path);
@@ -202,7 +201,7 @@ public class MediaCaptureImageActivity extends Activity {
       return;
     }
 
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     Uri mediaUri = Uri.fromFile(f);
     // we never have to deal with deleting, as the Camera is overwriting
     // this...
@@ -212,7 +211,7 @@ public class MediaCaptureImageActivity extends Activity {
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
     File source = new File(binaryPath);
-    File sourceMedia = FileProvider.getAsFile(this, appName, uriFragmentNewFileBase + extension);
+    File sourceMedia = ODKFileUtils.getAsFile(appName, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
@@ -257,7 +256,7 @@ public class MediaCaptureImageActivity extends Activity {
 
   private void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
-        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
+        ODKFileUtils.getAsFile(appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));

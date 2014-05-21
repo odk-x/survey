@@ -133,7 +133,7 @@
 <string name="form_not_found">The requested form is missing: %1$s</string>
 <string name="invalid_uri_expecting_one_segment">Invalid %1$s uri. Expecting one segment (the appName).</string>
 <string name="invalid_uri_expecting_n_segments">Invalid %1$s uri. Expecting %2$d segments.</string>
-<string name="unrecognized_uri">Unrecognized %1$s uri. Only one of %2$s or %3$s or %4$s allowed.</string>
+<string name="unrecognized_uri">Unrecognized %1$s uri. Only one of %2$s or %3$s allowed.</string>
 <string name="no_formdef_json">%1$s. No formDef.json</string>
 <string name="mark_as_finished">Finalizing forms</string>
 <string name="user_access_main_menu">User can access Main Menu items:</string>

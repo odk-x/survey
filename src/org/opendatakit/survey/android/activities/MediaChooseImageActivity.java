@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
@@ -119,7 +118,7 @@ public class MediaChooseImageActivity extends Activity {
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-    File newMedia = FileProvider.getAsFile(this, appName, uriFragmentNewFileBase + extension);
+    File newMedia = ODKFileUtils.getAsFile(appName, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {

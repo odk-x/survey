@@ -44,7 +44,6 @@ import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -353,7 +352,7 @@ public class SubmissionProvider extends ContentProvider {
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
 
-                      File f = FileProvider.getAsFile(getContext(), appName, uriFragment);
+                      File f = ODKFileUtils.getAsFile(appName, uriFragment);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
@@ -553,7 +552,7 @@ public class SubmissionProvider extends ContentProvider {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
-                      File f = FileProvider.getAsFile(getContext(), appName, uriFragment);
+                      File f = ODKFileUtils.getAsFile(appName, uriFragment);
                       if (f.equals(manifest)) {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }

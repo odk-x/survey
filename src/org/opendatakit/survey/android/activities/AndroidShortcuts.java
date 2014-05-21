@@ -17,7 +17,6 @@ package org.opendatakit.survey.android.activities;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
@@ -110,12 +109,11 @@ public class AndroidShortcuts extends Activity {
     File[] directories = ODKFileUtils.getAppFolders();
     for (File app : directories) {
       String appName = app.getName();
-      Uri uri = Uri.withAppendedPath(FileProvider.getFileProviderContentUri(this), app.getName());
+      Uri uri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName());
       choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName, appName));
 
       Cursor c = null;
       try {
-        boolean first = true;
         c = getContentResolver().query(
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, null, null,
             null);
@@ -183,7 +181,8 @@ public class AndroidShortcuts extends Activity {
    * Returns the results to the calling intent.
    */
   private void returnShortcut(Choice choice) {
-    Intent shortcutIntent = new Intent(Intent.ACTION_VIEW);
+    Intent shortcutIntent = new Intent(Intent.ACTION_MAIN);
+    shortcutIntent.putExtra(MainMenuActivity.APP_NAME, choice.appName);
     shortcutIntent.setData(choice.command);
 
     Intent intent = new Intent();
