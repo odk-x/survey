@@ -23,11 +23,14 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
+import android.os.Build;
 import android.util.Log;
+import android.webkit.WebView;
 import fi.iki.elonen.SimpleWebServer;
 
 /**
@@ -129,12 +132,17 @@ public class Survey extends Application {
     ODKFileUtils.assertDirectoryStructure(appName);
   }
 
+  @SuppressLint("NewApi")
   @Override
   public void onCreate() {
     singleton = this;
     PropertyManager propertyManager = new PropertyManager(getApplicationContext());
 
     super.onCreate();
+    
+    if (Build.VERSION.SDK_INT >= 19) {
+      WebView.setWebContentsDebuggingEnabled(true);
+    }
 
     webServer = new Thread(null, new Runnable() {
       @Override
