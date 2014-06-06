@@ -150,8 +150,8 @@ public class ODKWebView extends WebView implements ServiceConnection {
     ws.setJavaScriptEnabled(true);
 
     // disable to try to solve touch/mouse/swipe issues
-    ws.setBuiltInZoomControls(true);
-    ws.setSupportZoom(true);
+   // ws.setBuiltInZoomControls(true);
+   // ws.setSupportZoom(true);
 
     setFocusable(true);
     setFocusableInTouchMode(true);
