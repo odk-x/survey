@@ -123,6 +123,13 @@ public class ODKWebView extends WebView implements ServiceConnection {
     super.onPause();
   }
 
+  @SuppressLint("NewApi")
+  private void perhapsEnableDebugging() {
+    if (Build.VERSION.SDK_INT >= 19) {
+      WebView.setWebContentsDebuggingEnabled(true);
+    }
+  }
+
   public ODKWebView(Context context, AttributeSet attrs) {
     super(context, attrs);
 
@@ -132,6 +139,8 @@ public class ODKWebView extends WebView implements ServiceConnection {
     String appName = activity.getAppName();
     log = WebLogger.getLogger(appName);
     log.i(t, "ODKWebView()");
+
+    perhapsEnableDebugging();
 
     // for development -- always draw from source...
     WebSettings ws = getSettings();
