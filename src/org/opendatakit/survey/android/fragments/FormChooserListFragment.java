@@ -15,6 +15,7 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
@@ -106,7 +107,7 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
 
     // get uri to form
     Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
-    String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+    String formId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
     Uri formUri = Uri.withAppendedPath(
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
             ((ODKActivity) getActivity()).getAppName()), formId);

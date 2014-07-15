@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -122,10 +123,10 @@ public class AndroidShortcuts extends Activity {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
             String formName = app.getName() + " > "
-                + c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+                + ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
                 Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                c.getString(c.getColumnIndex(FormsColumns.FORM_ID)));
+                ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }

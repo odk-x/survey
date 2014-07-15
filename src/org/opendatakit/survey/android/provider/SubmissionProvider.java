@@ -45,6 +45,7 @@ import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
@@ -247,56 +248,54 @@ public class SubmissionProvider extends ContentProvider {
             ColumnDefinition defn = defns.get(columnName);
             if (defn != null && !c.isNull(i)) {
               if ( defn.elementName == ids.instanceName ) {
-                instanceName = c.getString(i);
+                instanceName = ODKDatabaseUtils.getIndexAsString(c, i);
               }
               // user-defined column
               log.i(t, "element type: " + defn.elementType);
               if (defn.elementType.equals("string")) {
-                String value = c.getString(i);
+                String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("integer")) {
-                Integer value = c.getInt(i);
+                Integer value = ODKDatabaseUtils.getIndexAsType(c, Integer.class, i);
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("number")) {
-                Double value = c.getDouble(i);
+                Double value = ODKDatabaseUtils.getIndexAsType(c, Double.class, i);
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("boolean")) {
-                Boolean value = (c.getInt(i) != 0);
+                Integer tmp = ODKDatabaseUtils.getIndexAsType(c, Integer.class, i);
+                Boolean value = tmp == null ? null : (tmp != 0);
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("date")) {
-                String value = c.getString(i);
-                String datestamp = (new SimpleDateFormat(ISO8601_DATE_ONLY_FORMAT, Locale.ENGLISH))
+                String value = ODKDatabaseUtils.getIndexAsString(c, i);
+                String datestamp = (value == null) ? null :
+                  (new SimpleDateFormat(ISO8601_DATE_ONLY_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
                 putElementValue(values, defn, datestamp);
               } else if (defn.elementType.equals("dateTime")) {
-                String value = c.getString(i);
-                String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
+                String value = ODKDatabaseUtils.getIndexAsString(c, i);
+                String datestamp = (value == null) ? null :
+                  (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
                 putElementValue(values, defn, datestamp);
               } else if (defn.elementType.equals("time")) {
-                String value = c.getString(i);
+                String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("array")) {
-                String valueString = c.getString(i);
-                ArrayList<Object> al = ODKFileUtils.mapper.readValue(valueString, ArrayList.class);
+                ArrayList<Object> al = ODKDatabaseUtils.getIndexAsType(c, ArrayList.class, i);
                 putElementValue(values, defn, al);
               } else if (defn.elementType.equals("object")) {
-                String valueString = c.getString(i);
-                HashMap<String, Object> obj = ODKFileUtils.mapper.readValue(valueString,
-                    HashMap.class);
+                HashMap<String, Object> obj = ODKDatabaseUtils.getIndexAsType(c, HashMap.class, i);
                 putElementValue(values, defn, obj);
               } else /* user-defined */{
                 log.i(t, "user-defined element type: " + defn.elementType);
-                String valueString = c.getString(i);
-                HashMap<String, Object> obj = ODKFileUtils.mapper.readValue(valueString,
-                    HashMap.class);
+                HashMap<String, Object> obj =  ODKDatabaseUtils.getIndexAsType(c, HashMap.class, i);;
                 putElementValue(values, defn, obj);
               }
 
             } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
-              timestamp = c.getString(i);
+              timestamp = ODKDatabaseUtils.getIndexAsString(c, i);
             } else if (columnName.equals(DataTableColumns.FORM_ID)) {
-              formStateId = c.getString(i);
+              formStateId = ODKDatabaseUtils.getIndexAsString(c, i);
             }
           }
 

@@ -18,6 +18,7 @@ package org.opendatakit.survey.android.fragments;
 import java.util.ArrayList;
 
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.SelectConfirmationDialogFragment.SelectConfirmationDialog;
@@ -279,9 +280,9 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
-    String formName = c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-    String formVersion = c.getString(c.getColumnIndex(FormsColumns.FORM_VERSION));
+    String formId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
+    String formName = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+    String formVersion = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_VERSION));
 
     FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(formId, formName, formVersion);
 

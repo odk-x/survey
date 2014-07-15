@@ -30,6 +30,7 @@ import java.util.zip.ZipInputStream;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -302,7 +303,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
 
       if (c.moveToFirst()) {
         do {
-          String id = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+          String id = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
           Uri otherUri = Uri.withAppendedPath(
               Uri.withAppendedPath(formsProviderContentUri, appName), id);
 
@@ -315,7 +316,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             throw new IllegalStateException("Column " + FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH
                 + " missing from database table. Incompatible versions?");
           }
-          String appRelativeFormMediaPath = c.getString(appRelativeFormMediaPathIdx);
+          String appRelativeFormMediaPath = ODKDatabaseUtils.getIndexAsString(c, appRelativeFormMediaPathIdx);
           File f = ODKFileUtils.asAppFile(appName, appRelativeFormMediaPath);
           File formDefJson = new File(f, ODKFileUtils.FORMDEF_JSON_FILENAME);
           if (!f.exists() || !f.isDirectory() || !formDefJson.exists() || !formDefJson.isFile()) {
@@ -326,7 +327,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             //////////////////////////////////
             // formdef.json exists. See if it is
             // unchanged...
-            String json_md5 = c.getString(c.getColumnIndex(FormsColumns.JSON_MD5_HASH));
+            String json_md5 = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.JSON_MD5_HASH));
             String fileMd5 = ODKFileUtils.getMd5Hash(formDefJson);
             if ( json_md5.equals(fileMd5) ) {
               // it is unchanged -- no need to rescan it
@@ -447,9 +448,9 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         fi = new FormInfo(appContext, appName, formDef);
       } else if (c.getCount() == 1) {
         c.moveToFirst();
-        String id = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+        String id = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
         uri = Uri.withAppendedPath(Uri.withAppendedPath(formsProviderContentUri, appName), id);
-        Long lastModificationDate = c.getLong(c.getColumnIndex(FormsColumns.DATE));
+        Long lastModificationDate = ODKDatabaseUtils.getIndexAsType(c, Long.class, c.getColumnIndex(FormsColumns.DATE));
         Long formDefModified = ODKFileUtils.getMostRecentlyModifiedDate(formDir);
         if (lastModificationDate.compareTo(formDefModified) == 0) {
           Log.i(t, "updateFormDir: " + formDirectoryPath

@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 
@@ -397,17 +398,9 @@ public class DbShimService extends Service {
           int nCols = c.getColumnCount();
           for (int i = 0; i < nCols; ++i) {
             String name = c.getColumnName(i);
-            int type = c.getType(i);
-            if (type == Cursor.FIELD_TYPE_NULL) {
-              row.put(name, null);
-            } else if (type == Cursor.FIELD_TYPE_INTEGER) {
-              row.put(name, c.getInt(i));
-            } else if (type == Cursor.FIELD_TYPE_FLOAT) {
-              row.put(name, c.getDouble(i));
-            } else {
-              // string or blob
-              row.put(name, c.getString(i));
-            }
+
+            Object v = ODKDatabaseUtils.getIndexAsType(c, ODKDatabaseUtils.getIndexDataType(c, i), i);
+            row.put(name, v);
           }
           rowSet.add(row);
         }

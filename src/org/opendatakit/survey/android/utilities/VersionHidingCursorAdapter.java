@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.utilities;
 
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 
 import android.content.Context;
@@ -52,7 +53,7 @@ public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
           }
           return false;
         } else {
-          String version = cursor.getString(columnIndex);
+          String version = ODKDatabaseUtils.getIndexAsString(cursor, columnIndex);
           TextView v = (TextView) view;
           if (version != null) {
             v.setText(ctxt.getString(R.string.version) + " " + version);

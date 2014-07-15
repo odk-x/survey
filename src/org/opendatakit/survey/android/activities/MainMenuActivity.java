@@ -25,6 +25,7 @@ import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -543,8 +544,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   @Override
   public String getActiveUser() {
+    FormIdStruct form = getCurrentForm();
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
-        getCurrentForm().tableId, getInstanceId());
+        form == null ? null : getCurrentForm().tableId, getInstanceId());
 
     String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
     if ( name == null || name.length() == 0) {
@@ -598,8 +600,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (c != null && c.getCount() > 0) {
         // we found a match...
         c.moveToFirst();
-        formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
-        lastModified = c.getLong(c.getColumnIndex(FormsColumns.DATE));
+        formPath = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_PATH));
+        lastModified = ODKDatabaseUtils.getIndexAsType(c, Long.class, c.getColumnIndex(FormsColumns.DATE));
       }
     } finally {
        if (c != null && !c.isClosed()) {

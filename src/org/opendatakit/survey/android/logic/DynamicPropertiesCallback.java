@@ -31,10 +31,10 @@ import android.content.Context;
  */
 public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
 
-  Context ctxt;
-  String appName;
-  String tableId;
-  String instanceId;
+  private Context ctxt;
+  private String appName;
+  private String tableId;
+  private String instanceId;
 
   public DynamicPropertiesCallback(Context ctxt, String appName, String tableId, String instanceId) {
     this.ctxt = ctxt;
@@ -62,12 +62,18 @@ public class DynamicPropertiesCallback implements DynamicPropertiesInterface {
 
   @Override
   public String getInstanceDirectory() {
+    if ( tableId == null ) {
+      throw new IllegalStateException("getInstanceDirectory() unexpectedly invoked outside of a form.");
+    }
     String mediaPath = ODKFileUtils.getInstanceFolder(appName, tableId, instanceId);
     return mediaPath;
   }
 
   @Override
   public String getUriFragmentNewInstanceFile(String uriDeviceId, String extension) {
+    if ( tableId == null ) {
+      throw new IllegalStateException("getUriFragmentNewInstanceFile(...) unexpectedly invoked outside of a form.");
+    }
     String mediaPath = ODKFileUtils.getInstanceFolder(appName, tableId, instanceId);
     File f = new File(mediaPath);
     f.mkdirs();

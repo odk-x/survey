@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.provider.InstanceColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
@@ -175,7 +176,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           // add all items if mToggled sets to select all
           if (mToggled) {
             Cursor c = (Cursor) ls.getItemAtPosition(pos);
-            String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+            String uuid = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
             mSelected.add(uuid);
           }
         }
@@ -264,7 +265,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String k = c.getString(c.getColumnIndex(InstanceColumns._ID));
+    String k = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
 
     // add/remove from selected list
     if (mSelected.contains(k))
@@ -301,7 +302,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     for (String id : mSelected) {
       for (int pos = 0; pos < ls.getCount(); pos++) {
         Cursor c = (Cursor) ls.getItemAtPosition(pos);
-        String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+        String uuid = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
         if (id.equals(uuid)) {
           ls.setItemChecked(pos, true);
           break;
@@ -486,7 +487,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
               + currentForm.formId + "/" + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
-            String name = results.getString(results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
+            String name = ODKDatabaseUtils.getIndexAsString(results, results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
             message.append(name + " - " + outcome.mResults.get(id) + "\n\n");
           }
         } finally {

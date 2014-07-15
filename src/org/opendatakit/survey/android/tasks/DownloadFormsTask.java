@@ -39,6 +39,7 @@ import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
@@ -260,7 +261,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                 int appRelativeFormMediaPathIdx = alreadyExists
                     .getColumnIndex(FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH);
                 existingMediaPath = ODKFileUtils.asAppFile(appName,
-                    alreadyExists.getString(appRelativeFormMediaPathIdx));
+                    ODKDatabaseUtils.getIndexAsString(alreadyExists, appRelativeFormMediaPathIdx));
               }
             } finally {
               if (alreadyExists != null) {

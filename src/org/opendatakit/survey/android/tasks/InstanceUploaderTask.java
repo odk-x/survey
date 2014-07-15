@@ -37,6 +37,7 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.InstanceColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
@@ -438,8 +439,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
         if (c.getCount() == 1 && c.moveToFirst()) {
 
-          String id = c.getString(c.getColumnIndex(InstanceColumns._ID));
-          String dataTableInstanceId = c.getString(c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
+          String id = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
+          String dataTableInstanceId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
           c.close();
 
           FileSet instanceFiles;
