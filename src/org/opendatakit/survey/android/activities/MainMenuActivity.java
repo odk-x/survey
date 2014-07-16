@@ -1477,6 +1477,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   @Override
   public String doAction(String page, String path, String action, JSONObject valueContentMap) {
 
+    // android.os.Debug.waitForDebugger();
+
     if (isWaitingForBinaryData()) {
       Log.w(t, "Already waiting for data -- ignoring");
       return "IGNORE";
