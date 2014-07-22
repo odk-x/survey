@@ -63,7 +63,7 @@ public class Survey extends Application {
         testing.start();
         server = testing;
       } catch (IOException e) {
-        Log.e("Survey.Thread.WebServer", "Exception: " + e.toString());
+        Log.d("Survey.Thread.WebServer", "Exception: " + e.toString());
       }
     }
   }
@@ -139,7 +139,7 @@ public class Survey extends Application {
     PropertyManager propertyManager = new PropertyManager(getApplicationContext());
 
     super.onCreate();
-    
+
     if (Build.VERSION.SDK_INT >= 19) {
       WebView.setWebContentsDebuggingEnabled(true);
     }
