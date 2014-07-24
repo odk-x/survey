@@ -36,7 +36,7 @@ import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
 import org.opendatakit.survey.android.fragments.InitializationFragment;
-import org.opendatakit.survey.android.fragments.InstanceUploaderFormChooserListFragment;
+import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
@@ -98,7 +98,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, 
+    INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -115,6 +116,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   public static final String APP_NAME = "appName";
   private static final String FORM_URI = "formUri";
+  private static final String UPLOAD_TABLE_ID = "uploadTableId";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
   private static final String CONTROLLER_STATE = "controllerState";
@@ -262,6 +264,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private String actionWaitingForData = null;
 
   private String appName = null;
+  private String uploadTableId = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
 
@@ -347,6 +350,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     }
     if (getInstanceId() != null) {
       outState.putString(INSTANCE_ID, getInstanceId());
+    }
+    if (getUploadTableId() != null) {
+      outState.putString(UPLOAD_TABLE_ID, getUploadTableId());
     }
     if (getScreenPath() != null) {
       outState.putString(SCREEN_PATH, getScreenPath());
@@ -476,7 +482,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
-        || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
+        || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER
         || currentFragment == ScreenList.INSTANCE_UPLOADER || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
@@ -519,6 +525,16 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   public FormIdStruct getCurrentForm() {
     return this.currentForm;
+  }
+
+  private void setUploadTableId(String uploadTableId) {
+    WebLogger.getLogger(getAppName()).i(t,  "setUploadTableId: " + uploadTableId);
+    this.uploadTableId = uploadTableId;
+  }
+
+  @Override
+  public String getUploadTableId() {
+    return this.uploadTableId;
   }
 
   @Override
@@ -820,6 +836,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       }
       setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
           .getString(INSTANCE_ID) : getInstanceId());
+      setUploadTableId(savedInstanceState.containsKey(UPLOAD_TABLE_ID) ? savedInstanceState
+          .getString(UPLOAD_TABLE_ID) : getUploadTableId());
 
       String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ?
           savedInstanceState.getString(SCREEN_PATH) : getScreenPath();
@@ -932,7 +950,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       swapToFragmentView(ScreenList.WEBKIT);
       return true;
     } else if (item.getItemId() == MENU_PUSH_FORMS) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER);
+      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER);
       return true;
     } else if (item.getItemId() == MENU_PREFERENCES) {
       // PreferenceFragment missing from support library...
@@ -967,30 +985,17 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   @Override
-  public void chooseInstanceUploaderForm(Uri formUri) {
+  public void chooseInstanceUploaderTable(String tableId) {
     boolean success = true;
 
-    ODKWebView webkitView = (ODKWebView) findViewById(R.id.webkit_view);
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    setUploadTableId(tableId);
 
-    FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
-
-    // create this from the datastore
-    if (newForm == null) {
-      success = false;
-    } else {
-      // always loose the current instance...
-      setCurrentForm(newForm);
-      setInstanceId(null);
-      clearSectionScreenState();
-      setAuxillaryHash(null);
-      webkitView.clearPage();
-    }
-
-    if (success) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
-    } else {
-      Toast.makeText(this, getString(R.string.form_load_error), Toast.LENGTH_SHORT).show();
-    }
+    swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
   }
 
   @Override
@@ -1185,17 +1190,17 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (f == null) {
         f = new FormDownloadListFragment();
       }
-    } else if (newFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER) {
-      f = mgr.findFragmentById(InstanceUploaderFormChooserListFragment.ID);
+    } else if (newFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER) {
+      f = mgr.findFragmentById(InstanceUploaderTableChooserListFragment.ID);
       if (f == null) {
-        f = new InstanceUploaderFormChooserListFragment();
+        f = new InstanceUploaderTableChooserListFragment();
       }
     } else if (newFragment == ScreenList.INSTANCE_UPLOADER) {
       f = mgr.findFragmentById(InstanceUploaderListFragment.ID);
       if (f == null) {
         f = new InstanceUploaderListFragment();
       }
-      ((InstanceUploaderListFragment) f).changeForm(getCurrentForm());
+      ((InstanceUploaderListFragment) f).changeUploadTableId();
     } else if (newFragment == ScreenList.WEBKIT) {
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {

@@ -18,19 +18,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.listeners.InitializationListener;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
+import org.opendatakit.survey.android.listeners.InitializationListener;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.listeners.LicenseReaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
-import org.opendatakit.survey.android.tasks.InitializationTask;
 import org.opendatakit.survey.android.tasks.DeleteFormsTask;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 import org.opendatakit.survey.android.tasks.DownloadFormsTask;
+import org.opendatakit.survey.android.tasks.InitializationTask;
 import org.opendatakit.survey.android.tasks.InstanceUploaderTask;
 import org.opendatakit.survey.android.tasks.LicenseReaderTask;
 
@@ -304,7 +303,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void uploadInstances(InstanceUploaderListener listener, FormIdStruct form,
+  public void uploadInstances(InstanceUploaderListener listener, String appName, String uploadTableId,
       String[] instancesToUpload) {
     mInstanceUploaderListener = listener;
     if (mBackgroundTasks.mInstanceUploaderTask != null
@@ -312,7 +311,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
       Toast.makeText(this.getActivity(), getString(R.string.upload_in_progress), Toast.LENGTH_LONG)
           .show();
     } else {
-      InstanceUploaderTask iu = new InstanceUploaderTask(form);
+      InstanceUploaderTask iu = new InstanceUploaderTask(appName, uploadTableId);
       iu.setApplication(getActivity().getApplication());
       iu.setUploaderListener(this);
       mBackgroundTasks.mInstanceUploaderTask = iu;

@@ -49,6 +49,8 @@ public interface ODKActivity {
 
   public String getAppName();
 
+  public String getUploadTableId();
+
   public String getActiveUser();
 
   /** for completing the uriFragment of the media attachments */
@@ -106,8 +108,8 @@ public interface ODKActivity {
   // for FormChooserListFragment
   public void chooseForm(Uri formUri);
 
-  // for InstanceUploaderFormChooserListFragment
-  public void chooseInstanceUploaderForm(Uri formUri);
+  // for InstanceUploaderTableChooserListFragment
+  public void chooseInstanceUploaderTable(String tableId);
   /**
    * Use the Activity implementation of this.
    *

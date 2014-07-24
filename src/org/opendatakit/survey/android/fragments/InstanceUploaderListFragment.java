@@ -27,7 +27,6 @@ import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
-import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 
@@ -88,7 +87,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private static final String DIALOG_STATE = "dialogState";
   private static final String SHOW_UNSENT = "showUnsent";
   private static final String URL = "url";
-  private static final String FORM_URI = "formUri";
 
   // data to retain across orientation changes
 
@@ -98,8 +96,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private String mAlertMsg;
   private DialogState mDialogState = DialogState.None;
   private boolean mShowUnsent = true;
-  private URI mUrl;
-  private FormIdStruct currentForm = null; // via uri
+  private URI mUrl = null;
 
   // data that is not retained
 
@@ -214,11 +211,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       if (savedInstanceState.containsKey(URL)) {
         mUrl = URI.create(savedInstanceState.getString(URL));
       }
-
-      if (savedInstanceState.containsKey(FORM_URI)) {
-        currentForm = FormIdStruct.retrieveFormIdStruct(getActivity().getContentResolver(),
-            Uri.parse(savedInstanceState.getString(FORM_URI)));
-      }
     }
     mUploadButton.setEnabled(!(mSelected.size() == 0));
 
@@ -240,9 +232,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     if (mUrl != null) {
       outState.putString(URL, mUrl.toString());
     }
-    if (currentForm != null) {
-      outState.putString(FORM_URI, currentForm.formUri.toString());
-    }
   }
 
   private void clearChoices() {
@@ -250,8 +239,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     mUploadButton.setEnabled(false);
   }
 
-  public void changeForm(FormIdStruct form) {
-    currentForm = form;
+  public void changeUploadTableId() {
     if (getActivity() != null) {
       // if we are already attached to an activity, restart the loader.
       // otherwise, we will eventually be attached.
@@ -278,14 +266,15 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   }
 
   private void uploadSelectedFiles() {
-    if (mSelected.size() > 0 && currentForm != null) {
+    if (mSelected.size() > 0 && ((ODKActivity) getActivity()).getUploadTableId() != null) {
       // show dialog box
       showProgressDialog();
 
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
       String[] str = new String[mSelected.size()];
-      f.uploadInstances(this, currentForm, mSelected.toArray(str));
+      f.uploadInstances(this, ((ODKActivity) getActivity()).getAppName(),
+          ((ODKActivity) getActivity()).getUploadTableId(), mSelected.toArray(str));
     }
   }
 
@@ -475,7 +464,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
         "background");
     f.clearUploadInstancesTask();
 
-    if (outcome.mAuthRequestingServer == null && currentForm != null) {
+    if (outcome.mAuthRequestingServer == null && ((ODKActivity) getActivity()).getUploadTableId() != null) {
       StringBuilder message = new StringBuilder();
 
       Set<String> keys = outcome.mResults.keySet();
@@ -483,8 +472,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
         Cursor results = null;
         try {
-          Uri uri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-              + currentForm.formId + "/" + StringEscapeUtils.escapeHtml4(id));
+          Uri uri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, ((ODKActivity) getActivity()).getAppName() + "/"
+              + ((ODKActivity) getActivity()).getUploadTableId() + "/" + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
             String name = ODKDatabaseUtils.getIndexAsString(results, results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
@@ -583,9 +572,10 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     // First, pick the base URI to use depending on whether we are
     // currently filtering.
     Uri baseUri;
-    if (currentForm != null) {
-      baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-          + currentForm.formId);
+    if (((ODKActivity) getActivity()).getUploadTableId() != null) {
+      baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
+          ((ODKActivity) getActivity()).getAppName() + "/"
+          + ((ODKActivity) getActivity()).getUploadTableId());
     } else {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
           ((ODKActivity) getActivity()).getAppName());

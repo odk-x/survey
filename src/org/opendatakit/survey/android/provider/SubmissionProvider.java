@@ -36,6 +36,7 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
+import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
 import org.opendatakit.aggregate.odktables.rest.TableConstants;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
@@ -45,6 +46,8 @@ import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.provider.KeyValueStoreColumns;
+import org.opendatakit.common.android.utilities.ODKDataUtils;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -203,8 +206,6 @@ public class SubmissionProvider extends ContentProvider {
 
     final String tableId = segments.get(1);
     final String instanceId = (segments.size() >= 3 ? segments.get(2) : null);
-    final String formId = uri.getQueryParameter("formId");
-    final String formVersion = uri.getQueryParameter("formVersion");
     final SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName).getReadableDatabase();
 
     String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
@@ -214,12 +215,59 @@ public class SubmissionProvider extends ContentProvider {
 
     final String dbTableName = "\"" + tableName + "\"";
 
+    String xmlInstanceName = null;
+    String xmlRootElementName = null;
+    String xmlDeviceIdPropertyName = null;
+    String xmlUserIdPropertyName = null;
+    String xmlBase64RsaPublicKey = null;
+
     try {
-      // get map of (elementKey -> ColumnDefinition)
+
+      Cursor c = null;
+      try {
+        c = db.query(DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME,
+            new String[] { KeyValueStoreColumns.KEY, KeyValueStoreColumns.VALUE },
+            KeyValueStoreColumns.TABLE_ID + "=? AND " +
+            KeyValueStoreColumns.PARTITION + "=? AND " +
+            KeyValueStoreColumns.ASPECT + "=? AND " +
+            KeyValueStoreColumns.KEY + " IN (?,?,?,?,?)",
+            new String[] { tableId,
+              KeyValueStoreConstants.PARTITION_TABLE,
+              KeyValueStoreConstants.ASPECT_DEFAULT,
+              KeyValueStoreConstants.XML_INSTANCE_NAME,
+              KeyValueStoreConstants.XML_ROOT_ELEMENT_NAME,
+              KeyValueStoreConstants.XML_DEVICE_ID_PROPERTY_NAME,
+              KeyValueStoreConstants.XML_USER_ID_PROPERTY_NAME,
+              KeyValueStoreConstants.XML_BASE64_RSA_PUBLIC_KEY },
+            null, null, null );
+        if ( c.getCount() > 0 ) {
+          c.moveToFirst();
+          int idxKey = c.getColumnIndex(KeyValueStoreColumns.KEY);
+          int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
+          do {
+            String key = c.getString(idxKey);
+            String value = c.getString(idxValue);
+            if ( KeyValueStoreConstants.XML_INSTANCE_NAME.equals(key) ) {
+              xmlInstanceName = value;
+            } else if ( KeyValueStoreConstants.XML_ROOT_ELEMENT_NAME.equals(key) ) {
+              xmlRootElementName = value;
+            } else if ( KeyValueStoreConstants.XML_DEVICE_ID_PROPERTY_NAME.equals(key) ) {
+              xmlDeviceIdPropertyName = value;
+            } else if ( KeyValueStoreConstants.XML_USER_ID_PROPERTY_NAME.equals(key) ) {
+              xmlUserIdPropertyName = value;
+            } else if ( KeyValueStoreConstants.XML_BASE64_RSA_PUBLIC_KEY.equals(key) ) {
+              xmlBase64RsaPublicKey = value;
+            }
+          } while ( c.moveToNext());
+        }
+      } finally {
+        c.close();
+        c = null;
+      }
+
+    // get map of (elementKey -> ColumnDefinition)
       Map<String, ColumnDefinition> defns = DataModelDatabaseHelper.getColumnDefinitions(db,
           tableId);
-      // get the id struct
-      IdInstanceNameStruct ids = DataModelDatabaseHelper.getIds(db, formId);
 
       HashMap<String, Object> values = new HashMap<String, Object>();
 
@@ -231,23 +279,31 @@ public class SubmissionProvider extends ContentProvider {
           .append(")").append(" and ").append(DataTableColumns.SAVEPOINT_TYPE).append("=?");
 
       String[] selectionArgs = new String[] { instanceId, "COMPLETE" };
-      Cursor c = null;
       FileSet freturn = new FileSet(appName);
+
+      String datestamp = null;
 
       try {
         c = db.rawQuery(b.toString(), selectionArgs);
         b.setLength(0);
 
         if (c.moveToFirst() && c.getCount() == 1) {
-          String timestamp = null;
+          String rowETag = null;
+          String filterType = null;
+          String filterValue = null;
+          String formId = null;
+          String locale = null;
+          String savepointType = null;
+          String savepointCreator = null;
+          String savepointTimestamp = null;
           String instanceName = null;
-          String formStateId = null;
+
           // OK. we have the record -- work through all the terms
           for (int i = 0; i < c.getColumnCount(); ++i) {
             String columnName = c.getColumnName(i);
             ColumnDefinition defn = defns.get(columnName);
             if (defn != null && !c.isNull(i)) {
-              if ( defn.elementName == ids.instanceName ) {
+              if ( defn.elementName == instanceName ) {
                 instanceName = ODKDatabaseUtils.getIndexAsString(c, i);
               }
               // user-defined column
@@ -267,16 +323,16 @@ public class SubmissionProvider extends ContentProvider {
                 putElementValue(values, defn, value);
               } else if (defn.elementType.equals("date")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
-                String datestamp = (value == null) ? null :
+                String jrDatestamp = (value == null) ? null :
                   (new SimpleDateFormat(ISO8601_DATE_ONLY_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
-                putElementValue(values, defn, datestamp);
+                putElementValue(values, defn, jrDatestamp);
               } else if (defn.elementType.equals("dateTime")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
-                String datestamp = (value == null) ? null :
+                String jrDatestamp = (value == null) ? null :
                   (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
-                putElementValue(values, defn, datestamp);
+                putElementValue(values, defn, jrDatestamp);
               } else if (defn.elementType.equals("time")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 putElementValue(values, defn, value);
@@ -293,9 +349,23 @@ public class SubmissionProvider extends ContentProvider {
               }
 
             } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
-              timestamp = ODKDatabaseUtils.getIndexAsString(c, i);
+              savepointTimestamp = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.ROW_ETAG)) {
+              rowETag = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.FILTER_TYPE)) {
+              filterType = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.FILTER_VALUE)) {
+              filterValue = ODKDatabaseUtils.getIndexAsString(c, i);
             } else if (columnName.equals(DataTableColumns.FORM_ID)) {
-              formStateId = ODKDatabaseUtils.getIndexAsString(c, i);
+              formId = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.LOCALE)) {
+              locale = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.FORM_ID)) {
+              formId = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.SAVEPOINT_TYPE)) {
+              savepointType = ODKDatabaseUtils.getIndexAsString(c, i);
+            } else if (columnName.equals(DataTableColumns.SAVEPOINT_CREATOR)) {
+              savepointCreator = ODKDatabaseUtils.getIndexAsString(c, i);
             }
           }
 
@@ -365,163 +435,177 @@ public class SubmissionProvider extends ContentProvider {
               }
             }
 
-            // Need to get Form definition in order to get info on
-            // XML structure...
-            String formSelection = FormsColumns.FORM_ID
-                + "=?"
-                + ((formVersion == null) ? (" AND " + FormsColumns.FORM_VERSION + " IS NULL")
-                    : (" AND " + FormsColumns.FORM_VERSION + "=?"));
-            String[] formSelectionArgs;
-            if (formVersion == null) {
-              String[] t = { formId };
-              formSelectionArgs = t;
-            } else {
-              String[] t = { formId, formVersion };
-              formSelectionArgs = t;
+            datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
+                .format(new Date(TableConstants.milliSecondsFromNanos(savepointTimestamp)));
+
+            // For XML, we traverse the map to serialize it
+            Document d = new Document();
+            d.setStandalone(true);
+            d.setEncoding(CharEncoding.UTF_8);
+            Element e = d.createElement(XML_DEFAULT_NAMESPACE,
+                (xmlRootElementName == null) ? "data" : xmlRootElementName);
+            e.setPrefix("jr", XML_OPENROSA_NAMESPACE);
+            e.setPrefix("", XML_DEFAULT_NAMESPACE);
+            d.addChild(0, Node.ELEMENT, e);
+            e.setAttribute("", "id", tableId);
+            DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getContext(), appName,
+                tableId, instanceId);
+
+            int idx = 0;
+            Element meta = d.createElement(XML_OPENROSA_NAMESPACE, "meta");
+
+            Element v = d.createElement(XML_OPENROSA_NAMESPACE, "instanceID");
+            v.addChild(0, Node.TEXT, ODKDataUtils.genUUID());
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+
+            if (xmlDeviceIdPropertyName != null) {
+              String deviceId = propertyManager.getSingularProperty(xmlDeviceIdPropertyName,
+                  cb);
+              if (deviceId != null) {
+                v = d.createElement(XML_OPENROSA_NAMESPACE, "deviceID");
+                v.addChild(0, Node.TEXT, deviceId);
+                meta.addChild(idx++, Node.ELEMENT, v);
+                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+              }
+            }
+            if (xmlUserIdPropertyName != null) {
+              String userId = propertyManager.getSingularProperty(xmlUserIdPropertyName, cb);
+              if (userId != null) {
+                v = d.createElement(XML_OPENROSA_NAMESPACE, "userID");
+                v.addChild(0, Node.TEXT, userId);
+                meta.addChild(idx++, Node.ELEMENT, v);
+                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+              }
+            }
+            v = d.createElement(XML_OPENROSA_NAMESPACE, "timeEnd");
+            v.addChild(0, Node.TEXT, datestamp);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+
+            // these are extra metadata tags...
+            if ( instanceName != null ) {
+              v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
+              v.addChild(0, Node.TEXT, instanceName);
+              meta.addChild(idx++, Node.ELEMENT, v);
+              meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+            }
+            else{
+              v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
+              v.addChild(0, Node.TEXT, savepointTimestamp);
+              meta.addChild(idx++, Node.ELEMENT, v);
+              meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
             }
 
-            Cursor fc = null;
-            try {
-              fc = getContext().getContentResolver().query(
-                  Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, formSelection,
-                  formSelectionArgs, null);
-              if (fc != null && fc.moveToFirst() && fc.getCount() == 1) {
+            // these are extra metadata tags...
+            // rowID
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "rowID");
+            v.addChild(0, Node.TEXT, instanceId);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                FormInfo f = new FormInfo(appName, fc, false);
-                fc.close();
+            // rowETag
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "rowETag");
+            v.addChild(0, Node.TEXT, rowETag);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
-                    .format(new Date(TableConstants.milliSecondsFromNanos(timestamp)));
+            // filterType
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "filterType");
+            v.addChild(0, Node.TEXT, filterType);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                // For XML, we traverse the map to serialize it
-                Document d = new Document();
-                d.setStandalone(true);
-                d.setEncoding(CharEncoding.UTF_8);
-                Element e = d.createElement(XML_DEFAULT_NAMESPACE,
-                    (f.xmlRootElementName == null) ? "data" : f.xmlRootElementName);
-                e.setPrefix("jr", XML_OPENROSA_NAMESPACE);
-                e.setPrefix("", XML_DEFAULT_NAMESPACE);
-                d.addChild(0, Node.ELEMENT, e);
-                e.setAttribute("", "id", f.formId);
-                if (f.formVersion != null) {
-                  e.setAttribute("", "version", f.formVersion);
-                }
-                DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getContext(), appName,
-                    tableId, instanceId);
+            // filterValue
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "filterValue");
+            v.addChild(0, Node.TEXT, filterValue);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                int idx = 0;
-                Element meta = d.createElement(XML_OPENROSA_NAMESPACE, "meta");
-                Element v = d.createElement(XML_OPENROSA_NAMESPACE, "instanceID");
-                v.addChild(0, Node.TEXT, instanceId);
-                meta.addChild(idx++, Node.ELEMENT, v);
-                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                if (f.xmlDeviceIdPropertyName != null) {
-                  String deviceId = propertyManager.getSingularProperty(f.xmlDeviceIdPropertyName,
-                      cb);
-                  if (deviceId != null) {
-                    v = d.createElement(XML_OPENROSA_NAMESPACE, "deviceID");
-                    v.addChild(0, Node.TEXT, deviceId);
-                    meta.addChild(idx++, Node.ELEMENT, v);
-                    meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                  }
-                }
-                if (f.xmlUserIdPropertyName != null) {
-                  String userId = propertyManager.getSingularProperty(f.xmlUserIdPropertyName, cb);
-                  if (userId != null) {
-                    v = d.createElement(XML_OPENROSA_NAMESPACE, "userID");
-                    v.addChild(0, Node.TEXT, userId);
-                    meta.addChild(idx++, Node.ELEMENT, v);
-                    meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                  }
-                }
-                v = d.createElement(XML_OPENROSA_NAMESPACE, "timeEnd");
-                v.addChild(0, Node.TEXT, datestamp);
-                meta.addChild(idx++, Node.ELEMENT, v);
-                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+            // formID
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "formID");
+            v.addChild(0, Node.TEXT, formId);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                // these are extra metadata tags...
-                if ( instanceName != null ) {
-                  v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
-                  v.addChild(0, Node.TEXT, instanceName);
-                  meta.addChild(idx++, Node.ELEMENT, v);
-                  meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                }
-                else{
-                  v = d.createElement(XML_DEFAULT_NAMESPACE, "instanceName");
-                  v.addChild(0, Node.TEXT, datestamp);
-                  meta.addChild(idx++, Node.ELEMENT, v);
-                  meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                }
+            // locale
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "locale");
+            v.addChild(0, Node.TEXT, locale);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                // these are extra metadata tags...
-                v = d.createElement(XML_DEFAULT_NAMESPACE, "formID");
-                v.addChild(0, Node.TEXT, formStateId);
-                meta.addChild(idx++, Node.ELEMENT, v);
-                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+            // savepointType
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointType");
+            v.addChild(0, Node.TEXT, savepointType);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                // we may want to track incomplete or partial submissions in the
-                // future...
-                v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointType");
-                v.addChild(0, Node.TEXT, "COMPLETE");
-                meta.addChild(idx++, Node.ELEMENT, v);
-                meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                e.addChild(0, Node.IGNORABLE_WHITESPACE, NEW_LINE);
-                e.addChild(1, Node.ELEMENT, meta);
-                e.addChild(2, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+            // savepointCreator
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointCreator");
+            v.addChild(0, Node.TEXT, savepointCreator);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                idx = 3;
-                ArrayList<String> entryNames = new ArrayList<String>();
-                entryNames.addAll(values.keySet());
-                Collections.sort(entryNames);
-                for (String name : entryNames) {
-                  idx = generateXmlHelper(d, e, idx, name, values, log);
-                }
+            // savepointTimestamp
+            v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointTimestamp");
+            v.addChild(0, Node.TEXT, savepointTimestamp);
+            meta.addChild(idx++, Node.ELEMENT, v);
+            meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                KXmlSerializer serializer = new KXmlSerializer();
+            // and insert the meta block into the XML
 
-                ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                serializer.setOutput(bo, CharEncoding.UTF_8);
-                // setting the response content type emits the
-                // xml header.
-                // just write the body here...
-                d.writeChildren(serializer);
-                serializer.flush();
-                bo.close();
+            e.addChild(0, Node.IGNORABLE_WHITESPACE, NEW_LINE);
+            e.addChild(1, Node.ELEMENT, meta);
+            e.addChild(2, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
-                b.append(bo.toString(CharEncoding.UTF_8));
+            idx = 3;
+            ArrayList<String> entryNames = new ArrayList<String>();
+            entryNames.addAll(values.keySet());
+            Collections.sort(entryNames);
+            for (String name : entryNames) {
+              idx = generateXmlHelper(d, e, idx, name, values, log);
+            }
 
-                // OK we have the document in the builder (b).
-                String doc = b.toString();
+            KXmlSerializer serializer = new KXmlSerializer();
 
-                freturn.instanceFile = submissionXml;
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            serializer.setOutput(bo, CharEncoding.UTF_8);
+            // setting the response content type emits the
+            // xml header.
+            // just write the body here...
+            d.writeChildren(serializer);
+            serializer.flush();
+            bo.close();
 
-                // see if the form is encrypted and we can
-                // encrypt it...
-                EncryptedFormInformation formInfo = EncryptionUtils.getEncryptedFormInformation(f,
-                    instanceId);
-                if (formInfo != null) {
-                  File submissionXmlEnc = new File(submissionXml.getParentFile(),
-                      submissionXml.getName() + ".enc");
-                  submissionXmlEnc.delete();
-                  // if we are encrypting, the form cannot be
-                  // reopened afterward
-                  // and encrypt the submission (this is a
-                  // one-way operation)...
-                  if (!EncryptionUtils.generateEncryptedSubmission(freturn, doc, submissionXml,
-                      submissionXmlEnc, formInfo)) {
-                    return null;
-                  }
-                  // at this point, the freturn object has
-                  // been re-written with the encrypted media
-                  // and xml files.
-                } else {
-                  exportFile(doc, submissionXml, log);
-                }
+            b.append(bo.toString(CharEncoding.UTF_8));
+
+            // OK we have the document in the builder (b).
+            String doc = b.toString();
+
+            freturn.instanceFile = submissionXml;
+
+            // see if the form is encrypted and we can
+            // encrypt it...
+            EncryptedFormInformation formInfo = EncryptionUtils.getEncryptedFormInformation(tableId,
+                xmlBase64RsaPublicKey,
+                instanceId);
+            if (formInfo != null) {
+              File submissionXmlEnc = new File(submissionXml.getParentFile(),
+                  submissionXml.getName() + ".enc");
+              submissionXmlEnc.delete();
+              // if we are encrypting, the form cannot be
+              // reopened afterward
+              // and encrypt the submission (this is a
+              // one-way operation)...
+              if (!EncryptionUtils.generateEncryptedSubmission(freturn, doc, submissionXml,
+                  submissionXmlEnc, formInfo)) {
+                return null;
               }
-            } finally {
-              if (fc != null && !fc.isClosed()) {
-                fc.close();
-              }
+              // at this point, the freturn object has
+              // been re-written with the encrypted media
+              // and xml files.
+            } else {
+              exportFile(doc, submissionXml, log);
             }
 
           } else {
@@ -581,8 +665,6 @@ public class SubmissionProvider extends ContentProvider {
               elem.put("instanceName", instanceName);
             }
             elem.put("saved", "COMPLETE");
-            String datestamp = (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
-                .format(new Date(TableConstants.milliSecondsFromNanos(timestamp)));
             elem.put("timestamp", datestamp);
 
             b.append(ODKFileUtils.mapper.writeValueAsString(wrapper));

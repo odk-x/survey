@@ -35,8 +35,11 @@ import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.opendatakit.common.android.logic.FormInfo;
+import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
+import org.opendatakit.common.android.database.DataModelDatabaseHelper;
+import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.provider.InstanceColumns;
+import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
@@ -53,7 +56,6 @@ import org.opendatakit.httpclientandroidlib.entity.mime.content.StringBody;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
-import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
@@ -65,6 +67,7 @@ import org.opendatakit.survey.android.provider.SubmissionProvider;
 import android.app.Application;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -88,11 +91,13 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
   private InstanceUploadOutcome mResultOutcome = new InstanceUploadOutcome();
 
-  private FormIdStruct uploadingForm;
+  private final String appName;
+  private final String uploadTableId;
 
-  public InstanceUploaderTask(FormIdStruct form) {
+  public InstanceUploaderTask(String appName, String uploadTableId) {
     super();
-    this.uploadingForm = form;
+    this.appName = appName;
+    this.uploadTableId = uploadTableId;
   }
 
   private void setAuth(String auth) {
@@ -386,24 +391,20 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    * @throws JsonMappingException
    * @throws JsonParseException
    */
-  private FileSet constructSubmissionFiles(FormInfo fi, String instanceId)
+  private FileSet constructSubmissionFiles(String instanceId)
       throws JsonParseException, JsonMappingException, IOException {
 
     Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
         + "/"
-        + URLEncoder.encode(fi.appName, CharEncoding.UTF_8)
+        + URLEncoder.encode(appName, CharEncoding.UTF_8)
         + "/"
-        + URLEncoder.encode(fi.tableId, CharEncoding.UTF_8)
+        + URLEncoder.encode(uploadTableId, CharEncoding.UTF_8)
         + "/"
-        + URLEncoder.encode(instanceId, CharEncoding.UTF_8)
-        + "?formId="
-        + URLEncoder.encode(fi.formId, CharEncoding.UTF_8)
-        + ((fi.formVersion == null) ? "" : "&formVersion="
-            + URLEncoder.encode(fi.formVersion, CharEncoding.UTF_8)));
+        + URLEncoder.encode(instanceId, CharEncoding.UTF_8));
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
 
-    FileSet f = FileSet.parse(appContext, fi.appName, is);
+    FileSet f = FileSet.parse(appContext, appName, is);
     return f;
   }
 
@@ -415,10 +416,52 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     mOutcome.mResults = new HashMap<String, String>();
     mOutcome.mAuthRequestingServer = null;
 
-    String auth = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_AUTH);
+    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
     setAuth(auth);
 
-    FormInfo fi = new FormInfo(appContext, uploadingForm.appName, uploadingForm.formDefFile);
+    String urlString = null;
+    
+    /** 
+     * retrieve the URL string for the table, if defined...
+     * otherwise, use the app property values to construct it.
+     */
+    {
+      DataModelDatabaseHelper dbHelper = DataModelDatabaseHelperFactory.getDbHelper(appContext, appName);
+      SQLiteDatabase db = dbHelper.getReadableDatabase();
+      
+      Cursor c = null;
+      try {
+        c = db.query( DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
+            KeyValueStoreColumns.TABLE_ID + "=? AND " +
+            KeyValueStoreColumns.PARTITION + "=? AND " +
+            KeyValueStoreColumns.ASPECT + "=? AND " + 
+            KeyValueStoreColumns.KEY + "=?",
+            new String[] {
+              uploadTableId, 
+              KeyValueStoreConstants.PARTITION_TABLE,
+              KeyValueStoreConstants.ASPECT_DEFAULT,
+              KeyValueStoreConstants.XML_SUBMISSION_URL },
+            null, null, null);
+        if ( c.getCount() == 1 ) {
+          c.moveToFirst();
+          int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
+          urlString = c.getString(idxValue);
+        } else if ( c.getCount() != 0 ) {
+          throw new IllegalStateException("two or more entries for " + KeyValueStoreConstants.XML_SUBMISSION_URL);
+        }
+      } finally {
+        c.close();
+        db.releaseReference();
+      }
+      
+      if ( urlString == null ) {
+        urlString = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SERVER_URL);
+        String submissionUrl = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SUBMISSION_URL);
+        urlString = urlString + submissionUrl;
+      }
+    }
+    
+    //FormInfo fi = new FormInfo(appContext, appName, ODKFileUtils.getuploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
     HttpContext localContext = WebUtils.getHttpContext();
@@ -432,8 +475,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       }
       publishProgress(i + 1, toUpload.length);
 
-      Uri toUpdate = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, uploadingForm.appName
-          + "/" + uploadingForm.formId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
+      Uri toUpdate = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, appName
+          + "/" + uploadTableId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
       Cursor c = null;
       try {
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
@@ -445,15 +488,9 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
           FileSet instanceFiles;
           try {
-            instanceFiles = constructSubmissionFiles(fi, dataTableInstanceId);
-            String urlString = fi.xmlSubmissionUrl;
-            if (urlString == null) {
-              urlString = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SERVER_URL);
-              // NOTE: /submission must not be translated! It is
-              // the well-known path on the server.
-              String submissionUrl = PropertiesSingleton.getProperty(uploadingForm.appName, PreferencesActivity.KEY_SUBMISSION_URL);
-              urlString = urlString + submissionUrl;
-            }
+            instanceFiles = constructSubmissionFiles(dataTableInstanceId);
+            // NOTE: /submission must not be translated! It is
+            // the well-known path on the server.
 
             if (!uploadOneSubmission(urlString, toUpdate, id, instanceFiles, httpclient,
                 localContext, uriRemap)) {

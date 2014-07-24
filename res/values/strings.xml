@@ -51,6 +51,7 @@
 <string name="no_connection">No network connection available</string>
 <string name="no_items_display">Nothing available to display.</string>
 <string name="no_items_display_forms">Nothing available to display.\n\nTry getting and filling out a blank form.</string>
+<string name="no_items_display_tables">Nothing available to display.\n\nTry getting and filling out a blank form.</string>
 <string name="no_items_display_instances">Nothing available to display.\n\nTry finalizing saved forms before sending.</string>
 <string name="ok">OK</string>
 <string name="parse_openrosa_formlist_failed">The server has not provided an available-forms document compatible with the OpenRosa version 1.0 standard: %s</string>
@@ -94,6 +95,7 @@
 <string name="font_size">Text Font Size</string>
 <string name="change_font_size">Text Font Size</string>
 <string name="form_scan_starting">Scanning for forms&#8230;</string>
+<string name="table_scan_starting">Scanning for tables&#8230;</string>
 <string name="default_odk_formlist">/formList</string>
 <string name="default_odk_submission">/submission</string>
 <string name="access_error">Error while accessing %s: </string>
@@ -182,8 +184,8 @@
 <string name="application">(Application)</string>
 <string name="invalid_app_name">Invalid application name: %1$s</string>
 <string name="select_form_to_edit">Select the form to open</string>
-<string name="choose_form_to_upload">Choose form data to upload</string>
-<string name="choose_form_instance_to_upload">Select the instances to upload</string>
+<string name="choose_table_to_upload">Choose table data to upload</string>
+<string name="choose_row_to_upload">Select the instances to upload</string>
 <string name="select_form_to_delete">Select the form definition to delete</string>
 <string name="mismatched_form_id_info">The formDef.json does not contain the claimed formId: %1$s</string>
 <string name="mismatched_form_version_info">The formDef.json for formId: %1$s does not match the claimed formVersion: %2$s</string>

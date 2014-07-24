@@ -49,7 +49,6 @@ import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
-import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.utilities.Base64Wrapper;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.provider.FileSet;
@@ -95,8 +94,7 @@ public class EncryptionUtils {
   };
 
   public static final class EncryptedFormInformation {
-    public final String formId;
-    public final String formVersion;
+    public final String tableId;
     public final String instanceId;
     public final String base64EncryptedFileRsaPublicKey;
     public final PublicKey rsaPublicKey;
@@ -107,12 +105,11 @@ public class EncryptionUtils {
     public final StringBuilder elementSignatureSource = new StringBuilder();
     public final Base64Wrapper wrapper;
 
-    EncryptedFormInformation(FormInfo fi, String instanceId, PublicKey rsaPublicKey,
+    EncryptedFormInformation(String tableId, String xmlBase64RsaPublicKey, String instanceId, PublicKey rsaPublicKey,
         Base64Wrapper wrapper) {
-      this.formId = fi.formId;
-      this.formVersion = fi.formVersion;
+      this.tableId = tableId;
       this.instanceId = instanceId;
-      this.base64EncryptedFileRsaPublicKey = fi.xmlBase64RsaPublicKey;
+      this.base64EncryptedFileRsaPublicKey = xmlBase64RsaPublicKey;
       this.rsaPublicKey = rsaPublicKey;
       this.wrapper = wrapper;
 
@@ -179,10 +176,7 @@ public class EncryptionUtils {
       }
 
       // start building elementSignatureSource...
-      appendElementSignatureSource(formId);
-      if (formVersion != null) {
-        appendElementSignatureSource(formVersion.toString());
-      }
+      appendElementSignatureSource(tableId);
       appendElementSignatureSource(base64RsaEncryptedSymmetricKey);
 
       appendElementSignatureSource(instanceId);
@@ -285,10 +279,10 @@ public class EncryptionUtils {
    * @param instanceMetadata
    * @return
    */
-  public static EncryptedFormInformation getEncryptedFormInformation(FormInfo fi, String instanceId) {
+  public static EncryptedFormInformation getEncryptedFormInformation(String tableId, String xmlBase64RsaPublicKey, String instanceId) {
 
     // fetch the form information
-    String base64RsaPublicKey = fi.xmlBase64RsaPublicKey;
+    String base64RsaPublicKey = xmlBase64RsaPublicKey;
     PublicKey pk;
     Base64Wrapper wrapper;
 
@@ -337,7 +331,7 @@ public class EncryptionUtils {
       Log.e(t, "Invalid RSA public key.");
       return null;
     }
-    return new EncryptedFormInformation(fi, instanceId, pk, wrapper);
+    return new EncryptedFormInformation(tableId, xmlBase64RsaPublicKey, instanceId, pk, wrapper);
   }
 
   private static void encryptFile(File file, File encryptedFile, EncryptedFormInformation formInfo)
@@ -551,10 +545,7 @@ public class EncryptionUtils {
     d.setEncoding(CharEncoding.UTF_8);
     Element e = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, DATA);
     e.setPrefix(null, XML_ENCRYPTED_TAG_NAMESPACE);
-    e.setAttribute(null, ID, formInfo.formId);
-    if (formInfo.formVersion != null) {
-      e.setAttribute(null, VERSION, formInfo.formVersion);
-    }
+    e.setAttribute(null, ID, formInfo.tableId);
     e.setAttribute(null, ENCRYPTED, "yes");
     d.addChild(0, Node.ELEMENT, e);
 
