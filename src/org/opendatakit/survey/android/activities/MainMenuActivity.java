@@ -36,8 +36,8 @@ import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
 import org.opendatakit.survey.android.fragments.InitializationFragment;
-import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
+import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.logic.FormIdStruct;
@@ -130,16 +130,18 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   private static final int MENU_FILL_FORM = Menu.FIRST;
   private static final int MENU_PULL_FORMS = Menu.FIRST + 1;
-  private static final int MENU_MANAGE_FORMS = Menu.FIRST + 2;
-  private static final int MENU_PREFERENCES = Menu.FIRST + 3;
-  private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
-  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
-  private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
-  private static final int MENU_ABOUT = Menu.FIRST + 7;
+  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 2;
+  private static final int MENU_MANAGE_FORMS = Menu.FIRST + 3;
+  private static final int MENU_PREFERENCES = Menu.FIRST + 4;
+  private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 5;
+  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 6;
+  private static final int MENU_PUSH_FORMS = Menu.FIRST + 7;
+  private static final int MENU_ABOUT = Menu.FIRST + 8;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
   private static final int INTERNAL_ACTIVITY_CODE = 21;
+  private static final int SYNC_ACTIVITY_CODE = 22;
 
   private static final boolean EXIT = true;
 
@@ -901,6 +903,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
         item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
+
+        item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
+        item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
       }
 
       String send = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_SEND_FINALIZED);
@@ -943,6 +948,17 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     } else if (item.getItemId() == MENU_PULL_FORMS) {
       swapToFragmentView(ScreenList.FORM_DOWNLOADER);
       return true;
+    } else if (item.getItemId() == MENU_CLOUD_FORMS) {
+      Intent syncIntent = new Intent();
+      syncIntent.setComponent(new ComponentName(
+          "org.opendatakit.sync",
+          "org.opendatakit.sync.activities.SyncActivity"));
+      syncIntent.setAction(Intent.ACTION_DEFAULT);
+      Bundle bundle = new Bundle();
+      bundle.putString(APP_NAME, appName);
+      syncIntent.putExtras(bundle);
+      this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
+      return true;
     } else if (item.getItemId() == MENU_MANAGE_FORMS) {
       swapToFragmentView(ScreenList.FORM_DELETER);
       return true;
@@ -961,7 +977,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       return true;
     } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
     	String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
-      if ("".equalsIgnoreCase(pw)) {
+      if (pw == null || "".equalsIgnoreCase(pw)) {
         Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
         // TODO: convert this activity into a preferences fragment
         i.putExtra(APP_NAME, getAppName());
@@ -1063,7 +1079,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
           public void onClick(DialogInterface dialog, int whichButton) {
             String value = input.getText().toString();
             String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
-            if (pw.compareTo(value) == 0) {
+            if (pw != null && pw.compareTo(value) == 0) {
               Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
               // TODO: convert this activity into a preferences fragment
               i.putExtra(APP_NAME, getAppName());
