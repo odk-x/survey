@@ -41,6 +41,7 @@ import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDef
 import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
+import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
@@ -193,7 +194,7 @@ public class SubmissionProvider extends ContentProvider {
 
     List<String> segments = uri.getPathSegments();
 
-    if (segments.size() != 3) {
+    if (segments.size() != 4) {
       throw new IllegalArgumentException("Unknown URI (incorrect number of path segments!) " + uri);
     }
 
@@ -203,7 +204,8 @@ public class SubmissionProvider extends ContentProvider {
     WebLogger log = WebLogger.getLogger(appName);
 
     final String tableId = segments.get(1);
-    final String instanceId = (segments.size() >= 3 ? segments.get(2) : null);
+    final String instanceId = segments.get(2);
+    final String submissionInstanceId = segments.get(3);
     final SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName).getReadableDatabase();
 
     String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
@@ -213,6 +215,8 @@ public class SubmissionProvider extends ContentProvider {
 
     final String dbTableName = "\"" + tableName + "\"";
 
+    // Get the table properties specific to XML submissions
+    
     String xmlInstanceName = null;
     String xmlRootElementName = null;
     String xmlDeviceIdPropertyName = null;
@@ -263,10 +267,12 @@ public class SubmissionProvider extends ContentProvider {
         c = null;
       }
 
-    // get map of (elementKey -> ColumnDefinition)
+      // get map of (elementKey -> ColumnDefinition)
       Map<String, ColumnDefinition> defns = DataModelDatabaseHelper.getColumnDefinitions(db,
           tableId);
-
+      
+      // Retrieve the values of the record to be emitted...
+      
       HashMap<String, Object> values = new HashMap<String, Object>();
 
       // issue query to retrieve the instanceId
@@ -301,7 +307,7 @@ public class SubmissionProvider extends ContentProvider {
             String columnName = c.getColumnName(i);
             ColumnDefinition defn = defns.get(columnName);
             if (defn != null && !c.isNull(i)) {
-              if ( defn.elementName == instanceName ) {
+              if ( xmlInstanceName != null && defn.elementName.equals(xmlInstanceName)) {
                 instanceName = ODKDatabaseUtils.getIndexAsString(c, i);
               }
               // user-defined column
@@ -419,12 +425,14 @@ public class SubmissionProvider extends ContentProvider {
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
 
-                      File f = ODKFileUtils.getAsFile(appName, uriFragment);
-                      if (f.equals(manifest)) {
-                        throw new IllegalStateException("Unexpected collision with manifest.json");
+                      if ( uriFragment != null ) {
+                        File f = ODKFileUtils.getAsFile(appName, uriFragment);
+                        if (f.equals(manifest)) {
+                          throw new IllegalStateException("Unexpected collision with manifest.json");
+                        }
+                        freturn.addAttachmentFile(f, contentType);
+                        parent.put(defn.elementName, f.getName());
                       }
-                      freturn.addAttachmentFile(f, contentType);
-                      parent.put(defn.elementName, f.getName());
                     } else {
                       throw new IllegalStateException("Unhandled transform case");
                     }
@@ -453,7 +461,7 @@ public class SubmissionProvider extends ContentProvider {
             Element meta = d.createElement(XML_OPENROSA_NAMESPACE, "meta");
 
             Element v = d.createElement(XML_OPENROSA_NAMESPACE, "instanceID");
-            v.addChild(0, Node.TEXT, ODKDataUtils.genUUID());
+            v.addChild(0, Node.TEXT, submissionInstanceId);
             meta.addChild(idx++, Node.ELEMENT, v);
             meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
@@ -504,19 +512,25 @@ public class SubmissionProvider extends ContentProvider {
 
             // rowETag
             v = d.createElement(XML_DEFAULT_NAMESPACE, "rowETag");
-            v.addChild(0, Node.TEXT, rowETag);
+            if ( rowETag != null ) {
+              v.addChild(0, Node.TEXT, rowETag);
+            }
             meta.addChild(idx++, Node.ELEMENT, v);
             meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
             // filterType
             v = d.createElement(XML_DEFAULT_NAMESPACE, "filterType");
-            v.addChild(0, Node.TEXT, filterType);
+            if ( filterType != null ) {
+              v.addChild(0, Node.TEXT, filterType);
+            }
             meta.addChild(idx++, Node.ELEMENT, v);
             meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
             // filterValue
             v = d.createElement(XML_DEFAULT_NAMESPACE, "filterValue");
-            v.addChild(0, Node.TEXT, filterValue);
+            if ( filterValue != null ) {
+              v.addChild(0, Node.TEXT, filterValue);
+            }
             meta.addChild(idx++, Node.ELEMENT, v);
             meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 
@@ -540,7 +554,9 @@ public class SubmissionProvider extends ContentProvider {
 
             // savepointCreator
             v = d.createElement(XML_DEFAULT_NAMESPACE, "savepointCreator");
-            v.addChild(0, Node.TEXT, savepointCreator);
+            if ( savepointCreator != null ) {
+              v.addChild(0, Node.TEXT, savepointCreator);
+            }
             meta.addChild(idx++, Node.ELEMENT, v);
             meta.addChild(idx++, Node.IGNORABLE_WHITESPACE, NEW_LINE);
 

@@ -38,6 +38,7 @@ import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
+import org.opendatakit.common.android.utilities.ODKDataUtils;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.Header;
@@ -122,10 +123,11 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    * @return false if credentials are required and we should terminate
    *         immediately.
    */
-  private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id,
+  private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id, String submissionInstanceId,
       FileSet instanceFiles, HttpClient httpclient, HttpContext localContext, Map<URI, URI> uriRemap) {
 
     ContentValues cv = new ContentValues();
+    cv.put(InstanceColumns.SUBMISSION_INSTANCE_ID, submissionInstanceId);
     URI u = null;
     try {
       URL url = new URL(URLDecoder.decode(urlString, CharEncoding.UTF_8));
@@ -392,7 +394,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    * @throws JsonMappingException
    * @throws JsonParseException
    */
-  private FileSet constructSubmissionFiles(String instanceId)
+  private FileSet constructSubmissionFiles(String instanceId, String submissionInstanceId)
       throws JsonParseException, JsonMappingException, IOException {
 
     Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
@@ -401,7 +403,9 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
         + "/"
         + URLEncoder.encode(uploadTableId, CharEncoding.UTF_8)
         + "/"
-        + URLEncoder.encode(instanceId, CharEncoding.UTF_8));
+        + URLEncoder.encode(instanceId, CharEncoding.UTF_8)
+        + "/"
+        + URLEncoder.encode(submissionInstanceId, CharEncoding.UTF_8));
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
 
@@ -485,15 +489,26 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
           String id = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
           String dataTableInstanceId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
+          String lastOutcome = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.XML_PUBLISH_STATUS));
+          String submissionInstanceId = ODKDataUtils.genUUID();
+          // submissions always get a new legacy instance id UNLESS the last submission failed, 
+          // in which case we retry the submission using the legacy instance id associated with 
+          // that failure. This supports resumption of sends of forms with many attachments.
+          if ( lastOutcome != null && lastOutcome.equals(InstanceColumns.STATUS_SUBMISSION_FAILED) ) {
+            String lastId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.SUBMISSION_INSTANCE_ID));
+            if ( lastId != null ) {
+              submissionInstanceId = lastId;
+            }
+          }
           c.close();
 
           FileSet instanceFiles;
           try {
-            instanceFiles = constructSubmissionFiles(dataTableInstanceId);
+            instanceFiles = constructSubmissionFiles(dataTableInstanceId, submissionInstanceId);
             // NOTE: /submission must not be translated! It is
             // the well-known path on the server.
 
-            if (!uploadOneSubmission(urlString, toUpdate, id, instanceFiles, httpclient,
+            if (!uploadOneSubmission(urlString, toUpdate, id, submissionInstanceId, instanceFiles, httpclient,
                 localContext, uriRemap)) {
               return mOutcome; // get credentials...
             }

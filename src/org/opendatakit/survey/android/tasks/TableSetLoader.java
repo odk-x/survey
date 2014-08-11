@@ -18,6 +18,7 @@ import android.database.sqlite.SQLiteDatabase;
 
 public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSetEntry>>{
 
+  private static final String COMMON_JAVASCRIPT_FRAMEWORK = "\"Common Javascript Framework\"";
   public static final class TableSetEntry {
     public final String tableId;
     public final String displayName;
@@ -40,41 +41,51 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
 
     DataModelDatabaseHelper dbHelper = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName);
 
-    SQLiteDatabase db = dbHelper.getReadableDatabase();
+    SQLiteDatabase db = dbHelper.getWritableDatabase();
 
-    Cursor c = db.query(DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
+    Cursor c = null;
+    try {
+      c = db.query(DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
             KeyValueStoreColumns.PARTITION + "=? AND " +
             KeyValueStoreColumns.ASPECT + "=? AND " +
-            KeyValueStoreColumns.KEY + "=?",
+            KeyValueStoreColumns.KEY + "=? AND " +
+            KeyValueStoreColumns.VALUE + "<>?",
         new String[] { KeyValueStoreConstants.PARTITION_TABLE,
                        KeyValueStoreConstants.ASPECT_DEFAULT,
-                       KeyValueStoreConstants.TABLE_DISPLAY_NAME}, null, null, null);
+                       KeyValueStoreConstants.TABLE_DISPLAY_NAME,
+                       COMMON_JAVASCRIPT_FRAMEWORK}, null, null, null);
 
-    if ( c != null && c.getCount() > 0) {
-      List<TableSetEntry> entries = new ArrayList<TableSetEntry>();
-
-      c.moveToFirst();
-      int idxTableId = c.getColumnIndex(KeyValueStoreColumns.TABLE_ID);
-      int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
-
-      do {
-        String tableId = c.getString(idxTableId);
-        String value = c.getString(idxValue);
-        String displayName = ODKDataUtils.getLocalizedDisplayName(value);
-        if ( displayName == null ) {
-          displayName = tableId;
-        }
-        entries.add( new TableSetEntry(tableId, displayName));
-      } while ( c.moveToNext() );
-
-      Collections.sort(entries, new Comparator<TableSetEntry>() {
-
-        @Override
-        public int compare(TableSetEntry lhs, TableSetEntry rhs) {
-          return lhs.displayName.compareTo(rhs.displayName);
-        }});
-
-      return entries;
+      if ( c != null && c.getCount() > 0) {
+        List<TableSetEntry> entries = new ArrayList<TableSetEntry>();
+  
+        c.moveToFirst();
+        int idxTableId = c.getColumnIndex(KeyValueStoreColumns.TABLE_ID);
+        int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
+  
+        do {
+          String tableId = c.getString(idxTableId);
+          String value = c.getString(idxValue);
+          String displayName = ODKDataUtils.getLocalizedDisplayName(value);
+          if ( displayName == null ) {
+            displayName = tableId;
+          }
+          entries.add( new TableSetEntry(tableId, displayName));
+        } while ( c.moveToNext() );
+  
+        Collections.sort(entries, new Comparator<TableSetEntry>() {
+  
+          @Override
+          public int compare(TableSetEntry lhs, TableSetEntry rhs) {
+            return lhs.displayName.compareTo(rhs.displayName);
+          }});
+  
+        return entries;
+      }
+    } finally {
+      if ( c != null && !c.isClosed() ) {
+        c.close();
+      }
+      db.close();
     }
 
     return new ArrayList<TableSetEntry>();
