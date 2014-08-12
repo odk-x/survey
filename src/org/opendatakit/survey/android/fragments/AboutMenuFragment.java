@@ -17,7 +17,7 @@ package org.opendatakit.survey.android.fragments;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.listeners.LicenseReaderListener;
+import org.opendatakit.common.android.listener.LicenseReaderListener;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -70,7 +70,7 @@ public class AboutMenuFragment extends Fragment implements LicenseReaderListener
 
   @Override
   public void readLicenseComplete(String result) {
-    Log.i(t, "Delete forms complete");
+    Log.i(t, "Read license complete");
     if (result != null) {
       // Read license file successfully
       Toast.makeText(getActivity(), R.string.read_license_success, Toast.LENGTH_SHORT).show();

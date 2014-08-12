@@ -949,15 +949,20 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       swapToFragmentView(ScreenList.FORM_DOWNLOADER);
       return true;
     } else if (item.getItemId() == MENU_CLOUD_FORMS) {
-      Intent syncIntent = new Intent();
-      syncIntent.setComponent(new ComponentName(
-          "org.opendatakit.sync",
-          "org.opendatakit.sync.activities.SyncActivity"));
-      syncIntent.setAction(Intent.ACTION_DEFAULT);
-      Bundle bundle = new Bundle();
-      bundle.putString(APP_NAME, appName);
-      syncIntent.putExtras(bundle);
-      this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
+      try {
+        Intent syncIntent = new Intent();
+        syncIntent.setComponent(new ComponentName(
+            "org.opendatakit.sync",
+            "org.opendatakit.sync.activities.SyncActivity"));
+        syncIntent.setAction(Intent.ACTION_DEFAULT);
+        Bundle bundle = new Bundle();
+        bundle.putString(APP_NAME, appName);
+        syncIntent.putExtras(bundle);
+        this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
+      } catch (ActivityNotFoundException e) {
+        e.printStackTrace();
+        Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
+      }
       return true;
     } else if (item.getItemId() == MENU_MANAGE_FORMS) {
       swapToFragmentView(ScreenList.FORM_DELETER);

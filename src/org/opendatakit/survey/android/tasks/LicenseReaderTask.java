@@ -5,7 +5,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-import org.opendatakit.survey.android.listeners.LicenseReaderListener;
+import org.opendatakit.common.android.listener.LicenseReaderListener;
 
 import org.opendatakit.common.android.R;
 
