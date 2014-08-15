@@ -21,11 +21,11 @@ import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
+import android.preference.Preference.OnPreferenceChangeListener;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceCategory;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceScreen;
-import android.preference.Preference.OnPreferenceChangeListener;
 
 public class AdminPreferencesActivity extends PreferenceActivity implements OnPreferenceChangeListener{
 
