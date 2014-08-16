@@ -24,6 +24,7 @@ import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.listeners.InitializationListener;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.common.android.listener.LicenseReaderListener;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.tasks.DeleteFormsTask;
@@ -37,6 +38,7 @@ import android.app.Activity;
 import android.app.Fragment;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -239,7 +241,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   // ///////////////////////////////////////////////////
   // actions
 
-  public void readLicenseFile(String appName, LicenseReaderListener listener) {
+  public synchronized void readLicenseFile(String appName, LicenseReaderListener listener) {
     mLicenseReaderListener = listener;
     if (mBackgroundTasks.mLicenseReaderTask != null
         && mBackgroundTasks.mLicenseReaderTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -254,7 +256,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
+  public synchronized void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
     mDeleteFormsListener = listener;
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -271,7 +273,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void downloadFormList(String appName, FormListDownloaderListener listener) {
+  public synchronized void downloadFormList(String appName, FormListDownloaderListener listener) {
     mFormListDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormListTask != null
         && mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -286,7 +288,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void downloadForms(String appName, FormDownloaderListener listener,
+  public synchronized void downloadForms(String appName, FormDownloaderListener listener,
       FormDetails[] filesToDownload) {
     mFormDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormsTask != null
@@ -303,7 +305,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void uploadInstances(InstanceUploaderListener listener, String appName, String uploadTableId,
+  public synchronized void uploadInstances(InstanceUploaderListener listener, String appName, String uploadTableId,
       String[] instancesToUpload) {
     mInstanceUploaderListener = listener;
     if (mBackgroundTasks.mInstanceUploaderTask != null
@@ -319,7 +321,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void initializeAppName(String appName, InitializationListener listener) {
+  public synchronized void initializeAppName(String appName, InitializationListener listener) {
     mInitializationListener = listener;
     if (mBackgroundTasks.mInitializationTask != null
         && mBackgroundTasks.mInitializationTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -343,7 +345,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   // up to the task itself to eventually shutdown. i.e., we don't quite
   // know when they actually stop.
 
-  public void clearDownloadFormListTask() {
+  public synchronized void clearDownloadFormListTask() {
     mFormListDownloaderListener = null;
     if (mBackgroundTasks.mDownloadFormListTask != null) {
       mBackgroundTasks.mDownloadFormListTask.setDownloaderListener(null);
@@ -354,7 +356,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mDownloadFormListTask = null;
   }
 
-  public void clearDownloadFormsTask() {
+  public synchronized void clearDownloadFormsTask() {
     mFormDownloaderListener = null;
     if (mBackgroundTasks.mDownloadFormsTask != null) {
       mBackgroundTasks.mDownloadFormsTask.setDownloaderListener(null);
@@ -365,7 +367,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mDownloadFormsTask = null;
   }
 
-  public void clearUploadInstancesTask() {
+  public synchronized void clearUploadInstancesTask() {
     mInstanceUploaderListener = null;
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(null);
@@ -376,7 +378,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mInstanceUploaderTask = null;
   }
 
-  public void clearInitializationTask() {
+  public synchronized void clearInitializationTask() {
     mInitializationListener = null;
     if (mBackgroundTasks.mInitializationTask != null) {
       mBackgroundTasks.mInitializationTask.setInitializationListener(null);
@@ -393,7 +395,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   // These maintain communications paths, so that we get a failure
   // completion callback eventually.
 
-  public void cancelDownloadFormListTask() {
+  public synchronized void cancelDownloadFormListTask() {
     if (mBackgroundTasks.mDownloadFormListTask != null) {
       if (mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mDownloadFormListTask.cancel(true);
@@ -401,7 +403,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelDownloadFormsTask() {
+  public synchronized void cancelDownloadFormsTask() {
     if (mBackgroundTasks.mDownloadFormsTask != null) {
       if (mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mDownloadFormsTask.cancel(true);
@@ -409,7 +411,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelUploadInstancesTask() {
+  public synchronized void cancelUploadInstancesTask() {
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       if (mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mInstanceUploaderTask.cancel(true);
@@ -417,7 +419,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelInitializationTask() {
+  public synchronized void cancelInitializationTask() {
     if (mBackgroundTasks.mInitializationTask != null) {
       if (mBackgroundTasks.mInitializationTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mInitializationTask.cancel(true);

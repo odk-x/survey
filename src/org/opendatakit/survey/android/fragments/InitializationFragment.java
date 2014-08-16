@@ -39,12 +39,12 @@ import android.view.ViewGroup;
 public class InitializationFragment extends Fragment implements InitializationListener,
     ConfirmAlertDialog, CancelProgressDialog {
 
-  private static final String t = "CopyExpansionFilesFragment";
+  private static final String t = "InitializationFragment";
 
   public static final int ID = R.layout.copy_expansion_files_layout;
 
   private static enum DialogState {
-    Progress, Alert, None
+    Init, Progress, Alert, None
   };
 
   // keys for the data being retained
@@ -58,7 +58,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
   private String mAlertTitle;
   private String mAlertMsg;
-  private DialogState mDialogState = DialogState.None;
+  private DialogState mDialogState = DialogState.Init;
   private String mFragmentToShowNext;
 
   // data that is not retained
@@ -116,6 +116,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
     // launch the copy operation
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
+    Log.i(t, "initializeAppName called ");
     f.initializeAppName(((ODKActivity) getActivity()).getAppName(), this);
   }
 
@@ -143,7 +144,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
     super.onResume();
 
-    if (mDialogState == DialogState.None) {
+    if (mDialogState == DialogState.Init) {
+      Log.i(t, "onResume -- calling initializeAppName");
       intializeAppName();
     }
 
@@ -296,6 +298,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
   public void cancelProgressDialog() {
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
+    Log.i(t, "cancelProgressDialog -- calling cancelInitializationTask");
     // signal the task that we want it to be cancelled.
     // but keep the notification path...
     // the task will call back with a copyExpansionFilesComplete()

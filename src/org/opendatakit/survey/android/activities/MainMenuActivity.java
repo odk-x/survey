@@ -410,6 +410,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         }
       }
     } else {
+      Log.e(t, "initializationCompleted: swapping to " + currentFragment.name());
       swapToFragmentView(currentFragment);
     }
   }
@@ -510,9 +511,11 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if ((currentFragment != ScreenList.INITIALIZATION_DIALOG) &&
           (formFailedLaunchInitializationTask ||
            Survey.getInstance().shouldRunInitializationTask(getAppName()))) {
+        // clear the form-failed flag
+        formFailedLaunchInitializationTask = false;
+        Log.e(t, "onStart -- setting formFailedLaunchInitializationTask to FALSE");
         // and immediately clear the should-run flag...
         Survey.getInstance().clearRunInitializationTask(getAppName());
-        formFailedLaunchInitializationTask = false;
         // OK we should swap to the InitializationFragment view
         swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
       }
@@ -863,6 +866,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (newForm == null) {
         // can't find it -- launch the initialization dialog to hopefully discover it.
         formFailedLaunchInitializationTask = true;
+        Log.e(t, "onCreate -- setting formFailedLaunchInitializationTask to TRUE");
         currentFragment = ScreenList.WEBKIT;
       } else {
         transitionToFormHelper(uri, newForm);
@@ -1196,11 +1200,16 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         f = new FormChooserListFragment();
       }
     } else if (newFragment == ScreenList.INITIALIZATION_DIALOG) {
-      f = mgr.findFragmentById(InitializationFragment.ID);
-      if (f == null) {
-        f = new InitializationFragment();
+      if ( currentFragment == ScreenList.INITIALIZATION_DIALOG ) {
+        Log.e(t,"Unexpected: currentFragment == INITIALIZATION_DIALOG");
+        return;
+      } else {
+        f = mgr.findFragmentById(InitializationFragment.ID);
+        if (f == null) {
+          f = new InitializationFragment();
+        }
+        ((InitializationFragment) f).setFragmentToShowNext(currentFragment.name());
       }
-      ((InitializationFragment) f).setFragmentToShowNext(currentFragment.name());
     } else if (newFragment == ScreenList.FORM_DELETER) {
       f = mgr.findFragmentById(FormDeleteListFragment.ID);
       if (f == null) {
