@@ -1639,6 +1639,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         pageWaitingForData = null;
         actionWaitingForData = null;
       }
+    } else if ( requestCode == SYNC_ACTIVITY_CODE ) {
+      Survey.getInstance().setRunInitializationTask(getAppName());
+      this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }
 }

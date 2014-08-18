@@ -18,6 +18,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 import org.opendatakit.common.android.database.WebDbDatabaseHelper;
+import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.activities.ODKActivity.FrameworkFormPathInfo;
@@ -93,7 +94,7 @@ public class ODKShimJavascriptCallback {
 		      "\"version\":\""	+ Build.VERSION.RELEASE + "\"," +
             "\"appName\":\"" + mActivity.getAppName() + "\"," +
 		      ((mActivity.getActiveUser() == null) ? 
-		          "\"activeUser\":null," :
+		          "\"activeUser\":\"" + DataTableColumns.DEFAULT_SAVEPOINT_CREATOR + "\"," :
                 "\"activeUser\":\"" + mActivity.getActiveUser() + "\",") +
             "\"baseUri\":\"" + mActivity.getWebViewContentUri() + mActivity.getAppName() + "/\"," +
             "\"formsUri\":\"" + FormsProviderAPI.CONTENT_URI.toString() + "\"," +

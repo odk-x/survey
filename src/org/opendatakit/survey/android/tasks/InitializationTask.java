@@ -136,7 +136,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
       // specifically target this form...
       Log.i(t, "updateFormInfo: form: " + formDir.getAbsolutePath());
 
-      String examString = appContext.getString(R.string.updating_form_information, formDir.getName(), i, formDirs.size());
+      String examString = appContext.getString(R.string.updating_form_information, formDir.getName(), i+1, formDirs.size());
       publishProgress(examString, null);
 
       updateFormDir(formDir, true, ODKFileUtils.getStaleFormsFolder(appName) + File.separator);
