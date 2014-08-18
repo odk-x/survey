@@ -33,17 +33,16 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 /**
- * Background task for downloading forms from urls or a formlist from a url. We
- * overload this task a bit so that we don't have to keep track of two separate
- * downloading tasks and it simplifies interfaces. If LIST_URL is passed to
- * doInBackground(), we fetch a form list. If a hashmap containing form/url
- * pairs is passed, we download those forms.
+ * Background task for downloading a formlist from a url. 
+ * In ODK 2.0, the formlist is actually a list of tableIds.
+ * The actual forms are buried within the zips for those
+ * tableIds.
  *
- * @author carlhartung
+ * @author mitchellsundt@gmail.com
  */
 public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String, FormDetails>> {
 
-  private static final String t = "DownloadFormsTask";
+  private static final String t = "DownloadFormListTask";
 
   // used to store error message if one occurs
   public static final String DL_ERROR_MSG = "dlerrormessage";

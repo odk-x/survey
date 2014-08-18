@@ -28,11 +28,11 @@ the License.
         android:paddingLeft="8dip"
         android:paddingRight="8dip"
         android:paddingTop="4dip"
-        android:text="@string/form_scan_starting"
+        android:text="@string/select_form_to_edit"
         android:textSize="14sp" />
 
     <ListView
-        android:id="@id/android:list"
+        android:id="@android:id/list"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent" />
 

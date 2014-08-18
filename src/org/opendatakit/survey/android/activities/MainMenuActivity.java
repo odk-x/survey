@@ -289,9 +289,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
    */
 
   // no need to preserve
-  private boolean formFailedLaunchInitializationTask = false;
-
-  // no need to preserve
   private PropertyManager mPropertyManager;
 
   // no need to preserve
@@ -377,8 +374,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   public void initializationCompleted(String fragmentToShowNext) {
     // whether we have can cancelled or completed update,
     // remember to not do the expansion files check next time through
-    currentFragment = ScreenList.valueOf(fragmentToShowNext);
-    if ( currentFragment == ScreenList.WEBKIT && getCurrentForm() == null ) {
+    ScreenList newFragment = ScreenList.valueOf(fragmentToShowNext);
+    if ( newFragment == ScreenList.WEBKIT && getCurrentForm() == null ) {
       // we were sent off to the initialization dialog to try to
       // discover the form. We need to inquire about the form again
       // and, if we cannot find it, report an error to the user.
@@ -395,6 +392,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
           formUri = Uri.withAppendedPath(
               Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
         } else {
+          swapToFragmentView(ScreenList.FORM_CHOOSER);
           createErrorDialog(getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
           return;
         }
@@ -402,16 +400,17 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
         if (newForm == null) {
           // error
+          swapToFragmentView(ScreenList.FORM_CHOOSER);
           createErrorDialog(getString(R.string.form_not_found, segments.get(1)), EXIT);
           return;
         } else {
           transitionToFormHelper(uri, newForm);
-          swapToFragmentView(currentFragment);
+          swapToFragmentView(newFragment);
         }
       }
     } else {
-      Log.e(t, "initializationCompleted: swapping to " + currentFragment.name());
-      swapToFragmentView(currentFragment);
+      Log.i(t, "initializationCompleted: swapping to " + newFragment.name());
+      swapToFragmentView(newFragment);
     }
   }
 
@@ -507,18 +506,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     FragmentManager mgr = getFragmentManager();
     if (mgr.getBackStackEntryCount() == 0) {
       swapToFragmentView(currentFragment);
-      // we are not recovering...
-      if ((currentFragment != ScreenList.INITIALIZATION_DIALOG) &&
-          (formFailedLaunchInitializationTask ||
-           Survey.getInstance().shouldRunInitializationTask(getAppName()))) {
-        // clear the form-failed flag
-        formFailedLaunchInitializationTask = false;
-        Log.e(t, "onStart -- setting formFailedLaunchInitializationTask to FALSE");
-        // and immediately clear the should-run flag...
-        Survey.getInstance().clearRunInitializationTask(getAppName());
-        // OK we should swap to the InitializationFragment view
-        swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
-      }
     }
   }
 
@@ -865,8 +852,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
       if (newForm == null) {
         // can't find it -- launch the initialization dialog to hopefully discover it.
-        formFailedLaunchInitializationTask = true;
-        Log.e(t, "onCreate -- setting formFailedLaunchInitializationTask to TRUE");
+        Log.i(t, "onCreate -- calling setRunInitializationTask");
+        Survey.getInstance().setRunInitializationTask(getAppName());
         currentFragment = ScreenList.WEBKIT;
       } else {
         transitionToFormHelper(uri, newForm);
@@ -1208,7 +1195,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         if (f == null) {
           f = new InitializationFragment();
         }
-        ((InitializationFragment) f).setFragmentToShowNext(currentFragment.name());
+        ((InitializationFragment) f).setFragmentToShowNext((currentFragment == null) ? ScreenList.FORM_CHOOSER.name() : currentFragment.name());
       }
     } else if (newFragment == ScreenList.FORM_DELETER) {
       f = mgr.findFragmentById(FormDeleteListFragment.ID);
@@ -1259,6 +1246,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
     }
+
     currentFragment = newFragment;
     BackStackEntry entry = null;
     for (int i = 0; i < mgr.getBackStackEntryCount(); ++i) {
@@ -1276,15 +1264,20 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     // add transaction to show the screen we want
     FragmentTransaction trans = mgr.beginTransaction();
     trans.replace(R.id.main_content, f);
-    // never put the copy-expansion-files fragment on the
-    // back stack it is always a transient screen.
-    if (currentFragment != ScreenList.INITIALIZATION_DIALOG) {
-      trans.addToBackStack(currentFragment.name());
-    } else {
-      trans.disallowAddToBackStack();
-    }
+    trans.addToBackStack(currentFragment.name());
     trans.commit();
-    levelSafeInvalidateOptionsMenu();
+    
+    // and see if we should re-initialize...
+    if ((currentFragment != ScreenList.INITIALIZATION_DIALOG) &&
+        Survey.getInstance().shouldRunInitializationTask(getAppName())) {
+      Log.i(t, "swapToFragmentView -- calling clearRunInitializationTask");
+      // and immediately clear the should-run flag...
+      Survey.getInstance().clearRunInitializationTask(getAppName());
+      // OK we should swap to the InitializationFragment view
+      swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
+    } else {
+      levelSafeInvalidateOptionsMenu();
+    }
   }
 
   private void levelSafeInvalidateOptionsMenu() {

@@ -75,7 +75,6 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
     mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
         R.layout.two_item, data, viewParams);
     setListAdapter(mInstances);
-    // getListView().setBackgroundColor(Color.WHITE);
 
     getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
   }
@@ -83,17 +82,12 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     view = inflater.inflate(ID, container, false);
-    TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
     return view;
   }
 
   @Override
   public void onResume() {
     super.onResume();
-
-    TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
   }
 
   @Override

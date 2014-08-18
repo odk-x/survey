@@ -36,10 +36,8 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
 import org.kxml2.kdom.Element;
-import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
@@ -47,25 +45,22 @@ import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.client.methods.HttpGet;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.app.Application;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
 /**
- * Background task for downloading a given list of forms. We assume right now
- * that the forms are coming from the same server that presented the form list,
- * but theoretically that won't always be true.
+ * Background task for downloading a given list of forms. In ODK 2.0, the forms
+ * are actually tableids, and the forms.zip media attachment contains the forms
+ * associated with the tableid. So the manifest is the critical element.
  *
- * @author msundt
- * @author carlhartung
+ * @author mitchellsundt@gmail.com
  */
 public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<String, String>> {
 
@@ -104,287 +99,241 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
     HashMap<String, String> result = new HashMap<String, String>();
 
-    for (int i = 0; i < total; i++) {
-      FormDetails fd = values[i];
+    try {
+      for (int i = 0; i < total; i++) {
+        FormDetails fd = values[i];
 
-      if (isCancelled()) {
-        result.put(fd.formID, "cancelled");
-        return result;
-      }
-
-      publishProgress(fd.formID, Integer.valueOf(count).toString(), Integer.valueOf(total)
-          .toString());
-
-      String message = "";
-      /*
-       * Downloaded forms are placed in a staging directory (STALE_FORMS_PATH).
-       * Once they are deemed complete, they are atomically moved into the
-       * FORMS_PATH. For atomicity, the Form definition file will be stored
-       * WITHIN the media folder.
-       */
-
-      /* download to here... under STALE_FORMS_PATH */
-      File tempFormPath = null;
-      /* download to here.. under STALE_FORMS_PATH */
-      File tempMediaPath = null;
-      /* existing with exactly the same formVersion is here... */
-      File existingMediaPath = null;
-      /* existing to be moved here... under STALE_FORMS_PATH */
-      File staleMediaPath = null;
-      /* after downloaded and unpacked, move it here... */
-      // File formPath = null; // don't know tableId yet...
-      /* after downloaded and unpacked, move it here... */
-      // File mediaPath = null; // don't know tableId yet...
-      try {
-        /*
-         * path to the directory containing the newly downloaded or stale data
-         */
-        String baseStaleMediaPath;
-        boolean isFramework;
-        if (fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID)) {
-          /*
-           * the Common Javascript Framework is stored in the Framework
-           * directories
-           */
-          baseStaleMediaPath = ODKFileUtils.getStaleFrameworkFolder(getAppName()) + File.separator;
-          isFramework = true;
-        } else {
-          baseStaleMediaPath = ODKFileUtils.getStaleFormsFolder(getAppName()) + File.separator;
-          isFramework = false;
+        if (isCancelled()) {
+          result.put(fd.formID, "cancelled");
+          return result;
         }
-        // /* path to the directory containing the live data */
-        // String baseMediaPath;
-        // if ( isFramework ) {
-        // baseMediaPath = ODKFileUtils.getFrameworkFolder(getAppName())
-        // + File.separator;
-        // } else
-        // baseMediaPath = ODKFileUtils.getFormsFolder(getAppName(), tableId,
-        // formId)
-        // + File.separator;
-        // }
 
+        publishProgress(fd.formID, Integer.valueOf(count).toString(), Integer.valueOf(total)
+            .toString());
+
+        String message = "";
+        /*
+         * Downloaded forms are placed in a staging directory
+         * (STALE_FORMS_PATH). Once they are deemed complete, they are
+         * atomically moved into the FORMS_PATH. For atomicity, the Form
+         * definition file will be stored WITHIN the media folder.
+         */
+
+        /* download to here... under STALE_FORMS_PATH */
+        File tempFormPath = null;
+        /* download to here.. under STALE_FORMS_PATH */
+        File tempMediaPath = null;
+        /* existing with exactly the same formVersion is here... */
+        File existingMediaPath = null;
+        /* existing to be moved here... under STALE_FORMS_PATH */
+        File staleMediaPath = null;
+        /* after downloaded and unpacked, move it here... */
+        // File formPath = null; // don't know tableId yet...
+        /* after downloaded and unpacked, move it here... */
+        // File mediaPath = null; // don't know tableId yet...
         try {
-          // clean up friendly form name...
-          String rootName = fd.formID;
-          if (!rootName.matches("^\\p{L}\\p{M}*(\\p{L}\\p{M}*|\\p{Nd}|_)*$")) {
-            // error!
-            message += appContext.getString(R.string.invalid_form_id, fd.formID, fd.formName);
-            Log.e(t, "Invalid form_id: " + fd.formID + " for: " + fd.formName);
+          /*
+           * path to the directory containing the newly downloaded or stale data
+           */
+          String baseStaleMediaPath;
+          boolean isFramework;
+          if (fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID)) {
+            /*
+             * the Common Javascript Framework is stored in the Framework
+             * directories
+             */
+            baseStaleMediaPath = ODKFileUtils.getStaleFrameworkFolder(getAppName())
+                + File.separator;
+            isFramework = true;
           } else {
+            baseStaleMediaPath = ODKFileUtils.getStaleFormsFolder(getAppName()) + File.separator;
+            isFramework = false;
+          }
 
-            // figure out what to name this when we move it
-            // out of /odk/appname/tables/tableId/forms/formId...
-            int rev = 2;
-            {
-              // proposed name of form 'media' directory and form
-              // file...
-              String tempMediaPathName = baseStaleMediaPath + rootName;
+          try {
+            // clean up friendly form name...
+            String rootName = fd.formID;
+            if (!rootName.matches("^\\p{L}\\p{M}*(\\p{L}\\p{M}*|\\p{Nd}|_)*$")) {
+              // error!
+              message += appContext.getString(R.string.invalid_form_id, fd.formID, fd.formName);
+              Log.e(t, "Invalid form_id: " + fd.formID + " for: " + fd.formName);
+            } else {
 
-              tempMediaPath = new File(tempMediaPathName);
-              tempFormPath = new File(tempMediaPath, ODKFileUtils.FILENAME_XFORMS_XML);
+              // figure out what to name this when we move it
+              // out of /odk/appname/tables/tableId/forms/formId...
+              int rev = 2;
+              {
+                // proposed name of form 'media' directory and form
+                // file...
+                String tempMediaPathName = baseStaleMediaPath + rootName;
 
-              while (tempMediaPath.exists()) {
-                try {
-                  if (tempMediaPath.exists()) {
-                    FileUtils.deleteDirectory(tempMediaPath);
-                  }
-                  Log.i(t, "Successful delete of stale directory: " + tempMediaPathName);
-                } catch (IOException ex) {
-                  ex.printStackTrace();
-                  Log.i(t, "Unable to delete stale directory: " + tempMediaPathName);
-                }
-                tempMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
                 tempMediaPath = new File(tempMediaPathName);
                 tempFormPath = new File(tempMediaPath, ODKFileUtils.FILENAME_XFORMS_XML);
+
+                while (tempMediaPath.exists()) {
+                  try {
+                    if (tempMediaPath.exists()) {
+                      FileUtils.deleteDirectory(tempMediaPath);
+                    }
+                    Log.i(t, "Successful delete of stale directory: " + tempMediaPathName);
+                  } catch (IOException ex) {
+                    ex.printStackTrace();
+                    Log.i(t, "Unable to delete stale directory: " + tempMediaPathName);
+                  }
+                  tempMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
+                  tempMediaPath = new File(tempMediaPathName);
+                  tempFormPath = new File(tempMediaPath, ODKFileUtils.FILENAME_XFORMS_XML);
+                  rev++;
+                }
+              }
+
+              // and find a name that any existing directory could be
+              // renamed to... (continuing rev counter)
+              String staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
+              staleMediaPath = new File(staleMediaPathName);
+
+              while (staleMediaPath.exists()) {
+                try {
+                  if (staleMediaPath.exists()) {
+                    FileUtils.deleteDirectory(staleMediaPath);
+                  }
+                  Log.i(t, "Successful delete of stale directory: " + staleMediaPathName);
+                } catch (IOException ex) {
+                  ex.printStackTrace();
+                  Log.i(t, "Unable to delete stale directory: " + staleMediaPathName);
+                }
+                staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
+                staleMediaPath = new File(staleMediaPathName);
                 rev++;
               }
-            }
 
-            // and find a name that any existing directory could be
-            // renamed to... (continuing rev counter)
-            String staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
-            staleMediaPath = new File(staleMediaPathName);
-
-            while (staleMediaPath.exists()) {
-              try {
-                if (staleMediaPath.exists()) {
-                  FileUtils.deleteDirectory(staleMediaPath);
-                }
-                Log.i(t, "Successful delete of stale directory: " + staleMediaPathName);
-              } catch (IOException ex) {
-                ex.printStackTrace();
-                Log.i(t, "Unable to delete stale directory: " + staleMediaPathName);
-              }
-              staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
-              staleMediaPath = new File(staleMediaPathName);
-              rev++;
-            }
-
-            // we have a candidate mediaPath and formPath.
-            // If this is a replacement for an identical existing form,
-            // update formPath and mediaPath
-            // to be the paths for the existing form. We will be doing
-            // atomic moves of the mediaPath
-            // to swap in the new files.
-
-            Cursor alreadyExists = null;
-            try {
-              String[] projection = { FormsColumns.FORM_ID,
-                  FormsColumns.APP_RELATIVE_FORM_FILE_PATH,
-                  FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH, FormsColumns.FORM_VERSION };
-              //
-              // find if there is already a form definition with the
-              // same formId and formVersion...
-              String selection = FormsColumns.FORM_ID + "=? AND " + FormsColumns.FORM_VERSION
-                  + ((fd.formVersion == null) ? " IS NULL" : "=?");
-              String[] selectionArgs;
-              if (fd.formVersion == null) {
-                String[] tempArgs = { fd.formID };
-                selectionArgs = tempArgs;
+              // we have a candidate mediaPath and formPath.
+              // The existing tableId directory is where we
+              // will eventually be placing this data, with
+              // the tableId == the formId from the legacy
+              // pathway.
+              if (isFramework) {
+                existingMediaPath = new File(ODKFileUtils.getAssetsFolder(getAppName()));
               } else {
-                String[] tempArgs = { fd.formID, fd.formVersion };
-                selectionArgs = tempArgs;
+                existingMediaPath = new File(ODKFileUtils.getTablesFolder(getAppName(), fd.formID));
               }
-              // use the most recently created of the matches
-              // (in case DB is corrupted)
-              String orderBy = FormsColumns.DATE + " DESC";
-              alreadyExists = appContext.getContentResolver().query(
-                  Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), projection,
-                  selection, selectionArgs, orderBy);
+              ODKFileUtils.createFolder(existingMediaPath.getAbsolutePath());
 
-              if (alreadyExists == null) {
-                message += appContext.getString(R.string.invalid_app_name, appName);
-                Log.e(t, "Invalid appName: " + appName);
-              } else if (alreadyExists.getCount() > 0) {
-                // we found a match...
-                alreadyExists.moveToFirst();
-                int appRelativeFormMediaPathIdx = alreadyExists
-                    .getColumnIndex(FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH);
-                existingMediaPath = ODKFileUtils.asAppFile(appName,
-                    ODKDatabaseUtils.getIndexAsString(alreadyExists, appRelativeFormMediaPathIdx));
-              }
-            } finally {
-              if (alreadyExists != null) {
-                alreadyExists.close();
-              }
-            }
-
-            if (fd.manifestUrl == null) {
-              message += appContext.getString(R.string.no_manifest, fd.formID);
-              Log.e(t, "No Manifest for: " + fd.formID);
-            } else {
-              // download the media files -- it is an error if there
-              // are none...
-              String error = downloadManifestAndMediaFiles(tempMediaPath, existingMediaPath, fd,
-                  count, total);
-              if (error != null) {
-                message += error;
+              if (fd.manifestUrl == null) {
+                message += appContext.getString(R.string.no_manifest, fd.formID);
+                Log.e(t, "No Manifest for: " + fd.formID);
               } else {
-                error = explodeZips(fd, tempMediaPath, count, total);
+                // download the media files -- it is an error if there
+                // are none...
+                String error = downloadManifestAndMediaFiles(tempMediaPath, existingMediaPath, fd,
+                    count, total);
                 if (error != null) {
                   message += error;
-                } else if (tempFormPath.exists()) {
-                  message += appContext.getString(R.string.xforms_file_exists,
-                      ODKFileUtils.FILENAME_XFORMS_XML, fd.formID);
-                  Log.e(t, ODKFileUtils.FILENAME_XFORMS_XML
-                      + " was present in exploded download of " + fd.formID);
                 } else {
-                  // OK so far -- download the form definition
-                  // file
-                  // note that this is the reverse order from ODK1
-                  downloadXform(fd, tempFormPath, new File(existingMediaPath,
-                      ODKFileUtils.FILENAME_XFORMS_XML));
+                  error = explodeZips(fd, tempMediaPath, count, total);
+                  if (error != null) {
+                    message += error;
+                  } else if (tempFormPath.exists()) {
+                    message += appContext.getString(R.string.xforms_file_exists,
+                        ODKFileUtils.FILENAME_XFORMS_XML, fd.formID);
+                    Log.e(t, ODKFileUtils.FILENAME_XFORMS_XML
+                        + " was present in exploded download of " + fd.formID);
+                  } else {
+                    // OK so far -- download the form definition
+                    // file
+                    // note that this is the reverse order from ODK1
+                    downloadXform(fd, tempFormPath, new File(existingMediaPath,
+                        ODKFileUtils.FILENAME_XFORMS_XML));
+                  }
                 }
               }
             }
-          }
-        } catch (SocketTimeoutException se) {
-          se.printStackTrace();
-          message += se.getMessage();
-        } catch (Exception e) {
-          e.printStackTrace();
-          if (e.getCause() != null) {
-            message += e.getCause().getMessage();
-          } else {
-            message += e.getMessage();
-          }
-        }
-
-        // OK. Everything is downloaded and present in the tempMediaPath
-        // directory...
-        if (message.equals("")) {
-          File mediaPath = null;
-          try {
-            File formDef = new File(tempMediaPath, ODKFileUtils.FORMDEF_JSON_FILENAME);
-
-            if (!formDef.exists()) {
-              message = appContext.getString(R.string.no_formdef_json, fd.formID);
-              Log.e(t, ODKFileUtils.FORMDEF_JSON_FILENAME
-                  + " was not found in exploded download of " + fd.formID);
+          } catch (SocketTimeoutException se) {
+            se.printStackTrace();
+            message += se.getMessage();
+          } catch (Exception e) {
+            e.printStackTrace();
+            if (e.getCause() != null) {
+              message += e.getCause().getMessage();
             } else {
-              // we don't know where to move it until we parse
-              // the file to extract the tableId.
-              FormInfo fi = new FormInfo(appContext, appName, formDef);
-              if ( !fd.formID.equals(fi.formId) ) {
-                message = appContext.getString(R.string.mismatched_form_id_info, fd.formID);
-                Log.e(t, "formDef.json contained a different formId (" + fi.formId + ") than the one requested (" + fd.formID + ").");
-              } else if ( fd.formVersion != fi.formVersion && !fd.formVersion.equals(fi.formVersion) ) {
-                message = appContext.getString(R.string.mismatched_form_version_info, fd.formID, fd.formVersion);
-                Log.e(t, "formDef.json contained a different formId (" + fi.formVersion + ") than the one requested (" + fd.formVersion + ").");
-              } else {
-                if ( isFramework ) {
-                  mediaPath = new File(ODKFileUtils.getFrameworkFolder(appName));
-                } else {
-                  mediaPath = new File(ODKFileUtils.getFormFolder(appName, fi.tableId, fi.formId));
+              message += e.getMessage();
+            }
+          }
+
+          if (message.equals("")) {
+            // OK. Everything is downloaded, unzipped, and present in the
+            // tempMediaPath
+            // directory... assume everything is OK and just move it...
+
+            // TODO: with the restructuring of the directory structure, step (3)
+            // won't be necessary
+            // (0) ensure there is no instances folder coming from the server
+            // (affects recovery)
+            // (1) move the existingMediaPath to the staleMediaPath
+            // (2) move the tempMediaPath to the existingMediaPath
+            // (3) move the staleMediaPath/instances folder to the
+            // existingMediaPath/instances.
+            File existingInstances = new File(existingMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
+            File staleInstances = new File(staleMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
+            File tempInstances = new File(tempMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
+
+            try {
+              // (0) ensure there is no instances folder coming from the server
+              if (tempInstances.exists()) {
+                FileUtils.deleteDirectory(tempInstances);
+              }
+              // (1) move any current directory to the stale tree.
+              if (existingMediaPath.exists()) {
+                FileUtils.moveDirectory(existingMediaPath, staleMediaPath);
+              }
+              // (2) move the temp directory to the current location.
+              FileUtils.moveDirectory(tempMediaPath, existingMediaPath);
+              // (3) move any instances back to the current location.
+              if (staleInstances.exists()) {
+                FileUtils.moveDirectory(staleInstances, existingInstances);
+              }
+            } catch (IOException ex) {
+              ex.printStackTrace();
+              message += ex.toString();
+              if (staleMediaPath.exists()) {
+                // try to move this back, since we failed somehow...
+                try {
+                  if (existingInstances.exists()) {
+                    FileUtils.moveDirectory(existingInstances, staleInstances);
+                  }
+                  if (existingMediaPath.exists()) {
+                    FileUtils.deleteDirectory(existingMediaPath);
+                  }
+                  FileUtils.moveDirectory(staleMediaPath, existingMediaPath);
+                } catch (IOException e) {
+                  e.printStackTrace();
                 }
-                // ensure the destination parent directory structure exists
-                mediaPath.getParentFile().mkdirs();
-                // move any current directory to the stale tree.
-                if (mediaPath.exists()) {
-                  FileUtils.moveDirectory(mediaPath, staleMediaPath);
-                }
-                // move the temp directory to the current location.
-                FileUtils.moveDirectory(tempMediaPath, mediaPath);
-                // the background listener should update the database
               }
             }
-          } catch (IOException ex) {
-            ex.printStackTrace();
-            message += ex.toString();
-            if (mediaPath != null && staleMediaPath.exists()) {
-              // try to move this back, since we failed somehow...
+          }
+        } finally {
+          if (!message.equalsIgnoreCase("")) {
+            // failure...
+            // we should always delete the temp file / directory.
+            // it is always a new file / directory, so there is no harm
+            // doing this.
+            if (tempMediaPath.exists()) {
               try {
-                if (mediaPath.exists()) {
-                  FileUtils.deleteDirectory(mediaPath);
-                }
-                FileUtils.moveDirectory(staleMediaPath, mediaPath);
+                FileUtils.deleteDirectory(tempMediaPath);
               } catch (IOException e) {
                 e.printStackTrace();
               }
             }
+          } else {
+            message = appContext.getString(R.string.success);
           }
         }
-      } finally {
-        if (!message.equalsIgnoreCase("")) {
-          // failure...
-          // we should always delete the temp file / directory.
-          // it is always a new file / directory, so there is no harm
-          // doing this.
-          if (tempMediaPath.exists()) {
-            try {
-              FileUtils.deleteDirectory(tempMediaPath);
-            } catch (IOException e) {
-              e.printStackTrace();
-            }
-          }
-        } else {
-          message = appContext.getString(R.string.success);
-        }
+        count++;
+        result.put(fd.formID, message);
       }
-      count++;
-      result.put(fd.formID, message);
+    } finally {
+      Survey.getInstance().setRunInitializationTask(getAppName());
     }
-
     return result;
   }
 

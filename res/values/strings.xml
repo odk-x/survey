@@ -192,4 +192,5 @@
 <string name="delete_yes_with_options">Delete Forms &amp; Data</string>
 <string name="file_and_data_deleted_ok">%s form(s) and data successfully deleted!</string>
 <string name="sync_not_found">ODK Sync is not installed</string>
+<string name="initializing">Initializing Survey &#8230;</string>
 </resources>

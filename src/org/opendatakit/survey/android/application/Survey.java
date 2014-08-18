@@ -84,13 +84,17 @@ public class Survey extends Application {
     int questionFontsize = Integer.valueOf(question_font);
     return questionFontsize;
   }
-
+  
   public boolean shouldRunInitializationTask(String appName) {
     return !appNameHasBeenInitialized.contains(appName);
   }
 
   public void clearRunInitializationTask(String appName) {
     appNameHasBeenInitialized.add(appName);
+  }
+
+  public void setRunInitializationTask(String appName) {
+    appNameHasBeenInitialized.remove(appName);
   }
 
   public String getVersionCodeString() {

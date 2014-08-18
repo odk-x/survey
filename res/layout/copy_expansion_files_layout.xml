@@ -26,7 +26,7 @@ the License.
         android:gravity="center"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
-        android:text="@string/no_items_display_forms"
+        android:text="@string/initializing"
         android:textColor="@color/black"
         android:textSize="21sp" />
 
