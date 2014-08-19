@@ -16,13 +16,19 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
+import org.opendatakit.common.android.database.DataModelDatabaseHelper;
+import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.provider.TableDefinitionsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
@@ -64,6 +70,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -125,6 +132,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
   private static final String CURRENT_FRAGMENT = "currentFragment";
+  
+  /** tables that have conflict rows */
+  public static final String CONFLICT_TABLES = "conflictTables";
 
   // menu options
 
@@ -142,7 +152,18 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   private static final int HANDLER_ACTIVITY_CODE = 20;
   private static final int INTERNAL_ACTIVITY_CODE = 21;
   private static final int SYNC_ACTIVITY_CODE = 22;
+  private static final int CONFLICT_ACTIVITY_CODE = 23;
 
+  // values for external intents to resolve conflicts
+  /** Survey's package name as declared in the manifest. */
+  public static final String SYNC_PACKAGE_NAME = "org.opendatakit.sync";
+  /** The full path to Sync's checkpoint list activity. */
+  public static final String SYNC_CHECKPOINT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.CheckpointResolutionListActivity";
+  /** The full path to Sync's conflict list activity. */
+  public static final String SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.ConflictResolutionListActivity";
+  /** The field name for the tableId to resolve conflicts on */
+  public static final String SYNC_TABLE_ID_PARAMETER = "tableId";
+  
   private static final boolean EXIT = true;
 
   private static final FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER = new FrameLayout.LayoutParams(
@@ -282,6 +303,9 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   // DO NOT USE THESE -- only used to determine if the current form has changed.
   private String trackingFormPath = null;
   private Long trackingFormLastModifiedDate = 0L;
+  
+  /** track which tables have conflicts (these need to be resolved before Survey can operate) */
+  Bundle mConflictTables = new Bundle();
 
   /**
    * Member variables that do not need to be preserved across orientation
@@ -368,6 +392,11 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     outState.putBundle(SESSION_VARIABLES, sessionVariables);
 
     outState.putParcelableArrayList(SECTION_STATE_SCREEN_HISTORY, sectionStateScreenHistory);
+
+    if ( mConflictTables != null && !mConflictTables.isEmpty() ) {
+      outState.putBundle(CONFLICT_TABLES, mConflictTables);
+    }
+
   }
 
   @Override
@@ -506,6 +535,102 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     FragmentManager mgr = getFragmentManager();
     if (mgr.getBackStackEntryCount() == 0) {
       swapToFragmentView(currentFragment);
+    }
+  }
+  
+  public void scanForConflictAllTables() {
+    long now = System.currentTimeMillis();
+    Log.i(this.getClass().getSimpleName(), "scanForConflictAllTables -- searching for conflicts and checkpoints ");
+    
+    DataModelDatabaseHelper dbh = DataModelDatabaseHelperFactory.getDbHelper(this, getAppName());
+    
+    SQLiteDatabase db = dbh.getReadableDatabase();
+    Cursor c = null;
+
+    StringBuilder b = new StringBuilder();
+    b.append("SELECT ").append(TableDefinitionsColumns.DB_TABLE_NAME).append(", ")
+     .append(TableDefinitionsColumns.TABLE_ID).append(" FROM \"")
+     .append(DataModelDatabaseHelper.TABLE_DEFS_TABLE_NAME).append("\"");
+
+    Map<String,String> tableMap = new TreeMap<String,String>();
+    try {
+      c = db.rawQuery(b.toString(), null);
+      int idxId = c.getColumnIndex(TableDefinitionsColumns.TABLE_ID);
+      int idxName = c.getColumnIndex(TableDefinitionsColumns.DB_TABLE_NAME);
+      if ( c.moveToFirst() ) {
+        do {
+          tableMap.put(ODKDatabaseUtils.getIndexAsString(c, idxId), 
+              ODKDatabaseUtils.getIndexAsString(c, idxName));
+        } while ( c.moveToNext() );
+      }
+      c.close();
+    } finally {
+      if ( c != null && !c.isClosed() ) {
+        c.close();
+      }
+    }
+    
+    Bundle conflictTables = new Bundle();
+    
+    for ( Map.Entry<String,String> table : tableMap.entrySet() ) {
+      String tableId = table.getKey();
+      String dbTableName = table.getValue();
+      b.setLength(0);
+      b.append("SELECT SUM(case when _conflict_type is not null then 1 else 0 end) as conflicts from \"")
+       .append(dbTableName).append("\"");
+      
+      try {
+        c = db.rawQuery(b.toString(), null);
+        int idxConflicts = c.getColumnIndex("conflicts");
+        c.moveToFirst();
+        int conflicts = ODKDatabaseUtils.getIndexAsType(c, Integer.class, idxConflicts);
+        c.close();
+        
+        if ( conflicts != 0 ) {
+          conflictTables.putString(tableId, dbTableName);
+        }
+      } finally {
+        if ( c != null && !c.isClosed() ) {
+          c.close();
+        }
+      }
+    }
+    mConflictTables = conflictTables;
+    
+    
+    long elapsed = System.currentTimeMillis() - now;
+    Log.i(this.getClass().getSimpleName(), "scanForConflictAllTables -- full table scan completed: " + Long.toString(elapsed) + " ms");
+  }
+  
+  @Override
+  protected void onPostResume() {
+    super.onPostResume();
+    // Hijack the app here, after all screens have been resumed,
+    // to ensure that all checkpoints and conflicts have been
+    // resolved. If they haven't, we branch to the resolution
+    // activity.
+    
+    if ( mConflictTables == null || mConflictTables.isEmpty() ) {
+      scanForConflictAllTables();
+    }
+    if ( (mConflictTables != null) && !mConflictTables.isEmpty() ) {
+      Iterator<String> iterator = mConflictTables.keySet().iterator();
+      String tableId = iterator.next();
+      mConflictTables.remove(tableId);
+
+      Intent i;
+      i = new Intent();
+      i.setComponent(new ComponentName(SYNC_PACKAGE_NAME,
+          SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME));
+      i.setAction(Intent.ACTION_EDIT);
+      i.putExtra(APP_NAME, getAppName());
+      i.putExtra(SYNC_TABLE_ID_PARAMETER, tableId);
+      try {
+        this.startActivityForResult(i, CONFLICT_ACTIVITY_CODE);
+      } catch ( ActivityNotFoundException e ) {
+        Toast.makeText(this, getString(R.string.activity_not_found, 
+            SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME), Toast.LENGTH_LONG).show();
+      }
     }
   }
 
@@ -788,6 +913,10 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       // if appName is explicitly set, use it...
       setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
           : getAppName());
+
+      if ( savedInstanceState.containsKey(CONFLICT_TABLES) ) {
+        mConflictTables = savedInstanceState.getBundle(CONFLICT_TABLES);
+      }
     }
 
 
