@@ -583,10 +583,10 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         c = db.rawQuery(b.toString(), null);
         int idxConflicts = c.getColumnIndex("conflicts");
         c.moveToFirst();
-        int conflicts = ODKDatabaseUtils.getIndexAsType(c, Integer.class, idxConflicts);
+        Integer conflicts = ODKDatabaseUtils.getIndexAsType(c, Integer.class, idxConflicts);
         c.close();
         
-        if ( conflicts != 0 ) {
+        if ( conflicts != null && conflicts != 0 ) {
           conflictTables.putString(tableId, dbTableName);
         }
       } finally {
