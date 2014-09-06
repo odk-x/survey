@@ -36,8 +36,11 @@ import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
 import org.opendatakit.aggregate.odktables.rest.TableConstants;
+import org.opendatakit.aggregate.odktables.rest.entity.Column;
+import org.opendatakit.common.android.data.ElementDataType;
+import org.opendatakit.common.android.data.ElementType;
+import org.opendatakit.common.android.data.ColumnDefinition;
 import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.database.DataModelDatabaseHelper.ColumnDefinition;
 import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
@@ -53,6 +56,7 @@ import android.content.ContentProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
@@ -100,23 +104,23 @@ public class SubmissionProvider extends ContentProvider {
   private static final void putElementValue(HashMap<String, Object> dataMap, ColumnDefinition defn,
       Object value) {
     List<ColumnDefinition> nesting = new ArrayList<ColumnDefinition>();
-    ColumnDefinition cur = defn.parent;
+    ColumnDefinition cur = defn.getParent();
     while (cur != null) {
       nesting.add(cur);
-      cur = cur.parent;
+      cur = cur.getParent();
     }
 
     HashMap<String, Object> elem = dataMap;
     for (int i = nesting.size() - 1; i >= 0; --i) {
       cur = nesting.get(i);
-      if (elem.containsKey(cur.elementName)) {
-        elem = (HashMap<String, Object>) elem.get(cur.elementName);
+      if (elem.containsKey(cur.getElementName())) {
+        elem = (HashMap<String, Object>) elem.get(cur.getElementName());
       } else {
-        elem.put(cur.elementName, new HashMap<String, Object>());
-        elem = (HashMap<String, Object>) elem.get(cur.elementName);
+        elem.put(cur.getElementName(), new HashMap<String, Object>());
+        elem = (HashMap<String, Object>) elem.get(cur.getElementName());
       }
     }
-    elem.put(defn.elementName, value);
+    elem.put(defn.getElementName(), value);
   }
 
   @SuppressWarnings("unchecked")
@@ -206,12 +210,18 @@ public class SubmissionProvider extends ContentProvider {
     final String submissionInstanceId = segments.get(3);
     final SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName).getReadableDatabase();
 
-    String tableName = DataModelDatabaseHelper.getDbTableName(db, tableId);
-    if (tableName == null) {
-      throw new IllegalArgumentException("Unknown URI (no matching tableId) " + uri);
+    boolean success = false;
+    try {
+      success = ODKDatabaseUtils.hasTableId(db, tableId);
+    } catch ( Exception e ) {
+      e.printStackTrace();
+      throw new SQLException("Unknown URI (exception testing for tableId) " + uri);
+    }
+    if (!success) {
+      throw new SQLException("Unknown URI (missing data table for tableId) " + uri);
     }
 
-    final String dbTableName = "\"" + tableName + "\"";
+    final String dbTableName = "\"" + tableId + "\"";
 
     // Get the table properties specific to XML submissions
     
@@ -265,9 +275,8 @@ public class SubmissionProvider extends ContentProvider {
         c = null;
       }
 
-      // get map of (elementKey -> ColumnDefinition)
-      Map<String, ColumnDefinition> defns = DataModelDatabaseHelper.getColumnDefinitions(db,
-          tableId);
+      List<Column> columns = ODKDatabaseUtils.getUserDefinedColumns(db, tableId);
+      List<ColumnDefinition> orderedDefns = ColumnDefinition.buildColumnDefinitions(columns);
       
       // Retrieve the values of the record to be emitted...
       
@@ -303,51 +312,49 @@ public class SubmissionProvider extends ContentProvider {
           // OK. we have the record -- work through all the terms
           for (int i = 0; i < c.getColumnCount(); ++i) {
             String columnName = c.getColumnName(i);
-            ColumnDefinition defn = defns.get(columnName);
+            ColumnDefinition defn = ColumnDefinition.find(orderedDefns, columnName);
             if (defn != null && !c.isNull(i)) {
-              if ( xmlInstanceName != null && defn.elementName.equals(xmlInstanceName)) {
+              if ( xmlInstanceName != null && defn.getElementName().equals(xmlInstanceName)) {
                 instanceName = ODKDatabaseUtils.getIndexAsString(c, i);
               }
               // user-defined column
-              log.i(t, "element type: " + defn.elementType);
-              if (defn.elementType.equals("string")) {
-                String value = ODKDatabaseUtils.getIndexAsString(c, i);
-                putElementValue(values, defn, value);
-              } else if (defn.elementType.equals("integer")) {
+              ElementType type = ElementType.parseElementType(defn.getElementType(), ! defn.getChildren().isEmpty());
+              ElementDataType dataType = type.getDataType();
+              
+              log.i(t, "element type: " + defn.getElementType());
+              if (dataType == ElementDataType.integer) {
                 Integer value = ODKDatabaseUtils.getIndexAsType(c, Integer.class, i);
                 putElementValue(values, defn, value);
-              } else if (defn.elementType.equals("number")) {
+              } else if (dataType == ElementDataType.number) {
                 Double value = ODKDatabaseUtils.getIndexAsType(c, Double.class, i);
                 putElementValue(values, defn, value);
-              } else if (defn.elementType.equals("boolean")) {
+              } else if (dataType == ElementDataType.bool) {
                 Integer tmp = ODKDatabaseUtils.getIndexAsType(c, Integer.class, i);
                 Boolean value = tmp == null ? null : (tmp != 0);
                 putElementValue(values, defn, value);
-              } else if (defn.elementType.equals("date")) {
+              } else if (type.getElementType().equals("date")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 String jrDatestamp = (value == null) ? null :
                   (new SimpleDateFormat(ISO8601_DATE_ONLY_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
                 putElementValue(values, defn, jrDatestamp);
-              } else if (defn.elementType.equals("dateTime")) {
+              } else if (type.getElementType().equals("dateTime")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 String jrDatestamp = (value == null) ? null :
                   (new SimpleDateFormat(ISO8601_DATE_FORMAT, Locale.ENGLISH))
                     .format(new Date(TableConstants.milliSecondsFromNanos(value)));
                 putElementValue(values, defn, jrDatestamp);
-              } else if (defn.elementType.equals("time")) {
+              } else if (type.getElementType().equals("time")) {
                 String value = ODKDatabaseUtils.getIndexAsString(c, i);
                 putElementValue(values, defn, value);
-              } else if (defn.elementType.equals("array")) {
+              } else if (dataType == ElementDataType.array) {
                 ArrayList<Object> al = ODKDatabaseUtils.getIndexAsType(c, ArrayList.class, i);
                 putElementValue(values, defn, al);
-              } else if (defn.elementType.equals("object")) {
-                HashMap<String, Object> obj = ODKDatabaseUtils.getIndexAsType(c, HashMap.class, i);
-                putElementValue(values, defn, obj);
-              } else /* user-defined */{
-                log.i(t, "user-defined element type: " + defn.elementType);
-                HashMap<String, Object> obj =  ODKDatabaseUtils.getIndexAsType(c, HashMap.class, i);;
-                putElementValue(values, defn, obj);
+              } else if (dataType == ElementDataType.string) {
+                  String value = ODKDatabaseUtils.getIndexAsString(c, i);
+                  putElementValue(values, defn, value);
+              } else /* unrecognized */{
+                throw new IllegalStateException("unrecognized data type: " + defn.getElementType());
               }
 
             } else if (columnName.equals(DataTableColumns.SAVEPOINT_TIMESTAMP)) {
@@ -386,18 +393,21 @@ public class SubmissionProvider extends ContentProvider {
           if (asXml) {
             // Pre-processing -- collapse all geopoints into a
             // string-valued representation
-            for (ColumnDefinition defn : defns.values()) {
-              if (defn.elementType.equals("geopoint") || defn.elementType.equals("mimeUri")) {
+            for (ColumnDefinition defn : orderedDefns) {
+              ElementType type = ElementType.parseElementType(defn.getElementType(), !defn.getChildren().isEmpty());
+              ElementDataType dataType = type.getDataType();
+              if (dataType == ElementDataType.object && 
+                  (type.getElementType().equals("geopoint") || type.getElementType().equals("mimeUri"))) {
                 Map<String, Object> parent = null;
                 List<ColumnDefinition> parents = new ArrayList<ColumnDefinition>();
-                ColumnDefinition d = defn.parent;
+                ColumnDefinition d = defn.getParent();
                 while (d != null) {
                   parents.add(d);
-                  d = d.parent;
+                  d = d.getParent();
                 }
                 parent = values;
                 for (int i = parents.size() - 1; i >= 0; --i) {
-                  Object o = parent.get(parents.get(i).elementName);
+                  Object o = parent.get(parents.get(i).getElementName());
                   if (o == null) {
                     parent = null;
                     break;
@@ -405,9 +415,9 @@ public class SubmissionProvider extends ContentProvider {
                   parent = (Map<String, Object>) o;
                 }
                 if (parent != null) {
-                  Object o = parent.get(defn.elementName);
+                  Object o = parent.get(defn.getElementName());
                   if (o != null) {
-                    if (defn.elementType.equals("geopoint")) {
+                    if (type.getElementType().equals("geopoint")) {
                       Map<String, Object> geopoint = (Map<String, Object>) o;
                       // OK. we have geopoint -- get the
                       // lat, long, alt, etc.
@@ -417,8 +427,8 @@ public class SubmissionProvider extends ContentProvider {
                       Double accuracy = (Double) geopoint.get("accuracy");
                       String gpt = "" + latitude + " " + longitude + " " + altitude + " "
                           + accuracy;
-                      parent.put(defn.elementName, gpt);
-                    } else if (defn.elementType.equals("mimeUri")) {
+                      parent.put(defn.getElementName(), gpt);
+                    } else if (type.getElementType().equals("mimeUri")) {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
@@ -429,7 +439,7 @@ public class SubmissionProvider extends ContentProvider {
                           throw new IllegalStateException("Unexpected collision with manifest.json");
                         }
                         freturn.addAttachmentFile(f, contentType);
-                        parent.put(defn.elementName, f.getName());
+                        parent.put(defn.getElementName(), f.getName());
                       }
                     } else {
                       throw new IllegalStateException("Unhandled transform case");
@@ -622,18 +632,21 @@ public class SubmissionProvider extends ContentProvider {
 
           } else {
             // Pre-processing -- collapse all mimeUri into filename
-            for (ColumnDefinition defn : defns.values()) {
-              if (defn.elementType.equals("mimeUri")) {
+            for (ColumnDefinition defn : orderedDefns) {
+              ElementType type = ElementType.parseElementType(defn.getElementType(), !defn.getChildren().isEmpty());
+              ElementDataType dataType = type.getDataType();
+              
+              if (dataType == ElementDataType.object && type.getElementType().equals("mimeUri")) {
                 Map<String, Object> parent = null;
                 List<ColumnDefinition> parents = new ArrayList<ColumnDefinition>();
-                ColumnDefinition d = defn.parent;
+                ColumnDefinition d = defn.getParent();
                 while (d != null) {
                   parents.add(d);
-                  d = d.parent;
+                  d = d.getParent();
                 }
                 parent = values;
                 for (int i = parents.size() - 1; i >= 0; --i) {
-                  Object o = parent.get(parents.get(i).elementName);
+                  Object o = parent.get(parents.get(i).getElementName());
                   if (o == null) {
                     parent = null;
                     break;
@@ -641,9 +654,9 @@ public class SubmissionProvider extends ContentProvider {
                   parent = (Map<String, Object>) o;
                 }
                 if (parent != null) {
-                  Object o = parent.get(defn.elementName);
+                  Object o = parent.get(defn.getElementName());
                   if (o != null) {
-                    if (defn.elementType.equals("mimeUri")) {
+                    if (dataType == ElementDataType.object && type.getElementType().equals("mimeUri")) {
                       Map<String, Object> mimeuri = (Map<String, Object>) o;
                       String uriFragment = (String) mimeuri.get("uriFragment");
                       String contentType = (String) mimeuri.get("contentType");
@@ -652,7 +665,7 @@ public class SubmissionProvider extends ContentProvider {
                         throw new IllegalStateException("Unexpected collision with manifest.json");
                       }
                       freturn.addAttachmentFile(f, contentType);
-                      parent.put(defn.elementName, f.getName());
+                      parent.put(defn.getElementName(), f.getName());
                     } else {
                       throw new IllegalStateException("Unhandled transform case");
                     }
@@ -668,7 +681,7 @@ public class SubmissionProvider extends ContentProvider {
             wrapper.put("instanceId", instanceId);
             HashMap<String, Object> formDef = new HashMap<String, Object>();
             formDef.put("table_id", tableId);
-            formDef.put("model", DataModelDatabaseHelper.getDataModel(defns));
+            formDef.put("model", ColumnDefinition.getDataModel(orderedDefns));
             wrapper.put("formDef", formDef);
             wrapper.put("data", values);
             wrapper.put("metadata", new HashMap<String, Object>());

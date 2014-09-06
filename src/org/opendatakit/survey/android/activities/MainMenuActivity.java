@@ -18,8 +18,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -548,19 +546,16 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     Cursor c = null;
 
     StringBuilder b = new StringBuilder();
-    b.append("SELECT ").append(TableDefinitionsColumns.DB_TABLE_NAME).append(", ")
-     .append(TableDefinitionsColumns.TABLE_ID).append(" FROM \"")
+    b.append("SELECT ").append(TableDefinitionsColumns.TABLE_ID).append(" FROM \"")
      .append(DataModelDatabaseHelper.TABLE_DEFS_TABLE_NAME).append("\"");
 
-    Map<String,String> tableMap = new TreeMap<String,String>();
+    List<String> tableIds = new ArrayList<String>();
     try {
       c = db.rawQuery(b.toString(), null);
       int idxId = c.getColumnIndex(TableDefinitionsColumns.TABLE_ID);
-      int idxName = c.getColumnIndex(TableDefinitionsColumns.DB_TABLE_NAME);
       if ( c.moveToFirst() ) {
         do {
-          tableMap.put(ODKDatabaseUtils.getIndexAsString(c, idxId), 
-              ODKDatabaseUtils.getIndexAsString(c, idxName));
+          tableIds.add(ODKDatabaseUtils.getIndexAsString(c, idxId));
         } while ( c.moveToNext() );
       }
       c.close();
@@ -572,12 +567,10 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     
     Bundle conflictTables = new Bundle();
     
-    for ( Map.Entry<String,String> table : tableMap.entrySet() ) {
-      String tableId = table.getKey();
-      String dbTableName = table.getValue();
+    for ( String tableId : tableIds ) {
       b.setLength(0);
       b.append("SELECT SUM(case when _conflict_type is not null then 1 else 0 end) as conflicts from \"")
-       .append(dbTableName).append("\"");
+       .append(tableId).append("\"");
       
       try {
         c = db.rawQuery(b.toString(), null);
@@ -587,7 +580,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         c.close();
         
         if ( conflicts != null && conflicts != 0 ) {
-          conflictTables.putString(tableId, dbTableName);
+          conflictTables.putString(tableId, tableId);
         }
       } finally {
         if ( c != null && !c.isClosed() ) {
