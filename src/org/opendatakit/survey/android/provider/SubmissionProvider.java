@@ -276,7 +276,7 @@ public class SubmissionProvider extends ContentProvider {
       }
 
       List<Column> columns = ODKDatabaseUtils.getUserDefinedColumns(db, tableId);
-      List<ColumnDefinition> orderedDefns = ColumnDefinition.buildColumnDefinitions(columns);
+      ArrayList<ColumnDefinition> orderedDefns = ColumnDefinition.buildColumnDefinitions(columns);
       
       // Retrieve the values of the record to be emitted...
       
