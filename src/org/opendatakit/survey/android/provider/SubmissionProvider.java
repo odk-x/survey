@@ -318,7 +318,7 @@ public class SubmissionProvider extends ContentProvider {
                 instanceName = ODKDatabaseUtils.getIndexAsString(c, i);
               }
               // user-defined column
-              ElementType type = ElementType.parseElementType(defn.getElementType(), ! defn.getChildren().isEmpty());
+              ElementType type = defn.getType();
               ElementDataType dataType = type.getDataType();
               
               log.i(t, "element type: " + defn.getElementType());
@@ -394,7 +394,7 @@ public class SubmissionProvider extends ContentProvider {
             // Pre-processing -- collapse all geopoints into a
             // string-valued representation
             for (ColumnDefinition defn : orderedDefns) {
-              ElementType type = ElementType.parseElementType(defn.getElementType(), !defn.getChildren().isEmpty());
+              ElementType type = defn.getType();
               ElementDataType dataType = type.getDataType();
               if (dataType == ElementDataType.object && 
                   (type.getElementType().equals("geopoint") || type.getElementType().equals("mimeUri"))) {
@@ -633,7 +633,7 @@ public class SubmissionProvider extends ContentProvider {
           } else {
             // Pre-processing -- collapse all mimeUri into filename
             for (ColumnDefinition defn : orderedDefns) {
-              ElementType type = ElementType.parseElementType(defn.getElementType(), !defn.getChildren().isEmpty());
+              ElementType type = defn.getType();
               ElementDataType dataType = type.getDataType();
               
               if (dataType == ElementDataType.object && type.getElementType().equals("mimeUri")) {
