@@ -123,10 +123,10 @@ public class AndroidShortcuts extends Activity {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
             String formName = app.getName() + " > "
-                + ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+                + ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
                 Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
+                ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }

@@ -34,8 +34,8 @@ import java.util.Map;
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DataModelDatabaseHelper;
 import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseConstants;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
@@ -112,7 +112,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    *
    * @param urlString
    *          destination URL
-   * @param id -- _ID in the InstanceColumns table.
+   * @param id
+   *          -- _ID in the InstanceColumns table.
    * @param instanceFilePath
    * @param httpclient
    *          - client connection
@@ -123,8 +124,9 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    * @return false if credentials are required and we should terminate
    *         immediately.
    */
-  private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id, String submissionInstanceId,
-      FileSet instanceFiles, HttpClient httpclient, HttpContext localContext, Map<URI, URI> uriRemap) {
+  private boolean uploadOneSubmission(String urlString, Uri toUpdate, String id,
+      String submissionInstanceId, FileSet instanceFiles, HttpClient httpclient,
+      HttpContext localContext, Map<URI, URI> uriRemap) {
 
     ContentValues cv = new ContentValues();
     cv.put(InstanceColumns.SUBMISSION_INSTANCE_ID, submissionInstanceId);
@@ -397,14 +399,10 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
   private FileSet constructSubmissionFiles(String instanceId, String submissionInstanceId)
       throws JsonParseException, JsonMappingException, IOException {
 
-    Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX
-        + "/"
-        + URLEncoder.encode(appName, CharEncoding.UTF_8)
-        + "/"
-        + URLEncoder.encode(uploadTableId, CharEncoding.UTF_8)
-        + "/"
-        + URLEncoder.encode(instanceId, CharEncoding.UTF_8)
-        + "/"
+    Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX + "/"
+        + URLEncoder.encode(appName, CharEncoding.UTF_8) + "/"
+        + URLEncoder.encode(uploadTableId, CharEncoding.UTF_8) + "/"
+        + URLEncoder.encode(instanceId, CharEncoding.UTF_8) + "/"
         + URLEncoder.encode(submissionInstanceId, CharEncoding.UTF_8));
 
     InputStream is = appContext.getContentResolver().openInputStream(manifest);
@@ -425,48 +423,46 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     setAuth(auth);
 
     String urlString = null;
-    
-    /** 
-     * retrieve the URL string for the table, if defined...
-     * otherwise, use the app property values to construct it.
+
+    /**
+     * retrieve the URL string for the table, if defined... otherwise, use the
+     * app property values to construct it.
      */
     {
-      DataModelDatabaseHelper dbHelper = DataModelDatabaseHelperFactory.getDbHelper(appContext, appName);
-      SQLiteDatabase db = dbHelper.getReadableDatabase();
-      
+      SQLiteDatabase db = null;
+
       Cursor c = null;
       try {
-        c = db.query( DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
-            KeyValueStoreColumns.TABLE_ID + "=? AND " +
-            KeyValueStoreColumns.PARTITION + "=? AND " +
-            KeyValueStoreColumns.ASPECT + "=? AND " + 
-            KeyValueStoreColumns.KEY + "=?",
-            new String[] {
-              uploadTableId, 
-              KeyValueStoreConstants.PARTITION_TABLE,
-              KeyValueStoreConstants.ASPECT_DEFAULT,
-              KeyValueStoreConstants.XML_SUBMISSION_URL },
+        db = DataModelDatabaseHelperFactory.getDatabase(appContext, appName);
+        c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
+            KeyValueStoreColumns.TABLE_ID + "=? AND " + KeyValueStoreColumns.PARTITION + "=? AND "
+                + KeyValueStoreColumns.ASPECT + "=? AND " + KeyValueStoreColumns.KEY + "=?",
+            new String[] { uploadTableId, KeyValueStoreConstants.PARTITION_TABLE,
+                KeyValueStoreConstants.ASPECT_DEFAULT, KeyValueStoreConstants.XML_SUBMISSION_URL },
             null, null, null);
-        if ( c.getCount() == 1 ) {
+        if (c.getCount() == 1) {
           c.moveToFirst();
           int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
           urlString = c.getString(idxValue);
-        } else if ( c.getCount() != 0 ) {
-          throw new IllegalStateException("two or more entries for " + KeyValueStoreConstants.XML_SUBMISSION_URL);
+        } else if (c.getCount() != 0) {
+          throw new IllegalStateException("two or more entries for "
+              + KeyValueStoreConstants.XML_SUBMISSION_URL);
         }
       } finally {
         c.close();
         db.releaseReference();
       }
-      
-      if ( urlString == null ) {
+
+      if (urlString == null) {
         urlString = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SERVER_URL);
-        String submissionUrl = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SUBMISSION_URL);
+        String submissionUrl = PropertiesSingleton.getProperty(appName,
+            PreferencesActivity.KEY_SUBMISSION_URL);
         urlString = urlString + submissionUrl;
       }
     }
-    
-    //FormInfo fi = new FormInfo(appContext, appName, ODKFileUtils.getuploadingForm.formDefFile);
+
+    // FormInfo fi = new FormInfo(appContext, appName,
+    // ODKFileUtils.getuploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
     HttpContext localContext = WebUtils.getHttpContext();
@@ -480,23 +476,30 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       }
       publishProgress(i + 1, toUpload.length);
 
-      Uri toUpdate = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, appName
-          + "/" + uploadTableId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
+      Uri toUpdate = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, appName + "/"
+          + uploadTableId + "/" + StringEscapeUtils.escapeHtml4(toUpload[i]));
       Cursor c = null;
       try {
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
         if (c.getCount() == 1 && c.moveToFirst()) {
 
-          String id = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
-          String dataTableInstanceId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
-          String lastOutcome = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.XML_PUBLISH_STATUS));
+          String id = ODKDatabaseUtils.get().getIndexAsString(c,
+              c.getColumnIndex(InstanceColumns._ID));
+          String dataTableInstanceId = ODKDatabaseUtils.get().getIndexAsString(c,
+              c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
+          String lastOutcome = ODKDatabaseUtils.get().getIndexAsString(c,
+              c.getColumnIndex(InstanceColumns.XML_PUBLISH_STATUS));
           String submissionInstanceId = ODKDataUtils.genUUID();
-          // submissions always get a new legacy instance id UNLESS the last submission failed, 
-          // in which case we retry the submission using the legacy instance id associated with 
-          // that failure. This supports resumption of sends of forms with many attachments.
-          if ( lastOutcome != null && lastOutcome.equals(InstanceColumns.STATUS_SUBMISSION_FAILED) ) {
-            String lastId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns.SUBMISSION_INSTANCE_ID));
-            if ( lastId != null ) {
+          // submissions always get a new legacy instance id UNLESS the last
+          // submission failed,
+          // in which case we retry the submission using the legacy instance id
+          // associated with
+          // that failure. This supports resumption of sends of forms with many
+          // attachments.
+          if (lastOutcome != null && lastOutcome.equals(InstanceColumns.STATUS_SUBMISSION_FAILED)) {
+            String lastId = ODKDatabaseUtils.get().getIndexAsString(c,
+                c.getColumnIndex(InstanceColumns.SUBMISSION_INSTANCE_ID));
+            if (lastId != null) {
               submissionInstanceId = lastId;
             }
           }
@@ -508,22 +511,22 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
             // NOTE: /submission must not be translated! It is
             // the well-known path on the server.
 
-            if (!uploadOneSubmission(urlString, toUpdate, id, submissionInstanceId, instanceFiles, httpclient,
-                localContext, uriRemap)) {
+            if (!uploadOneSubmission(urlString, toUpdate, id, submissionInstanceId, instanceFiles,
+                httpclient, localContext, uriRemap)) {
               return mOutcome; // get credentials...
             }
           } catch (JsonParseException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
-                + e.toString());
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId
+                + " :: details: " + e.toString());
           } catch (JsonMappingException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
-                + e.toString());
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId
+                + " :: details: " + e.toString());
           } catch (IOException e) {
             e.printStackTrace();
-            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId + " :: details: "
-                + e.toString());
+            mOutcome.mResults.put(id, fail + "unable to obtain manifest: " + dataTableInstanceId
+                + " :: details: " + e.toString());
           }
         } else {
           mOutcome.mResults.put("unknown", fail + "unable to retrieve instance information via: "

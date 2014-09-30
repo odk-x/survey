@@ -53,7 +53,7 @@ public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
           }
           return false;
         } else {
-          String version = ODKDatabaseUtils.getIndexAsString(cursor, columnIndex);
+          String version = ODKDatabaseUtils.get().getIndexAsString(cursor, columnIndex);
           TextView v = (TextView) view;
           if (version != null) {
             v.setText(ctxt.getString(R.string.version) + " " + version);

@@ -447,7 +447,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
           c = getContentResolver().query(uri, projection, null, null, null);
           int i = c.getColumnIndexOrThrow(Images.Media.DATA);
           c.moveToFirst();
-          sourceImagePath = ODKDatabaseUtils.getIndexAsString(c, i);
+          sourceImagePath = ODKDatabaseUtils.get().getIndexAsString(c, i);
         } finally {
           if (c != null) {
             c.close();
