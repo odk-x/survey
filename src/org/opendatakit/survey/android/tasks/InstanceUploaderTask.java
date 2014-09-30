@@ -34,7 +34,7 @@ import java.util.Map;
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.database.DatabaseConstants;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
@@ -433,7 +433,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
 
       Cursor c = null;
       try {
-        db = DataModelDatabaseHelperFactory.getDatabase(appContext, appName);
+        db = DatabaseFactory.get().getDatabase(appContext, appName);
         c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
             KeyValueStoreColumns.TABLE_ID + "=? AND " + KeyValueStoreColumns.PARTITION + "=? AND "
                 + KeyValueStoreColumns.ASPECT + "=? AND " + KeyValueStoreColumns.KEY + "=?",

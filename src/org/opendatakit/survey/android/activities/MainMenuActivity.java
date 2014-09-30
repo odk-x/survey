@@ -22,11 +22,9 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
-import org.opendatakit.common.android.database.DatabaseConstants;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.provider.TableDefinitionsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
@@ -547,53 +545,18 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
     SQLiteDatabase db = null;
     try {
-      db = DataModelDatabaseHelperFactory.getDatabase(this, getAppName());
-      Cursor c = null;
-
-      StringBuilder b = new StringBuilder();
-      b.append("SELECT ").append(TableDefinitionsColumns.TABLE_ID).append(" FROM \"")
-          .append(DatabaseConstants.TABLE_DEFS_TABLE_NAME).append("\"");
-
-      List<String> tableIds = new ArrayList<String>();
-      try {
-        c = db.rawQuery(b.toString(), null);
-        int idxId = c.getColumnIndex(TableDefinitionsColumns.TABLE_ID);
-        if (c.moveToFirst()) {
-          do {
-            tableIds.add(ODKDatabaseUtils.get().getIndexAsString(c, idxId));
-          } while (c.moveToNext());
-        }
-        c.close();
-      } finally {
-        if (c != null && !c.isClosed()) {
-          c.close();
-        }
-      }
+      db = DatabaseFactory.get().getDatabase(this, getAppName());
+      ArrayList<String> tableIds = ODKDatabaseUtils.get().getAllTableIds(db);
 
       Bundle conflictTables = new Bundle();
 
       for (String tableId : tableIds) {
-        b.setLength(0);
-        b.append(
-            "SELECT SUM(case when _conflict_type is not null then 1 else 0 end) as conflicts from \"")
-            .append(tableId).append("\"");
-
-        try {
-          c = db.rawQuery(b.toString(), null);
-          int idxConflicts = c.getColumnIndex("conflicts");
-          c.moveToFirst();
-          Integer conflicts = ODKDatabaseUtils.get().getIndexAsType(c, Integer.class, idxConflicts);
-          c.close();
-
-          if (conflicts != null && conflicts != 0) {
+        int health = ODKDatabaseUtils.get().getTableHealth(db, tableId);
+        if ( (health & ODKDatabaseUtils.TABLE_HEALTH_HAS_CONFLICTS) != 0) {
             conflictTables.putString(tableId, tableId);
-          }
-        } finally {
-          if (c != null && !c.isClosed()) {
-            c.close();
-          }
         }
       }
+      
       mConflictTables = conflictTables;
     } finally {
       if (db != null) {

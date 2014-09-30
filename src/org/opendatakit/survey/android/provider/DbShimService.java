@@ -23,7 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -370,7 +370,7 @@ public class DbShimService extends Service {
         return;
       }
 
-      db = DataModelDatabaseHelperFactory.getDatabase(DbShimService.this.getApplicationContext(), appName);
+      db = DatabaseFactory.get().getDatabase(DbShimService.this.getApplicationContext(), appName);
       appContext.transactions.put(thisTransactionGeneration, db);
       db.beginTransaction();
     } else {

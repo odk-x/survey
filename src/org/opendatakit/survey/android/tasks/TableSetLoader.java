@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.database.DatabaseConstants;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
@@ -42,7 +42,7 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
     SQLiteDatabase db = null;
     Cursor c = null;
     try {
-      db = DataModelDatabaseHelperFactory.getDatabase(getContext(), appName);
+      db = DatabaseFactory.get().getDatabase(getContext(), appName);
       c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
             KeyValueStoreColumns.PARTITION + "=? AND " +
             KeyValueStoreColumns.ASPECT + "=? AND " +
