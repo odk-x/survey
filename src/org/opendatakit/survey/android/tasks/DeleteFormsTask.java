@@ -58,15 +58,16 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
         break;
       }
       try {
+        Uri deleteForm = Uri.withAppendedPath(
+            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
+
         if (deleteFormData) {
           SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(appContext.getApplicationContext(), appName).getWritableDatabase();
           
           IdInstanceNameStruct ids = DataModelDatabaseHelper.getIds(db, params[i]);
 
-          ODKDatabaseUtils.deleteTableAndData(db, ids.tableId);
+          ODKDatabaseUtils.deleteTableAndData(db, appName, ids.tableId);
         }
-        Uri deleteForm = Uri.withAppendedPath(
-            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
         deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 
       } catch (Exception ex) {
