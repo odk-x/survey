@@ -53,6 +53,8 @@ public interface ODKActivity {
 
   public String getActiveUser();
 
+  public String getProperty(String propertyId);
+
   /** for completing the uriFragment of the media attachments */
   public String getWebViewContentUri();
 
