@@ -36,17 +36,17 @@ import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
 import org.opendatakit.aggregate.odktables.rest.TableConstants;
-import org.opendatakit.aggregate.odktables.rest.entity.Column;
 import org.opendatakit.common.android.data.ColumnDefinition;
 import org.opendatakit.common.android.data.ElementDataType;
 import org.opendatakit.common.android.data.ElementType;
-import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.database.DatabaseConstants;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.TableUtil;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.utilities.EncryptionUtils;
@@ -273,8 +273,7 @@ public class SubmissionProvider extends ContentProvider {
           c = null;
         }
 
-        List<Column> columns = ODKDatabaseUtils.get().getUserDefinedColumns(db, tableId);
-        ArrayList<ColumnDefinition> orderedDefns = ColumnDefinition.buildColumnDefinitions(columns);
+        ArrayList<ColumnDefinition> orderedDefns = TableUtil.get().getColumnDefinitions(db, tableId);
 
         // Retrieve the values of the record to be emitted...
 
