@@ -14,8 +14,9 @@
 
 package org.opendatakit.survey.android.tasks;
 
-import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
+import org.opendatakit.common.android.database.IdInstanceNameStruct;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
@@ -56,12 +57,23 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
         break;
       }
       try {
-        if (deleteFormData) {
-          SQLiteDatabase db = DataModelDatabaseHelperFactory.getDbHelper(appContext.getApplicationContext(), appName).getWritableDatabase();
-          DataModelDatabaseHelper.deleteTableAndData(db, params[i]);
-        }
         Uri deleteForm = Uri.withAppendedPath(
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
+
+        if (deleteFormData) {
+          SQLiteDatabase db = null;
+          try {
+            db = DatabaseFactory.get().getDatabase(appContext.getApplicationContext(), appName);
+            
+            IdInstanceNameStruct ids = IdInstanceNameStruct.getIds(db, params[i]);
+
+            ODKDatabaseUtils.get().deleteTableAndData(db, appName, ids.tableId);
+          } finally {
+            if ( db != null ) {
+              db.close();
+            }
+          }
+        }
         deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 
       } catch (Exception ex) {

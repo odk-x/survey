@@ -23,8 +23,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -371,8 +370,7 @@ public class DbShimService extends Service {
         return;
       }
 
-      DataModelDatabaseHelper dbh = DataModelDatabaseHelperFactory.getDbHelper(DbShimService.this.getApplicationContext(), appName);
-      db = dbh.getWritableDatabase();
+      db = DatabaseFactory.get().getDatabase(DbShimService.this.getApplicationContext(), appName);
       appContext.transactions.put(thisTransactionGeneration, db);
       db.beginTransaction();
     } else {
@@ -399,7 +397,7 @@ public class DbShimService extends Service {
           for (int i = 0; i < nCols; ++i) {
             String name = c.getColumnName(i);
 
-            Object v = ODKDatabaseUtils.getIndexAsType(c, ODKDatabaseUtils.getIndexDataType(c, i), i);
+            Object v = ODKDatabaseUtils.get().getIndexAsType(c, ODKDatabaseUtils.get().getIndexDataType(c, i), i);
             row.put(name, v);
           }
           rowSet.add(row);

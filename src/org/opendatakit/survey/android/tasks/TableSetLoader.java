@@ -6,8 +6,8 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.database.DataModelDatabaseHelperFactory;
+import org.opendatakit.common.android.database.DatabaseFactory;
+import org.opendatakit.common.android.database.DatabaseConstants;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
 
@@ -39,13 +39,11 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
   @Override
   public List<TableSetEntry> loadInBackground() {
 
-    DataModelDatabaseHelper dbHelper = DataModelDatabaseHelperFactory.getDbHelper(getContext(), appName);
-
-    SQLiteDatabase db = dbHelper.getWritableDatabase();
-
+    SQLiteDatabase db = null;
     Cursor c = null;
     try {
-      c = db.query(DataModelDatabaseHelper.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
+      db = DatabaseFactory.get().getDatabase(getContext(), appName);
+      c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
             KeyValueStoreColumns.PARTITION + "=? AND " +
             KeyValueStoreColumns.ASPECT + "=? AND " +
             KeyValueStoreColumns.KEY + "=? AND " +
@@ -85,7 +83,9 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
       if ( c != null && !c.isClosed() ) {
         c.close();
       }
-      db.close();
+      if ( db != null ) {
+        db.close();
+      }
     }
 
     return new ArrayList<TableSetEntry>();

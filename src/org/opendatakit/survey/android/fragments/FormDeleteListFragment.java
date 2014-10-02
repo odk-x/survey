@@ -280,9 +280,9 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String formId = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
-    String formName = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-    String formVersion = ODKDatabaseUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_VERSION));
+    String formId = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
+    String formName = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+    String formVersion = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_VERSION));
 
     FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(formId, formName, formVersion);
 
