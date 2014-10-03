@@ -273,22 +273,26 @@ public class SubmissionProvider extends ContentProvider {
           c = null;
         }
 
-        ArrayList<ColumnDefinition> orderedDefns = TableUtil.get().getColumnDefinitions(db, tableId);
+        ArrayList<ColumnDefinition> orderedDefns = TableUtil.get()
+            .getColumnDefinitions(db, tableId);
 
         // Retrieve the values of the record to be emitted...
 
         HashMap<String, Object> values = new HashMap<String, Object>();
 
-        // issue query to retrieve the instanceId
+        // issue query to retrieve the most recent non-checkpoint data record
+        // for the instanceId
         StringBuilder b = new StringBuilder();
-        b.append("SELECT * FROM ").append(dbTableName).append(" WHERE ")
-            .append(DataTableColumns.ID).append("=?").append(" group by ")
-            .append(DataTableColumns.ID).append(" having ")
-            .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append("=max(")
-            .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append(")").append(" and ")
-            .append(DataTableColumns.SAVEPOINT_TYPE).append("=?");
+        b.append("SELECT * FROM ").append(dbTableName).append(" as T WHERE ")
+            .append(DataTableColumns.ID).append("=?").append(" AND ")
+            .append(DataTableColumns.SAVEPOINT_TYPE).append(" IS NOT NULL AND")
+            .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append("=(SELECT max(V.")
+                .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append(") FROM ").append(dbTableName)
+                   .append(" as V WHERE V.").append(DataTableColumns.ID).append("=T.")
+                   .append(DataTableColumns.ID).append(" AND V.")
+                   .append(DataTableColumns.SAVEPOINT_TYPE).append(" IS NOT NULL").append(")");
 
-        String[] selectionArgs = new String[] { instanceId, "COMPLETE" };
+        String[] selectionArgs = new String[] { instanceId };
         FileSet freturn = new FileSet(appName);
 
         String datestamp = null;
