@@ -696,6 +696,16 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   @Override
+  public String getProperty(String propertyId) {
+    FormIdStruct form = getCurrentForm();
+    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
+        form == null ? null : getCurrentForm().tableId, getInstanceId());
+
+    String value = mPropertyManager.getSingularProperty(propertyId, cb);
+    return value;
+  }
+
+  @Override
   public String getWebViewContentUri() {
     Uri u = UrlUtils.getWebViewContentUri(this);
 

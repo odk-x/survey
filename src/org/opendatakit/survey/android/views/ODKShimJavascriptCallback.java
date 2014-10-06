@@ -167,6 +167,17 @@ public class ODKShimJavascriptCallback {
   }
 
   // @JavascriptInterface
+  public String getProperty(String propertyId) {
+    if (mWebView == null) {
+      log.i(t, "getProperty -- interface removed");
+      return null;
+    }
+    log("I", "getProperty(" + propertyId + ")");
+
+    return mActivity.getProperty(propertyId);
+  }
+
+  // @JavascriptInterface
   public void clearInstanceId(String refId) {
     if (mWebView == null) {
       log.w("shim", "clearInstanceId -- interface removed");
