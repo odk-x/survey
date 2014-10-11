@@ -94,6 +94,7 @@ public class EncryptionUtils {
   };
 
   public static final class EncryptedFormInformation {
+    public final String appName;
     public final String tableId;
     public final String instanceId;
     public final String base64EncryptedFileRsaPublicKey;
@@ -105,8 +106,9 @@ public class EncryptionUtils {
     public final StringBuilder elementSignatureSource = new StringBuilder();
     public final Base64Wrapper wrapper;
 
-    EncryptedFormInformation(String tableId, String xmlBase64RsaPublicKey, String instanceId, PublicKey rsaPublicKey,
+    EncryptedFormInformation(String appName, String tableId, String xmlBase64RsaPublicKey, String instanceId, PublicKey rsaPublicKey,
         Base64Wrapper wrapper) {
+      this.appName = appName;
       this.tableId = tableId;
       this.instanceId = instanceId;
       this.base64EncryptedFileRsaPublicKey = xmlBase64RsaPublicKey;
@@ -187,12 +189,12 @@ public class EncryptionUtils {
     }
 
     public void appendSubmissionFileSignatureSource(String contents, File file) {
-      String md5Hash = ODKFileUtils.getNakedMd5Hash(contents);
+      String md5Hash = ODKFileUtils.getNakedMd5Hash(appName, contents);
       appendElementSignatureSource(file.getName() + "::" + md5Hash);
     }
 
     public void appendFileSignatureSource(File file) {
-      String md5Hash = ODKFileUtils.getNakedMd5Hash(file);
+      String md5Hash = ODKFileUtils.getNakedMd5Hash(appName, file);
       appendElementSignatureSource(file.getName() + "::" + md5Hash);
     }
 
@@ -272,14 +274,15 @@ public class EncryptionUtils {
   }
 
   /**
-   * Retrieve the encryption information for this uri.
-   *
-   * @param mUri
-   *          either an instance URI (if previously saved) or a form URI
-   * @param instanceMetadata
+   * Retrieve the encryption information for this row.
+   * 
+   * @param appName
+   * @param tableId
+   * @param xmlBase64RsaPublicKey
+   * @param instanceId
    * @return
    */
-  public static EncryptedFormInformation getEncryptedFormInformation(String tableId, String xmlBase64RsaPublicKey, String instanceId) {
+  public static EncryptedFormInformation getEncryptedFormInformation(String appName, String tableId, String xmlBase64RsaPublicKey, String instanceId) {
 
     // fetch the form information
     String base64RsaPublicKey = xmlBase64RsaPublicKey;
@@ -331,7 +334,7 @@ public class EncryptionUtils {
       Log.e(t, "Invalid RSA public key.");
       return null;
     }
-    return new EncryptedFormInformation(tableId, xmlBase64RsaPublicKey, instanceId, pk, wrapper);
+    return new EncryptedFormInformation(appName, tableId, xmlBase64RsaPublicKey, instanceId, pk, wrapper);
   }
 
   private static void encryptFile(File file, File encryptedFile, EncryptedFormInformation formInfo)

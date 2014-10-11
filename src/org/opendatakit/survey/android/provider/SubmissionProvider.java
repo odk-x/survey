@@ -274,7 +274,7 @@ public class SubmissionProvider extends ContentProvider {
         }
 
         ArrayList<ColumnDefinition> orderedDefns = TableUtil.get()
-            .getColumnDefinitions(db, tableId);
+            .getColumnDefinitions(db, appName, tableId);
 
         // Retrieve the values of the record to be emitted...
 
@@ -613,7 +613,7 @@ public class SubmissionProvider extends ContentProvider {
               // see if the form is encrypted and we can
               // encrypt it...
               EncryptedFormInformation formInfo = EncryptionUtils.getEncryptedFormInformation(
-                  tableId, xmlBase64RsaPublicKey, instanceId);
+                  appName, tableId, xmlBase64RsaPublicKey, instanceId);
               if (formInfo != null) {
                 File submissionXmlEnc = new File(submissionXml.getParentFile(),
                     submissionXml.getName() + ".enc");

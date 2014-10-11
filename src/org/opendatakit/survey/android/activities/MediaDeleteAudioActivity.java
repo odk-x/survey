@@ -68,7 +68,7 @@ public class MediaDeleteAudioActivity extends Activity {
 
     File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
 
-    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, f.getAbsolutePath());
+    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, appName, f.getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);
 
     Intent i = new Intent();

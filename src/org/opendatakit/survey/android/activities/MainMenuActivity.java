@@ -1752,7 +1752,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       try {
         String jsonObject = null;
         Bundle b = (intent == null) ? null : intent.getExtras();
-        JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(b);
+        JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
         jsonObject = "{\"status\":" + Integer.toString(resultCode)
             + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
         Log.i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);

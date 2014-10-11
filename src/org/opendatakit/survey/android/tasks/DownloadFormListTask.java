@@ -17,6 +17,7 @@ package org.opendatakit.survey.android.tasks;
 import java.util.HashMap;
 
 import org.kxml2.kdom.Element;
+import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
@@ -83,10 +84,10 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
 
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.get().getHttpContext();
-    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
+    HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
-    DocumentFetchResult result = WebUtils.get().getXmlDocument(downloadListUrl, localContext, httpclient,
+    DocumentFetchResult result = WebUtils.get().getXmlDocument(appName, downloadListUrl, localContext, httpclient,
         auth);
 
     // If we can't get the document, return the error, cancel the task

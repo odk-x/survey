@@ -14,7 +14,7 @@
 
 package org.opendatakit.survey.android.fragments;
 
-import org.opendatakit.common.android.utilities.WebUtils;
+import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
@@ -64,7 +64,7 @@ public class AuthDialogFragment extends DialogFragment {
     FragmentManager mgr = getFragmentManager();
     Fragment f = mgr.findFragmentById(fragmentId);
 
-    String appName = ((ODKActivity) getActivity()).getAppName();
+    final String appName = ((ODKActivity) getActivity()).getAppName();
 
     setTargetFragment(f, RequestCodes.AUTH_DIALOG.ordinal());
 
@@ -89,7 +89,7 @@ public class AuthDialogFragment extends DialogFragment {
 
             Uri u = Uri.parse(url);
 
-            WebUtils.get().addCredentials(username.getText().toString(), password.getText().toString(),
+            ClientConnectionManagerFactory.get(appName).addCredentials(username.getText().toString(), password.getText().toString(),
                 u.getHost());
             // return and trigger resumption of actions...
             getActivity().finish();

@@ -328,7 +328,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             // formdef.json exists. See if it is
             // unchanged...
             String json_md5 = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.JSON_MD5_HASH));
-            String fileMd5 = ODKFileUtils.getMd5Hash(formDefJson);
+            String fileMd5 = ODKFileUtils.getMd5Hash(appName, formDefJson);
             if ( json_md5.equals(fileMd5) ) {
               // it is unchanged -- no need to rescan it
               discoveredFormDefDirs.remove(f);

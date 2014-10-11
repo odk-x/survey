@@ -68,7 +68,7 @@ public class MediaDeleteImageActivity extends Activity {
 
     File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
 
-    int del = MediaUtils.deleteImageFileFromMediaProvider(this, f.getAbsolutePath());
+    int del = MediaUtils.deleteImageFileFromMediaProvider(this, appName, f.getAbsolutePath());
     Log.i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);
 
     Intent i = new Intent();

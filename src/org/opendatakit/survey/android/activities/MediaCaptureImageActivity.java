@@ -171,7 +171,7 @@ public class MediaCaptureImageActivity extends Activity {
     File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
-    int del = MediaUtils.deleteImageFileFromMediaProvider(this, path);
+    int del = MediaUtils.deleteImageFileFromMediaProvider(this, appName, path);
     Log.i(t, "Deleted " + del + " rows from image media content provider");
   }
 

@@ -168,7 +168,7 @@ public class MediaCaptureVideoActivity extends Activity {
     File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
-    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, path);
+    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, appName, path);
     Log.i(t, "Deleted " + del + " rows from video media content provider");
   }
 

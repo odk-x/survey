@@ -38,6 +38,7 @@ import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.database.DatabaseConstants;
 import org.opendatakit.common.android.provider.InstanceColumns;
 import org.opendatakit.common.android.provider.KeyValueStoreColumns;
+import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
@@ -230,7 +231,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (ClientProtocolException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Client Protocol Exception");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
@@ -238,14 +239,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (ConnectTimeoutException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Connection Timeout");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
         return true;
       } catch (UnknownHostException e) {
         e.printStackTrace();
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + e.getMessage() + " :: Network Connection Failed");
         Log.e(t, e.getMessage());
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -254,7 +255,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (SocketTimeoutException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Connection Timeout");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
@@ -262,14 +263,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (HttpHostConnectException e) {
         e.printStackTrace();
         Log.e(t, e.toString());
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Network Connection Refused");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
         return true;
       } catch (Exception e) {
         e.printStackTrace();
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Generic Exception");
         Log.e(t, e.getMessage());
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -465,8 +466,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     // ODKFileUtils.getuploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.get().getHttpContext();
-    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
+    HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
     Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 

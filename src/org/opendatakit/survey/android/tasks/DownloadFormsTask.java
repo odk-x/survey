@@ -37,6 +37,7 @@ import java.util.zip.ZipFile;
 import org.apache.commons.io.FileUtils;
 import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebUtils;
@@ -423,7 +424,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
     String currentHash = "-";
     if (formPath != null && formPath.exists()) {
-      currentHash = ODKFileUtils.getMd5Hash(formPath);
+      currentHash = ODKFileUtils.getMd5Hash(appName, formPath);
     }
     if (currentHash.equals(fd.hash)) {
       // no need for the network retrieval -- use local copy
@@ -472,9 +473,9 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
       // get shared HttpContext so that authentication and cookies are
       // retained.
-      HttpContext localContext = WebUtils.get().getHttpContext();
+      HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
 
-      HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+      HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
       // set up request...
       HttpGet req = WebUtils.get().createOpenRosaHttpGet(uri, mAuth);
@@ -529,7 +530,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
         }
 
       } catch (Exception e) {
-        WebUtils.get().clearHttpConnectionManager();
+        ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
         Log.e(t, e.toString());
         e.printStackTrace();
         if (attemptCount != 1) {
@@ -562,11 +563,11 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     List<MediaFile> files = new ArrayList<MediaFile>();
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.get().getHttpContext();
+    HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
 
-    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
-    DocumentFetchResult result = WebUtils.get().getXmlDocument(fd.manifestUrl, localContext, httpclient,
+    DocumentFetchResult result = WebUtils.get().getXmlDocument(appName, fd.manifestUrl, localContext, httpclient,
         mAuth);
 
     if (result.errorMessage != null) {
@@ -669,7 +670,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
           String currentHash = "-";
           if (existingMediaFile != null && existingMediaFile.exists()) {
-            currentHash = ODKFileUtils.getMd5Hash(existingMediaFile);
+            currentHash = ODKFileUtils.getMd5Hash(appName, existingMediaFile);
           }
           if (currentHash.equals(toDownload.hash)) {
             // no need for the network retrieval -- use local copy

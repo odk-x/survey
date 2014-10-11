@@ -146,7 +146,7 @@ public class MediaCaptureAudioActivity extends Activity {
     File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
-    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, path);
+    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, appName, path);
     Log.i(t, "Deleted " + del + " rows from audio media content provider");
   }
 
