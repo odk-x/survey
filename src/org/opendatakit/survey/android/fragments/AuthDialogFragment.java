@@ -89,7 +89,7 @@ public class AuthDialogFragment extends DialogFragment {
 
             Uri u = Uri.parse(url);
 
-            WebUtils.addCredentials(username.getText().toString(), password.getText().toString(),
+            WebUtils.get().addCredentials(username.getText().toString(), password.getText().toString(),
                 u.getHost());
             // return and trigger resumption of actions...
             getActivity().finish();

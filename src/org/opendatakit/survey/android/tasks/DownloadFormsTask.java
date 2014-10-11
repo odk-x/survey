@@ -472,12 +472,12 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
       // get shared HttpContext so that authentication and cookies are
       // retained.
-      HttpContext localContext = WebUtils.getHttpContext();
+      HttpContext localContext = WebUtils.get().getHttpContext();
 
-      HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+      HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
       // set up request...
-      HttpGet req = WebUtils.createOpenRosaHttpGet(uri, mAuth);
+      HttpGet req = WebUtils.get().createOpenRosaHttpGet(uri, mAuth);
 
       HttpResponse response = null;
       try {
@@ -485,7 +485,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
         int statusCode = response.getStatusLine().getStatusCode();
 
         if (statusCode != 200) {
-          WebUtils.discardEntityBytes(response);
+          WebUtils.get().discardEntityBytes(response);
           String errMsg = appContext.getString(R.string.file_fetch_failed, downloadUrl, response
               .getStatusLine().getReasonPhrase(), statusCode);
           Log.e(t, errMsg);
@@ -529,7 +529,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
         }
 
       } catch (Exception e) {
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         Log.e(t, e.toString());
         e.printStackTrace();
         if (attemptCount != 1) {
@@ -562,11 +562,11 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     List<MediaFile> files = new ArrayList<MediaFile>();
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.getHttpContext();
+    HttpContext localContext = WebUtils.get().getHttpContext();
 
-    HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
-    DocumentFetchResult result = WebUtils.getXmlDocument(fd.manifestUrl, localContext, httpclient,
+    DocumentFetchResult result = WebUtils.get().getXmlDocument(fd.manifestUrl, localContext, httpclient,
         mAuth);
 
     if (result.errorMessage != null) {

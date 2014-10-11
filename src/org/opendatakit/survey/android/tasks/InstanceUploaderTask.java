@@ -168,7 +168,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       u = uriRemap.get(u);
     } else {
       // we need to issue a head request
-      HttpHead httpHead = WebUtils.createOpenRosaHttpHead(u);
+      HttpHead httpHead = WebUtils.get().createOpenRosaHttpHead(u);
 
       // prepare response
       HttpResponse response = null;
@@ -176,14 +176,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
         response = httpclient.execute(httpHead, localContext);
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode == 401) {
-          WebUtils.discardEntityBytes(response);
+          WebUtils.get().discardEntityBytes(response);
           // we need authentication, so stop and return what we've
           // done so far.
           mOutcome.mAuthRequestingServer = u;
           return false;
         } else if (statusCode == 204) {
           Header[] locations = response.getHeaders("Location");
-          WebUtils.discardEntityBytes(response);
+          WebUtils.get().discardEntityBytes(response);
           if (locations != null && locations.length == 1) {
             try {
               URL url = new URL(URLDecoder.decode(locations[0].getValue(), CharEncoding.UTF_8));
@@ -213,7 +213,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
           }
         } else {
           // may be a server that does not handle
-          WebUtils.discardEntityBytes(response);
+          WebUtils.get().discardEntityBytes(response);
 
           Log.w(t, "Status code on Head request: " + statusCode);
           if (statusCode >= 200 && statusCode <= 299) {
@@ -230,7 +230,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (ClientProtocolException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Client Protocol Exception");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
@@ -238,14 +238,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (ConnectTimeoutException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Connection Timeout");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
         return true;
       } catch (UnknownHostException e) {
         e.printStackTrace();
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + e.getMessage() + " :: Network Connection Failed");
         Log.e(t, e.getMessage());
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -254,7 +254,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (SocketTimeoutException e) {
         e.printStackTrace();
         Log.e(t, e.getMessage());
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Connection Timeout");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
@@ -262,14 +262,14 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } catch (HttpHostConnectException e) {
         e.printStackTrace();
         Log.e(t, e.toString());
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Network Connection Refused");
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
         appContext.getContentResolver().update(toUpdate, cv, null, null);
         return true;
       } catch (Exception e) {
         e.printStackTrace();
-        WebUtils.clearHttpConnectionManager();
+        WebUtils.get().clearHttpConnectionManager();
         mOutcome.mResults.put(id, fail + "Generic Exception");
         Log.e(t, e.getMessage());
         cv.put(InstanceColumns.XML_PUBLISH_STATUS, InstanceColumns.STATUS_SUBMISSION_FAILED);
@@ -305,7 +305,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       lastJ = j;
       first = false;
 
-      HttpPost httppost = WebUtils.createOpenRosaHttpPost(u, mAuth);
+      HttpPost httppost = WebUtils.get().createOpenRosaHttpPost(u, mAuth);
 
       long byteCount = 0L;
 
@@ -353,7 +353,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       try {
         response = httpclient.execute(httppost, localContext);
         int responseCode = response.getStatusLine().getStatusCode();
-        WebUtils.discardEntityBytes(response);
+        WebUtils.get().discardEntityBytes(response);
 
         Log.i(t, "Response code:" + responseCode);
         // verify that the response was a 201 or 202.
@@ -465,8 +465,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     // ODKFileUtils.getuploadingForm.formDefFile);
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.getHttpContext();
-    HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpContext localContext = WebUtils.get().getHttpContext();
+    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
     Map<URI, URI> uriRemap = new HashMap<URI, URI>();
 

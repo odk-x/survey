@@ -83,10 +83,10 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
 
     // get shared HttpContext so that authentication and cookies are
     // retained.
-    HttpContext localContext = WebUtils.getHttpContext();
-    HttpClient httpclient = WebUtils.createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpContext localContext = WebUtils.get().getHttpContext();
+    HttpClient httpclient = WebUtils.get().createHttpClient(WebUtils.CONNECTION_TIMEOUT);
 
-    DocumentFetchResult result = WebUtils.getXmlDocument(downloadListUrl, localContext, httpclient,
+    DocumentFetchResult result = WebUtils.get().getXmlDocument(downloadListUrl, localContext, httpclient,
         auth);
 
     // If we can't get the document, return the error, cancel the task

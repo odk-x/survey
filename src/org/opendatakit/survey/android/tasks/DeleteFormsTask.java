@@ -67,7 +67,7 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
             
             IdInstanceNameStruct ids = IdInstanceNameStruct.getIds(db, params[i]);
 
-            ODKDatabaseUtils.get().deleteTableAndData(db, appName, ids.tableId);
+            ODKDatabaseUtils.get().deleteDBTableAndAllData(db, appName, ids.tableId);
           } finally {
             if ( db != null ) {
               db.close();
