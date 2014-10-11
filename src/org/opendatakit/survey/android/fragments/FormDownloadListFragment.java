@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
@@ -39,7 +40,6 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -354,7 +354,8 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      Log.i(t, "Attempting to close a dialog that was not previously opened");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "Attempting to close a dialog that was not previously opened");
     }
 
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
@@ -362,7 +363,8 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
     f.clearDownloadFormListTask();
 
     if (result == null) {
-      Log.e(t, "Formlist Downloading returned null.  That shouldn't happen");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).e(t,
+          "Formlist Downloading returned null.  That shouldn't happen");
       // Just displayes "error occured" to the user, but this should never
       // happen.
       createAlertDialog(getString(R.string.load_remote_form_error),
@@ -569,7 +571,8 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      Log.i(t, "Attempting to close a dialog that was not previously opened");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "Attempting to close a dialog that was not previously opened");
     }
 
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(

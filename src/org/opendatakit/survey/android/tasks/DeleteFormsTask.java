@@ -17,6 +17,7 @@ package org.opendatakit.survey.android.tasks;
 import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.database.IdInstanceNameStruct;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
@@ -24,7 +25,6 @@ import android.app.Application;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
 
 /**
  * Task responsible for deleting selected forms.
@@ -77,7 +77,7 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
         deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 
       } catch (Exception ex) {
-        Log.e(t,
+        WebLogger.getLogger(appName).e(t,
             "Exception during delete of: " + params[i] + " exception: " + ex.toString());
       }
     }

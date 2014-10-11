@@ -20,6 +20,7 @@ import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
@@ -31,7 +32,6 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Application;
 import android.os.AsyncTask;
-import android.util.Log;
 
 /**
  * Background task for downloading a formlist from a url. 
@@ -105,7 +105,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
       Element xformsElement = result.doc.getRootElement();
       if (!xformsElement.getName().equals("xforms")) {
         String error = "root element is not <xforms> : " + xformsElement.getName();
-        Log.e(t, "Parsing OpenRosa reply -- " + error);
+        WebLogger.getLogger(appName).e(t, "Parsing OpenRosa reply -- " + error);
         formList.put(DL_ERROR_MSG,
             new FormDetails(appContext.getString(R.string.parse_openrosa_formlist_failed, error)));
         return formList;
@@ -113,7 +113,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
       String namespace = xformsElement.getNamespace();
       if (!isXformsListNamespacedElement(xformsElement)) {
         String error = "root element namespace is incorrect:" + namespace;
-        Log.e(t, "Parsing OpenRosa reply -- " + error);
+        WebLogger.getLogger(appName).e(t, "Parsing OpenRosa reply -- " + error);
         formList.put(DL_ERROR_MSG,
             new FormDetails(appContext.getString(R.string.parse_openrosa_formlist_failed, error)));
         return formList;
@@ -196,7 +196,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
         if (formId == null || downloadUrl == null || formName == null || hash == null) {
           String error = "Forms list entry " + Integer.toString(i)
               + " is missing one or more tags: formId, hash, name, or downloadUrl";
-          Log.e(t, "Parsing OpenRosa reply -- " + error);
+          WebLogger.getLogger(appName).e(t, "Parsing OpenRosa reply -- " + error);
           formList.clear();
           formList
               .put(
@@ -210,7 +210,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
       }
     } else {
       String error = "Server is not OpenRosa compliant";
-      Log.e(t, error);
+      WebLogger.getLogger(appName).e(t, error);
       formList.clear();
       formList.put(DL_ERROR_MSG,
           new FormDetails(appContext.getString(R.string.parse_openrosa_formlist_failed, error)));

@@ -77,7 +77,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -435,7 +434,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         }
       }
     } else {
-      Log.i(t, "initializationCompleted: swapping to " + newFragment.name());
+      WebLogger.getLogger(getAppName()).i(t, "initializationCompleted: swapping to " + newFragment.name());
       swapToFragmentView(newFragment);
     }
   }
@@ -540,7 +539,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   public void scanForConflictAllTables() {
     long now = System.currentTimeMillis();
-    Log.i(this.getClass().getSimpleName(),
+    WebLogger.getLogger(getAppName()).i(this.getClass().getSimpleName(),
         "scanForConflictAllTables -- searching for conflicts and checkpoints ");
 
     SQLiteDatabase db = null;
@@ -565,7 +564,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     }
 
     long elapsed = System.currentTimeMillis() - now;
-    Log.i(this.getClass().getSimpleName(),
+    WebLogger.getLogger(getAppName()).i(this.getClass().getSimpleName(),
         "scanForConflictAllTables -- full table scan completed: " + Long.toString(elapsed) + " ms");
   }
 
@@ -901,7 +900,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       }
     }
 
-    Log.i(t, "Starting up, creating directories");
+    WebLogger.getLogger(getAppName()).i(t, "Starting up, creating directories");
     try {
       String appName = getAppName();
       if (appName != null && appName.length() != 0) {
@@ -964,7 +963,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       if (newForm == null) {
         // can't find it -- launch the initialization dialog to hopefully
         // discover it.
-        Log.i(t, "onCreate -- calling setRunInitializationTask");
+        WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
         Survey.getInstance().setRunInitializationTask(getAppName());
         currentFragment = ScreenList.WEBKIT;
       } else {
@@ -1064,7 +1063,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         syncIntent.putExtras(bundle);
         this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
       } catch (ActivityNotFoundException e) {
-        e.printStackTrace();
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
         Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
       }
       return true;
@@ -1143,7 +1142,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   private void createErrorDialog(String errorMsg, final boolean shouldExit) {
-    Log.e(t, errorMsg);
+    WebLogger.getLogger(getAppName()).e(t, errorMsg);
     if (mAlertDialog != null) {
       mAlertDialog.dismiss();
       mAlertDialog = null;
@@ -1284,13 +1283,13 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   }
 
   public void swapToFragmentView(ScreenList newFragment) {
-    Log.i(t, "swapToFragmentView: " + newFragment.toString());
+    WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView: " + newFragment.toString());
     FragmentManager mgr = getFragmentManager();
     Fragment f;
     if (newFragment == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");
     } else if (newFragment == ScreenList.CUSTOM_VIEW) {
-      Log.w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
+      WebLogger.getLogger(getAppName()).w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {
         f = new WebViewFragment();
@@ -1303,7 +1302,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       }
     } else if (newFragment == ScreenList.INITIALIZATION_DIALOG) {
       if (currentFragment == ScreenList.INITIALIZATION_DIALOG) {
-        Log.e(t, "Unexpected: currentFragment == INITIALIZATION_DIALOG");
+        WebLogger.getLogger(getAppName()).e(t, "Unexpected: currentFragment == INITIALIZATION_DIALOG");
         return;
       } else {
         f = mgr.findFragmentById(InitializationFragment.ID);
@@ -1387,7 +1386,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     // and see if we should re-initialize...
     if ((currentFragment != ScreenList.INITIALIZATION_DIALOG)
         && Survey.getInstance().shouldRunInitializationTask(getAppName())) {
-      Log.i(t, "swapToFragmentView -- calling clearRunInitializationTask");
+      WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView -- calling clearRunInitializationTask");
       // and immediately clear the should-run flag...
       Survey.getInstance().clearRunInitializationTask(getAppName());
       // OK we should swap to the InitializationFragment view
@@ -1633,7 +1632,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     // android.os.Debug.waitForDebugger();
 
     if (isWaitingForBinaryData()) {
-      Log.w(t, "Already waiting for data -- ignoring");
+      WebLogger.getLogger(getAppName()).w(t, "Already waiting for data -- ignoring");
       return "IGNORE";
     }
 
@@ -1647,7 +1646,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         i = new Intent(this, clazz);
         isSurveyApp = true;
       } catch (ClassNotFoundException e) {
-        e.printStackTrace();
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
         i = new Intent(action);
       }
     } else {
@@ -1689,7 +1688,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
               if (v != null) {
                 return v;
               } else {
-                Log.e(t, "Unable to process opendatakit-macro: " + value);
+                WebLogger.getLogger(getAppName()).e(t, "Unable to process opendatakit-macro: " + value);
                 throw new IllegalArgumentException(
                     "Unable to process opendatakit-macro expression: " + value);
               }
@@ -1706,12 +1705,13 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         // ensure that we supply our appName...
         if (!i.hasExtra(APP_NAME)) {
           i.putExtra(APP_NAME, getAppName());
-          Log.w(t, "doAction into Survey or Tables does not supply an appName. Adding: "
+          WebLogger.getLogger(getAppName()).w(t, "doAction into Survey or Tables does not supply an appName. Adding: "
               + getAppName());
         }
       }
     } catch (Exception ex) {
-      ex.printStackTrace();
+      WebLogger.getLogger(getAppName()).e(t, "JSONException: " + ex.toString());
+      WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "JSONException: " + ex.toString();
     }
 
@@ -1723,8 +1723,8 @@ public class MainMenuActivity extends Activity implements ODKActivity {
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
-      ex.printStackTrace();
-      Log.e(t, "Unable to launch activity: " + ex.toString());
+      WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
+      WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
     }
   }
@@ -1745,7 +1745,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    Log.i(t, "onActivityResult");
+    WebLogger.getLogger(getAppName()).i(t, "onActivityResult");
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
@@ -1755,7 +1755,7 @@ public class MainMenuActivity extends Activity implements ODKActivity {
         JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
         jsonObject = "{\"status\":" + Integer.toString(resultCode)
             + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
-        Log.i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
+        WebLogger.getLogger(getAppName()).i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
         view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
             jsonObject);

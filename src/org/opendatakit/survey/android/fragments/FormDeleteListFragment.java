@@ -14,15 +14,14 @@
 
 package org.opendatakit.survey.android.fragments;
 
-
 import java.util.ArrayList;
 
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.SelectConfirmationDialogFragment.SelectConfirmationDialog;
-import org.opendatakit.survey.android.fragments.FormDeleteListFragmentSelection;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
@@ -36,7 +35,6 @@ import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -73,7 +71,6 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   // data to retain across orientation changes
 
   private DialogState mDialogState = DialogState.None;
-
 
   private ArrayList<FormDeleteListFragmentSelection> mSelected = new ArrayList<FormDeleteListFragmentSelection>();
 
@@ -131,7 +128,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       }
 
       if (savedInstanceState.containsKey(SELECTED)) {
-        FormDeleteListFragmentSelection[] selectedArray = (FormDeleteListFragmentSelection[])savedInstanceState.getParcelableArray(SELECTED);
+        FormDeleteListFragmentSelection[] selectedArray = (FormDeleteListFragmentSelection[]) savedInstanceState
+            .getParcelableArray(SELECTED);
         for (int i = 0; i < selectedArray.length; i++) {
           mSelected.add(selectedArray[i]);
         }
@@ -149,7 +147,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   @Override
   public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    FormDeleteListFragmentSelection[] selectedArray = new FormDeleteListFragmentSelection[mSelected.size()];
+    FormDeleteListFragmentSelection[] selectedArray = new FormDeleteListFragmentSelection[mSelected
+        .size()];
     for (int i = 0; i < mSelected.size(); i++) {
       selectedArray[i] = mSelected.get(i);
     }
@@ -210,12 +209,14 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     FormDeleteListFragmentSelection sel;
     for (int i = 0; i < mSelected.size(); i++) {
       sel = mSelected.get(i);
-      alertMsg = alertMsg + "\n" + sel.formName + " id: " + sel.formId + " ver: " + sel.formVersion + "\n";
+      alertMsg = alertMsg + "\n" + sel.formName + " id: " + sel.formId + " ver: " + sel.formVersion
+          + "\n";
     }
 
     if (dialog != null && ((SelectConfirmationDialogFragment) dialog).getDialog() != null) {
       mDialogState = DialogState.Confirmation;
-      ((SelectConfirmationDialogFragment) dialog).getDialog().setTitle(getString(R.string.delete_file));
+      ((SelectConfirmationDialogFragment) dialog).getDialog().setTitle(
+          getString(R.string.delete_file));
       ((SelectConfirmationDialogFragment) dialog).setMessage(alertMsg);
       // TODO: may need to set the ok/cancel button text if this is ever
       // reused?
@@ -232,14 +233,16 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   @Override
   public void okConfirmationDialog() {
-    Log.i(t, "ok (delete) selected files");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "ok (delete) selected files");
     mDialogState = DialogState.None;
     deleteSelectedForms(false);
   }
 
   @Override
   public void okWithOptionsConfirmationDialog() {
-    Log.i(t, "ok (delete) selected files and data");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "ok (delete) selected files and data");
     mDialogState = DialogState.None;
     deleteSelectedForms(true);
   }
@@ -248,7 +251,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
   public void cancelConfirmationDialog() {
     // no-op
     mDialogState = DialogState.None;
-    Log.i(t, "cancel (do not delete) selected files");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "cancel (do not delete) selected files");
   }
 
   /**
@@ -271,7 +275,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       selectedFormIds[i] = mSelected.get(i).formId;
     }
 
-    f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this, selectedFormIds, deleteFormAndData);
+    f.deleteSelectedForms(((ODKActivity) getActivity()).getAppName(), this, selectedFormIds,
+        deleteFormAndData);
   }
 
   @Override
@@ -280,11 +285,15 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String formId = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
-    String formName = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-    String formVersion = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_VERSION));
+    String formId = ODKDatabaseUtils.get().getIndexAsString(c,
+        c.getColumnIndex(FormsColumns.FORM_ID));
+    String formName = ODKDatabaseUtils.get().getIndexAsString(c,
+        c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+    String formVersion = ODKDatabaseUtils.get().getIndexAsString(c,
+        c.getColumnIndex(FormsColumns.FORM_VERSION));
 
-    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(formId, formName, formVersion);
+    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(formId,
+        formName, formVersion);
 
     if (mSelected.contains(clickedItem))
       mSelected.remove(clickedItem);
@@ -297,7 +306,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   @Override
   public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
-    Log.i(t, "Delete forms complete");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t, "Delete forms complete");
     if (deletedForms == mSelected.size()) {
       if (deleteFormData) {
         // all form deletes were successful
@@ -311,7 +320,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     } else {
       // had some failures
-      Log.e(t, "Failed to delete " + (mSelected.size() - deletedForms) + " forms");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).e(t,
+          "Failed to delete " + (mSelected.size() - deletedForms) + " forms");
       Toast
           .makeText(
               getActivity(),

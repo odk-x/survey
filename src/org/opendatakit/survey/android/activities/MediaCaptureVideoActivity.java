@@ -23,6 +23,7 @@ import java.util.Locale;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -35,7 +36,6 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
-import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -131,7 +131,7 @@ public class MediaCaptureVideoActivity extends Activity {
       // of the intent - using the MediaStore.EXTRA_OUTPUT to get the data
       // Have it saving to an intermediate location instead of final destination
       // to allow the current location to catch issues with the intermediate file
-      Log.i(t, "The build of this device is " + android.os.Build.MODEL);
+      WebLogger.getLogger(appName).i(t, "The build of this device is " + android.os.Build.MODEL);
       if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
         nexus7Uri = getOutputMediaFileUri(MEDIA_TYPE_VIDEO);  
         i.putExtra(MediaStore.EXTRA_OUTPUT, nexus7Uri);
@@ -142,7 +142,7 @@ public class MediaCaptureVideoActivity extends Activity {
         startActivityForResult(i, ACTION_CODE);
       } catch (ActivityNotFoundException e) {
         String err = getString(R.string.activity_not_found, MediaStore.ACTION_VIDEO_CAPTURE);
-        Log.e(t, err);
+        WebLogger.getLogger(appName).e(t, err);
         Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
         setResult(Activity.RESULT_CANCELED);
         finish();
@@ -169,7 +169,7 @@ public class MediaCaptureVideoActivity extends Activity {
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteVideoFileFromMediaProvider(this, appName, path);
-    Log.i(t, "Deleted " + del + " rows from video media content provider");
+    WebLogger.getLogger(appName).i(t, "Deleted " + del + " rows from video media content provider");
   }
 
   @Override
@@ -188,13 +188,13 @@ public class MediaCaptureVideoActivity extends Activity {
     // getDataString() does...
     String str = intent.getDataString();
     if (mediaUri == null && str != null) {
-      Log.w(t, "Attempting to work around null mediaUri");
+      WebLogger.getLogger(appName).w(t, "Attempting to work around null mediaUri");
       mediaUri = Uri.parse(str);
     }
 
     if (mediaUri == null) {
       // we are in trouble
-      Log.e(t, "No uri returned from ACTION_CAPTURE_VIDEO!");
+      WebLogger.getLogger(appName).e(t, "No uri returned from ACTION_CAPTURE_VIDEO!");
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
@@ -225,7 +225,7 @@ public class MediaCaptureVideoActivity extends Activity {
     try {
       FileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
-      Log.e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       deleteMedia();
       setResult(Activity.RESULT_CANCELED);
@@ -243,9 +243,9 @@ public class MediaCaptureVideoActivity extends Activity {
 
       Uri MediaURI = getApplicationContext().getContentResolver().insert(
           Video.Media.EXTERNAL_CONTENT_URI, values);
-      Log.i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
       uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
-      Log.i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
       
       // Need to have this ugly code to account for 
       // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
@@ -257,9 +257,9 @@ public class MediaCaptureVideoActivity extends Activity {
       } else {
         delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
       }
-      Log.i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
+      WebLogger.getLogger(appName).i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
-      Log.e(t, "Inserting Video file FAILED");
+      WebLogger.getLogger(appName).e(t, "Inserting Video file FAILED");
     }
 
     /*
@@ -280,7 +280,7 @@ public class MediaCaptureVideoActivity extends Activity {
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      Log.e(t, ERROR_NO_FILE
+      WebLogger.getLogger(appName).e(t, ERROR_NO_FILE
           + ((uriFragmentToMedia != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
@@ -300,7 +300,7 @@ public class MediaCaptureVideoActivity extends Activity {
    * For Nexus 7 fix ... 
    * See http://developer.android.com/guide/topics/media/camera.html for more info
    */
-  private static Uri getOutputMediaFileUri(int type){
+  private Uri getOutputMediaFileUri(int type){
         return Uri.fromFile(getOutputMediaFile(type));
   }
 
@@ -309,7 +309,7 @@ public class MediaCaptureVideoActivity extends Activity {
    *  For Nexus 7 fix ... 
    *  See http://developer.android.com/guide/topics/media/camera.html for more info
    */
-  private static File getOutputMediaFile(int type){
+  private File getOutputMediaFile(int type) {
       // To be safe, you should check that the SDCard is mounted
       // using Environment.getExternalStorageState() before doing this.
 
@@ -320,7 +320,7 @@ public class MediaCaptureVideoActivity extends Activity {
       // Create the storage directory if it does not exist
       if (! mediaStorageDir.exists()){
           if (! mediaStorageDir.mkdirs()){
-              Log.d(t, "failed to create directory");
+              WebLogger.getLogger(appName).d(t, "failed to create directory");
               return null;
           }
       }

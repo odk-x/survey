@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
@@ -134,7 +135,7 @@ public class SplashScreenActivity extends Activity {
         return;
       }
     }
-    Log.i(t, "SplashScreenActivity appName: " + appName);
+    WebLogger.getLogger(appName).i(t, "SplashScreenActivity appName: " + appName);
 
     // get the package info object with version number
     PackageInfo packageInfo = null;

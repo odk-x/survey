@@ -40,6 +40,7 @@ import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.HttpClient;
@@ -54,7 +55,6 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.app.Application;
 import android.os.AsyncTask;
-import android.util.Log;
 
 /**
  * Background task for downloading a given list of forms. In ODK 2.0, the forms
@@ -157,7 +157,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
             if (!rootName.matches("^\\p{L}\\p{M}*(\\p{L}\\p{M}*|\\p{Nd}|_)*$")) {
               // error!
               message += appContext.getString(R.string.invalid_form_id, fd.formID, fd.formName);
-              Log.e(t, "Invalid form_id: " + fd.formID + " for: " + fd.formName);
+              WebLogger.getLogger(appName).e(t,
+                  "Invalid form_id: " + fd.formID + " for: " + fd.formName);
             } else {
 
               // figure out what to name this when we move it
@@ -176,10 +177,12 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                     if (tempMediaPath.exists()) {
                       FileUtils.deleteDirectory(tempMediaPath);
                     }
-                    Log.i(t, "Successful delete of stale directory: " + tempMediaPathName);
+                    WebLogger.getLogger(appName).i(t,
+                        "Successful delete of stale directory: " + tempMediaPathName);
                   } catch (IOException ex) {
-                    ex.printStackTrace();
-                    Log.i(t, "Unable to delete stale directory: " + tempMediaPathName);
+                    WebLogger.getLogger(appName).printStackTrace(ex);
+                    WebLogger.getLogger(appName).i(t,
+                        "Unable to delete stale directory: " + tempMediaPathName);
                   }
                   tempMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
                   tempMediaPath = new File(tempMediaPathName);
@@ -198,10 +201,12 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                   if (staleMediaPath.exists()) {
                     FileUtils.deleteDirectory(staleMediaPath);
                   }
-                  Log.i(t, "Successful delete of stale directory: " + staleMediaPathName);
+                  WebLogger.getLogger(appName).i(t,
+                      "Successful delete of stale directory: " + staleMediaPathName);
                 } catch (IOException ex) {
-                  ex.printStackTrace();
-                  Log.i(t, "Unable to delete stale directory: " + staleMediaPathName);
+                  WebLogger.getLogger(appName).printStackTrace(ex);
+                  WebLogger.getLogger(appName).i(t,
+                      "Unable to delete stale directory: " + staleMediaPathName);
                 }
                 staleMediaPathName = baseStaleMediaPath + rootName + "_" + rev;
                 staleMediaPath = new File(staleMediaPathName);
@@ -222,7 +227,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
               if (fd.manifestUrl == null) {
                 message += appContext.getString(R.string.no_manifest, fd.formID);
-                Log.e(t, "No Manifest for: " + fd.formID);
+                WebLogger.getLogger(appName).e(t, "No Manifest for: " + fd.formID);
               } else {
                 // download the media files -- it is an error if there
                 // are none...
@@ -237,8 +242,10 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                   } else if (tempFormPath.exists()) {
                     message += appContext.getString(R.string.xforms_file_exists,
                         ODKFileUtils.FILENAME_XFORMS_XML, fd.formID);
-                    Log.e(t, ODKFileUtils.FILENAME_XFORMS_XML
-                        + " was present in exploded download of " + fd.formID);
+                    WebLogger.getLogger(appName).e(
+                        t,
+                        ODKFileUtils.FILENAME_XFORMS_XML + " was present in exploded download of "
+                            + fd.formID);
                   } else {
                     // OK so far -- download the form definition
                     // file
@@ -250,10 +257,10 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
               }
             }
           } catch (SocketTimeoutException se) {
-            se.printStackTrace();
+            WebLogger.getLogger(appName).printStackTrace(se);
             message += se.getMessage();
           } catch (Exception e) {
-            e.printStackTrace();
+            WebLogger.getLogger(appName).printStackTrace(e);
             if (e.getCause() != null) {
               message += e.getCause().getMessage();
             } else {
@@ -294,7 +301,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                 FileUtils.moveDirectory(staleInstances, existingInstances);
               }
             } catch (IOException ex) {
-              ex.printStackTrace();
+              WebLogger.getLogger(appName).printStackTrace(ex);
               message += ex.toString();
               if (staleMediaPath.exists()) {
                 // try to move this back, since we failed somehow...
@@ -307,7 +314,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
                   }
                   FileUtils.moveDirectory(staleMediaPath, existingMediaPath);
                 } catch (IOException e) {
-                  e.printStackTrace();
+                  WebLogger.getLogger(appName).printStackTrace(e);
                 }
               }
             }
@@ -322,7 +329,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
               try {
                 FileUtils.deleteDirectory(tempMediaPath);
               } catch (IOException e) {
-                e.printStackTrace();
+                WebLogger.getLogger(appName).printStackTrace(e);
               }
             }
           } else {
@@ -384,10 +391,10 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
             out.close();
             in.close();
           }
-          Log.i(t, "Extracted ZipEntry: " + entry.getName());
+          WebLogger.getLogger(appName).i(t, "Extracted ZipEntry: " + entry.getName());
         }
       } catch (IOException e) {
-        e.printStackTrace();
+        WebLogger.getLogger(appName).printStackTrace(e);
         if (e.getCause() != null) {
           message += e.getCause().getMessage();
         } else {
@@ -398,8 +405,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
           try {
             f.close();
           } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(t, "Closing of ZipFile failed: " + e.toString());
+            WebLogger.getLogger(appName).printStackTrace(e);
+            WebLogger.getLogger(appName).e(t, "Closing of ZipFile failed: " + e.toString());
           }
         }
       }
@@ -429,7 +436,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     if (currentHash.equals(fd.hash)) {
       // no need for the network retrieval -- use local copy
       FileUtils.copyFile(formPath, tempFormPath);
-      Log.i(t,
+      WebLogger.getLogger(appName).i(t,
           "Skipping form file fetch -- file hashes identical: " + tempFormPath.getAbsolutePath());
     } else {
       downloadFile(tempFormPath, fd.downloadUrl);
@@ -452,10 +459,10 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
       URL url = new URL(downloadUrl);
       uri = url.toURI();
     } catch (MalformedURLException e) {
-      e.printStackTrace();
+      WebLogger.getLogger(appName).printStackTrace(e);
       throw e;
     } catch (URISyntaxException e) {
-      e.printStackTrace();
+      WebLogger.getLogger(appName).printStackTrace(e);
       throw e;
     }
 
@@ -475,7 +482,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
       // retained.
       HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
 
-      HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+      HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(
+          WebUtils.CONNECTION_TIMEOUT);
 
       // set up request...
       HttpGet req = WebUtils.get().createOpenRosaHttpGet(uri, mAuth);
@@ -489,7 +497,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
           WebUtils.get().discardEntityBytes(response);
           String errMsg = appContext.getString(R.string.file_fetch_failed, downloadUrl, response
               .getStatusLine().getReasonPhrase(), statusCode);
-          Log.e(t, errMsg);
+          WebLogger.getLogger(appName).e(t, errMsg);
           throw new Exception(errMsg);
         }
 
@@ -531,8 +539,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
       } catch (Exception e) {
         ClientConnectionManagerFactory.get(appName).clearHttpConnectionManager();
-        Log.e(t, e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         if (attemptCount != 1) {
           throw e;
         }
@@ -565,10 +573,11 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     // retained.
     HttpContext localContext = ClientConnectionManagerFactory.get(appName).getHttpContext();
 
-    HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(WebUtils.CONNECTION_TIMEOUT);
+    HttpClient httpclient = ClientConnectionManagerFactory.get(appName).createHttpClient(
+        WebUtils.CONNECTION_TIMEOUT);
 
-    DocumentFetchResult result = WebUtils.get().getXmlDocument(appName, fd.manifestUrl, localContext, httpclient,
-        mAuth);
+    DocumentFetchResult result = WebUtils.get().getXmlDocument(appName, fd.manifestUrl,
+        localContext, httpclient, mAuth);
 
     if (result.errorMessage != null) {
       return result.errorMessage;
@@ -578,7 +587,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
     if (!result.isOpenRosaResponse) {
       errMessage += appContext.getString(R.string.manifest_server_error);
-      Log.e(t, errMessage);
+      WebLogger.getLogger(appName).e(t, errMessage);
       return errMessage;
     }
 
@@ -586,13 +595,13 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     Element manifestElement = result.doc.getRootElement();
     if (!manifestElement.getName().equals("manifest")) {
       errMessage += appContext.getString(R.string.root_element_error, manifestElement.getName());
-      Log.e(t, errMessage);
+      WebLogger.getLogger(appName).e(t, errMessage);
       return errMessage;
     }
     String namespace = manifestElement.getNamespace();
     if (!isXformsManifestNamespacedElement(manifestElement)) {
       errMessage += appContext.getString(R.string.root_namespace_error, namespace);
-      Log.e(t, errMessage);
+      WebLogger.getLogger(appName).e(t, errMessage);
       return errMessage;
     }
     int nElements = manifestElement.getChildCount();
@@ -643,7 +652,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
         }
         if (filename == null || downloadUrl == null || hash == null) {
           errMessage += appContext.getString(R.string.manifest_tag_error, Integer.toString(i));
-          Log.e(t, errMessage);
+          WebLogger.getLogger(appName).e(t, errMessage);
           return errMessage;
         }
         files.add(new MediaFile(filename, hash, downloadUrl));
@@ -651,7 +660,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     }
 
     // OK we now have the full set of files to download...
-    Log.i(t, "Downloading " + files.size() + " media files.");
+    WebLogger.getLogger(appName).i(t, "Downloading " + files.size() + " media files.");
     int mediaCount = 0;
     if (files.size() > 0) {
       tempMediaPath.mkdirs();
@@ -675,7 +684,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
           if (currentHash.equals(toDownload.hash)) {
             // no need for the network retrieval -- use local copy
             FileUtils.copyFile(existingMediaFile, mediaFile);
-            Log.i(
+            WebLogger.getLogger(appName).i(
                 t,
                 "Skipping media file fetch -- file hashes identical: "
                     + mediaFile.getAbsolutePath());

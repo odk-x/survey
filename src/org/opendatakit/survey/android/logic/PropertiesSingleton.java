@@ -24,6 +24,7 @@ import java.util.Properties;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
@@ -31,7 +32,6 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.util.Log;
 
 public class PropertiesSingleton {
 
@@ -215,7 +215,7 @@ public class PropertiesSingleton {
       configFileInputStream.close();
 
     } catch (Exception e) {
-      e.printStackTrace();
+      WebLogger.getLogger(mAppName).printStackTrace(e);
     }
   }
 
@@ -236,11 +236,11 @@ public class PropertiesSingleton {
       boolean fileSuccess = mTempConfigFile.renameTo(mConfigFile);
 
       if (!fileSuccess) {
-        Log.i(t, "Temporary Config File Rename Failed!");
+        WebLogger.getLogger(mAppName).i(t, "Temporary Config File Rename Failed!");
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      WebLogger.getLogger(mAppName).printStackTrace(e);
     }
   }
 }

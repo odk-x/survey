@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.ArrayList;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
@@ -116,7 +117,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
     // launch the copy operation
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
-    Log.i(t, "initializeAppName called ");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "initializeAppName called ");
     f.initializeAppName(((ODKActivity) getActivity()).getAppName(), this);
   }
 
@@ -145,7 +147,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
     super.onResume();
 
     if (mDialogState == DialogState.Init) {
-      Log.i(t, "onResume -- calling initializeAppName");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "onResume -- calling initializeAppName");
       intializeAppName();
     }
 
@@ -178,14 +181,15 @@ public class InitializationFragment extends Fragment implements InitializationLi
     try {
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      Log.i(t, "Attempting to close a dialog that was not previously opened");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "Attempting to close a dialog that was not previously opened");
     }
 
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
     f.clearInitializationTask();
 
-    if ( overallSuccess && result.isEmpty() ) {
+    if (overallSuccess && result.isEmpty()) {
       // do not require an OK if everything went well
       Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
       if (progress != null) {
@@ -298,7 +302,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
   public void cancelProgressDialog() {
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
-    Log.i(t, "cancelProgressDialog -- calling cancelInitializationTask");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "cancelProgressDialog -- calling cancelInitializationTask");
     // signal the task that we want it to be cancelled.
     // but keep the notification path...
     // the task will call back with a copyExpansionFilesComplete()

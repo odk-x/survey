@@ -14,17 +14,17 @@
 
 package org.opendatakit.survey.android.fragments;
 
+import org.opendatakit.common.android.listener.LicenseReaderListener;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.common.android.listener.LicenseReaderListener;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.os.Bundle;
 import android.text.Html;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -70,7 +70,8 @@ public class AboutMenuFragment extends Fragment implements LicenseReaderListener
 
   @Override
   public void readLicenseComplete(String result) {
-    Log.i(t, "Read license complete");
+    ODKActivity activity = (ODKActivity) getActivity();
+    WebLogger.getLogger(activity.getAppName()).i(t, "Read license complete");
     if (result != null) {
       // Read license file successfully
       Toast.makeText(getActivity(), R.string.read_license_success, Toast.LENGTH_SHORT).show();
@@ -78,7 +79,7 @@ public class AboutMenuFragment extends Fragment implements LicenseReaderListener
       mTextView.setText(Html.fromHtml(result));
     } else {
       // had some failures
-      Log.e(t, "Failed to read license file");
+      WebLogger.getLogger(activity.getAppName()).e(t, "Failed to read license file");
       Toast.makeText(getActivity(), R.string.read_license_fail, Toast.LENGTH_LONG).show();
     }
   }

@@ -32,6 +32,7 @@ import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.InitializationListener;
@@ -44,11 +45,11 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
 
 /**
- * Background task for exploding the built-in zipfile resource into the framework
- * directory of the application and doing forms discovery on this appName.
+ * Background task for exploding the built-in zipfile resource into the
+ * framework directory of the application and doing forms discovery on this
+ * appName.
  *
  * @author mitchellsundt@gmail.com
  */
@@ -72,9 +73,9 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
     String message = null;
     ArrayList<String> result = new ArrayList<String>();
 
-    /////////////////////////////////////////////////
+    // ///////////////////////////////////////////////
     // check that the framework zip has been exploded
-    if (!ODKFileUtils.isConfiguredSurveyApp(appName, Survey.getInstance().getVersionCodeString()) ) {
+    if (!ODKFileUtils.isConfiguredSurveyApp(appName, Survey.getInstance().getVersionCodeString())) {
       publishProgress(appContext.getString(R.string.expansion_unzipping_begins), null);
 
       extractFromRawZip(R.raw.frameworkzip, true, result);
@@ -83,13 +84,13 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
       ODKFileUtils.assertConfiguredSurveyApp(appName, Survey.getInstance().getVersionCodeString());
     }
 
-    ///////////////////////////////////////////
-    ///////////////////////////////////////////
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
+    // /////////////////////////////////////////
+    // /////////////////////////////////////////
     // register the framework form
     // TODO: make this go away!
     updateFormDir(new File(ODKFileUtils.getFrameworkFolder(appName)), false,
-                  ODKFileUtils.getStaleFrameworkFolder(appName) + File.separator);
+        ODKFileUtils.getStaleFrameworkFolder(appName) + File.separator);
 
     // and now scan for new forms...
 
@@ -103,10 +104,11 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
       @Override
       public boolean accept(File pathname) {
         return pathname.isDirectory();
-      }});
+      }
+    });
 
     List<File> formDirs = new ArrayList<File>();
-    for ( File tableIdDir : tableIdDirs ) {
+    for (File tableIdDir : tableIdDirs) {
       String tableId = tableIdDir.getName();
 
       File formDir = new File(ODKFileUtils.getFormsFolder(appName, tableId));
@@ -116,14 +118,15 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         public boolean accept(File pathname) {
           File formDef = new File(pathname, ODKFileUtils.FORMDEF_JSON_FILENAME);
           return pathname.isDirectory() && formDef.exists() && formDef.isFile();
-        }});
+        }
+      });
 
-      if ( formIdDirs != null ) {
+      if (formIdDirs != null) {
         formDirs.addAll(Arrays.asList(formIdDirs));
       }
     }
 
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
     // remove forms that no longer exist
     // remove the forms that haven't changed
     // from the discovered list
@@ -131,12 +134,13 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
 
     // this is the complete list of forms we need to scan and possibly add
     // to the FormsProvider
-    for ( int i = 0 ; i < formDirs.size() ; ++i ) {
+    for (int i = 0; i < formDirs.size(); ++i) {
       File formDir = formDirs.get(i);
       // specifically target this form...
-      Log.i(t, "updateFormInfo: form: " + formDir.getAbsolutePath());
+      WebLogger.getLogger(appName).i(t, "updateFormInfo: form: " + formDir.getAbsolutePath());
 
-      String examString = appContext.getString(R.string.updating_form_information, formDir.getName(), i+1, formDirs.size());
+      String examString = appContext.getString(R.string.updating_form_information,
+          formDir.getName(), i + 1, formDirs.size());
       publishProgress(examString, null);
 
       updateFormDir(formDir, true, ODKFileUtils.getStaleFormsFolder(appName) + File.separator);
@@ -189,14 +193,14 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             }
             ++nFiles;
             File tempFile = new File(ODKFileUtils.getAppFolder(appName), entry.getName());
-            String formattedString = appContext.getString(R.string.expansion_unzipping_without_detail,
-                entry.getName(), nFiles, totalFiles);
+            String formattedString = appContext.getString(
+                R.string.expansion_unzipping_without_detail, entry.getName(), nFiles, totalFiles);
             String detail;
             if (entry.isDirectory()) {
               detail = appContext.getString(R.string.expansion_create_dir_detail);
               publishProgress(formattedString, detail);
               tempFile.mkdirs();
-            } else if ( overwrite || !tempFile.exists() ) {
+            } else if (overwrite || !tempFile.exists()) {
               int bufferSize = 8192;
               OutputStream out = new BufferedOutputStream(new FileOutputStream(tempFile, false),
                   bufferSize);
@@ -205,8 +209,9 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
               while ((bread = zipInputStream.read(buffer)) != -1) {
                 bytesProcessed += bread;
                 long curThousands = (bytesProcessed / 1000L);
-                if ( curThousands != lastBytesProcessedThousands ) {
-                  detail = appContext.getString(R.string.expansion_unzipping_detail, bytesProcessed, size);
+                if (curThousands != lastBytesProcessedThousands) {
+                  detail = appContext.getString(R.string.expansion_unzipping_detail,
+                      bytesProcessed, size);
                   publishProgress(formattedString, detail);
                   lastBytesProcessedThousands = curThousands;
                 }
@@ -215,23 +220,25 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
               out.flush();
               out.close();
 
-              detail = appContext.getString(R.string.expansion_unzipping_detail, bytesProcessed, size);
+              detail = appContext.getString(R.string.expansion_unzipping_detail, bytesProcessed,
+                  size);
               publishProgress(formattedString, detail);
             }
-            Log.i(t, "Extracted ZipEntry: " + entry.getName());
+            WebLogger.getLogger(appName).i(t, "Extracted ZipEntry: " + entry.getName());
           }
 
-          String completionString = appContext.getString(R.string.expansion_unzipping_complete, totalFiles);
+          String completionString = appContext.getString(R.string.expansion_unzipping_complete,
+              totalFiles);
           publishProgress(completionString, null);
         } catch (IOException e) {
-          e.printStackTrace();
+          WebLogger.getLogger(appName).printStackTrace(e);
           mPendingSuccess = false;
           if (e.getCause() != null) {
             message = e.getCause().getMessage();
           } else {
             message = e.getMessage();
           }
-          if ( entry != null ) {
+          if (entry != null) {
             result.add(entry.getName() + " " + message);
           } else {
             result.add("Error accessing zipfile resource " + message);
@@ -241,13 +248,13 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             try {
               zipInputStream.close();
             } catch (IOException e) {
-              e.printStackTrace();
-              Log.e(t, "Closing of ZipFile failed: " + e.toString());
+              WebLogger.getLogger(appName).printStackTrace(e);
+              WebLogger.getLogger(appName).e(t, "Closing of ZipFile failed: " + e.toString());
             }
           }
         }
       } catch (Exception e) {
-        e.printStackTrace();
+        WebLogger.getLogger(appName).printStackTrace(e);
         mPendingSuccess = false;
         if (e.getCause() != null) {
           message = e.getCause().getMessage();
@@ -256,20 +263,20 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         }
         result.add("Error accessing zipfile resource " + message);
       } finally {
-        if ( rawInputStream != null) {
+        if (rawInputStream != null) {
           try {
             rawInputStream.close();
           } catch (IOException e) {
-            e.printStackTrace();
+            WebLogger.getLogger(appName).printStackTrace(e);
           }
         }
       }
     } finally {
-      if ( fd != null ) {
+      if (fd != null) {
         try {
           fd.close();
         } catch (IOException e) {
-          e.printStackTrace();
+          WebLogger.getLogger(appName).printStackTrace(e);
         }
       } else {
         result.add("Error accessing zipfile resource.");
@@ -287,8 +294,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
     String completionString = appContext.getString(R.string.searching_for_deleted_forms);
     publishProgress(completionString, null);
 
-
-    Log.i(t, "removeStaleFormInfo " + appName + " begin");
+    WebLogger.getLogger(appName).i(t, "removeStaleFormInfo " + appName + " begin");
     ArrayList<Uri> badEntries = new ArrayList<Uri>();
     Cursor c = null;
     try {
@@ -296,14 +302,15 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
           Uri.withAppendedPath(formsProviderContentUri, appName), null, null, null, null);
 
       if (c == null) {
-        Log.w(t, "removeStaleFormInfo " + appName
-            + " null cursor returned from query.");
+        WebLogger.getLogger(appName).w(t,
+            "removeStaleFormInfo " + appName + " null cursor returned from query.");
         return;
       }
 
       if (c.moveToFirst()) {
         do {
-          String id = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
+          String id = ODKDatabaseUtils.get().getIndexAsString(c,
+              c.getColumnIndex(FormsColumns.FORM_ID));
           Uri otherUri = Uri.withAppendedPath(
               Uri.withAppendedPath(formsProviderContentUri, appName), id);
 
@@ -316,7 +323,8 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             throw new IllegalStateException("Column " + FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH
                 + " missing from database table. Incompatible versions?");
           }
-          String appRelativeFormMediaPath = ODKDatabaseUtils.get().getIndexAsString(c, appRelativeFormMediaPathIdx);
+          String appRelativeFormMediaPath = ODKDatabaseUtils.get().getIndexAsString(c,
+              appRelativeFormMediaPathIdx);
           File f = ODKFileUtils.asAppFile(appName, appRelativeFormMediaPath);
           File formDefJson = new File(f, ODKFileUtils.FORMDEF_JSON_FILENAME);
           if (!f.exists() || !f.isDirectory() || !formDefJson.exists() || !formDefJson.isFile()) {
@@ -324,12 +332,13 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
             badEntries.add(otherUri);
             continue;
           } else {
-            //////////////////////////////////
+            // ////////////////////////////////
             // formdef.json exists. See if it is
             // unchanged...
-            String json_md5 = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.JSON_MD5_HASH));
+            String json_md5 = ODKDatabaseUtils.get().getIndexAsString(c,
+                c.getColumnIndex(FormsColumns.JSON_MD5_HASH));
             String fileMd5 = ODKFileUtils.getMd5Hash(appName, formDefJson);
-            if ( json_md5.equals(fileMd5) ) {
+            if (json_md5.equals(fileMd5)) {
               // it is unchanged -- no need to rescan it
               discoveredFormDefDirs.remove(f);
             }
@@ -337,11 +346,9 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         } while (c.moveToNext());
       }
     } catch (Exception e) {
-      Log.e(
-          t,
-          "removeStaleFormInfo " + appName + " exception: "
-              + e.toString());
-      e.printStackTrace();
+      WebLogger.getLogger(appName).e(t,
+          "removeStaleFormInfo " + appName + " exception: " + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
     } finally {
       if (c != null && !c.isClosed()) {
         c.close();
@@ -350,22 +357,18 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
 
     // delete the other entries (and directories)
     for (Uri badUri : badEntries) {
-      Log.i(
-          t,
-          "removeStaleFormInfo: " + appName + " deleting: "
-              + badUri.toString());
+      WebLogger.getLogger(appName).i(t,
+          "removeStaleFormInfo: " + appName + " deleting: " + badUri.toString());
       try {
         appContext.getContentResolver().delete(badUri, null, null);
       } catch (Exception e) {
-        Log.e(
-            t,
-            "removeStaleFormInfo " + appName + " exception: "
-                + e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t,
+            "removeStaleFormInfo " + appName + " exception: " + e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         // and continue -- don't throw an error
       }
     }
-    Log.i(t, "removeStaleFormInfo " + appName + " end");
+    WebLogger.getLogger(appName).i(t, "removeStaleFormInfo " + appName + " end");
   }
 
   /**
@@ -398,8 +401,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
   /**
    * Scan the given formDir and update the Forms database. If it is the
    * formsFolder, then any 'framework' forms should be forbidden. If it is not
-   * the
-   * formsFolder, only 'framework' forms should be allowed
+   * the formsFolder, only 'framework' forms should be allowed
    *
    * @param mediaPath
    *          -- full formDir
@@ -410,7 +412,7 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
   private final void updateFormDir(File formDir, boolean isFormsFolder, String baseStaleMediaPath) {
     Uri formsProviderContentUri = Uri.parse("content://" + FormsProviderAPI.AUTHORITY);
     String formDirectoryPath = formDir.getAbsolutePath();
-    Log.i(t, "updateFormDir: " + formDirectoryPath);
+    WebLogger.getLogger(appName).i(t, "updateFormDir: " + formDirectoryPath);
 
     boolean needUpdate = true;
     FormInfo fi = null;
@@ -420,46 +422,48 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
       File formDef = new File(formDir, ODKFileUtils.FORMDEF_JSON_FILENAME);
 
       String selection = FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH + "=?";
-      String[] selectionArgs = { ODKFileUtils.asRelativePath(appName, formDir)
-      };
+      String[] selectionArgs = { ODKFileUtils.asRelativePath(appName, formDir) };
       c = appContext.getContentResolver().query(
           Uri.withAppendedPath(formsProviderContentUri, appName), null, selection, selectionArgs,
           null);
 
       if (c == null) {
-        Log.w(t, "updateFormDir: " + formDirectoryPath
-            + " null cursor -- cannot update!");
+        WebLogger.getLogger(appName).w(t,
+            "updateFormDir: " + formDirectoryPath + " null cursor -- cannot update!");
         return;
       }
 
       if (c.getCount() > 1) {
         c.close();
-        Log.w(t, "updateFormDir: " + formDirectoryPath
-            + " multiple records from cursor -- delete all and restore!");
+        WebLogger.getLogger(appName).w(t,
+            "updateFormDir: " + formDirectoryPath
+                + " multiple records from cursor -- delete all and restore!");
         // we have multiple records for this one directory.
         // Rename the directory. Delete the records, and move the
         // directory back.
         File tempMediaPath = moveToStaleDirectory(formDir, baseStaleMediaPath);
-        appContext.getContentResolver().delete(Uri.withAppendedPath(formsProviderContentUri, appName),
-            selection, selectionArgs);
+        appContext.getContentResolver().delete(
+            Uri.withAppendedPath(formsProviderContentUri, appName), selection, selectionArgs);
         FileUtils.moveDirectory(tempMediaPath, formDir);
         // we don't know which of the above records was correct, so
         // reparse this to get ground truth...
         fi = new FormInfo(appContext, appName, formDef);
       } else if (c.getCount() == 1) {
         c.moveToFirst();
-        String id = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
+        String id = ODKDatabaseUtils.get().getIndexAsString(c,
+            c.getColumnIndex(FormsColumns.FORM_ID));
         uri = Uri.withAppendedPath(Uri.withAppendedPath(formsProviderContentUri, appName), id);
-        Long lastModificationDate = ODKDatabaseUtils.get().getIndexAsType(c, Long.class, c.getColumnIndex(FormsColumns.DATE));
+        Long lastModificationDate = ODKDatabaseUtils.get().getIndexAsType(c, Long.class,
+            c.getColumnIndex(FormsColumns.DATE));
         Long formDefModified = ODKFileUtils.getMostRecentlyModifiedDate(formDir);
         if (lastModificationDate.compareTo(formDefModified) == 0) {
-          Log.i(t, "updateFormDir: " + formDirectoryPath
-              + " formDef unchanged");
+          WebLogger.getLogger(appName).i(t,
+              "updateFormDir: " + formDirectoryPath + " formDef unchanged");
           fi = new FormInfo(appName, c, false);
           needUpdate = false;
         } else {
-          Log.i(t, "updateFormDir: " + formDirectoryPath
-              + " formDef revised");
+          WebLogger.getLogger(appName).i(t,
+              "updateFormDir: " + formDirectoryPath + " formDef revised");
           fi = new FormInfo(appContext, appName, formDef);
           needUpdate = true;
         }
@@ -496,32 +500,27 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         }
       }
     } catch (SQLiteException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     } catch (IOException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     } catch (IllegalArgumentException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       try {
         FileUtils.deleteDirectory(formDir);
-        Log.i(t, "updateFormDir: " + formDirectoryPath
-            + " Removing -- unable to parse formDef file: " + e.toString());
+        WebLogger.getLogger(appName).i(t,
+            "updateFormDir: " + formDirectoryPath + " Removing -- unable to parse formDef file: "
+                + e.toString());
       } catch (IOException e1) {
-        e1.printStackTrace();
-        Log.i(t,
+        WebLogger.getLogger(appName).printStackTrace(e1);
+        WebLogger.getLogger(appName).i(t,
             "updateFormDir: " + formDirectoryPath
                 + " Removing -- unable to delete form directory: " + formDir.getName() + " error: "
                 + e.toString());
@@ -540,34 +539,28 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
     if (fi.formVersion == null) {
       selection = FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH + "!=? AND " + FormsColumns.FORM_ID
           + "=? AND " + FormsColumns.FORM_VERSION + " IS NULL";
-      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId
-      };
+      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId };
       selectionArgs = temp;
     } else {
       selection = FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH + "!=? AND " + FormsColumns.FORM_ID
           + "=? AND " + "( " + FormsColumns.FORM_VERSION + " IS NULL" + " OR "
           + FormsColumns.FORM_VERSION + " <=?" + " )";
-      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId, fi.formVersion
-      };
+      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId, fi.formVersion };
       selectionArgs = temp;
     }
 
     try {
-      appContext.getContentResolver().delete(Uri.withAppendedPath(formsProviderContentUri, appName),
-          selection, selectionArgs);
+      appContext.getContentResolver().delete(
+          Uri.withAppendedPath(formsProviderContentUri, appName), selection, selectionArgs);
     } catch (SQLiteException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     } catch (Exception e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     }
 
@@ -575,14 +568,12 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
     if (fi.formVersion == null) {
       selection = FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH + "!=? AND " + FormsColumns.FORM_ID
           + "=? AND " + FormsColumns.FORM_VERSION + " IS NOT NULL";
-      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId
-      };
+      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId };
       selectionArgs = temp;
     } else {
       selection = FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH + "!=? AND " + FormsColumns.FORM_ID
           + "=? AND " + FormsColumns.FORM_VERSION + " >?";
-      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId, fi.formVersion
-      };
+      String[] temp = { ODKFileUtils.asRelativePath(appName, formDir), fi.formId, fi.formVersion };
       selectionArgs = temp;
     }
 
@@ -591,8 +582,8 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
       c = appContext.getContentResolver().query(uriApp, null, selection, selectionArgs, null);
 
       if (c == null) {
-        Log.w(t, "updateFormDir: " + uriApp.toString()
-            + " null cursor -- cannot update!");
+        WebLogger.getLogger(appName).w(t,
+            "updateFormDir: " + uriApp.toString() + " null cursor -- cannot update!");
         return;
       }
 
@@ -603,18 +594,14 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
         return;
       }
     } catch (SQLiteException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     } catch (IOException e) {
-      e.printStackTrace();
-      Log.e(
-          t,
-          "updateFormDir: " + formDirectoryPath + " exception: "
-              + e.toString());
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + e.toString());
       return;
     } finally {
       if (c != null && !c.isClosed()) {
@@ -637,19 +624,19 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
 
       if (uri != null) {
         int count = appContext.getContentResolver().update(uri, v, null, null);
-        Log.i(t, "updateFormDir: " + formDirectoryPath + " " + count
-            + " records successfully updated");
+        WebLogger.getLogger(appName).i(t,
+            "updateFormDir: " + formDirectoryPath + " " + count + " records successfully updated");
       } else {
-        appContext.getContentResolver().insert(Uri.withAppendedPath(formsProviderContentUri, appName),
-            v);
-        Log.i(t, "updateFormDir: " + formDirectoryPath
-            + " one record successfully inserted");
+        appContext.getContentResolver().insert(
+            Uri.withAppendedPath(formsProviderContentUri, appName), v);
+        WebLogger.getLogger(appName).i(t,
+            "updateFormDir: " + formDirectoryPath + " one record successfully inserted");
       }
 
     } catch (SQLiteException ex) {
-      ex.printStackTrace();
-      Log.e(t, "updateFormDir: " + formDirectoryPath + " exception: "
-          + ex.toString());
+      WebLogger.getLogger(appName).printStackTrace(ex);
+      WebLogger.getLogger(appName).e(t,
+          "updateFormDir: " + formDirectoryPath + " exception: " + ex.toString());
       return;
     }
   }
@@ -682,7 +669,8 @@ public class InitializationTask extends AsyncTask<Void, String, ArrayList<String
     synchronized (this) {
       if (mStateListener != null) {
         // update progress and total
-        mStateListener.initializationProgressUpdate(values[0] + (( values[1] != null ) ? "\n(" + values[1] + ")" : ""));
+        mStateListener.initializationProgressUpdate(values[0]
+            + ((values[1] != null) ? "\n(" + values[1] + ")" : ""));
       }
     }
 

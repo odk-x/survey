@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -29,7 +30,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Images;
-import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -122,7 +122,7 @@ public class MediaChooseImageActivity extends Activity {
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
-      Log.e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       // keep the image as a captured image so user can choose it.
       setResult(Activity.RESULT_CANCELED);
@@ -130,7 +130,7 @@ public class MediaChooseImageActivity extends Activity {
       return;
     }
 
-    Log.i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
+    WebLogger.getLogger(appName).i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
 
     Uri mediaURI = null;
     if (newMedia.exists()) {
@@ -144,7 +144,7 @@ public class MediaChooseImageActivity extends Activity {
       values.put(Images.Media.DATA, newMedia.getAbsolutePath());
 
       mediaURI = getContentResolver().insert(Images.Media.EXTERNAL_CONTENT_URI, values);
-      Log.i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
 
       // if you are replacing an answer. delete the previous image using
       // the
@@ -152,7 +152,7 @@ public class MediaChooseImageActivity extends Activity {
       String binarypath = MediaUtils.getPathFromUri(this, mediaURI, Images.Media.DATA);
       File newMediaFromCP = new File(binarypath);
 
-      Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
+      WebLogger.getLogger(appName).i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, newMediaFromCP));
       String name = newMediaFromCP.getName();
@@ -160,7 +160,7 @@ public class MediaChooseImageActivity extends Activity {
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      Log.e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();
