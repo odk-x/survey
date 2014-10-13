@@ -1640,10 +1640,24 @@ public class MainMenuActivity extends Activity implements ODKActivity {
    *          -- the intent to be launched
    * @param valueContentMap
    *          -- parameters to pass to the intent { uri: uriValue, extras: extrasMap }
+   *          -- parameters to pass to the intent
+   *          {
+   *            uri: uriValue, // parse to a uri and set as the data of the
+   *                           // intent
+   *            extras: extrasMap, // added as extras to the intent
+   *            package: packageStr, // the name of a package to launch
+   *            type: typeStr, // will be set as the type
+   *            data: dataUri // will be parsed to a uri and set as the data of
+   *                          // the intent. For now this is equivalent to the
+   *                          // uri field, although that name is less precise.
+   *          }
    */
   @Override
-  public String doAction(String page, String path, String action, JSONObject valueContentMap) {
-
+  public String doAction(
+      String page,
+      String path,
+      String action,
+      JSONObject valueContentMap) {
     // android.os.Debug.waitForDebugger();
 
     if (isWaitingForBinaryData()) {
@@ -1673,18 +1687,49 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     }
 
     try {
+      
+      String uriKey = "uri";
+      String extrasKey = "extras";
+      String packageKey = "package";
+      String typeKey = "type";
+      String dataKey = "data";
+      
       JSONObject valueMap = null;
       if (valueContentMap != null) {
-        if ( valueContentMap.has("uri") ) {
-          String v = valueContentMap.getString("uri");
-          if ( v != null ) {
-            Uri uri = Uri.parse(v);
+        
+        // do type first, as it says in the spec this call deletes any other
+        // data (eg by setData()) on the intent.
+        if (valueContentMap.has(typeKey)) {
+          String type = valueContentMap.getString(typeKey);
+          i.setType(type);
+        }
+        
+        if (valueContentMap.has(uriKey) || valueContentMap.has(dataKey)) {
+          // as it currently stands, the data property can be in either the uri
+          // or data keys.
+          String uriValueStr = null;
+          if (valueContentMap.has(uriKey)) {
+            uriValueStr = valueContentMap.getString(uriKey);
+          }
+          // go ahead and overwrite with data if it's present.
+          if (valueContentMap.has(dataKey)) {
+            uriValueStr = valueContentMap.getString(dataKey);
+          }
+          if (uriValueStr != null) {
+            Uri uri = Uri.parse(uriValueStr);
             i.setData(uri);
           }
         }
-        if ( valueContentMap.has("extras") ) {
-          valueMap = valueContentMap.getJSONObject("extras");
+        
+        if (valueContentMap.has(extrasKey)) {
+          valueMap = valueContentMap.getJSONObject(extrasKey);
         }
+        
+        if (valueContentMap.has(packageKey)) {
+          String packageStr = valueContentMap.getString(packageKey);
+          i.setPackage(packageStr);
+        }
+        
       }
 
       if (valueMap != null) {
