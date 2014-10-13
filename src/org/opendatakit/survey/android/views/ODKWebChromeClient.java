@@ -14,6 +14,9 @@
 
 package org.opendatakit.survey.android.views;
 
+import org.opendatakit.common.android.utilities.StaticStateManipulator;
+import org.opendatakit.common.android.utilities.StaticStateManipulator.IStaticFieldManipulator;
+
 import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnPreparedListener;
@@ -38,6 +41,20 @@ public class ODKWebChromeClient extends WebChromeClient implements
 
   private static VideoView lastVideo = null;
   private static MediaPlayer lastMediaPlayer = null;
+  
+  static {
+    StaticStateManipulator.get().register(75, new IStaticFieldManipulator() {
+
+      @Override
+      public void reset() {
+        if ( lastVideo != null ) {
+          if ( lastVideo.isPlaying() ) {
+            lastVideo.stopPlayback();
+          }
+          safeReset(lastMediaPlayer);
+        }
+      }});
+  }
 
   public ODKWebChromeClient(ODKWebView wrappedWebView) {
     this.wrappedWebView = wrappedWebView;

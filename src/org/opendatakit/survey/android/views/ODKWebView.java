@@ -38,7 +38,7 @@ import android.webkit.WebView;
 @SuppressLint("SetJavaScriptEnabled")
 public class ODKWebView extends WebView implements ServiceConnection {
 
-  private static String t = "ODKWebView";
+  private static final String t = "ODKWebView";
   private static final String BASE_STATE = "BASE_STATE";
   private static final String JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD = "JAVASCRIPT_REQUESTS_WAITING_FOR_PAGE_LOAD";
 

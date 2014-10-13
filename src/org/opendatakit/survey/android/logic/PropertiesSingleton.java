@@ -17,13 +17,13 @@ package org.opendatakit.survey.android.logic;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.StaticStateManipulator;
+import org.opendatakit.common.android.utilities.StaticStateManipulator.IStaticFieldManipulator;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -37,18 +37,28 @@ public class PropertiesSingleton {
 
   private static final String t = "PropertiesSingleton";
 
-  private static final Map<String, PropertiesSingleton> singletons = new HashMap<String, PropertiesSingleton>();
+  private static String gAppName = null;
+  private static PropertiesSingleton gSingleton = null;
+  
+  static {
+    StaticStateManipulator.get().register(90,  new IStaticFieldManipulator() {
+
+      @Override
+      public void reset() {
+        gSingleton = null;
+        gAppName = null;
+      }});
+  }
 
   private static synchronized PropertiesSingleton getSingleton(String appName) {
     if (appName == null || appName.length() == 0) {
       throw new IllegalArgumentException("Unexpectedly null or empty appName");
     }
-    PropertiesSingleton s = singletons.get(appName);
-    if (s == null) {
-      s = new PropertiesSingleton(appName);
-      singletons.put(appName, s);
+    if ( gSingleton == null || gAppName == null || !gAppName.equals(appName) ) {
+      gSingleton = new PropertiesSingleton(appName);
+      gAppName = appName;
     }
-    return s;
+    return gSingleton;
   }
 
   private static boolean isSecureProperty(String propertyName) {
