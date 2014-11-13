@@ -43,8 +43,25 @@ public class PropertiesSingleton {
     if (appName == null || appName.length() == 0) {
       throw new IllegalArgumentException("Unexpectedly null or empty appName");
     }
+    
     PropertiesSingleton s = singletons.get(appName);
     if (s == null) {
+
+      // ensure that external storage is present...
+      try {
+        ODKFileUtils.verifyExternalStorageAvailability();
+        File f = new File(ODKFileUtils.getOdkFolder());
+        if (!f.exists()) {
+          f.mkdir();
+        } else if (!f.isDirectory()) {
+          Log.e(t, f.getAbsolutePath() + " is not a directory!");
+          throw new IllegalArgumentException(f.getAbsolutePath() + " is not a directory!");
+        }
+      } catch (Exception e) {
+        Log.e(t, "External storage not available");
+        throw new IllegalArgumentException("External storage not available");
+      }
+
       s = new PropertiesSingleton(appName);
       singletons.put(appName, s);
     }
