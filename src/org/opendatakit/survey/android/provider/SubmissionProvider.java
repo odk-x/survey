@@ -314,8 +314,13 @@ public class SubmissionProvider extends ContentProvider {
 
             // OK. we have the record -- work through all the terms
             for (int i = 0; i < c.getColumnCount(); ++i) {
+              ColumnDefinition defn = null;
               String columnName = c.getColumnName(i);
-              ColumnDefinition defn = ColumnDefinition.find(orderedDefns, columnName);
+              try {
+                defn = ColumnDefinition.find(orderedDefns, columnName);
+              } catch (IllegalArgumentException e) {
+                // ignore...
+              }
               if (defn != null && !c.isNull(i)) {
                 if (xmlInstanceName != null && defn.getElementName().equals(xmlInstanceName)) {
                   instanceName = ODKDatabaseUtils.get().getIndexAsString(c, i);
