@@ -32,6 +32,7 @@ import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
+import android.util.Log;
 
 public class PropertiesSingleton {
 
@@ -54,6 +55,22 @@ public class PropertiesSingleton {
     if (appName == null || appName.length() == 0) {
       throw new IllegalArgumentException("Unexpectedly null or empty appName");
     }
+
+    // ensure that external storage is present...
+    try {
+      ODKFileUtils.verifyExternalStorageAvailability();
+      File f = new File(ODKFileUtils.getOdkFolder());
+      if (!f.exists()) {
+        f.mkdir();
+      } else if (!f.isDirectory()) {
+        Log.e(t, f.getAbsolutePath() + " is not a directory!");
+        throw new IllegalArgumentException(f.getAbsolutePath() + " is not a directory!");
+      }
+    } catch (Exception e) {
+      Log.e(t, "External storage not available");
+      throw new IllegalArgumentException("External storage not available");
+    }
+
     if ( gSingleton == null || gAppName == null || !gAppName.equals(appName) ) {
       gSingleton = new PropertiesSingleton(appName);
       gAppName = appName;
