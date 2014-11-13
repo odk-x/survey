@@ -285,7 +285,7 @@ public class SubmissionProvider extends ContentProvider {
         StringBuilder b = new StringBuilder();
         b.append("SELECT * FROM ").append(dbTableName).append(" as T WHERE ")
             .append(DataTableColumns.ID).append("=?").append(" AND ")
-            .append(DataTableColumns.SAVEPOINT_TYPE).append(" IS NOT NULL AND")
+            .append(DataTableColumns.SAVEPOINT_TYPE).append(" IS NOT NULL AND ")
             .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append("=(SELECT max(V.")
                 .append(DataTableColumns.SAVEPOINT_TIMESTAMP).append(") FROM ").append(dbTableName)
                    .append(" as V WHERE V.").append(DataTableColumns.ID).append("=T.")
