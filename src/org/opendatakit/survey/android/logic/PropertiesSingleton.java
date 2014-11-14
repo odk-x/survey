@@ -56,22 +56,23 @@ public class PropertiesSingleton {
       throw new IllegalArgumentException("Unexpectedly null or empty appName");
     }
 
-    // ensure that external storage is present...
-    try {
-      ODKFileUtils.verifyExternalStorageAvailability();
-      File f = new File(ODKFileUtils.getOdkFolder());
-      if (!f.exists()) {
-        f.mkdir();
-      } else if (!f.isDirectory()) {
-        Log.e(t, f.getAbsolutePath() + " is not a directory!");
-        throw new IllegalArgumentException(f.getAbsolutePath() + " is not a directory!");
-      }
-    } catch (Exception e) {
-      Log.e(t, "External storage not available");
-      throw new IllegalArgumentException("External storage not available");
-    }
-
     if ( gSingleton == null || gAppName == null || !gAppName.equals(appName) ) {
+
+      // ensure that external storage is present...
+      try {
+        ODKFileUtils.verifyExternalStorageAvailability();
+        File f = new File(ODKFileUtils.getOdkFolder());
+        if (!f.exists()) {
+          f.mkdir();
+        } else if (!f.isDirectory()) {
+          Log.e(t, f.getAbsolutePath() + " is not a directory!");
+          throw new IllegalArgumentException(f.getAbsolutePath() + " is not a directory!");
+        }
+      } catch (Exception e) {
+        Log.e(t, "External storage not available");
+        throw new IllegalArgumentException("External storage not available");
+      }
+
       gSingleton = new PropertiesSingleton(appName);
       gAppName = appName;
     }
