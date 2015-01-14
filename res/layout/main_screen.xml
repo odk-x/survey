@@ -26,13 +26,6 @@
         android:background="@android:color/white"
         android:visibility="visible"/>
 
-    <fragment
-        android:name="org.opendatakit.survey.android.fragments.BackgroundTaskFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:tag="background"
-        android:visibility="gone" />
-
     <FrameLayout
         android:id="@+id/shadow_content"
         android:layout_width="match_parent"

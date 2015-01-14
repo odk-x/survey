@@ -15,9 +15,13 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.views.ODKWebView;
 
+import android.app.Activity;
 import android.app.Fragment;
+import android.app.FragmentManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,17 +34,47 @@ import android.view.ViewGroup;
  *
  */
 public class WebViewFragment extends Fragment {
+  private static final String LOGTAG = "WebViewFragment";
   public static final int ID = R.layout.blank_layout;
-
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
   }
 
-  @Override
-  public void onActivityCreated(Bundle savedInstanceState) {
-    super.onActivityCreated(savedInstanceState);
+  public void onAttach(Activity activity) {
+    super.onAttach(activity);
+  }
 
+  @Override
+  public void onResume() {
+    super.onResume();
+    
+    if ( getActivity() != null ) {
+      FragmentManager mgr = getFragmentManager();
+      BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
+  
+      f.configureView();
+    }
+  }
+
+  @Override
+  public void onDestroyView() {
+
+    if ( getActivity() != null ) {
+      ODKWebView wv = (ODKWebView) getActivity().findViewById(R.id.webkit_view);
+      if (wv != null) {
+        Log.i(LOGTAG, "onDestroyView - Rolling back all active transactions held by DbShim service");
+        wv.beforeDbShimServiceDisconnected();
+      }
+    }
+
+    super.onDestroyView();
+  }
+
+  @Override
+  public void onDestroy() {
+    super.onDestroy();
   }
 
   @Override

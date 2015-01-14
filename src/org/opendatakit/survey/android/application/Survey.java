@@ -13,7 +13,6 @@
  */
 package org.opendatakit.survey.android.application;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -31,7 +30,6 @@ import android.content.res.Configuration;
 import android.os.Build;
 import android.util.Log;
 import android.webkit.WebView;
-import fi.iki.elonen.SimpleWebServer;
 
 /**
  * Extends the Application class to implement
@@ -47,36 +45,10 @@ public class Survey extends Application {
 
   private Set<String> appNameHasBeenInitialized = new HashSet<String>();
 
-  private SimpleWebServer server = null;
-  private volatile Thread webServer = null;
-
   private static Survey singleton = null;
 
   public static Survey getInstance() {
     return singleton;
-  }
-
-  private synchronized void startServer() {
-    if (server == null || !server.isAlive()) {
-      SimpleWebServer testing = new SimpleWebServer();
-      try {
-        testing.start();
-        server = testing;
-      } catch (IOException e) {
-        Log.d("Survey.Thread.WebServer", "Exception: " + e.toString());
-      }
-    }
-  }
-
-  private synchronized void stopServer() {
-    if (server != null) {
-      try {
-        server.stop();
-      } catch (Exception e) {
-        // ignore...
-      }
-      server = null;
-    }
   }
 
   public static int getQuestionFontsize(String appName) {
@@ -147,27 +119,6 @@ public class Survey extends Application {
     if (Build.VERSION.SDK_INT >= 19) {
       WebView.setWebContentsDebuggingEnabled(true);
     }
-
-    webServer = new Thread(null, new Runnable() {
-      @Override
-      public void run() {
-        Thread mySelf = Thread.currentThread();
-        int retryCount = 0;
-        for (;webServer == mySelf;) {
-          startServer();
-          try {
-            retryCount++;
-            Thread.sleep(1000);
-            if ( retryCount % 60 == 0 ) {
-              Log.d(t,"Survey.Thread.WebServer -- waking to confirm webserver is still working");
-            }
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-        stopServer();
-      }}, "WebServer");
-    webServer.start();
   }
 
   @Override
@@ -178,15 +129,6 @@ public class Survey extends Application {
 
   @Override
   public void onTerminate() {
-    Thread tmpThread = webServer;
-    webServer = null;
-    tmpThread.interrupt();
-    try {
-      // give it time to drain...
-      Thread.sleep(200);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
     super.onTerminate();
     Log.i(t, "onTerminate");
   }

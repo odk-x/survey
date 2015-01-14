@@ -34,6 +34,7 @@ import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.AboutMenuFragment;
+import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
@@ -46,7 +47,6 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.DbShimService;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
 
@@ -61,18 +61,14 @@ import android.app.FragmentManager.BackStackEntry;
 import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.InputType;
@@ -319,26 +315,6 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   // cached for efficiency only -- no need to preserve
   private View mVideoProgressView = null;
 
-  private ServiceConnection mConnection = new ServiceConnection() {
-
-    @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
-      if (wkt != null) {
-        wkt.onServiceConnected(name, service);
-      }
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
-      if (wkt != null) {
-        wkt.onServiceDisconnected(name);
-      }
-    }
-
-  };
-
   @Override
   protected void onPause() {
     // if (mAlertDialog != null && mAlertDialog.isShowing()) {
@@ -486,24 +462,12 @@ public class MainMenuActivity extends Activity implements ODKActivity {
   @Override
   protected void onStop() {
     super.onStop();
-    ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
-    if (wkt != null) {
-      wkt.beforeDbShimServiceDisconnected();
-    }
-    unbindService(mConnection);
   }
 
   @SuppressLint("InlinedApi")
   @Override
   protected void onStart() {
     super.onStart();
-
-    // ensure the DbShimService is started
-    Intent intent = new Intent(this, DbShimService.class);
-    this.startService(intent);
-
-    this.bindService(intent, mConnection, Context.BIND_AUTO_CREATE
-        | ((Build.VERSION.SDK_INT >= 14) ? Context.BIND_ADJUST_WITH_ACTIVITY : 0));
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
@@ -836,6 +800,20 @@ public class MainMenuActivity extends Activity implements ODKActivity {
     super.onCreate(savedInstanceState);
 
     // android.os.Debug.waitForDebugger();
+
+    // ensure that we have a BackgroundTaskFragment...
+    // create it programmatically because if we place it in the 
+    // layout XML, it will be recreated with each screen rotation
+    // and we don't want that!!!
+    {
+      Fragment f = getFragmentManager().findFragmentByTag("background");
+      if ( f == null ) {
+        f = new BackgroundTaskFragment();
+        FragmentTransaction trans = getFragmentManager().beginTransaction();
+        trans.add(f, "background");
+        trans.commit();
+      }
+    }
 
     mPropertyManager = new PropertyManager(this);
 

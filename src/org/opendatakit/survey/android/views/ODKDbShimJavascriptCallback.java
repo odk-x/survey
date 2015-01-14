@@ -15,11 +15,12 @@
 package org.opendatakit.survey.android.views;
 
 import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.dbshim.service.DbShimCallback;
+import org.opendatakit.dbshim.service.OdkDbShimInterface;
 import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.provider.DbShimService.DbShimBinder;
-import org.opendatakit.survey.android.provider.DbShimService.DbShimCallback;
 
 import android.app.Activity;
+import android.os.RemoteException;
 
 /**
  * The class mapped to 'dbshim' in the Javascript
@@ -30,16 +31,22 @@ import android.app.Activity;
  * @author mitchellsundt@gmail.com
  *
  */
-public class ODKDbShimJavascriptCallback implements DbShimCallback {
+public class ODKDbShimJavascriptCallback {
 
   public static final String t = "ODKDbShimJavascriptCallback";
 
   private ODKWebView mWebView;
   private ODKActivity mActivity;
   private final WebLogger log;
-  private DbShimBinder mDbShimService;
+  private OdkDbShimInterface mDbShimService;
+  private DbShimCallback.Stub mCallbackIf = new DbShimCallback.Stub() {
+    @Override
+    public void fireCallback(String fullCommand) throws RemoteException {
+      ODKDbShimJavascriptCallback.this.fireCallback(fullCommand);
+    }
+  };
 
-  public ODKDbShimJavascriptCallback(ODKWebView webView, ODKActivity activity, DbShimBinder dbShimService) {
+  public ODKDbShimJavascriptCallback(ODKWebView webView, ODKActivity activity, OdkDbShimInterface dbShimService) {
     mWebView = webView;
     mActivity = activity;
     mDbShimService = dbShimService;
@@ -69,7 +76,11 @@ public class ODKDbShimJavascriptCallback implements DbShimCallback {
       log.i(t, "immediateRollbackOutstandingTransactions -- mDbShimService removed");
     } else {
       // "-" clears and releases all the database handles for this application
-      mDbShimService.initializeDatabaseConnections(mActivity.getAppName(), "-", this);
+      try {
+        mDbShimService.initializeDatabaseConnections(mActivity.getAppName(), "-", getCallbackIf());
+      } catch (RemoteException e) {
+        log.i(t, "immediateRollbackOutstandingTransactions -- mDbShimService RemoteException");
+      }
     }
   }
 
@@ -84,7 +95,11 @@ public class ODKDbShimJavascriptCallback implements DbShimCallback {
       log.i(t, "confirmSettings -- mDbShimService removed");
     } else {
       // -1 resets everything
-      mDbShimService.initializeDatabaseConnections(mActivity.getAppName(), generation, this);
+      try {
+        mDbShimService.initializeDatabaseConnections(mActivity.getAppName(), generation, getCallbackIf());
+      } catch (RemoteException e) {
+        log.i(t, "confirmSettings -- mDbShimService RemoteException");
+      }
     }
   }
 
@@ -102,8 +117,12 @@ public class ODKDbShimJavascriptCallback implements DbShimCallback {
       log.i(t, "executeSqlStmt -- mDbShimService removed");
     } else {
       // -1 resets everything
-      mDbShimService.runStmt(mActivity.getAppName(), generation, transactionGeneration, actionIdx,
-          sqlStmt, strBinds, this);
+      try {
+        mDbShimService.runStmt(mActivity.getAppName(), generation, transactionGeneration, actionIdx,
+          sqlStmt, strBinds, getCallbackIf());
+      } catch (RemoteException e) {
+        log.i(t, "executeSqlStmt -- mDbShimService RemoteException");
+      }
     }
   }
 
@@ -120,7 +139,11 @@ public class ODKDbShimJavascriptCallback implements DbShimCallback {
       log.i(t, "rollback -- mDbShimService removed");
     } else {
       // -1 resets everything
-      mDbShimService.runRollback(mActivity.getAppName(), generation, transactionGeneration, this);
+      try {
+        mDbShimService.runRollback(mActivity.getAppName(), generation, transactionGeneration, getCallbackIf());
+      } catch (RemoteException e) {
+        log.i(t, "rollback -- mDbShimService RemoteException");
+      }
     }
   }
   // @JavascriptInterface
@@ -136,8 +159,16 @@ public class ODKDbShimJavascriptCallback implements DbShimCallback {
       log.i(t, "commit -- mDbShimService removed");
     } else {
       // -1 resets everything
-      mDbShimService.runCommit(mActivity.getAppName(), generation, transactionGeneration, this);
+      try {
+        mDbShimService.runCommit(mActivity.getAppName(), generation, transactionGeneration, getCallbackIf());
+      } catch (RemoteException e) {
+        log.i(t, "commit -- mDbShimService RemoteException");
+      }
     }
+  }
+
+  private DbShimCallback.Stub getCallbackIf() {
+    return mCallbackIf;
   }
 
 }

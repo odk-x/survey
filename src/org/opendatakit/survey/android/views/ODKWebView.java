@@ -19,18 +19,15 @@ import java.util.LinkedList;
 
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.dbshim.service.OdkDbShimInterface;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.DbShimService.DbShimBinder;
 
 import android.annotation.SuppressLint;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.ServiceConnection;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.View;
@@ -51,7 +48,7 @@ import android.webkit.WebView;
  *
  */
 @SuppressLint("SetJavaScriptEnabled")
-public class ODKWebView extends WebView implements ServiceConnection {
+public class ODKWebView extends WebView {
 
   private static final String t = "ODKWebView";
   private static final String BASE_STATE = "BASE_STATE";
@@ -68,27 +65,21 @@ public class ODKWebView extends WebView implements ServiceConnection {
   private boolean isFirstPageLoad = true;
   private final LinkedList<String> javascriptRequestsWaitingForPageLoad = new LinkedList<String>();
 
-  @Override
-  public void onServiceConnected(ComponentName name, IBinder service) {
-    dbShim = new ODKDbShimJavascriptCallback(ODKWebView.this, activity, (DbShimBinder) service);
-    if ( Build.VERSION.SDK_INT >= 11 ) {
-      // use the native implementation pre-3.0
+  public void serviceChange( boolean ready, OdkDbShimInterface dbShimBinder ) {
+    if ( ready && dbShimBinder != null ) {
+      dbShim = new ODKDbShimJavascriptCallback(ODKWebView.this, activity, dbShimBinder);
       addJavascriptInterface(dbShim, "dbshim");
+      loadPage();    
+    } else {
+      resetLoadPageStatus(loadPageUrl);
     }
-    loadPage();
   }
-
-  @Override
-  public void onServiceDisconnected(ComponentName name) {
-    log.w(t,  "ODKWebView ServiceConnection.onServiceDisconnected() - disconnected from DbShimService!");
-    dbShim = null;
-    resetLoadPageStatus(loadPageUrl);
-  }
-
+  
   public void beforeDbShimServiceDisconnected() {
     if ( dbShim != null ) {
       dbShim.immediateRollbackOutstandingTransactions();
     }
+    dbShim = null;
   }
   // TODO: the interaction with the landing.js needs to be updated
   // this is not 100% reliable because of that interaction.
@@ -147,7 +138,10 @@ public class ODKWebView extends WebView implements ServiceConnection {
 
   public ODKWebView(Context context, AttributeSet attrs) {
     super(context, attrs);
-
+    
+    if ( Build.VERSION.SDK_INT < 11 ) {
+      throw new IllegalStateException("pre-3.0 not supported!");
+    }
     // Context is ALWAYS an ODKActivity...
 
     activity = (ODKActivity) context;
@@ -164,7 +158,6 @@ public class ODKWebView extends WebView implements ServiceConnection {
     ws.setAppCachePath(ODKFileUtils.getAppCacheFolder(appName));
     ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
     ws.setDatabaseEnabled(true);
-    ws.setDatabasePath(ODKFileUtils.getWebDbFolder(appName));
     ws.setDefaultFixedFontSize(Survey.getQuestionFontsize(appName));
     ws.setDefaultFontSize(Survey.getQuestionFontsize(appName));
     ws.setDomStorageEnabled(true);
