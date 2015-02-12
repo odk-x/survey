@@ -17,27 +17,26 @@ package org.opendatakit.survey.android.fragments;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import org.opendatakit.common.android.listener.LicenseReaderListener;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.listeners.CopyExpansionFilesListener;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
+import org.opendatakit.survey.android.listeners.InitializationListener;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
-import org.opendatakit.survey.android.listeners.LicenseReaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
-import org.opendatakit.survey.android.tasks.CopyExpansionFilesTask;
 import org.opendatakit.survey.android.tasks.DeleteFormsTask;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 import org.opendatakit.survey.android.tasks.DownloadFormsTask;
+import org.opendatakit.survey.android.tasks.InitializationTask;
 import org.opendatakit.survey.android.tasks.InstanceUploaderTask;
 import org.opendatakit.survey.android.tasks.LicenseReaderTask;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -52,7 +51,7 @@ import android.widget.Toast;
  */
 public class BackgroundTaskFragment extends Fragment implements LicenseReaderListener, DeleteFormsListener,
     FormListDownloaderListener, FormDownloaderListener, InstanceUploaderListener,
-    CopyExpansionFilesListener {
+    InitializationListener {
 
   public static final class BackgroundTasks {
     LicenseReaderTask mLicenseReaderTask = null;
@@ -60,7 +59,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     DownloadFormListTask mDownloadFormListTask = null;
     DownloadFormsTask mDownloadFormsTask = null;
     InstanceUploaderTask mInstanceUploaderTask = null;
-    CopyExpansionFilesTask mCopyExpansionFilesTask = null;
+    InitializationTask mInitializationTask = null;
 
     BackgroundTasks() {
     };
@@ -74,7 +73,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   public FormListDownloaderListener mFormListDownloaderListener = null;
   public FormDownloaderListener mFormDownloaderListener = null;
   public InstanceUploaderListener mInstanceUploaderListener = null;
-  public CopyExpansionFilesListener mCopyExpansionFilesListener = null;
+  public InitializationListener mInitializationListener = null;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -133,7 +132,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mFormListDownloaderListener = null;
     mFormDownloaderListener = null;
     mInstanceUploaderListener = null;
-    mCopyExpansionFilesListener = null;
+    mInitializationListener = null;
 
     if (mBackgroundTasks.mLicenseReaderTask != null) {
       mBackgroundTasks.mLicenseReaderTask.setLicenseReaderListener(null);
@@ -150,8 +149,8 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(null);
     }
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-      mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(null);
+    if (mBackgroundTasks.mInitializationTask != null) {
+      mBackgroundTasks.mInitializationTask.setInitializationListener(null);
     }
     super.onPause();
   }
@@ -174,8 +173,8 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(this);
     }
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-      mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(this);
+    if (mBackgroundTasks.mInitializationTask != null) {
+      mBackgroundTasks.mInitializationTask.setInitializationListener(this);
     }
   }
 
@@ -227,20 +226,20 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void establishCopyExpansionFilesListener(CopyExpansionFilesListener listener) {
-    mCopyExpansionFilesListener = listener;
+  public void establishInitializationListener(InitializationListener listener) {
+    mInitializationListener = listener;
     // async task may have completed while we were reorienting...
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null
-        && mBackgroundTasks.mCopyExpansionFilesTask.getStatus() == AsyncTask.Status.FINISHED) {
-      this.copyExpansionFilesComplete(mBackgroundTasks.mCopyExpansionFilesTask.getOverallSuccess(),
-          mBackgroundTasks.mCopyExpansionFilesTask.getResult());
+    if (mBackgroundTasks.mInitializationTask != null
+        && mBackgroundTasks.mInitializationTask.getStatus() == AsyncTask.Status.FINISHED) {
+      this.initializationComplete(mBackgroundTasks.mInitializationTask.getOverallSuccess(),
+          mBackgroundTasks.mInitializationTask.getResult());
     }
   }
 
   // ///////////////////////////////////////////////////
   // actions
 
-  public void readLicenseFile(String appName, LicenseReaderListener listener) {
+  public synchronized void readLicenseFile(String appName, LicenseReaderListener listener) {
     mLicenseReaderListener = listener;
     if (mBackgroundTasks.mLicenseReaderTask != null
         && mBackgroundTasks.mLicenseReaderTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -255,7 +254,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
+  public synchronized void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
     mDeleteFormsListener = listener;
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -272,7 +271,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void downloadFormList(String appName, FormListDownloaderListener listener) {
+  public synchronized void downloadFormList(String appName, FormListDownloaderListener listener) {
     mFormListDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormListTask != null
         && mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -287,7 +286,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void downloadForms(String appName, FormDownloaderListener listener,
+  public synchronized void downloadForms(String appName, FormDownloaderListener listener,
       FormDetails[] filesToDownload) {
     mFormDownloaderListener = listener;
     if (mBackgroundTasks.mDownloadFormsTask != null
@@ -304,7 +303,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void uploadInstances(InstanceUploaderListener listener, FormIdStruct form,
+  public synchronized void uploadInstances(InstanceUploaderListener listener, String appName, String uploadTableId,
       String[] instancesToUpload) {
     mInstanceUploaderListener = listener;
     if (mBackgroundTasks.mInstanceUploaderTask != null
@@ -312,7 +311,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
       Toast.makeText(this.getActivity(), getString(R.string.upload_in_progress), Toast.LENGTH_LONG)
           .show();
     } else {
-      InstanceUploaderTask iu = new InstanceUploaderTask(form);
+      InstanceUploaderTask iu = new InstanceUploaderTask(appName, uploadTableId);
       iu.setApplication(getActivity().getApplication());
       iu.setUploaderListener(this);
       mBackgroundTasks.mInstanceUploaderTask = iu;
@@ -320,20 +319,20 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void copyExpansionFiles(String appName, CopyExpansionFilesListener listener) {
-    mCopyExpansionFilesListener = listener;
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null
-        && mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
+  public synchronized void initializeAppName(String appName, InitializationListener listener) {
+    mInitializationListener = listener;
+    if (mBackgroundTasks.mInitializationTask != null
+        && mBackgroundTasks.mInitializationTask.getStatus() != AsyncTask.Status.FINISHED) {
       // Toast.makeText(this.getActivity(),
       // getString(R.string.expansion_in_progress),
       // Toast.LENGTH_LONG).show();
     } else {
-      CopyExpansionFilesTask cf = new CopyExpansionFilesTask();
+      InitializationTask cf = new InitializationTask();
       cf.setApplication(getActivity().getApplication());
       cf.setAppName(appName);
-      cf.setCopyExpansionFilesListener(this);
-      mBackgroundTasks.mCopyExpansionFilesTask = cf;
-      executeTask(mBackgroundTasks.mCopyExpansionFilesTask, (Void) null);
+      cf.setInitializationListener(this);
+      mBackgroundTasks.mInitializationTask = cf;
+      executeTask(mBackgroundTasks.mInitializationTask, (Void) null);
     }
   }
 
@@ -344,7 +343,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   // up to the task itself to eventually shutdown. i.e., we don't quite
   // know when they actually stop.
 
-  public void clearDownloadFormListTask() {
+  public synchronized void clearDownloadFormListTask() {
     mFormListDownloaderListener = null;
     if (mBackgroundTasks.mDownloadFormListTask != null) {
       mBackgroundTasks.mDownloadFormListTask.setDownloaderListener(null);
@@ -355,7 +354,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mDownloadFormListTask = null;
   }
 
-  public void clearDownloadFormsTask() {
+  public synchronized void clearDownloadFormsTask() {
     mFormDownloaderListener = null;
     if (mBackgroundTasks.mDownloadFormsTask != null) {
       mBackgroundTasks.mDownloadFormsTask.setDownloaderListener(null);
@@ -366,7 +365,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mDownloadFormsTask = null;
   }
 
-  public void clearUploadInstancesTask() {
+  public synchronized void clearUploadInstancesTask() {
     mInstanceUploaderListener = null;
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       mBackgroundTasks.mInstanceUploaderTask.setUploaderListener(null);
@@ -377,15 +376,15 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     mBackgroundTasks.mInstanceUploaderTask = null;
   }
 
-  public void clearCopyExpansionFilesTask() {
-    mCopyExpansionFilesListener = null;
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-      mBackgroundTasks.mCopyExpansionFilesTask.setCopyExpansionFilesListener(null);
-      if (mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
-        mBackgroundTasks.mCopyExpansionFilesTask.cancel(true);
+  public synchronized void clearInitializationTask() {
+    mInitializationListener = null;
+    if (mBackgroundTasks.mInitializationTask != null) {
+      mBackgroundTasks.mInitializationTask.setInitializationListener(null);
+      if (mBackgroundTasks.mInitializationTask.getStatus() != AsyncTask.Status.FINISHED) {
+        mBackgroundTasks.mInitializationTask.cancel(true);
       }
     }
-    mBackgroundTasks.mCopyExpansionFilesTask = null;
+    mBackgroundTasks.mInitializationTask = null;
   }
 
   // /////////////////////////////////////////////////////////////////////////
@@ -394,7 +393,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   // These maintain communications paths, so that we get a failure
   // completion callback eventually.
 
-  public void cancelDownloadFormListTask() {
+  public synchronized void cancelDownloadFormListTask() {
     if (mBackgroundTasks.mDownloadFormListTask != null) {
       if (mBackgroundTasks.mDownloadFormListTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mDownloadFormListTask.cancel(true);
@@ -402,7 +401,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelDownloadFormsTask() {
+  public synchronized void cancelDownloadFormsTask() {
     if (mBackgroundTasks.mDownloadFormsTask != null) {
       if (mBackgroundTasks.mDownloadFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mDownloadFormsTask.cancel(true);
@@ -410,7 +409,7 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelUploadInstancesTask() {
+  public synchronized void cancelUploadInstancesTask() {
     if (mBackgroundTasks.mInstanceUploaderTask != null) {
       if (mBackgroundTasks.mInstanceUploaderTask.getStatus() != AsyncTask.Status.FINISHED) {
         mBackgroundTasks.mInstanceUploaderTask.cancel(true);
@@ -418,10 +417,10 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
     }
   }
 
-  public void cancelCopyExpansionFilesTask() {
-    if (mBackgroundTasks.mCopyExpansionFilesTask != null) {
-      if (mBackgroundTasks.mCopyExpansionFilesTask.getStatus() != AsyncTask.Status.FINISHED) {
-        mBackgroundTasks.mCopyExpansionFilesTask.cancel(true);
+  public synchronized void cancelInitializationTask() {
+    if (mBackgroundTasks.mInitializationTask != null) {
+      if (mBackgroundTasks.mInitializationTask.getStatus() != AsyncTask.Status.FINISHED) {
+        mBackgroundTasks.mInitializationTask.cancel(true);
       }
     }
   }
@@ -481,16 +480,16 @@ public class BackgroundTaskFragment extends Fragment implements LicenseReaderLis
   }
 
   @Override
-  public void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result) {
-    if (mCopyExpansionFilesListener != null) {
-      mCopyExpansionFilesListener.copyExpansionFilesComplete(overallSuccess, result);
+  public void initializationComplete(boolean overallSuccess, ArrayList<String> result) {
+    if (mInitializationListener != null) {
+      mInitializationListener.initializationComplete(overallSuccess, result);
     }
   }
 
   @Override
-  public void copyProgressUpdate(String status, int progress, int total) {
-    if (mCopyExpansionFilesListener != null) {
-      mCopyExpansionFilesListener.copyProgressUpdate(status, progress, total);
+  public void initializationProgressUpdate(String status) {
+    if (mInitializationListener != null) {
+      mInitializationListener.initializationProgressUpdate(status);
     }
   }
 }

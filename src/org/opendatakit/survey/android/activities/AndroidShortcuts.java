@@ -17,8 +17,8 @@ package org.opendatakit.survey.android.activities;
 import java.io.File;
 import java.util.ArrayList;
 
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -110,12 +110,11 @@ public class AndroidShortcuts extends Activity {
     File[] directories = ODKFileUtils.getAppFolders();
     for (File app : directories) {
       String appName = app.getName();
-      Uri uri = Uri.withAppendedPath(FileProvider.getFileProviderContentUri(this), app.getName());
+      Uri uri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName());
       choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName, appName));
 
       Cursor c = null;
       try {
-        boolean first = true;
         c = getContentResolver().query(
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, null, null,
             null);
@@ -124,10 +123,10 @@ public class AndroidShortcuts extends Activity {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
             String formName = app.getName() + " > "
-                + c.getString(c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+                + ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
                 Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                c.getString(c.getColumnIndex(FormsColumns.FORM_ID)));
+                ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }
@@ -184,6 +183,7 @@ public class AndroidShortcuts extends Activity {
    */
   private void returnShortcut(Choice choice) {
     Intent shortcutIntent = new Intent(Intent.ACTION_VIEW);
+    shortcutIntent.putExtra(MainMenuActivity.APP_NAME, choice.appName);
     shortcutIntent.setData(choice.command);
 
     Intent intent = new Intent();

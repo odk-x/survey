@@ -44,17 +44,16 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.kxml2.io.KXmlSerializer;
 import org.kxml2.kdom.Document;
 import org.kxml2.kdom.Element;
 import org.kxml2.kdom.Node;
-import org.opendatakit.common.android.logic.FormInfo;
 import org.opendatakit.common.android.utilities.Base64Wrapper;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.provider.FileSet;
 import org.opendatakit.survey.android.provider.FileSet.MimeFile;
-
-import android.util.Log;
 
 /**
  * Utility class for encrypting submissions during the SaveToDiskTask.
@@ -70,7 +69,6 @@ public class EncryptionUtils {
   // SHA-256
   public static final String ASYMMETRIC_ALGORITHM = "RSA/NONE/OAEPWithSHA256AndMGF1Padding";
   public static final String SYMMETRIC_ALGORITHM = "AES/CFB/PKCS5Padding";
-  public static final String UTF_8 = "UTF-8";
   public static final int SYMMETRIC_KEY_LENGTH = 256;
   public static final int IV_BYTE_LENGTH = 16;
 
@@ -95,8 +93,8 @@ public class EncryptionUtils {
   };
 
   public static final class EncryptedFormInformation {
-    public final String formId;
-    public final String formVersion;
+    public final String appName;
+    public final String tableId;
     public final String instanceId;
     public final String base64EncryptedFileRsaPublicKey;
     public final PublicKey rsaPublicKey;
@@ -107,12 +105,12 @@ public class EncryptionUtils {
     public final StringBuilder elementSignatureSource = new StringBuilder();
     public final Base64Wrapper wrapper;
 
-    EncryptedFormInformation(FormInfo fi, String instanceId, PublicKey rsaPublicKey,
+    EncryptedFormInformation(String appName, String tableId, String xmlBase64RsaPublicKey, String instanceId, PublicKey rsaPublicKey,
         Base64Wrapper wrapper) {
-      this.formId = fi.formId;
-      this.formVersion = fi.formVersion;
+      this.appName = appName;
+      this.tableId = tableId;
       this.instanceId = instanceId;
-      this.base64EncryptedFileRsaPublicKey = fi.xmlBase64RsaPublicKey;
+      this.base64EncryptedFileRsaPublicKey = xmlBase64RsaPublicKey;
       this.rsaPublicKey = rsaPublicKey;
       this.wrapper = wrapper;
 
@@ -128,7 +126,7 @@ public class EncryptionUtils {
       // this is the md5 hash of the instanceID and the symmetric key
       try {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(instanceId.getBytes(UTF_8));
+        md.update(instanceId.getBytes(CharEncoding.UTF_8));
         md.update(key);
         byte[] messageDigest = md.digest();
         ivSeedArray = new byte[IV_BYTE_LENGTH];
@@ -136,12 +134,12 @@ public class EncryptionUtils {
           ivSeedArray[i] = messageDigest[(i % messageDigest.length)];
         }
       } catch (NoSuchAlgorithmException e) {
-        Log.e(t, e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (UnsupportedEncodingException e) {
-        Log.e(t, e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       }
 
@@ -153,36 +151,33 @@ public class EncryptionUtils {
         pkCipher.init(Cipher.ENCRYPT_MODE, rsaPublicKey);
         byte[] pkEncryptedKey = pkCipher.doFinal(key);
         String alg = pkCipher.getAlgorithm();
-        Log.i(t, "AlgorithmUsed: " + alg);
+        WebLogger.getLogger(appName).i(t, "AlgorithmUsed: " + alg);
         base64RsaEncryptedSymmetricKey = wrapper.encodeToString(pkEncryptedKey);
 
       } catch (NoSuchAlgorithmException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (NoSuchPaddingException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (InvalidKeyException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (IllegalBlockSizeException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (BadPaddingException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       }
 
       // start building elementSignatureSource...
-      appendElementSignatureSource(formId);
-      if (formVersion != null) {
-        appendElementSignatureSource(formVersion.toString());
-      }
+      appendElementSignatureSource(tableId);
       appendElementSignatureSource(base64RsaEncryptedSymmetricKey);
 
       appendElementSignatureSource(instanceId);
@@ -193,12 +188,12 @@ public class EncryptionUtils {
     }
 
     public void appendSubmissionFileSignatureSource(String contents, File file) {
-      String md5Hash = ODKFileUtils.getNakedMd5Hash(contents);
+      String md5Hash = ODKFileUtils.getNakedMd5Hash(appName, contents);
       appendElementSignatureSource(file.getName() + "::" + md5Hash);
     }
 
     public void appendFileSignatureSource(File file) {
-      String md5Hash = ODKFileUtils.getNakedMd5Hash(file);
+      String md5Hash = ODKFileUtils.getNakedMd5Hash(appName, file);
       appendElementSignatureSource(file.getName() + "::" + md5Hash);
     }
 
@@ -222,15 +217,15 @@ public class EncryptionUtils {
       byte[] messageDigest;
       try {
         MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(elementSignatureSource.toString().getBytes(UTF_8));
+        md.update(elementSignatureSource.toString().getBytes(CharEncoding.UTF_8));
         messageDigest = md.digest();
       } catch (NoSuchAlgorithmException e) {
-        Log.e(t, e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (UnsupportedEncodingException e) {
-        Log.e(t, e.toString());
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, e.toString());
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       }
 
@@ -244,24 +239,24 @@ public class EncryptionUtils {
         return wrapper.encodeToString(pkEncryptedKey);
 
       } catch (NoSuchAlgorithmException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (NoSuchPaddingException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (InvalidKeyException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (IllegalBlockSizeException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       } catch (BadPaddingException e) {
-        Log.e(t, "Unable to encrypt the symmetric key");
-        e.printStackTrace();
+        WebLogger.getLogger(appName).e(t, "Unable to encrypt the symmetric key");
+        WebLogger.getLogger(appName).printStackTrace(e);
         throw new IllegalArgumentException(e.getMessage());
       }
     }
@@ -278,17 +273,18 @@ public class EncryptionUtils {
   }
 
   /**
-   * Retrieve the encryption information for this uri.
-   *
-   * @param mUri
-   *          either an instance URI (if previously saved) or a form URI
-   * @param instanceMetadata
+   * Retrieve the encryption information for this row.
+   * 
+   * @param appName
+   * @param tableId
+   * @param xmlBase64RsaPublicKey
+   * @param instanceId
    * @return
    */
-  public static EncryptedFormInformation getEncryptedFormInformation(FormInfo fi, String instanceId) {
+  public static EncryptedFormInformation getEncryptedFormInformation(String appName, String tableId, String xmlBase64RsaPublicKey, String instanceId) {
 
     // fetch the form information
-    String base64RsaPublicKey = fi.xmlBase64RsaPublicKey;
+    String base64RsaPublicKey = xmlBase64RsaPublicKey;
     PublicKey pk;
     Base64Wrapper wrapper;
 
@@ -299,13 +295,13 @@ public class EncryptionUtils {
     // submission must have an OpenRosa metadata block with a non-null
     // instanceID value.
     if (instanceId == null) {
-      Log.e(t, "No OpenRosa metadata block or no instanceId defined in that block");
+      WebLogger.getLogger(appName).e(t, "No OpenRosa metadata block or no instanceId defined in that block");
       return null;
     }
 
     int version = android.os.Build.VERSION.SDK_INT;
     if (version < 8) {
-      Log.e(t, "Phone does not support encryption.");
+      WebLogger.getLogger(appName).e(t, "Phone does not support encryption.");
       return null; // save unencrypted
     }
 
@@ -314,8 +310,8 @@ public class EncryptionUtils {
     try {
       wrapper = new Base64Wrapper();
     } catch (ClassNotFoundException e) {
-      Log.e(t, "Phone does not have Base64 class but API level is " + version);
-      e.printStackTrace();
+      WebLogger.getLogger(appName).e(t, "Phone does not have Base64 class but API level is " + version);
+      WebLogger.getLogger(appName).printStackTrace(e);
       return null; // save unencrypted
     }
 
@@ -326,18 +322,18 @@ public class EncryptionUtils {
     try {
       kf = KeyFactory.getInstance(RSA_ALGORITHM);
     } catch (NoSuchAlgorithmException e) {
-      Log.e(t, "Phone does not support RSA encryption.");
-      e.printStackTrace();
+      WebLogger.getLogger(appName).e(t, "Phone does not support RSA encryption.");
+      WebLogger.getLogger(appName).printStackTrace(e);
       return null;
     }
     try {
       pk = kf.generatePublic(publicKeySpec);
     } catch (InvalidKeySpecException e) {
-      e.printStackTrace();
-      Log.e(t, "Invalid RSA public key.");
+      WebLogger.getLogger(appName).printStackTrace(e);
+      WebLogger.getLogger(appName).e(t, "Invalid RSA public key.");
       return null;
     }
-    return new EncryptedFormInformation(fi, instanceId, pk, wrapper);
+    return new EncryptedFormInformation(appName, tableId, xmlBase64RsaPublicKey, instanceId, pk, wrapper);
   }
 
   private static void encryptFile(File file, File encryptedFile, EncryptedFormInformation formInfo)
@@ -364,26 +360,26 @@ public class EncryptionUtils {
       fin.close();
       fout.flush();
       fout.close();
-      Log.i(t, "Encrpyted:" + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).i(t, "Encrpyted:" + file.getName() + " -> " + encryptedFile.getName());
     } catch (IOException e) {
-      Log.e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (NoSuchAlgorithmException e) {
-      Log.e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (NoSuchPaddingException e) {
-      Log.e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (InvalidKeyException e) {
-      Log.e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (InvalidAlgorithmParameterException e) {
-      Log.e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: " + file.getName() + " -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     }
   }
@@ -402,7 +398,7 @@ public class EncryptionUtils {
       fout = new FileOutputStream(encryptedFile);
       fout = new CipherOutputStream(fout, c);
       InputStream fin;
-      fin = new ByteArrayInputStream(contents.getBytes("UTF-8"));
+      fin = new ByteArrayInputStream(contents.getBytes(CharEncoding.UTF_8));
       byte[] buffer = new byte[2048];
       int len = fin.read(buffer);
       while (len != -1) {
@@ -412,26 +408,26 @@ public class EncryptionUtils {
       fin.close();
       fout.flush();
       fout.close();
-      Log.i(t, "Encrpyted: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).i(t, "Encrpyted: content -> " + encryptedFile.getName());
     } catch (IOException e) {
-      Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (NoSuchAlgorithmException e) {
-      Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (NoSuchPaddingException e) {
-      Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (InvalidKeyException e) {
-      Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     } catch (InvalidAlgorithmParameterException e) {
-      Log.e(t, "Error encrypting: content -> " + encryptedFile.getName());
-      e.printStackTrace();
+      WebLogger.getLogger(formInfo.appName).e(t, "Error encrypting: content -> " + encryptedFile.getName());
+      WebLogger.getLogger(formInfo.appName).printStackTrace(e);
       throw e;
     }
   }
@@ -548,13 +544,10 @@ public class EncryptionUtils {
 
     Document d = new Document();
     d.setStandalone(true);
-    d.setEncoding(UTF_8);
+    d.setEncoding(CharEncoding.UTF_8);
     Element e = d.createElement(XML_ENCRYPTED_TAG_NAMESPACE, DATA);
     e.setPrefix(null, XML_ENCRYPTED_TAG_NAMESPACE);
-    e.setAttribute(null, ID, formInfo.formId);
-    if (formInfo.formVersion != null) {
-      e.setAttribute(null, VERSION, formInfo.formVersion);
-    }
+    e.setAttribute(null, ID, formInfo.tableId);
     e.setAttribute(null, ENCRYPTED, "yes");
     d.addChild(0, Node.ELEMENT, e);
 
@@ -594,7 +587,7 @@ public class EncryptionUtils {
     FileOutputStream out;
     try {
       out = new FileOutputStream(submissionXml);
-      OutputStreamWriter writer = new OutputStreamWriter(out, UTF_8);
+      OutputStreamWriter writer = new OutputStreamWriter(out, CharEncoding.UTF_8);
 
       KXmlSerializer serializer = new KXmlSerializer();
       serializer.setOutput(writer);
@@ -605,18 +598,18 @@ public class EncryptionUtils {
       writer.flush();
       writer.close();
     } catch (FileNotFoundException ex) {
-      ex.printStackTrace();
-      Log.e(t, "Error writing submission.xml for encrypted submission: "
+      WebLogger.getLogger(formInfo.appName).printStackTrace(ex);
+      WebLogger.getLogger(formInfo.appName).e(t, "Error writing submission.xml for encrypted submission: "
           + submissionXml.getParentFile().getName());
       return false;
     } catch (UnsupportedEncodingException ex) {
-      ex.printStackTrace();
-      Log.e(t, "Error writing submission.xml for encrypted submission: "
+      WebLogger.getLogger(formInfo.appName).printStackTrace(ex);
+      WebLogger.getLogger(formInfo.appName).e(t, "Error writing submission.xml for encrypted submission: "
           + submissionXml.getParentFile().getName());
       return false;
     } catch (IOException ex) {
-      ex.printStackTrace();
-      Log.e(t, "Error writing submission.xml for encrypted submission: "
+      WebLogger.getLogger(formInfo.appName).printStackTrace(ex);
+      WebLogger.getLogger(formInfo.appName).e(t, "Error writing submission.xml for encrypted submission: "
           + submissionXml.getParentFile().getName());
       return false;
     }

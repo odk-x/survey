@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 import android.content.Context;
+
+import com.fasterxml.jackson.core.JsonGenerationException;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 
 /**
  * Holds the files required for a submission to the ODK Aggregate legacy
@@ -87,11 +87,11 @@ public class FileSet {
     FileSet fs = new FileSet(appName);
     Map<String, String> map;
     map = (Map<String, String>) str.get(0);
-    fs.instanceFile = FileProvider.getAsFile(context, appName, map.get(URI_FRAGMENT));
+    fs.instanceFile = ODKFileUtils.getAsFile(appName, map.get(URI_FRAGMENT));
     for (int i = 1; i < str.size(); ++i) {
       map = (Map<String, String>) str.get(i);
       MimeFile f = new MimeFile();
-      f.file = FileProvider.getAsFile(context, appName, map.get(URI_FRAGMENT));
+      f.file = ODKFileUtils.getAsFile(appName, map.get(URI_FRAGMENT));
       f.contentType = map.get(CONTENT_TYPE);
       fs.attachmentFiles.add(f);
     }

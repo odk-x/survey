@@ -17,6 +17,7 @@ package org.opendatakit.survey.android.activities;
 import java.text.DecimalFormat;
 import java.util.List;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -29,7 +30,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
-import android.util.Log;
 import android.widget.Toast;
 
 public class GeoPointActivity extends Activity implements LocationListener {
@@ -53,7 +53,7 @@ public class GeoPointActivity extends Activity implements LocationListener {
     if ( mAppName == null || mAppName.length() == 0 ) {
       mAppName = "survey";
     }
-    Log.i(t, t + " appName=" + mAppName);
+    WebLogger.getLogger(mAppName).i(t, t + ".onCreate appName=" + mAppName);
 
     setTitle(mAppName + " > " + getString(R.string.get_location));
 

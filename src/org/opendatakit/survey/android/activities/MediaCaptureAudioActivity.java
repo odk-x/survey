@@ -18,20 +18,18 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
-import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -108,7 +106,7 @@ public class MediaCaptureAudioActivity extends Activity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(Audio.Media.RECORD_SOUND_ACTION);
       // to make the name unique...
-      File f = FileProvider.getAsFile(this, appName,
+      File f = ODKFileUtils.getAsFile(appName,
           (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
@@ -122,7 +120,7 @@ public class MediaCaptureAudioActivity extends Activity {
         startActivityForResult(i, ACTION_CODE);
       } catch (ActivityNotFoundException e) {
         String err = getString(R.string.activity_not_found, Audio.Media.RECORD_SOUND_ACTION);
-        Log.e(t, err);
+        WebLogger.getLogger(appName).e(t, err);
         Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
         setResult(Activity.RESULT_CANCELED);
         finish();
@@ -145,35 +143,11 @@ public class MediaCaptureAudioActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
-    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, path);
-    Log.i(t, "Deleted " + del + " rows from audio media content provider");
-  }
-
-  private String getPathFromUri(Uri uri) {
-    if (uri.toString().startsWith("file://")) {
-      return uri.toString().substring(7);
-    } else {
-      String[] mediaProjection = { Audio.Media.DATA };
-      String mediaPath = null;
-      Cursor c = null;
-      try {
-        c = getApplicationContext().getContentResolver().query(uri, mediaProjection, null, null,
-            null);
-        int column_index = c.getColumnIndexOrThrow(Audio.Media.DATA);
-        if (c.getCount() > 0) {
-          c.moveToFirst();
-          mediaPath = c.getString(column_index);
-        }
-        return mediaPath;
-      } finally {
-        if (c != null) {
-          c.close();
-        }
-      }
-    }
+    int del = MediaUtils.deleteAudioFileFromMediaProvider(this, appName, path);
+    WebLogger.getLogger(appName).i(t, "Deleted " + del + " rows from audio media content provider");
   }
 
   @Override
@@ -192,13 +166,13 @@ public class MediaCaptureAudioActivity extends Activity {
     // getDataString() does...
     String str = intent.getDataString();
     if (mediaUri == null && str != null) {
-      Log.w(t, "Attempting to work around null mediaUri");
+      WebLogger.getLogger(appName).w(t, "Attempting to work around null mediaUri");
       mediaUri = Uri.parse(str);
     }
 
     if (mediaUri == null) {
       // we are in trouble
-      Log.e(t, "No uri returned from RECORD_SOUND_ACTION!");
+      WebLogger.getLogger(appName).e(t, "No uri returned from RECORD_SOUND_ACTION!");
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
@@ -208,7 +182,7 @@ public class MediaCaptureAudioActivity extends Activity {
     deleteMedia();
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = getPathFromUri((Uri) mediaUri);
+    String binaryPath = MediaUtils.getPathFromUri(this, (Uri)mediaUri, Audio.Media.DATA);
     File source = new File(binaryPath);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
@@ -219,7 +193,7 @@ public class MediaCaptureAudioActivity extends Activity {
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
@@ -229,7 +203,7 @@ public class MediaCaptureAudioActivity extends Activity {
     try {
       FileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
-      Log.e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       deleteMedia();
       setResult(Activity.RESULT_CANCELED);
@@ -247,14 +221,14 @@ public class MediaCaptureAudioActivity extends Activity {
 
       Uri MediaURI = getApplicationContext().getContentResolver().insert(
           Audio.Media.EXTERNAL_CONTENT_URI, values);
-      Log.i(t, "Inserting AUDIO returned uri = " + MediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Inserting AUDIO returned uri = " + MediaURI.toString());
       uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
-      Log.i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
 
       int delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
-      Log.i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
+      WebLogger.getLogger(appName).i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
-      Log.e(t, "Inserting Audio file FAILED");
+      WebLogger.getLogger(appName).e(t, "Inserting Audio file FAILED");
     }
 
     /*
@@ -266,7 +240,7 @@ public class MediaCaptureAudioActivity extends Activity {
 
   private void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
-        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
+        ODKFileUtils.getAsFile(appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));
@@ -275,7 +249,7 @@ public class MediaCaptureAudioActivity extends Activity {
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      Log.e(t, ERROR_NO_FILE
+      WebLogger.getLogger(appName).e(t, ERROR_NO_FILE
           + ((uriFragmentToMedia != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);

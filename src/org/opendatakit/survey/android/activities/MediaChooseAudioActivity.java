@@ -18,9 +18,9 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
@@ -30,7 +30,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
-import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -119,11 +118,11 @@ public class MediaChooseAudioActivity extends Activity {
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-    File newMedia = FileProvider.getAsFile(this, appName, uriFragmentNewFileBase + extension);
+    File newMedia = ODKFileUtils.getAsFile(appName, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
-      Log.e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       // keep the image as a captured image so user can choose it.
       setResult(Activity.RESULT_CANCELED);
@@ -131,7 +130,7 @@ public class MediaChooseAudioActivity extends Activity {
       return;
     }
 
-    Log.i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
+    WebLogger.getLogger(appName).i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
 
     Uri mediaURI = null;
     if (newMedia.exists()) {
@@ -145,7 +144,7 @@ public class MediaChooseAudioActivity extends Activity {
       values.put(Audio.Media.DATA, newMedia.getAbsolutePath());
 
       mediaURI = getContentResolver().insert(Audio.Media.EXTERNAL_CONTENT_URI, values);
-      Log.i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
 
       // if you are replacing an answer. delete the previous image using
       // the
@@ -153,7 +152,7 @@ public class MediaChooseAudioActivity extends Activity {
       String binarypath = MediaUtils.getPathFromUri(this, mediaURI, Audio.Media.DATA);
       File newMediaFromCP = new File(binarypath);
 
-      Log.i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
+      WebLogger.getLogger(appName).i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, newMediaFromCP));
       String name = newMediaFromCP.getName();
@@ -161,7 +160,7 @@ public class MediaChooseAudioActivity extends Activity {
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      Log.e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();

@@ -49,7 +49,11 @@ public interface ODKActivity {
 
   public String getAppName();
 
+  public String getUploadTableId();
+
   public String getActiveUser();
+
+  public String getProperty(String propertyId);
 
   /** for completing the uriFragment of the media attachments */
   public String getWebViewContentUri();
@@ -101,13 +105,13 @@ public interface ODKActivity {
   public Bitmap getDefaultVideoPoster();
 
   // for CopyExpansionFilesFragment
-  public void expansionFilesCopied(String fragmentToShowNext);
+  public void initializationCompleted(String fragmentToShowNext);
 
   // for FormChooserListFragment
   public void chooseForm(Uri formUri);
 
-  // for InstanceUploaderFormChooserListFragment
-  public void chooseInstanceUploaderForm(Uri formUri);
+  // for InstanceUploaderTableChooserListFragment
+  public void chooseInstanceUploaderTable(String tableId);
   /**
    * Use the Activity implementation of this.
    *

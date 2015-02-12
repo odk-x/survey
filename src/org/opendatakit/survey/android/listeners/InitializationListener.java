@@ -19,8 +19,8 @@ import java.util.ArrayList;
 /**
  * @author mitchellsundt@gmail.com
  */
-public interface CopyExpansionFilesListener {
-  void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result);
+public interface InitializationListener {
+  void initializationComplete(boolean overallSuccess, ArrayList<String> result);
 
-  void copyProgressUpdate(String currentFile, int progress, int total);
+  void initializationProgressUpdate(String progressString);
 }

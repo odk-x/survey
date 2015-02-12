@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.activities;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
@@ -26,7 +27,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -58,7 +58,7 @@ public class AccountList extends ListActivity {
     if ( mAppName == null || mAppName.length() == 0 ) {
     	mAppName = "survey";
     }
-    Log.i(t, t + " appName=" + mAppName);
+    WebLogger.getLogger(mAppName).i(t, t + ".onCreate appName=" + mAppName);
 
     setTitle(mAppName + " > " + getString(R.string.google_account));
   }

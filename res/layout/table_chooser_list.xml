@@ -20,13 +20,31 @@ the License.
     android:orientation="vertical" >
 
     <TextView
+        android:id="@+id/status_text"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="#DDDDDD"
+        android:paddingBottom="4dip"
+        android:paddingLeft="8dip"
+        android:paddingRight="8dip"
+        android:paddingTop="4dip"
+        android:text="@string/table_scan_starting"
+        android:textSize="14sp" />
+
+    <ListView
+        android:id="@id/android:list"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent" />
+
+    <TextView
+        android:id="@android:id/empty"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:background="@color/white"
         android:gravity="center"
         android:paddingLeft="20dp"
         android:paddingRight="20dp"
-        android:text="@string/initializing"
+        android:text="@string/no_items_display_tables"
         android:textColor="@color/black"
         android:textSize="21sp" />
 

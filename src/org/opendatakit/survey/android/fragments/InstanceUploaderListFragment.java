@@ -21,32 +21,31 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.provider.InstanceColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
-import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 
 import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.ListFragment;
+import android.app.LoaderManager;
 import android.content.Context;
+import android.content.CursorLoader;
 import android.content.DialogInterface;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.ListFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.SimpleCursorAdapter;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -54,6 +53,7 @@ import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 import android.widget.Toast;
 
 /**
@@ -64,8 +64,8 @@ import android.widget.Toast;
  *
  */
 public class InstanceUploaderListFragment extends ListFragment implements OnLongClickListener,
-    LoaderManager.LoaderCallbacks<Cursor>, InstanceUploaderListener, ConfirmAlertDialog,
-    CancelProgressDialog {
+    InstanceUploaderListener, ConfirmAlertDialog, CancelProgressDialog,
+    LoaderManager.LoaderCallbacks<Cursor> {
   private static final String PROGRESS_DIALOG_TAG = "progressDialog";
 
   private static final String t = "InstanceUploaderListFragment";
@@ -87,7 +87,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private static final String DIALOG_STATE = "dialogState";
   private static final String SHOW_UNSENT = "showUnsent";
   private static final String URL = "url";
-  private static final String FORM_URI = "formUri";
 
   // data to retain across orientation changes
 
@@ -97,8 +96,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   private String mAlertMsg;
   private DialogState mDialogState = DialogState.None;
   private boolean mShowUnsent = true;
-  private URI mUrl;
-  private FormIdStruct currentForm = null; // via uri
+  private URI mUrl = null;
 
   // data that is not retained
 
@@ -175,7 +173,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           // add all items if mToggled sets to select all
           if (mToggled) {
             Cursor c = (Cursor) ls.getItemAtPosition(pos);
-            String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+            String uuid = ODKDatabaseUtils.get().getIndexAsString(c,
+                c.getColumnIndex(InstanceColumns._ID));
             mSelected.add(uuid);
           }
         }
@@ -213,11 +212,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       if (savedInstanceState.containsKey(URL)) {
         mUrl = URI.create(savedInstanceState.getString(URL));
       }
-
-      if (savedInstanceState.containsKey(FORM_URI)) {
-        currentForm = FormIdStruct.retrieveFormIdStruct(getActivity().getContentResolver(),
-            Uri.parse(savedInstanceState.getString(FORM_URI)));
-      }
     }
     mUploadButton.setEnabled(!(mSelected.size() == 0));
 
@@ -239,9 +233,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     if (mUrl != null) {
       outState.putString(URL, mUrl.toString());
     }
-    if (currentForm != null) {
-      outState.putString(FORM_URI, currentForm.formUri.toString());
-    }
   }
 
   private void clearChoices() {
@@ -249,8 +240,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     mUploadButton.setEnabled(false);
   }
 
-  public void changeForm(FormIdStruct form) {
-    currentForm = form;
+  public void changeUploadTableId() {
     if (getActivity() != null) {
       // if we are already attached to an activity, restart the loader.
       // otherwise, we will eventually be attached.
@@ -264,7 +254,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String k = c.getString(c.getColumnIndex(InstanceColumns._ID));
+    String k = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
 
     // add/remove from selected list
     if (mSelected.contains(k))
@@ -277,14 +267,15 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   }
 
   private void uploadSelectedFiles() {
-    if (mSelected.size() > 0 && currentForm != null) {
+    if (mSelected.size() > 0 && ((ODKActivity) getActivity()).getUploadTableId() != null) {
       // show dialog box
       showProgressDialog();
 
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
       String[] str = new String[mSelected.size()];
-      f.uploadInstances(this, currentForm, mSelected.toArray(str));
+      f.uploadInstances(this, ((ODKActivity) getActivity()).getAppName(),
+          ((ODKActivity) getActivity()).getUploadTableId(), mSelected.toArray(str));
     }
   }
 
@@ -301,7 +292,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     for (String id : mSelected) {
       for (int pos = 0; pos < ls.getCount(); pos++) {
         Cursor c = (Cursor) ls.getItemAtPosition(pos);
-        String uuid = c.getString(c.getColumnIndex(InstanceColumns._ID));
+        String uuid = ODKDatabaseUtils.get().getIndexAsString(c,
+            c.getColumnIndex(InstanceColumns._ID));
         if (id.equals(uuid)) {
           ls.setItemChecked(pos, true);
           break;
@@ -349,7 +341,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       ((AlertDialogFragment) alert).dismiss();
     }
 
-    if ( mDialogState == DialogState.Progress ) {
+    if (mDialogState == DialogState.Progress) {
       Fragment dialog = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
 
       if (dialog != null && ((ProgressDialogFragment) dialog).getDialog() != null) {
@@ -359,7 +351,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
         progressDialog.getDialog().setTitle(mAlertTitle);
         progressDialog.setMessage(mAlertMsg);
       } else {
-        if ( progressDialog != null ) {
+        if (progressDialog != null) {
           dismissProgressDialog();
         }
         progressDialog = ProgressDialogFragment.newInstance(getId(), mAlertTitle, mAlertMsg);
@@ -386,7 +378,6 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     }
   }
 
-
   private void dismissProgressDialog() {
     final Fragment dialog = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
     if (dialog != null && dialog != progressDialog) {
@@ -409,7 +400,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
         public void run() {
           try {
             scopedReference.dismiss();
-          } catch ( Exception e ) {
+          } catch (Exception e) {
             // ignore... we tried!
           }
         }
@@ -466,15 +457,17 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (Exception e) {
-      e.printStackTrace();
-      Log.i(t, "Attempting to close a dialog that was not previously opened");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).printStackTrace(e);
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "Attempting to close a dialog that was not previously opened");
     }
 
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
     f.clearUploadInstancesTask();
 
-    if (outcome.mAuthRequestingServer == null && currentForm != null) {
+    if (outcome.mAuthRequestingServer == null
+        && ((ODKActivity) getActivity()).getUploadTableId() != null) {
       StringBuilder message = new StringBuilder();
 
       Set<String> keys = outcome.mResults.keySet();
@@ -482,11 +475,15 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
         Cursor results = null;
         try {
-          Uri uri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-              + currentForm.formId + "/" + StringEscapeUtils.escapeHtml4(id));
+          Uri uri = Uri.withAppendedPath(
+              InstanceProviderAPI.CONTENT_URI,
+              ((ODKActivity) getActivity()).getAppName() + "/"
+                  + ((ODKActivity) getActivity()).getUploadTableId() + "/"
+                  + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
-            String name = results.getString(results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
+            String name = ODKDatabaseUtils.get().getIndexAsString(results,
+                results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
             message.append(name + " - " + outcome.mResults.get(id) + "\n\n");
           }
         } finally {
@@ -512,7 +509,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           String removeMe = itr.next();
           boolean removed = mSelected.remove(removeMe);
           if (removed) {
-            Log.i(t, removeMe + " was already sent, removing from queue before restarting task");
+            WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+                removeMe + " was already sent, removing from queue before restarting task");
           }
         }
       }
@@ -582,9 +580,11 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     // First, pick the base URI to use depending on whether we are
     // currently filtering.
     Uri baseUri;
-    if (currentForm != null) {
-      baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, currentForm.appName + "/"
-          + currentForm.formId);
+    if (((ODKActivity) getActivity()).getUploadTableId() != null) {
+      baseUri = Uri.withAppendedPath(
+          InstanceProviderAPI.CONTENT_URI,
+          ((ODKActivity) getActivity()).getAppName() + "/"
+              + ((ODKActivity) getActivity()).getUploadTableId());
     } else {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
           ((ODKActivity) getActivity()).getAppName());

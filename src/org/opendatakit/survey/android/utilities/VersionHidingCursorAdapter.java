@@ -14,12 +14,13 @@
 
 package org.opendatakit.survey.android.utilities;
 
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 
 import android.content.Context;
 import android.database.Cursor;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
+import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 
 /**
@@ -52,7 +53,7 @@ public class VersionHidingCursorAdapter extends SimpleCursorAdapter {
           }
           return false;
         } else {
-          String version = cursor.getString(columnIndex);
+          String version = ODKDatabaseUtils.get().getIndexAsString(cursor, columnIndex);
           TextView v = (TextView) view;
           if (version != null) {
             v.setText(ctxt.getString(R.string.version) + " " + version);

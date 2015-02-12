@@ -16,16 +16,16 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.ArrayList;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
-import org.opendatakit.survey.android.listeners.CopyExpansionFilesListener;
+import org.opendatakit.survey.android.listeners.InitializationListener;
 
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,15 +36,15 @@ import android.view.ViewGroup;
  * @author mitchellsundt@gmail.com
  *
  */
-public class CopyExpansionFilesFragment extends Fragment implements CopyExpansionFilesListener,
+public class InitializationFragment extends Fragment implements InitializationListener,
     ConfirmAlertDialog, CancelProgressDialog {
 
-  private static final String t = "CopyExpansionFilesFragment";
+  private static final String t = "InitializationFragment";
 
   public static final int ID = R.layout.copy_expansion_files_layout;
 
   private static enum DialogState {
-    Progress, Alert, None
+    Init, Progress, Alert, None
   };
 
   // keys for the data being retained
@@ -58,7 +58,7 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
 
   private String mAlertTitle;
   private String mAlertMsg;
-  private DialogState mDialogState = DialogState.None;
+  private DialogState mDialogState = DialogState.Init;
   private String mFragmentToShowNext;
 
   // data that is not retained
@@ -107,16 +107,18 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
   /**
    * Starts the download task and shows the progress dialog.
    */
-  private void copyExpansionFiles() {
+  private void intializeAppName() {
     // set up the first dialog, but don't show it...
-    mAlertTitle = getString(R.string.searching_for_expansion_files);
+    mAlertTitle = getString(R.string.configuring_survey);
     mAlertMsg = getString(R.string.please_wait);
     mDialogState = DialogState.Progress;
 
     // launch the copy operation
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
-    f.copyExpansionFiles(((ODKActivity) getActivity()).getAppName(), this);
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "initializeAppName called ");
+    f.initializeAppName(((ODKActivity) getActivity()).getAppName(), this);
   }
 
   @Override
@@ -139,12 +141,14 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
     // re-attach to the background fragment for task notifications...
     BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
-    f.establishCopyExpansionFilesListener(this);
+    f.establishInitializationListener(this);
 
     super.onResume();
 
-    if (mDialogState == DialogState.None) {
-      copyExpansionFiles();
+    if (mDialogState == DialogState.Init) {
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "onResume -- calling initializeAppName");
+      intializeAppName();
     }
 
     if (mDialogState == DialogState.Progress) {
@@ -172,16 +176,29 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
   }
 
   @Override
-  public void copyExpansionFilesComplete(boolean overallSuccess, ArrayList<String> result) {
+  public void initializationComplete(boolean overallSuccess, ArrayList<String> result) {
     try {
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      Log.i(t, "Attempting to close a dialog that was not previously opened");
+      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+          "Attempting to close a dialog that was not previously opened");
     }
 
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
-    f.clearCopyExpansionFilesTask();
+    f.clearInitializationTask();
+
+    if (overallSuccess && result.isEmpty()) {
+      // do not require an OK if everything went well
+      Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+      if (progress != null) {
+        ((ProgressDialogFragment) progress).dismiss();
+        mDialogState = DialogState.None;
+      }
+
+      ((ODKActivity) getActivity()).initializationCompleted(mFragmentToShowNext);
+      return;
+    }
 
     StringBuilder b = new StringBuilder();
     for (String k : result) {
@@ -189,8 +206,8 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
       b.append("\n\n");
     }
 
-    createAlertDialog(overallSuccess ? getString(R.string.expansion_complete)
-        : getString(R.string.expansion_failed), b.toString().trim());
+    createAlertDialog(overallSuccess ? getString(R.string.initialization_complete)
+        : getString(R.string.initialization_failed), b.toString().trim());
   }
 
   private void restoreProgressDialog() {
@@ -218,7 +235,7 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
 
   private void updateProgressDialogMessage(String message) {
     if (mDialogState == DialogState.Progress) {
-      mAlertTitle = getString(R.string.expanding_expansion_files);
+      mAlertTitle = getString(R.string.configuring_survey);
       mAlertMsg = message;
       restoreProgressDialog();
     }
@@ -259,7 +276,7 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
   @Override
   public void okAlertDialog() {
     mDialogState = DialogState.None;
-    ((ODKActivity) getActivity()).expansionFilesCopied(mFragmentToShowNext);
+    ((ODKActivity) getActivity()).initializationCompleted(mFragmentToShowNext);
   }
 
   /**
@@ -276,19 +293,21 @@ public class CopyExpansionFilesFragment extends Fragment implements CopyExpansio
   }
 
   @Override
-  public void copyProgressUpdate(String currentFile, int progress, int total) {
-    updateProgressDialogMessage(getString(R.string.expansion_progress, currentFile, progress, total));
+  public void initializationProgressUpdate(String displayString) {
+    updateProgressDialogMessage(displayString);
   }
 
   @Override
   public void cancelProgressDialog() {
     BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
         "background");
+    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+        "cancelProgressDialog -- calling cancelInitializationTask");
     // signal the task that we want it to be cancelled.
     // but keep the notification path...
     // the task will call back with a copyExpansionFilesComplete()
     // to report status (cancelled).
-    f.cancelCopyExpansionFilesTask();
+    f.cancelInitializationTask();
   }
 
 }

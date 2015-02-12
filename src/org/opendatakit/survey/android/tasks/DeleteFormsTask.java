@@ -14,17 +14,17 @@
 
 package org.opendatakit.survey.android.tasks;
 
-import org.opendatakit.common.android.database.DataModelDatabaseHelper;
-import org.opendatakit.common.android.provider.impl.CommonContentProvider;
+import org.opendatakit.common.android.database.DatabaseFactory;
+import org.opendatakit.common.android.database.IdInstanceNameStruct;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
-
 
 import android.app.Application;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.util.Log;
 
 /**
  * Task responsible for deleting selected forms.
@@ -57,16 +57,27 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
         break;
       }
       try {
-        if (deleteFormData) {
-          SQLiteDatabase db = CommonContentProvider.getDbHelper(appContext.getApplicationContext(), appName).getWritableDatabase();
-          DataModelDatabaseHelper.deleteTableAndData(db, params[i]);
-        }
         Uri deleteForm = Uri.withAppendedPath(
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
+
+        if (deleteFormData) {
+          SQLiteDatabase db = null;
+          try {
+            db = DatabaseFactory.get().getDatabase(appContext.getApplicationContext(), appName);
+            
+            IdInstanceNameStruct ids = IdInstanceNameStruct.getIds(db, params[i]);
+
+            ODKDatabaseUtils.get().deleteDBTableAndAllData(db, appName, ids.tableId);
+          } finally {
+            if ( db != null ) {
+              db.close();
+            }
+          }
+        }
         deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 
       } catch (Exception ex) {
-        Log.e(t,
+        WebLogger.getLogger(appName).e(t,
             "Exception during delete of: " + params[i] + " exception: " + ex.toString());
       }
     }
@@ -121,13 +132,13 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
   public Application getApplication() {
     return appContext;
   }
-  
+
   public void setDeleteFormData(boolean shouldFormDataBeDeleted) {
     synchronized (this) {
       this.deleteFormData = shouldFormDataBeDeleted;
     }
   }
-  
+
   public boolean getDeleteFormData() {
     return deleteFormData;
   }

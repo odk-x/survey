@@ -16,71 +16,77 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
+import org.opendatakit.common.android.database.DatabaseFactory;
 import org.opendatakit.common.android.logic.PropertyManager;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.AboutMenuFragment;
-import org.opendatakit.survey.android.fragments.CopyExpansionFilesFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
 import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
-import org.opendatakit.survey.android.fragments.InstanceUploaderFormChooserListFragment;
+import org.opendatakit.survey.android.fragments.InitializationFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
+import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.survey.android.logic.FormIdStruct;
+import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.provider.DbShimService;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.views.ODKWebView;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
 
 import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.ActionBar.Tab;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentManager.BackStackEntry;
+import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentManager.BackStackEntry;
-import android.support.v4.app.FragmentTransaction;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
-
-import com.actionbarsherlock.app.ActionBar;
-import com.actionbarsherlock.app.ActionBar.Tab;
-import com.actionbarsherlock.app.SherlockFragmentActivity;
-import com.actionbarsherlock.view.Menu;
-import com.actionbarsherlock.view.MenuItem;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches
@@ -89,12 +95,12 @@ import com.actionbarsherlock.view.MenuItem;
  * @author Carl Hartung (carlhartung@gmail.com)
  * @author Yaw Anokwa (yanokwa@gmail.com)
  */
-public class MainMenuActivity extends SherlockFragmentActivity implements ODKActivity {
+public class MainMenuActivity extends Activity implements ODKActivity {
 
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_FORM_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, COPY_EXPANSION_FILES, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -111,6 +117,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   public static final String APP_NAME = "appName";
   private static final String FORM_URI = "formUri";
+  private static final String UPLOAD_TABLE_ID = "uploadTableId";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
   private static final String CONTROLLER_STATE = "controllerState";
@@ -119,22 +126,37 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
   private static final String CURRENT_FRAGMENT = "currentFragment";
-  private static final String PROCESS_APK_EXPANSION_FILES = "processAPKExpansionFiles";
+
+  /** tables that have conflict rows */
+  public static final String CONFLICT_TABLES = "conflictTables";
 
   // menu options
 
   private static final int MENU_FILL_FORM = Menu.FIRST;
   private static final int MENU_PULL_FORMS = Menu.FIRST + 1;
-  private static final int MENU_MANAGE_FORMS = Menu.FIRST + 2;
-  private static final int MENU_PREFERENCES = Menu.FIRST + 3;
-  private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 4;
-  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 5;
-  private static final int MENU_PUSH_FORMS = Menu.FIRST + 6;
-  private static final int MENU_ABOUT = Menu.FIRST + 7;
+  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 2;
+  private static final int MENU_MANAGE_FORMS = Menu.FIRST + 3;
+  private static final int MENU_PREFERENCES = Menu.FIRST + 4;
+  private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 5;
+  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 6;
+  private static final int MENU_PUSH_FORMS = Menu.FIRST + 7;
+  private static final int MENU_ABOUT = Menu.FIRST + 8;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
   private static final int INTERNAL_ACTIVITY_CODE = 21;
+  private static final int SYNC_ACTIVITY_CODE = 22;
+  private static final int CONFLICT_ACTIVITY_CODE = 23;
+
+  // values for external intents to resolve conflicts
+  /** Survey's package name as declared in the manifest. */
+  public static final String SYNC_PACKAGE_NAME = "org.opendatakit.sync";
+  /** The full path to Sync's checkpoint list activity. */
+  public static final String SYNC_CHECKPOINT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.CheckpointResolutionListActivity";
+  /** The full path to Sync's conflict list activity. */
+  public static final String SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.ConflictResolutionListActivity";
+  /** The field name for the tableId to resolve conflicts on */
+  public static final String SYNC_TABLE_ID_PARAMETER = "tableId";
 
   private static final boolean EXIT = true;
 
@@ -200,7 +222,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   private static class SectionScreenStateHistory implements Parcelable {
-    ScreenState currentScreen = new ScreenState(null,null);
+    ScreenState currentScreen = new ScreenState(null, null);
     ArrayList<ScreenState> history = new ArrayList<ScreenState>();
 
     @Override
@@ -214,37 +236,36 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       dest.writeString(currentScreen.state);
 
       dest.writeInt(history.size());
-      for ( int i = 0 ; i < history.size() ; ++i ) {
+      for (int i = 0; i < history.size(); ++i) {
         ScreenState screen = history.get(i);
         dest.writeString(screen.screenPath);
         dest.writeString(screen.state);
       }
     }
 
-    public static final Parcelable.Creator<SectionScreenStateHistory> CREATOR
-            = new Parcelable.Creator<SectionScreenStateHistory>() {
-        public SectionScreenStateHistory createFromParcel(Parcel in) {
-          SectionScreenStateHistory cur = new SectionScreenStateHistory();
-          String screenPath = in.readString();
-          String state = in.readString();
-          cur.currentScreen = new ScreenState(screenPath, state);
-          int count = in.readInt();
-          for ( int i = 0 ; i < count ; ++i ) {
-            screenPath = in.readString();
-            state = in.readString();
-            cur.history.add(new ScreenState(screenPath, state));
-          }
-          return cur;
+    public static final Parcelable.Creator<SectionScreenStateHistory> CREATOR = new Parcelable.Creator<SectionScreenStateHistory>() {
+      public SectionScreenStateHistory createFromParcel(Parcel in) {
+        SectionScreenStateHistory cur = new SectionScreenStateHistory();
+        String screenPath = in.readString();
+        String state = in.readString();
+        cur.currentScreen = new ScreenState(screenPath, state);
+        int count = in.readInt();
+        for (int i = 0; i < count; ++i) {
+          screenPath = in.readString();
+          state = in.readString();
+          cur.history.add(new ScreenState(screenPath, state));
         }
+        return cur;
+      }
 
-        @Override
-        public SectionScreenStateHistory[] newArray(int size) {
-          SectionScreenStateHistory[] array = new SectionScreenStateHistory[size];
-          for ( int i = 0 ; i < size ; ++i ) {
-            array[i] = null;
-          }
-          return array;
+      @Override
+      public SectionScreenStateHistory[] newArray(int size) {
+        SectionScreenStateHistory[] array = new SectionScreenStateHistory[size];
+        for (int i = 0; i < size; ++i) {
+          array[i] = null;
         }
+        return array;
+      }
     };
   }
 
@@ -254,18 +275,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
 
-  private boolean mProcessAPKExpansionFiles = false;
   private String pageWaitingForData = null;
   private String pathWaitingForData = null;
   private String actionWaitingForData = null;
 
   private String appName = null;
+  private String uploadTableId = null;
   private FormIdStruct currentForm = null; // via FORM_URI (formUri)
   private String instanceId = null;
 
   private Bundle sessionVariables = new Bundle();
-  private ArrayList<SectionScreenStateHistory> sectionStateScreenHistory =
-      new ArrayList<SectionScreenStateHistory>();
+  private ArrayList<SectionScreenStateHistory> sectionStateScreenHistory = new ArrayList<SectionScreenStateHistory>();
 
   private String refId = UUID.randomUUID().toString();
   private String auxillaryHash = null;
@@ -275,6 +295,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   // DO NOT USE THESE -- only used to determine if the current form has changed.
   private String trackingFormPath = null;
   private Long trackingFormLastModifiedDate = 0L;
+
+  /**
+   * track which tables have conflicts (these need to be resolved before Survey
+   * can operate)
+   */
+  Bundle mConflictTables = new Bundle();
 
   /**
    * Member variables that do not need to be preserved across orientation
@@ -293,11 +319,31 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   // cached for efficiency only -- no need to preserve
   private View mVideoProgressView = null;
 
+  private ServiceConnection mConnection = new ServiceConnection() {
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service) {
+      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+      if (wkt != null) {
+        wkt.onServiceConnected(name, service);
+      }
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name) {
+      ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+      if (wkt != null) {
+        wkt.onServiceDisconnected(name);
+      }
+    }
+
+  };
+
   @Override
   protected void onPause() {
-//    if (mAlertDialog != null && mAlertDialog.isShowing()) {
-//      mAlertDialog.dismiss();
-//    }
+    // if (mAlertDialog != null && mAlertDialog.isShowing()) {
+    // mAlertDialog.dismiss();
+    // }
     super.onPause();
   }
 
@@ -316,13 +362,15 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
     }
     outState.putString(CURRENT_FRAGMENT, currentFragment.name());
-    outState.putBoolean(PROCESS_APK_EXPANSION_FILES, mProcessAPKExpansionFiles);
 
     if (getCurrentForm() != null) {
       outState.putString(FORM_URI, getCurrentForm().formUri.toString());
     }
     if (getInstanceId() != null) {
       outState.putString(INSTANCE_ID, getInstanceId());
+    }
+    if (getUploadTableId() != null) {
+      outState.putString(UPLOAD_TABLE_ID, getUploadTableId());
     }
     if (getScreenPath() != null) {
       outState.putString(SCREEN_PATH, getScreenPath());
@@ -339,28 +387,133 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     outState.putBundle(SESSION_VARIABLES, sessionVariables);
 
     outState.putParcelableArrayList(SECTION_STATE_SCREEN_HISTORY, sectionStateScreenHistory);
+
+    if (mConflictTables != null && !mConflictTables.isEmpty()) {
+      outState.putBundle(CONFLICT_TABLES, mConflictTables);
+    }
+
   }
 
   @Override
-  public void expansionFilesCopied(String fragmentToShowNext) {
+  public void initializationCompleted(String fragmentToShowNext) {
     // whether we have can cancelled or completed update,
     // remember to not do the expansion files check next time through
-    mProcessAPKExpansionFiles = false;
-    currentFragment = ScreenList.valueOf(fragmentToShowNext);
-    swapToFragmentView(currentFragment);
+    ScreenList newFragment = ScreenList.valueOf(fragmentToShowNext);
+    if (newFragment == ScreenList.WEBKIT && getCurrentForm() == null) {
+      // we were sent off to the initialization dialog to try to
+      // discover the form. We need to inquire about the form again
+      // and, if we cannot find it, report an error to the user.
+      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+      Uri uri = getIntent().getData();
+      Uri formUri = null;
+
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme())
+          && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() >= 2) {
+          String appName = segments.get(0);
+          setAppName(appName);
+          formUri = Uri.withAppendedPath(Uri.withAppendedPath(uriFormsProvider, appName),
+              segments.get(1));
+        } else {
+          swapToFragmentView(ScreenList.FORM_CHOOSER);
+          createErrorDialog(
+              getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
+          return;
+        }
+        // request specifies a specific formUri -- try to open that
+        FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+        if (newForm == null) {
+          // error
+          swapToFragmentView(ScreenList.FORM_CHOOSER);
+          createErrorDialog(getString(R.string.form_not_found, segments.get(1)), EXIT);
+          return;
+        } else {
+          transitionToFormHelper(uri, newForm);
+          swapToFragmentView(newFragment);
+        }
+      }
+    } else {
+      WebLogger.getLogger(getAppName()).i(t, "initializationCompleted: swapping to " + newFragment.name());
+      swapToFragmentView(newFragment);
+    }
   }
 
+  private void transitionToFormHelper(Uri uri, FormIdStruct newForm) {
+    // work through switching to that form
+    setAppName(newForm.appName);
+    setCurrentForm(newForm);
+    clearSectionScreenState();
+    String fragment = uri.getFragment();
+    if (fragment != null && fragment.length() != 0) {
+      // and process the fragment to find the instanceId, screenPath and other
+      // kv pairs
+      String[] pargs = fragment.split("&");
+      boolean first = true;
+      StringBuilder b = new StringBuilder();
+      int i;
+      for (i = 0; i < pargs.length; ++i) {
+        String[] keyValue = pargs[i].split("=");
+        if ("instanceId".equals(keyValue[0])) {
+          if (keyValue.length == 2) {
+            setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
+          }
+        } else if ("screenPath".equals(keyValue[0])) {
+          if (keyValue.length == 2) {
+            setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]), null);
+          }
+        } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
+          // ignore
+        } else {
+          if (!first) {
+            b.append("&");
+          }
+          first = false;
+          b.append(pargs[i]);
+        }
+      }
+      String aux = b.toString();
+      if (aux.length() != 0) {
+        setAuxillaryHash(aux);
+      }
+    } else {
+      setInstanceId(null);
+      setAuxillaryHash(null);
+    }
+    currentFragment = ScreenList.WEBKIT;
+  }
+
+  @Override
+  protected void onStop() {
+    super.onStop();
+    ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
+    if (wkt != null) {
+      wkt.beforeDbShimServiceDisconnected();
+    }
+    unbindService(mConnection);
+  }
+
+  @SuppressLint("InlinedApi")
   @Override
   protected void onStart() {
     super.onStart();
+
+    // ensure the DbShimService is started
+    Intent intent = new Intent(this, DbShimService.class);
+    this.startService(intent);
+
+    this.bindService(intent, mConnection, Context.BIND_AUTO_CREATE
+        | ((Build.VERSION.SDK_INT >= 14) ? Context.BIND_ADJUST_WITH_ACTIVITY : 0));
 
     FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
-        || currentFragment == ScreenList.FORM_DELETER || currentFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER
-        || currentFragment == ScreenList.INSTANCE_UPLOADER || currentFragment == ScreenList.COPY_EXPANSION_FILES) {
+        || currentFragment == ScreenList.FORM_DELETER
+        || currentFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER
+        || currentFragment == ScreenList.INSTANCE_UPLOADER
+        || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
       shadow.setVisibility(View.GONE);
       shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
@@ -378,26 +531,71 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       frags.setVisibility(View.GONE);
     }
 
-    FragmentManager mgr = this.getSupportFragmentManager();
+    FragmentManager mgr = getFragmentManager();
     if (mgr.getBackStackEntryCount() == 0) {
       swapToFragmentView(currentFragment);
-      // we are not recovering...
-      if ((currentFragment != ScreenList.COPY_EXPANSION_FILES) && mProcessAPKExpansionFiles) {
-        // no form files -- see if we can explode an APK Expansion file
-        ArrayList<Map<String, Object>> files = Survey.getInstance().expansionFiles();
-        if (files != null || Survey.debugAPKExpansionFile() != null) {
-          // double-check that we have no forms...
-          try {
-            mProcessAPKExpansionFiles = !Survey.createODKDirs(getAppName());
-          } catch (RuntimeException e) {
-            createErrorDialog(e.getMessage(), EXIT);
-            return;
-          }
-          if (mProcessAPKExpansionFiles) {
-            // OK we should swap to the CopyExpansionFiles view
-            swapToFragmentView(ScreenList.COPY_EXPANSION_FILES);
-          }
+    }
+  }
+
+  public void scanForConflictAllTables() {
+    long now = System.currentTimeMillis();
+    WebLogger.getLogger(getAppName()).i(this.getClass().getSimpleName(),
+        "scanForConflictAllTables -- searching for conflicts and checkpoints ");
+
+    SQLiteDatabase db = null;
+    try {
+      db = DatabaseFactory.get().getDatabase(this, getAppName());
+      ArrayList<String> tableIds = ODKDatabaseUtils.get().getAllTableIds(db);
+
+      Bundle conflictTables = new Bundle();
+
+      for (String tableId : tableIds) {
+        int health = ODKDatabaseUtils.get().getTableHealth(db, tableId);
+        if ( (health & ODKDatabaseUtils.TABLE_HEALTH_HAS_CONFLICTS) != 0) {
+            conflictTables.putString(tableId, tableId);
         }
+      }
+      
+      mConflictTables = conflictTables;
+    } finally {
+      if (db != null) {
+        db.close();
+      }
+    }
+
+    long elapsed = System.currentTimeMillis() - now;
+    WebLogger.getLogger(getAppName()).i(this.getClass().getSimpleName(),
+        "scanForConflictAllTables -- full table scan completed: " + Long.toString(elapsed) + " ms");
+  }
+
+  @Override
+  protected void onPostResume() {
+    super.onPostResume();
+    // Hijack the app here, after all screens have been resumed,
+    // to ensure that all checkpoints and conflicts have been
+    // resolved. If they haven't, we branch to the resolution
+    // activity.
+
+    if (mConflictTables == null || mConflictTables.isEmpty()) {
+      scanForConflictAllTables();
+    }
+    if ((mConflictTables != null) && !mConflictTables.isEmpty()) {
+      Iterator<String> iterator = mConflictTables.keySet().iterator();
+      String tableId = iterator.next();
+      mConflictTables.remove(tableId);
+
+      Intent i;
+      i = new Intent();
+      i.setComponent(new ComponentName(SYNC_PACKAGE_NAME, SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME));
+      i.setAction(Intent.ACTION_EDIT);
+      i.putExtra(APP_NAME, getAppName());
+      i.putExtra(SYNC_TABLE_ID_PARAMETER, tableId);
+      try {
+        this.startActivityForResult(i, CONFLICT_ACTIVITY_CODE);
+      } catch (ActivityNotFoundException e) {
+        Toast.makeText(this,
+            getString(R.string.activity_not_found, SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME),
+            Toast.LENGTH_LONG).show();
       }
     }
   }
@@ -410,6 +608,16 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   public FormIdStruct getCurrentForm() {
     return this.currentForm;
+  }
+
+  private void setUploadTableId(String uploadTableId) {
+    WebLogger.getLogger(getAppName()).i(t, "setUploadTableId: " + uploadTableId);
+    this.uploadTableId = uploadTableId;
+  }
+
+  @Override
+  public String getUploadTableId() {
+    return this.uploadTableId;
   }
 
   @Override
@@ -435,13 +643,14 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public String getActiveUser() {
+    FormIdStruct form = getCurrentForm();
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
-        getCurrentForm().tableId, getInstanceId());
+        form == null ? null : getCurrentForm().tableId, getInstanceId());
 
     String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
-    if ( name == null || name.length() == 0) {
+    if (name == null || name.length() == 0) {
       name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
-      if ( name != null && name.length() != 0 ) {
+      if (name != null && name.length() != 0) {
         name = "username:" + name;
       } else {
         name = null;
@@ -453,9 +662,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
+  public String getProperty(String propertyId) {
+    FormIdStruct form = getCurrentForm();
+    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(this, getAppName(),
+        form == null ? null : getCurrentForm().tableId, getInstanceId());
+
+    String value = mPropertyManager.getSingularProperty(propertyId, cb);
+    return value;
+  }
+
+  @Override
   public String getWebViewContentUri() {
-    Uri u = FileProvider.getWebViewContentUri(this);
-    return u.toString() + "/";
+    Uri u = UrlUtils.getWebViewContentUri(this);
+
+    String uriString = u.toString();
+
+    // Ensures that the string always ends with '/'
+    if (uriString.charAt(uriString.length() - 1) != '/') {
+      return uriString + "/";
+    } else {
+      return uriString;
+    }
   }
 
   @Override
@@ -475,23 +702,24 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       // use the most recently created of the matches
       // (in case DB corrupted)
       String orderBy = FormsColumns.FORM_VERSION + " DESC";
-      c = getContentResolver().query(
-          Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, selection,
-          selectionArgs, orderBy);
+      c = getContentResolver().query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+          null, selection, selectionArgs, orderBy);
 
       if (c != null && c.getCount() > 0) {
         // we found a match...
         c.moveToFirst();
-        formPath = c.getString(c.getColumnIndex(FormsColumns.FORM_PATH));
-        lastModified = c.getLong(c.getColumnIndex(FormsColumns.DATE));
+        formPath = ODKDatabaseUtils.get().getIndexAsString(c,
+            c.getColumnIndex(FormsColumns.FORM_PATH));
+        lastModified = ODKDatabaseUtils.get().getIndexAsType(c, Long.class,
+            c.getColumnIndex(FormsColumns.DATE));
       }
     } finally {
-       if (c != null && !c.isClosed()) {
-          c.close();
-       }
+      if (c != null && !c.isClosed()) {
+        c.close();
+      }
     }
 
-    if ( formPath == null ) {
+    if (formPath == null) {
       return null;
     } else {
       return new FrameworkFormPathInfo(formPath, lastModified);
@@ -505,7 +733,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // we need this so that we can load the index.html and main javascript
     // code
     FrameworkFormPathInfo info = getFrameworkFormPathInfo();
-    if ( info == null ) {
+    if (info == null) {
       return null;
     }
     String formPath = info.relativePath;
@@ -521,7 +749,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       return null;
     }
 
-    String fullPath = FileProvider.getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
+    String fullPath = UrlUtils.getAsWebViewUri(this, appName,
+        ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;
@@ -534,9 +763,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
     boolean changed = false;
 
-    if (ifChanged &&
-        frameworkBaseUrl != null &&
-        frameworkBaseUrl.equals(fullPath)) {
+    if (ifChanged && frameworkBaseUrl != null && frameworkBaseUrl.equals(fullPath)) {
       // determine if there are any changes in the framework
       // or in the form. If there are, reload. Otherwise,
       // return null.
@@ -544,17 +771,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       changed = (!frameworkLastModified.equals(frameworkLastModifiedDate));
     }
 
-    if ( currentForm == null ) {
+    if (currentForm == null) {
       trackingFormPath = null;
       trackingFormLastModifiedDate = 0L;
       changed = true;
-    } else if ( trackingFormPath == null ||
-      !trackingFormPath.equals(currentForm.formPath)) {
+    } else if (trackingFormPath == null || !trackingFormPath.equals(currentForm.formPath)) {
       trackingFormPath = currentForm.formPath;
       trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
     } else {
-      changed = changed || (Long.valueOf(trackingFormLastModifiedDate)
-          .compareTo(currentForm.lastDownloadDate.getTime()) < 0);
+      changed = changed
+          || (Long.valueOf(trackingFormLastModifiedDate).compareTo(
+              currentForm.lastDownloadDate.getTime()) < 0);
       trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
     }
 
@@ -565,22 +792,26 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public String getUrlLocationHash() {
-    if ( currentForm == null ) {
+    if (currentForm == null) {
       // we want framework...
       FrameworkFormPathInfo info = getFrameworkFormPathInfo();
-      if ( info == null ) {
+      if (info == null) {
         return "";
       }
-      String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4(info.relativePath)
+      String hashUrl = "#formPath="
+          + StringEscapeUtils.escapeHtml4(info.relativePath)
           + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
+          + ((getScreenPath() == null) ? "" : "&screenPath="
+              + StringEscapeUtils.escapeHtml4(getScreenPath()))
           + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
           + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
       return hashUrl;
     } else {
-      String hashUrl = "#formPath=" + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
+      String hashUrl = "#formPath="
+          + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
           + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath=" + StringEscapeUtils.escapeHtml4(getScreenPath()))
+          + ((getScreenPath() == null) ? "" : "&screenPath="
+              + StringEscapeUtils.escapeHtml4(getScreenPath()))
           + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
           + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
@@ -604,130 +835,86 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
+    // android.os.Debug.waitForDebugger();
+
     mPropertyManager = new PropertyManager(this);
 
     // must be at the beginning of any activity that can be called from an
     // external intent
     setAppName("survey");
     Uri uri = getIntent().getData();
+    Uri formUri = null;
+
     if (uri != null) {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriFileProvider = FileProvider.getFileProviderContentUri(this);
-      final Uri uriWebView = FileProvider.getWebViewContentUri(this);
-      if (uri.getScheme().equalsIgnoreCase(uriFileProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFileProvider.getAuthority())) {
+      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme())
+          && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        List<String> segments = uri.getPathSegments();
+        if (segments != null && segments.size() == 1) {
+          String appName = segments.get(0);
+          setAppName(appName);
+        } else if (segments != null && segments.size() >= 2) {
+          String appName = segments.get(0);
+          setAppName(appName);
+          formUri = Uri.withAppendedPath(Uri.withAppendedPath(uriFormsProvider, appName),
+              segments.get(1));
+        } else {
+          assignContentView();
+          createErrorDialog(
+              getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
+          return;
+        }
+      } else if (uri.getScheme().equals(uriWebView.getScheme())
+          && uri.getAuthority().equals(uriWebView.getAuthority())
+          && uri.getPort() == uriWebView.getPort()) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           String appName = segments.get(0);
           setAppName(appName);
         } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
-          return;
-        }
-      } else if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() >= 2) {
-          String appName = segments.get(0);
-          setAppName(appName);
-          Uri simpleUri = Uri.withAppendedPath(
-              Uri.withAppendedPath(uriFormsProvider, appName), segments.get(1));
-          FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), simpleUri);
-          if (newForm != null) {
-            setAppName(newForm.appName);
-            setCurrentForm(newForm);
-            clearSectionScreenState();
-            String fragment = uri.getFragment();
-            if ( fragment != null && fragment.length() != 0 ) {
-              // and process the fragment to find the instanceId, screenPath and other kv pairs
-              String[] pargs = fragment.split("&");
-              boolean first = true;
-              StringBuilder b = new StringBuilder();
-              int i;
-              for (i = 0; i < pargs.length; ++i) {
-                String[] keyValue = pargs[i].split("=");
-                if ("instanceId".equals(keyValue[0])) {
-                  if (keyValue.length == 2) {
-                     setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
-                  }
-                } else if ("screenPath".equals(keyValue[0])) {
-                  if (keyValue.length == 2) {
-                    setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]),null);
-                  }
-                } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
-                  // ignore
-                } else {
-                  if (!first) {
-                    b.append("&");
-                  }
-                  first = false;
-                  b.append(pargs[i]);
-                }
-              }
-              String aux = b.toString();
-              if (aux.length() != 0) {
-                setAuxillaryHash(aux);
-              }
-            } else {
-              setInstanceId(null);
-              setAuxillaryHash(null);
-            }
-            currentFragment = ScreenList.WEBKIT;
-          } else {
-            // cancel action if the form is not found...
-            String err = "Invalid " + uri.toString() + " uri. Form not found.";
-            Log.e(t, err);
-            Intent i = new Intent();
-            setResult(RESULT_CANCELED, i);
-            finish();
-            return;
-          }
-        } else {
-          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
-          return;
-        }
-      } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
-          uri.getAuthority().equals(uriWebView.getAuthority()) &&
-          uri.getPort() == uriWebView.getPort()) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() == 1) {
-          String appName = segments.get(0);
-          setAppName(appName);
-        } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
-          Intent i = new Intent();
-          setResult(RESULT_CANCELED, i);
-          finish();
+          assignContentView();
+          createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()),
+              EXIT);
           return;
         }
 
       } else {
-        String err = "Unexpected " + uri.toString() + " uri. Only one of " +
-            uriWebView.toString() + " or " +
-            uriFileProvider.toString() + " or " +
-            uriFormsProvider.toString() + " allowed.";
-        Log.e(t, err);
-        Intent i = new Intent();
-        setResult(RESULT_CANCELED, i);
-        finish();
+        assignContentView();
+        createErrorDialog(
+            getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
+                uriFormsProvider.toString()), EXIT);
         return;
       }
     }
 
     if (savedInstanceState != null) {
+      // if appName is explicitly set, use it...
+      setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
+          : getAppName());
+
+      if (savedInstanceState.containsKey(CONFLICT_TABLES)) {
+        mConflictTables = savedInstanceState.getBundle(CONFLICT_TABLES);
+      }
+    }
+
+    WebLogger.getLogger(getAppName()).i(t, "Starting up, creating directories");
+    try {
+      String appName = getAppName();
+      if (appName != null && appName.length() != 0) {
+        ODKFileUtils.verifyExternalStorageAvailability();
+        ODKFileUtils.assertDirectoryStructure(appName);
+      }
+    } catch (RuntimeException e) {
+      assignContentView();
+      createErrorDialog(e.getMessage(), EXIT);
+      return;
+    }
+
+    if (savedInstanceState != null) {
+      // if we are restoring, assume that initialization has already occurred.
 
       pageWaitingForData = savedInstanceState.containsKey(PAGE_WAITING_FOR_DATA) ? savedInstanceState
           .getString(PAGE_WAITING_FOR_DATA) : null;
@@ -739,13 +926,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       currentFragment = ScreenList
           .valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ? savedInstanceState
               .getString(CURRENT_FRAGMENT) : currentFragment.name());
-      if (savedInstanceState.containsKey(PROCESS_APK_EXPANSION_FILES)) {
-        mProcessAPKExpansionFiles = savedInstanceState.getBoolean(PROCESS_APK_EXPANSION_FILES);
-      }
 
-      // if appName is explicitly set, use it...
-      setAppName(savedInstanceState.containsKey(APP_NAME) ? savedInstanceState.getString(APP_NAME)
-          : getAppName());
       if (savedInstanceState.containsKey(FORM_URI)) {
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(),
             Uri.parse(savedInstanceState.getString(FORM_URI)));
@@ -756,11 +937,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       }
       setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
           .getString(INSTANCE_ID) : getInstanceId());
+      setUploadTableId(savedInstanceState.containsKey(UPLOAD_TABLE_ID) ? savedInstanceState
+          .getString(UPLOAD_TABLE_ID) : getUploadTableId());
 
-      String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ?
-          savedInstanceState.getString(SCREEN_PATH) : getScreenPath();
-      String tmpControllerState = savedInstanceState.containsKey(CONTROLLER_STATE) ?
-          savedInstanceState.getString(CONTROLLER_STATE) : getControllerState();
+      String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ? savedInstanceState
+          .getString(SCREEN_PATH) : getScreenPath();
+      String tmpControllerState = savedInstanceState.containsKey(CONTROLLER_STATE) ? savedInstanceState
+          .getString(CONTROLLER_STATE) : getControllerState();
       setSectionScreenState(tmpScreenPath, tmpControllerState);
 
       setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ? savedInstanceState
@@ -771,22 +954,33 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       }
 
       if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
-        sectionStateScreenHistory = savedInstanceState.getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
+        sectionStateScreenHistory = savedInstanceState
+            .getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
+      }
+    } else if (formUri != null) {
+      // request specifies a specific formUri -- try to open that
+      FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+      if (newForm == null) {
+        // can't find it -- launch the initialization dialog to hopefully
+        // discover it.
+        WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
+        Survey.getInstance().setRunInitializationTask(getAppName());
+        currentFragment = ScreenList.WEBKIT;
+      } else {
+        transitionToFormHelper(uri, newForm);
       }
     }
 
-    Log.i(t, "Starting up, creating directories");
-    try {
-      mProcessAPKExpansionFiles = !Survey.createODKDirs(getAppName());
-    } catch (RuntimeException e) {
-      createErrorDialog(e.getMessage(), EXIT);
-      return;
-    }
+    assignContentView();
+  }
 
-    // This creates the WebKit. We need all our values initialized by this point
+  /**
+   * This creates the WebKit. We need all our values initialized by this point.
+   */
+  private void assignContentView() {
     setContentView(R.layout.main_screen);
 
-    ActionBar actionBar = getSupportActionBar();
+    ActionBar actionBar = getActionBar();
     actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO);
     actionBar.show();
   }
@@ -798,7 +992,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
-      ActionBar actionBar = getSupportActionBar();
+      ActionBar actionBar = getActionBar();
       actionBar.setDisplayOptions(ActionBar.DISPLAY_USE_LOGO | ActionBar.DISPLAY_SHOW_TITLE);
       actionBar.show();
 
@@ -810,21 +1004,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (get.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
         item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
+
+        item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
+        item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
       }
 
-      String send = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_SEND_FINALIZED);
+      String send = PropertiesSingleton.getProperty(appName,
+          AdminPreferencesActivity.KEY_SEND_FINALIZED);
       if (send.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
         item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
       }
 
-      String manage = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_MANAGE_FORMS);
+      String manage = PropertiesSingleton.getProperty(appName,
+          AdminPreferencesActivity.KEY_MANAGE_FORMS);
       if (manage.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
         item.setIcon(R.drawable.trash).setShowAsAction(showOption);
       }
 
-      String settings = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
+      String settings = PropertiesSingleton.getProperty(appName,
+          AdminPreferencesActivity.KEY_ACCESS_SETTINGS);
       if (settings.equalsIgnoreCase("true")) {
         item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
             getString(R.string.general_preferences));
@@ -837,7 +1037,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
       item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
-      ActionBar actionBar = getSupportActionBar();
+      ActionBar actionBar = getActionBar();
       actionBar.hide();
     }
 
@@ -852,6 +1052,21 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     } else if (item.getItemId() == MENU_PULL_FORMS) {
       swapToFragmentView(ScreenList.FORM_DOWNLOADER);
       return true;
+    } else if (item.getItemId() == MENU_CLOUD_FORMS) {
+      try {
+        Intent syncIntent = new Intent();
+        syncIntent.setComponent(new ComponentName("org.opendatakit.sync",
+            "org.opendatakit.sync.activities.SyncActivity"));
+        syncIntent.setAction(Intent.ACTION_DEFAULT);
+        Bundle bundle = new Bundle();
+        bundle.putString(APP_NAME, appName);
+        syncIntent.putExtras(bundle);
+        this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
+      } catch (ActivityNotFoundException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
+      }
+      return true;
     } else if (item.getItemId() == MENU_MANAGE_FORMS) {
       swapToFragmentView(ScreenList.FORM_DELETER);
       return true;
@@ -859,7 +1074,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       swapToFragmentView(ScreenList.WEBKIT);
       return true;
     } else if (item.getItemId() == MENU_PUSH_FORMS) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER);
+      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER);
       return true;
     } else if (item.getItemId() == MENU_PREFERENCES) {
       // PreferenceFragment missing from support library...
@@ -869,8 +1084,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       startActivity(ig);
       return true;
     } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
-    	String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
-      if ("".equalsIgnoreCase(pw)) {
+      String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
+      if (pw == null || "".equalsIgnoreCase(pw)) {
         Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
         // TODO: convert this activity into a preferences fragment
         i.putExtra(APP_NAME, getAppName());
@@ -894,40 +1109,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public void chooseInstanceUploaderForm(Uri formUri) {
+  public void chooseInstanceUploaderTable(String tableId) {
     boolean success = true;
 
-    ODKWebView webkitView = (ODKWebView) findViewById(R.id.webkit_view);
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    // TODO: Verify there are no checkpoint saves on this tableId
+    setUploadTableId(tableId);
 
-    FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
-
-    // create this from the datastore
-    if (newForm == null) {
-      success = false;
-    } else {
-      // always loose the current instance...
-      setCurrentForm(newForm);
-      setInstanceId(null);
-      clearSectionScreenState();
-      setAuxillaryHash(null);
-      webkitView.clearPage();
-    }
-
-    if (success) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
-    } else {
-      Toast.makeText(this, getString(R.string.form_load_error), Toast.LENGTH_SHORT).show();
-    }
+    swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
   }
 
   @Override
   public void onBackPressed() {
-    FragmentManager mgr = getSupportFragmentManager();
-    int idxLast = mgr.getBackStackEntryCount()-2;
+    FragmentManager mgr = getFragmentManager();
+    int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
       Intent result = new Intent();
       // If we are in a WEBKIT, return the instanceId and the savepoint_type...
-      if ( this.getInstanceId() != null && currentFragment == ScreenList.WEBKIT ) {
+      if (this.getInstanceId() != null && currentFragment == ScreenList.WEBKIT) {
         result.putExtra("instanceId", getInstanceId());
         // in this case, the savepoint_type is null (a checkpoint).
       }
@@ -940,6 +1142,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   private void createErrorDialog(String errorMsg, final boolean shouldExit) {
+    WebLogger.getLogger(getAppName()).e(t, errorMsg);
     if (mAlertDialog != null) {
       mAlertDialog.dismiss();
       mAlertDialog = null;
@@ -949,10 +1152,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     mAlertDialog.setMessage(errorMsg);
     DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
       @Override
-      public void onClick(DialogInterface dialog, int i) {
-        switch (i) {
+      public void onClick(DialogInterface dialog, int button) {
+        switch (button) {
         case DialogInterface.BUTTON_POSITIVE:
           if (shouldExit) {
+            Intent i = new Intent();
+            setResult(RESULT_CANCELED, i);
             finish();
           }
           break;
@@ -981,8 +1186,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         new DialogInterface.OnClickListener() {
           public void onClick(DialogInterface dialog, int whichButton) {
             String value = input.getText().toString();
-            String pw = PropertiesSingleton.getProperty(appName, AdminPreferencesActivity.KEY_ADMIN_PW);
-            if (pw.compareTo(value) == 0) {
+            String pw = PropertiesSingleton.getProperty(appName,
+                AdminPreferencesActivity.KEY_ADMIN_PW);
+            if (pw != null && pw.compareTo(value) == 0) {
               Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
               // TODO: convert this activity into a preferences fragment
               i.putExtra(APP_NAME, getAppName());
@@ -1032,18 +1238,18 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public void hideWebkitView() {
     // This is a callback thread.
     // We must invalidate the options menu on the UI thread
-    // (this may be an issue with the Sherlock compatibility library)
     this.runOnUiThread(new Runnable() {
       @Override
       public void run() {
         WebLogger.getLogger(getAppName()).i(t, "hideWebkitView");
         // In the fragment UI, we want to return to not having any
         // instanceId defined.
-//        JQueryODKView webkitView = (JQueryODKView) findViewById(R.id.webkit_view);
-//        setInstanceId(null);
-//        setSectionScreenState(null,null);
-//        setAuxillaryHash(null);
-//        webkitView.loadPage();
+        // JQueryODKView webkitView = (JQueryODKView)
+        // findViewById(R.id.webkit_view);
+        // setInstanceId(null);
+        // setSectionScreenState(null,null);
+        // setAuxillaryHash(null);
+        // webkitView.loadPage();
         levelSafeInvalidateOptionsMenu();
       }
     });
@@ -1077,13 +1283,13 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   public void swapToFragmentView(ScreenList newFragment) {
-    Log.i(t, "swapToFragmentView: " + newFragment.toString());
-    FragmentManager mgr = getSupportFragmentManager();
+    WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView: " + newFragment.toString());
+    FragmentManager mgr = getFragmentManager();
     Fragment f;
     if (newFragment == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");
     } else if (newFragment == ScreenList.CUSTOM_VIEW) {
-      Log.w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
+      WebLogger.getLogger(getAppName()).w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {
         f = new WebViewFragment();
@@ -1094,12 +1300,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (f == null) {
         f = new FormChooserListFragment();
       }
-    } else if (newFragment == ScreenList.COPY_EXPANSION_FILES) {
-      f = mgr.findFragmentById(CopyExpansionFilesFragment.ID);
-      if (f == null) {
-        f = new CopyExpansionFilesFragment();
+    } else if (newFragment == ScreenList.INITIALIZATION_DIALOG) {
+      if (currentFragment == ScreenList.INITIALIZATION_DIALOG) {
+        WebLogger.getLogger(getAppName()).e(t, "Unexpected: currentFragment == INITIALIZATION_DIALOG");
+        return;
+      } else {
+        f = mgr.findFragmentById(InitializationFragment.ID);
+        if (f == null) {
+          f = new InitializationFragment();
+        }
+        ((InitializationFragment) f)
+            .setFragmentToShowNext((currentFragment == null) ? ScreenList.FORM_CHOOSER.name()
+                : currentFragment.name());
       }
-      ((CopyExpansionFilesFragment) f).setFragmentToShowNext(currentFragment.name());
     } else if (newFragment == ScreenList.FORM_DELETER) {
       f = mgr.findFragmentById(FormDeleteListFragment.ID);
       if (f == null) {
@@ -1110,17 +1323,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       if (f == null) {
         f = new FormDownloadListFragment();
       }
-    } else if (newFragment == ScreenList.INSTANCE_UPLOADER_FORM_CHOOSER) {
-      f = mgr.findFragmentById(InstanceUploaderFormChooserListFragment.ID);
+    } else if (newFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER) {
+      f = mgr.findFragmentById(InstanceUploaderTableChooserListFragment.ID);
       if (f == null) {
-        f = new InstanceUploaderFormChooserListFragment();
+        f = new InstanceUploaderTableChooserListFragment();
       }
     } else if (newFragment == ScreenList.INSTANCE_UPLOADER) {
       f = mgr.findFragmentById(InstanceUploaderListFragment.ID);
       if (f == null) {
         f = new InstanceUploaderListFragment();
       }
-      ((InstanceUploaderListFragment) f).changeForm(getCurrentForm());
+      ((InstanceUploaderListFragment) f).changeUploadTableId();
     } else if (newFragment == ScreenList.WEBKIT) {
       f = mgr.findFragmentById(WebViewFragment.ID);
       if (f == null) {
@@ -1149,6 +1362,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
     }
+
     currentFragment = newFragment;
     BackStackEntry entry = null;
     for (int i = 0; i < mgr.getBackStackEntryCount(); ++i) {
@@ -1166,22 +1380,22 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     // add transaction to show the screen we want
     FragmentTransaction trans = mgr.beginTransaction();
     trans.replace(R.id.main_content, f);
-    // never put the copy-expansion-files fragment on the
-    // back stack it is always a transient screen.
-    if (currentFragment != ScreenList.COPY_EXPANSION_FILES) {
-      trans.addToBackStack(currentFragment.name());
-    } else {
-      trans.disallowAddToBackStack();
-    }
+    trans.addToBackStack(currentFragment.name());
     trans.commit();
-    levelSafeInvalidateOptionsMenu();
+
+    // and see if we should re-initialize...
+    if ((currentFragment != ScreenList.INITIALIZATION_DIALOG)
+        && Survey.getInstance().shouldRunInitializationTask(getAppName())) {
+      WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView -- calling clearRunInitializationTask");
+      // and immediately clear the should-run flag...
+      Survey.getInstance().clearRunInitializationTask(getAppName());
+      // OK we should swap to the InitializationFragment view
+      swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
+    } else {
+      levelSafeInvalidateOptionsMenu();
+    }
   }
 
-  /**
-   * Android Lint complains, but we are using Sherlock,
-   * so this does exist for down-level devices.
-   */
-  @SuppressLint("NewApi")
   private void levelSafeInvalidateOptionsMenu() {
     invalidateOptionsMenu();
   }
@@ -1199,20 +1413,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     WebLogger l = WebLogger.getLogger(getAppName());
 
     l.d(t, "-------------*start* dumpScreenStateHistory--------------------");
-    if ( sectionStateScreenHistory.isEmpty() ) {
+    if (sectionStateScreenHistory.isEmpty()) {
       l.d(t, "sectionScreenStateHistory EMPTY");
     } else {
-      for ( int i = sectionStateScreenHistory.size()-1 ; i >= 0 ; --i ) {
+      for (int i = sectionStateScreenHistory.size() - 1; i >= 0; --i) {
         SectionScreenStateHistory thisSection = sectionStateScreenHistory.get(i);
-        l.d(t, "[" + i + "] screenPath: " + thisSection.currentScreen.screenPath );
-        l.d(t, "[" + i + "] state:      " + thisSection.currentScreen.state );
-        if ( thisSection.history.isEmpty() ) {
-          l.d(t, "[" + i + "] history[] EMPTY" );
+        l.d(t, "[" + i + "] screenPath: " + thisSection.currentScreen.screenPath);
+        l.d(t, "[" + i + "] state:      " + thisSection.currentScreen.state);
+        if (thisSection.history.isEmpty()) {
+          l.d(t, "[" + i + "] history[] EMPTY");
         } else {
-          for ( int j = thisSection.history.size()-1 ; j >= 0 ; --j ) {
+          for (int j = thisSection.history.size() - 1; j >= 0; --j) {
             ScreenState ss = thisSection.history.get(j);
-            l.d(t, "[" + i + "] history[" + j + "] screenPath: " + ss.screenPath );
-            l.d(t, "[" + i + "] history[" + j + "] state:      " + ss.state );
+            l.d(t, "[" + i + "] history[" + j + "] screenPath: " + ss.screenPath);
+            l.d(t, "[" + i + "] history[" + j + "] state:      " + ss.state);
           }
         }
       }
@@ -1226,14 +1440,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       WebLogger.getLogger(getAppName()).i(t, "pushSectionScreenState: NULL!");
       return;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
-    lastSection.history.add(new ScreenState(lastSection.currentScreen.screenPath, lastSection.currentScreen.state));
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
+        .size() - 1);
+    lastSection.history.add(new ScreenState(lastSection.currentScreen.screenPath,
+        lastSection.currentScreen.state));
   }
 
   @Override
   public void setSectionScreenState(String screenPath, String state) {
-    if ( screenPath == null ) {
-      WebLogger.getLogger(getAppName()).e(t, "pushSectionScreenState: NULL currentScreen.screenPath!");
+    if (screenPath == null) {
+      WebLogger.getLogger(getAppName()).e(t,
+          "pushSectionScreenState: NULL currentScreen.screenPath!");
       return;
     } else {
       String[] splits = screenPath.split("/");
@@ -1242,18 +1459,18 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       SectionScreenStateHistory lastSection;
       if (sectionStateScreenHistory.size() == 0) {
         sectionStateScreenHistory.add(new SectionScreenStateHistory());
-        lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+        lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
         lastSection.currentScreen.screenPath = screenPath;
         lastSection.currentScreen.state = state;
         lastSection.history.clear();
       } else {
-        lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
-        if ( lastSection.currentScreen.screenPath.startsWith(sectionName) ) {
+        lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
+        if (lastSection.currentScreen.screenPath.startsWith(sectionName)) {
           lastSection.currentScreen.screenPath = screenPath;
           lastSection.currentScreen.state = state;
         } else {
           sectionStateScreenHistory.add(new SectionScreenStateHistory());
-          lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+          lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
           lastSection.currentScreen.screenPath = screenPath;
           lastSection.currentScreen.state = state;
           lastSection.history.clear();
@@ -1266,7 +1483,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   public void clearSectionScreenState() {
     sectionStateScreenHistory.clear();
     sectionStateScreenHistory.add(new SectionScreenStateHistory());
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
+        .size() - 1);
     lastSection.currentScreen.screenPath = "initial/0";
     lastSection.currentScreen.state = null;
     lastSection.history.clear();
@@ -1278,7 +1496,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       WebLogger.getLogger(getAppName()).i(t, "getControllerState: NULL!");
       return null;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
+        .size() - 1);
     return lastSection.currentScreen.state;
   }
 
@@ -1288,18 +1507,19 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       WebLogger.getLogger(getAppName()).i(t, "getScreenPath: NULL!");
       return null;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
+        .size() - 1);
     return lastSection.currentScreen.screenPath;
   }
 
   @Override
   public boolean hasScreenHistory() {
     // two or more sections -- there must be history
-    if ( sectionStateScreenHistory.size() > 1 ) {
+    if (sectionStateScreenHistory.size() > 1) {
       return true;
     }
     // no sections -- no history
-    if ( sectionStateScreenHistory.size() == 0 ) {
+    if (sectionStateScreenHistory.size() == 0) {
       return false;
     }
 
@@ -1309,27 +1529,27 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public String popScreenHistory() {
-    if ( sectionStateScreenHistory.size() == 0 ) {
+    if (sectionStateScreenHistory.size() == 0) {
       return null;
     }
 
     SectionScreenStateHistory lastSection;
-    lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
-    if ( lastSection.history.size() != 0 ) {
-      ScreenState lastHistory = lastSection.history.remove(lastSection.history.size()-1);
+    lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
+    if (lastSection.history.size() != 0) {
+      ScreenState lastHistory = lastSection.history.remove(lastSection.history.size() - 1);
       lastSection.currentScreen.screenPath = lastHistory.screenPath;
       lastSection.currentScreen.state = lastHistory.state;
       return lastSection.currentScreen.screenPath;
     }
 
     // pop to an enclosing screen
-    sectionStateScreenHistory.remove(sectionStateScreenHistory.size()-1);
+    sectionStateScreenHistory.remove(sectionStateScreenHistory.size() - 1);
 
-    if ( sectionStateScreenHistory.size() == 0 ) {
+    if (sectionStateScreenHistory.size() == 0) {
       return null;
     }
 
-    lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+    lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
     return lastSection.currentScreen.screenPath;
   }
 
@@ -1341,11 +1561,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   @Override
   public String popSectionStack() {
     if (sectionStateScreenHistory.size() != 0) {
-      sectionStateScreenHistory.remove(sectionStateScreenHistory.size()-1);
+      sectionStateScreenHistory.remove(sectionStateScreenHistory.size() - 1);
     }
 
     if (sectionStateScreenHistory.size() != 0) {
-      SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size()-1);
+      SectionScreenStateHistory lastSection = sectionStateScreenHistory
+          .get(sectionStateScreenHistory.size() - 1);
       return lastSection.currentScreen.screenPath;
     }
 
@@ -1353,12 +1574,12 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
   }
 
   @Override
-  public void setSessionVariable( String elementPath, String jsonValue ) {
+  public void setSessionVariable(String elementPath, String jsonValue) {
     sessionVariables.putString(elementPath, jsonValue);
   }
 
   @Override
-  public String getSessionVariable( String elementPath ) {
+  public String getSessionVariable(String elementPath) {
     return sessionVariables.getString(elementPath);
   }
 
@@ -1402,13 +1623,29 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
    * @param action
    *          -- the intent to be launched
    * @param valueContentMap
-   *          -- parameters to pass to the intent { uri: uriValue, extras: extrasMap }
+   *          -- parameters to pass to the intent
+   *          {
+   *            uri: uriValue, // parse to a uri and set as the data of the
+   *                           // intent
+   *            extras: extrasMap, // added as extras to the intent
+   *            package: packageStr, // the name of a package to launch
+   *            type: typeStr, // will be set as the type
+   *            data: dataUri // will be parsed to a uri and set as the data of
+   *                          // the intent. For now this is equivalent to the
+   *                          // uri field, although that name is less precise.
+   *          }
    */
   @Override
-  public String doAction(String page, String path, String action, JSONObject valueContentMap) {
+  public String doAction(
+      String page,
+      String path,
+      String action,
+      JSONObject valueContentMap) {
+
+    // android.os.Debug.waitForDebugger();
 
     if (isWaitingForBinaryData()) {
-      Log.w(t, "Already waiting for data -- ignoring");
+      WebLogger.getLogger(getAppName()).w(t, "Already waiting for data -- ignoring");
       return "IGNORE";
     }
 
@@ -1422,7 +1659,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         i = new Intent(this, clazz);
         isSurveyApp = true;
       } catch (ClassNotFoundException e) {
-        e.printStackTrace();
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
         i = new Intent(action);
       }
     } else {
@@ -1434,18 +1671,49 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
     }
 
     try {
+      
+      String uriKey = "uri";
+      String extrasKey = "extras";
+      String packageKey = "package";
+      String typeKey = "type";
+      String dataKey = "data";
+      
       JSONObject valueMap = null;
       if (valueContentMap != null) {
-        if ( valueContentMap.has("uri") ) {
-          String v = valueContentMap.getString("uri");
-          if ( v != null ) {
-            Uri uri = Uri.parse(v);
+        
+        // do type first, as it says in the spec this call deletes any other
+        // data (eg by setData()) on the intent.
+        if (valueContentMap.has(typeKey)) {
+          String type = valueContentMap.getString(typeKey);
+          i.setType(type);
+        }
+        
+        if (valueContentMap.has(uriKey) || valueContentMap.has(dataKey)) {
+          // as it currently stands, the data property can be in either the uri
+          // or data keys.
+          String uriValueStr = null;
+          if (valueContentMap.has(uriKey)) {
+            uriValueStr = valueContentMap.getString(uriKey);
+          }
+          // go ahead and overwrite with data if it's present.
+          if (valueContentMap.has(dataKey)) {
+            uriValueStr = valueContentMap.getString(dataKey);
+          }
+          if (uriValueStr != null) {
+            Uri uri = Uri.parse(uriValueStr);
             i.setData(uri);
           }
         }
-        if ( valueContentMap.has("extras") ) {
-          valueMap = valueContentMap.getJSONObject("extras");
+        
+        if (valueContentMap.has(extrasKey)) {
+          valueMap = valueContentMap.getJSONObject(extrasKey);
         }
+        
+        if (valueContentMap.has(packageKey)) {
+          String packageStr = valueContentMap.getString(packageKey);
+          i.setPackage(packageStr);
+        }
+        
       }
 
       if (valueMap != null) {
@@ -1464,7 +1732,7 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
               if (v != null) {
                 return v;
               } else {
-                Log.e(t, "Unable to process opendatakit-macro: " + value);
+                WebLogger.getLogger(getAppName()).e(t, "Unable to process opendatakit-macro: " + value);
                 throw new IllegalArgumentException(
                     "Unable to process opendatakit-macro expression: " + value);
               }
@@ -1477,15 +1745,17 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         i.putExtras(b);
       }
 
-      if ( isSurveyApp || isTablesApp ) {
+      if (isSurveyApp || isTablesApp) {
         // ensure that we supply our appName...
-        if ( !i.hasExtra(APP_NAME) ) {
+        if (!i.hasExtra(APP_NAME)) {
           i.putExtra(APP_NAME, getAppName());
-          Log.w(t, "doAction into Survey or Tables does not supply an appName. Adding: " + getAppName());
+          WebLogger.getLogger(getAppName()).w(t, "doAction into Survey or Tables does not supply an appName. Adding: "
+              + getAppName());
         }
       }
     } catch (Exception ex) {
-      ex.printStackTrace();
+      WebLogger.getLogger(getAppName()).e(t, "JSONException: " + ex.toString());
+      WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "JSONException: " + ex.toString();
     }
 
@@ -1497,8 +1767,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
-      ex.printStackTrace();
-      Log.e(t, "Unable to launch activity: " + ex.toString());
+      WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
+      WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
     }
   }
@@ -1510,7 +1780,8 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
    * *********************************************************************
    * *********************************************************************
    * *********************************************************************
-   ***********************************************************************/
+   * *********************************************************************
+   */
 
   public boolean isWaitingForBinaryData() {
     return actionWaitingForData != null;
@@ -1518,19 +1789,20 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    Log.i(t, "onActivityResult");
+    WebLogger.getLogger(getAppName()).i(t, "onActivityResult");
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit_view);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       try {
         String jsonObject = null;
         Bundle b = (intent == null) ? null : intent.getExtras();
-        JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(b);
+        JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
         jsonObject = "{\"status\":" + Integer.toString(resultCode)
             + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
-        Log.i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
+        WebLogger.getLogger(getAppName()).i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
-        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData, jsonObject );
+        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
+            jsonObject);
       } catch (Exception e) {
         view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
             "{ \"status\":0, \"result\":\"" + e.toString() + "\"}");
@@ -1539,6 +1811,9 @@ public class MainMenuActivity extends SherlockFragmentActivity implements ODKAct
         pageWaitingForData = null;
         actionWaitingForData = null;
       }
+    } else if (requestCode == SYNC_ACTIVITY_CODE) {
+      Survey.getInstance().setRunInitializationTask(getAppName());
+      this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }
 }

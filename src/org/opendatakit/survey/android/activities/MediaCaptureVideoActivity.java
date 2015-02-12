@@ -16,23 +16,26 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.provider.FileProvider;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
-import android.util.Log;
 import android.widget.Toast;
 
 /**
@@ -55,6 +58,11 @@ public class MediaCaptureVideoActivity extends Activity {
   private static final String AFTER_RESULT = "afterResult";
   private static final String ERROR_NO_FILE = "Media file does not exist! ";
   private static final String ERROR_COPY_FILE = "Media file copy failed! ";
+  
+  private static final String NEXUS7 = "Nexus 7";
+  public static final int MEDIA_TYPE_IMAGE = 1;
+  public static final int MEDIA_TYPE_VIDEO = 2;
+  private Uri nexus7Uri;
 
   private String appName = null;
   private String uriFragmentNewFileBase = null;
@@ -109,7 +117,7 @@ public class MediaCaptureVideoActivity extends Activity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
       // to make the name unique...
-      File f = FileProvider.getAsFile(this, appName,
+      File f = ODKFileUtils.getAsFile(appName,
           (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
@@ -117,13 +125,24 @@ public class MediaCaptureVideoActivity extends Activity {
       } else {
         i.putExtra(Video.Media.DISPLAY_NAME, f.getName().substring(0, idx));
       }
+      
+      // Need to have this ugly code to account for 
+      // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
+      // of the intent - using the MediaStore.EXTRA_OUTPUT to get the data
+      // Have it saving to an intermediate location instead of final destination
+      // to allow the current location to catch issues with the intermediate file
+      WebLogger.getLogger(appName).i(t, "The build of this device is " + android.os.Build.MODEL);
+      if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
+        nexus7Uri = getOutputMediaFileUri(MEDIA_TYPE_VIDEO);  
+        i.putExtra(MediaStore.EXTRA_OUTPUT, nexus7Uri);
+      }
 
       try {
         hasLaunched = true;
         startActivityForResult(i, ACTION_CODE);
       } catch (ActivityNotFoundException e) {
         String err = getString(R.string.activity_not_found, MediaStore.ACTION_VIDEO_CAPTURE);
-        Log.e(t, err);
+        WebLogger.getLogger(appName).e(t, err);
         Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
         setResult(Activity.RESULT_CANCELED);
         finish();
@@ -146,35 +165,11 @@ public class MediaCaptureVideoActivity extends Activity {
       return;
     }
     // get the file path and delete the file
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
-    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, path);
-    Log.i(t, "Deleted " + del + " rows from video media content provider");
-  }
-
-  private String getPathFromUri(Uri uri) {
-    if (uri.toString().startsWith("file://")) {
-      return uri.toString().substring(7);
-    } else {
-      String[] mediaProjection = { Video.Media.DATA };
-      String mediaPath = null;
-      Cursor c = null;
-      try {
-        c = getApplicationContext().getContentResolver().query(uri, mediaProjection, null, null,
-            null);
-        int column_index = c.getColumnIndexOrThrow(Video.Media.DATA);
-        if (c.getCount() > 0) {
-          c.moveToFirst();
-          mediaPath = c.getString(column_index);
-        }
-        return mediaPath;
-      } finally {
-        if (c != null) {
-          c.close();
-        }
-      }
-    }
+    int del = MediaUtils.deleteVideoFileFromMediaProvider(this, appName, path);
+    WebLogger.getLogger(appName).i(t, "Deleted " + del + " rows from video media content provider");
   }
 
   @Override
@@ -193,13 +188,13 @@ public class MediaCaptureVideoActivity extends Activity {
     // getDataString() does...
     String str = intent.getDataString();
     if (mediaUri == null && str != null) {
-      Log.w(t, "Attempting to work around null mediaUri");
+      WebLogger.getLogger(appName).w(t, "Attempting to work around null mediaUri");
       mediaUri = Uri.parse(str);
     }
 
     if (mediaUri == null) {
       // we are in trouble
-      Log.e(t, "No uri returned from ACTION_CAPTURE_VIDEO!");
+      WebLogger.getLogger(appName).e(t, "No uri returned from ACTION_CAPTURE_VIDEO!");
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
@@ -209,7 +204,7 @@ public class MediaCaptureVideoActivity extends Activity {
     deleteMedia();
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = getPathFromUri((Uri) mediaUri);
+    String binaryPath = MediaUtils.getPathFromUri(this, (Uri) mediaUri, Video.Media.DATA);
     File source = new File(binaryPath);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
@@ -220,7 +215,7 @@ public class MediaCaptureVideoActivity extends Activity {
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = FileProvider.getAsFile(this, appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
@@ -230,7 +225,7 @@ public class MediaCaptureVideoActivity extends Activity {
     try {
       FileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
-      Log.e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       deleteMedia();
       setResult(Activity.RESULT_CANCELED);
@@ -248,14 +243,23 @@ public class MediaCaptureVideoActivity extends Activity {
 
       Uri MediaURI = getApplicationContext().getContentResolver().insert(
           Video.Media.EXTERNAL_CONTENT_URI, values);
-      Log.i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
       uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
-      Log.i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
-
-      int delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
-      Log.i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
+      WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
+      
+      // Need to have this ugly code to account for 
+      // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
+      // of the intent - uri in this case is a file 
+      int delCount = 0;
+      if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
+        File fileToDelete = new File(mediaUri.getPath());
+        delCount = fileToDelete.delete() ? 1 : 0;
+      } else {
+        delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      }
+      WebLogger.getLogger(appName).i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
-      Log.e(t, "Inserting Video file FAILED");
+      WebLogger.getLogger(appName).e(t, "Inserting Video file FAILED");
     }
 
     /*
@@ -267,7 +271,7 @@ public class MediaCaptureVideoActivity extends Activity {
 
   private void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
-        FileProvider.getAsFile(this, appName, uriFragmentToMedia) : null;
+        ODKFileUtils.getAsFile(appName, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
       i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));
@@ -276,7 +280,7 @@ public class MediaCaptureVideoActivity extends Activity {
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      Log.e(t, ERROR_NO_FILE
+      WebLogger.getLogger(appName).e(t, ERROR_NO_FILE
           + ((uriFragmentToMedia != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
@@ -289,6 +293,52 @@ public class MediaCaptureVideoActivity extends Activity {
     hasLaunched = false;
     afterResult = true;
     super.finish();
+  }
+
+  /*
+   * Create a file Uri for saving an image or video 
+   * For Nexus 7 fix ... 
+   * See http://developer.android.com/guide/topics/media/camera.html for more info
+   */
+  private Uri getOutputMediaFileUri(int type){
+        return Uri.fromFile(getOutputMediaFile(type));
+  }
+
+  /*
+   *  Create a File for saving an image or video 
+   *  For Nexus 7 fix ... 
+   *  See http://developer.android.com/guide/topics/media/camera.html for more info
+   */
+  private File getOutputMediaFile(int type) {
+      // To be safe, you should check that the SDCard is mounted
+      // using Environment.getExternalStorageState() before doing this.
+
+      File mediaStorageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+      // This location works best if you want the created images to be shared
+      // between applications and persist after your app has been uninstalled.
+
+      // Create the storage directory if it does not exist
+      if (! mediaStorageDir.exists()){
+          if (! mediaStorageDir.mkdirs()){
+              WebLogger.getLogger(appName).d(t, "failed to create directory");
+              return null;
+          }
+      }
+
+      // Create a media file name
+      String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmssSSSZ", Locale.US).format(new Date());
+      File mediaFile;
+      if (type == MEDIA_TYPE_IMAGE){
+          mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+          "IMG_"+ timeStamp + ".jpg");
+      } else if(type == MEDIA_TYPE_VIDEO) {
+          mediaFile = new File(mediaStorageDir.getPath() + File.separator +
+          "VID_"+ timeStamp + ".mp4");
+      } else {
+          return null;
+      }
+
+      return mediaFile;
   }
 
 }

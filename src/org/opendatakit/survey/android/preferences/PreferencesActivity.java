@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.android.preferences;
 
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.AccountList;
@@ -446,7 +447,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
           c = getContentResolver().query(uri, projection, null, null, null);
           int i = c.getColumnIndexOrThrow(Images.Media.DATA);
           c.moveToFirst();
-          sourceImagePath = c.getString(i);
+          sourceImagePath = ODKDatabaseUtils.get().getIndexAsString(c, i);
         } finally {
           if (c != null) {
             c.close();

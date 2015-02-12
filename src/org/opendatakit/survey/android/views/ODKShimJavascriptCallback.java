@@ -17,7 +17,8 @@ package org.opendatakit.survey.android.views;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.opendatakit.common.android.database.WebDbDatabaseHelper;
+import org.opendatakit.common.android.database.ArchaicConstantsToRemove;
+import org.opendatakit.common.android.provider.DataTableColumns;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.activities.ODKActivity.FrameworkFormPathInfo;
@@ -92,7 +93,9 @@ public class ODKShimJavascriptCallback {
 	 return "{\"container\":\"Android\"," +
 		      "\"version\":\""	+ Build.VERSION.RELEASE + "\"," +
             "\"appName\":\"" + mActivity.getAppName() + "\"," +
-		      "\"activeUser\":\"" + mActivity.getActiveUser() + "\"," +
+		      ((mActivity.getActiveUser() == null) ? 
+		          "\"activeUser\":\"" + DataTableColumns.DEFAULT_SAVEPOINT_CREATOR + "\"," :
+                "\"activeUser\":\"" + mActivity.getActiveUser() + "\",") +
             "\"baseUri\":\"" + mActivity.getWebViewContentUri() + mActivity.getAppName() + "/\"," +
             "\"formsUri\":\"" + FormsProviderAPI.CONTENT_URI.toString() + "\"," +
 	         "\"logLevel\":\"D\"}";
@@ -126,10 +129,10 @@ public class ODKShimJavascriptCallback {
     }
     log("I", "getDatabaseSettings");
     // maxSize is in bytes
-    return "{\"shortName\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_SHORT_NAME
-        + "\",\"version\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_VERSION
-        + "\",\"displayName\":\"" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_DISPLAY_NAME
-        + "\",\"maxSize\":" + WebDbDatabaseHelper.WEBDB_INSTANCE_DB_ESTIMATED_SIZE + "}";
+    return "{\"shortName\":\"" + ArchaicConstantsToRemove.WEBDB_INSTANCE_DB_SHORT_NAME
+        + "\",\"version\":\"" + ArchaicConstantsToRemove.WEBDB_INSTANCE_DB_VERSION
+        + "\",\"displayName\":\"" + ArchaicConstantsToRemove.WEBDB_INSTANCE_DB_DISPLAY_NAME
+        + "\",\"maxSize\":" + ArchaicConstantsToRemove.WEBDB_INSTANCE_DB_ESTIMATED_SIZE + "}";
   }
 
   // @JavascriptInterface
@@ -163,6 +166,17 @@ public class ODKShimJavascriptCallback {
     }
   }
 
+  // @JavascriptInterface
+  public String getProperty(String propertyId) {
+    if (mWebView == null) {
+      log.i(t, "getProperty -- interface removed");
+      return null;
+    }
+    log("I", "getProperty(" + propertyId + ")");
+
+    return mActivity.getProperty(propertyId);
+  }
+  
   // @JavascriptInterface
   public void clearInstanceId(String refId) {
     if (mWebView == null) {

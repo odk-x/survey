@@ -17,12 +17,14 @@ package org.opendatakit.survey.android.logic;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import org.apache.commons.lang3.CharEncoding;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.StaticStateManipulator;
+import org.opendatakit.common.android.utilities.StaticStateManipulator.IStaticFieldManipulator;
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
@@ -36,22 +38,45 @@ public class PropertiesSingleton {
 
   private static final String t = "PropertiesSingleton";
 
-  private static final String ODK_SURVEY_CONFIG_PROPERTIES_FILENAME = "survey.properties";
+  private static String gAppName = null;
+  private static PropertiesSingleton gSingleton = null;
+  
+  static {
+    StaticStateManipulator.get().register(90,  new IStaticFieldManipulator() {
 
-  private static final String ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME = "survey.temp";
-
-  private static final Map<String, PropertiesSingleton> singletons = new HashMap<String, PropertiesSingleton>();
+      @Override
+      public void reset() {
+        gSingleton = null;
+        gAppName = null;
+      }});
+  }
 
   private static synchronized PropertiesSingleton getSingleton(String appName) {
     if (appName == null || appName.length() == 0) {
       throw new IllegalArgumentException("Unexpectedly null or empty appName");
     }
-    PropertiesSingleton s = singletons.get(appName);
-    if (s == null) {
-      s = new PropertiesSingleton(appName);
-      singletons.put(appName, s);
+
+    if ( gSingleton == null || gAppName == null || !gAppName.equals(appName) ) {
+
+      // ensure that external storage is present...
+      try {
+        ODKFileUtils.verifyExternalStorageAvailability();
+        File f = new File(ODKFileUtils.getOdkFolder());
+        if (!f.exists()) {
+          f.mkdir();
+        } else if (!f.isDirectory()) {
+          Log.e(t, f.getAbsolutePath() + " is not a directory!");
+          throw new IllegalArgumentException(f.getAbsolutePath() + " is not a directory!");
+        }
+      } catch (Exception e) {
+        Log.e(t, "External storage not available");
+        throw new IllegalArgumentException("External storage not available");
+      }
+
+      gSingleton = new PropertiesSingleton(appName);
+      gAppName = appName;
     }
-    return s;
+    return gSingleton;
   }
 
   private static boolean isSecureProperty(String propertyName) {
@@ -209,8 +234,7 @@ public class PropertiesSingleton {
   private void readProperties() {
     try {
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
+        mConfigFile = new File(ODKFileUtils.getSurveyConfigurationFile(mAppName));
       }
 
       FileInputStream configFileInputStream = new FileInputStream(mConfigFile);
@@ -219,34 +243,32 @@ public class PropertiesSingleton {
       configFileInputStream.close();
 
     } catch (Exception e) {
-      e.printStackTrace();
+      WebLogger.getLogger(mAppName).printStackTrace(e);
     }
   }
 
   private void writeProperties() {
     try {
       if (mTempConfigFile == null) {
-        mTempConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_TEMP_CONFIG_PROPERTIES_FILENAME);
+        mTempConfigFile = new File(ODKFileUtils.getSurveyTempConfigurationFile(mAppName));
       }
       FileOutputStream configFileOutputStream = new FileOutputStream(mTempConfigFile, false);
 
-      mProps.storeToXML(configFileOutputStream, null, "UTF-8");
+      mProps.storeToXML(configFileOutputStream, null, CharEncoding.UTF_8);
       configFileOutputStream.close();
 
       if (mConfigFile == null) {
-        mConfigFile = new File(ODKFileUtils.getAppFolder(mAppName),
-            ODK_SURVEY_CONFIG_PROPERTIES_FILENAME);
+        mConfigFile = new File(ODKFileUtils.getSurveyConfigurationFile(mAppName));
       }
 
       boolean fileSuccess = mTempConfigFile.renameTo(mConfigFile);
 
       if (!fileSuccess) {
-        Log.i(t, "Temporary Config File Rename Failed!");
+        WebLogger.getLogger(mAppName).i(t, "Temporary Config File Rename Failed!");
       }
 
     } catch (Exception e) {
-      e.printStackTrace();
+      WebLogger.getLogger(mAppName).printStackTrace(e);
     }
   }
 }

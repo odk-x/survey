@@ -15,25 +15,25 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
+import android.app.ListFragment;
+import android.app.LoaderManager;
+import android.content.CursorLoader;
+import android.content.Loader;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.CursorLoader;
-import android.support.v4.content.Loader;
-import android.support.v4.widget.CursorAdapter;
-import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CursorAdapter;
 import android.widget.ListView;
-import android.widget.TextView;
+import android.widget.SimpleCursorAdapter;
 
 /**
  * Fragment displaying the list of available forms to fill out.
@@ -41,8 +41,8 @@ import android.widget.TextView;
  * @author mitchellsundt@gmail.com
  *
  */
-public class FormChooserListFragment extends ListFragment implements
-    LoaderManager.LoaderCallbacks<Cursor> {
+public class FormChooserListFragment extends ListFragment implements LoaderManager.LoaderCallbacks<Cursor>
+    {
 
   @SuppressWarnings("unused")
   private static final String t = "FormChooserListFragment";
@@ -74,7 +74,6 @@ public class FormChooserListFragment extends ListFragment implements
     mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
         R.layout.two_item, data, viewParams);
     setListAdapter(mInstances);
-    // getListView().setBackgroundColor(Color.WHITE);
 
     getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
   }
@@ -82,17 +81,12 @@ public class FormChooserListFragment extends ListFragment implements
   @Override
   public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
     view = inflater.inflate(ID, container, false);
-    TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
     return view;
   }
 
   @Override
   public void onResume() {
     super.onResume();
-
-    TextView tv = (TextView) view.findViewById(R.id.status_text);
-    tv.setText(R.string.select_form_to_edit);
   }
 
   @Override
@@ -106,7 +100,7 @@ public class FormChooserListFragment extends ListFragment implements
 
     // get uri to form
     Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
-    String formId = c.getString(c.getColumnIndex(FormsColumns.FORM_ID));
+    String formId = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
     Uri formUri = Uri.withAppendedPath(
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
             ((ODKActivity) getActivity()).getAppName()), formId);

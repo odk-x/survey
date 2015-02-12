@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.IOException;
 
+import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
@@ -30,7 +31,6 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 /**
  * Activity to authenticate against an account and generate a token into the
@@ -57,7 +57,7 @@ public class AccountInfo extends Activity {
     if ( mAppName == null || mAppName.length() == 0 ) {
     	mAppName = "survey";
     }
-    Log.i(t, t + " appName=" + mAppName);
+    WebLogger.getLogger(mAppName).i(t, t + ".onCreate appName=" + mAppName);
   }
 
   /**
