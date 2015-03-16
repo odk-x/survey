@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -38,11 +40,10 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class MediaChooseImageActivity extends Activity {
+public class MediaChooseImageActivity extends BaseActivity {
   private static final String t = "MediaChooseImageActivity";
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "image/";
-  private static final String APP_NAME = "appName";
   private static final String URI_FRAGMENT = "uriFragment";
 
   private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
@@ -57,17 +58,17 @@ public class MediaChooseImageActivity extends Activity {
 
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-      appName = extras.getString(APP_NAME);
+      appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (savedInstanceState != null) {
-      appName = savedInstanceState.getString(APP_NAME);
+      appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + APP_NAME
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
     }
 
@@ -88,11 +89,16 @@ public class MediaChooseImageActivity extends Activity {
       finish();
     }
   }
+  
+  @Override
+  public String getAppName() {
+    return appName;
+  }
 
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putString(APP_NAME, appName);
+    outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
   }
 
@@ -165,6 +171,14 @@ public class MediaChooseImageActivity extends Activity {
       setResult(Activity.RESULT_CANCELED);
       finish();
     }
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 
 }

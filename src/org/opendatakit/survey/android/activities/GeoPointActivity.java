@@ -17,10 +17,11 @@ package org.opendatakit.survey.android.activities;
 import java.text.DecimalFormat;
 import java.util.List;
 
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -32,7 +33,7 @@ import android.location.LocationProvider;
 import android.os.Bundle;
 import android.widget.Toast;
 
-public class GeoPointActivity extends Activity implements LocationListener {
+public class GeoPointActivity extends BaseActivity implements LocationListener {
   private static final String t = "GeoPointActivity";
 
   // default location accuracy
@@ -49,7 +50,7 @@ public class GeoPointActivity extends Activity implements LocationListener {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( mAppName == null || mAppName.length() == 0 ) {
       mAppName = "survey";
     }
@@ -77,6 +78,11 @@ public class GeoPointActivity extends Activity implements LocationListener {
 
     setupLocationDialog();
 
+  }
+  
+  @Override
+  public String getAppName() {
+    return mAppName;
   }
 
   @Override
@@ -193,6 +199,14 @@ public class GeoPointActivity extends Activity implements LocationListener {
     case LocationProvider.TEMPORARILY_UNAVAILABLE:
       break;
     }
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 
 }

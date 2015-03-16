@@ -18,16 +18,21 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 
+import org.opendatakit.common.android.activities.IAppAwareActivity;
+import org.opendatakit.common.android.fragment.AlertDialogFragment;
+import org.opendatakit.common.android.fragment.AlertDialogFragment.ConfirmAlertDialog;
+import org.opendatakit.common.android.fragment.AuthDialogFragment;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment.CancelProgressDialog;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
+import org.opendatakit.common.android.logic.RequestCodes;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
-import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 import org.opendatakit.survey.android.tasks.DownloadFormListTask;
 
 import android.app.Activity;
@@ -247,7 +252,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
 
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
-      f.downloadFormList(((ODKActivity) getActivity()).getAppName(), this);
+      f.downloadFormList(((IAppAwareActivity) getActivity()).getAppName(), this);
     }
   }
 
@@ -301,7 +306,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       showProgressDialog(DialogState.ProgressForms);
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
-      f.downloadForms(((ODKActivity) getActivity()).getAppName(), this,
+      f.downloadForms(((IAppAwareActivity) getActivity()).getAppName(), this,
           filesToDownload.toArray(new FormDetails[filesToDownload.size()]));
     } else {
       Toast.makeText(getActivity(), R.string.noselect_error, Toast.LENGTH_SHORT).show();
@@ -354,7 +359,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "Attempting to close a dialog that was not previously opened");
     }
 
@@ -363,7 +368,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
     f.clearDownloadFormListTask();
 
     if (result == null) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).e(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).e(t,
           "Formlist Downloading returned null.  That shouldn't happen");
       // Just displayes "error occured" to the user, but this should never
       // happen.
@@ -419,14 +424,16 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
 
   private void showAuthDialog() {
 
-    String appName = ((ODKActivity) getActivity()).getAppName();
+    String appName = ((IAppAwareActivity) getActivity()).getAppName();
 
-    String server = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SERVER_URL);
+    PropertiesSingleton props = SurveyToolProperties.get(getActivity(), appName);
+    
+    String server = props.getProperty(CommonToolProperties.KEY_LEGACY_SERVER_URL);
+    
+    final String url = server + props.getProperty(SurveyToolProperties.KEY_FORMLIST_URL);
 
-    final String url = server
-        + PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FORMLIST_URL);
-
-    AuthDialogFragment f = AuthDialogFragment.newInstance(getId(),
+    AuthDialogFragment f = AuthDialogFragment.newInstance(
+        ((IAppAwareActivity) getActivity()).getAppName(), getId(),
         getString(R.string.server_requires_auth), getString(R.string.server_auth_credentials, url),
         url);
 
@@ -571,7 +578,7 @@ public class FormDownloadListFragment extends ListFragment implements FormListDo
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "Attempting to close a dialog that was not previously opened");
     }
 

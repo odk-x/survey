@@ -18,7 +18,7 @@ import java.io.File;
 import java.util.Date;
 
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 import android.content.ContentResolver;
@@ -73,22 +73,24 @@ public class FormIdStruct {
     try {
       c = resolver.query(formUri, null, null, null, null);
       if (c != null && c.getCount() == 1) {
-        int appRelativeFormMedia = c.getColumnIndex(FormsColumns.APP_RELATIVE_FORM_MEDIA_PATH);
-        int formPath = c.getColumnIndex(FormsColumns.FORM_PATH);
-        int formId = c.getColumnIndex(FormsColumns.FORM_ID);
-        int formVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
-        int tableId = c.getColumnIndex(FormsColumns.TABLE_ID);
-        int date = c.getColumnIndex(FormsColumns.DATE);
+        int idxTableId = c.getColumnIndex(FormsColumns.TABLE_ID);
+        int idxFormId = c.getColumnIndex(FormsColumns.FORM_ID);
+        int idxFormVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
+        int idxDate = c.getColumnIndex(FormsColumns.DATE);
 
         c.moveToFirst();
 
-        File formMediaDirectory = ODKFileUtils.asAppFile(appName, ODKDatabaseUtils.get().getIndexAsString(c, appRelativeFormMedia));
-        File formDefJsonFile = new File(formMediaDirectory, ODKFileUtils.FORMDEF_JSON_FILENAME);
+        String tableId = ODKCursorUtils.getIndexAsString(c, idxTableId);
+        String formId = ODKCursorUtils.getIndexAsString(c, idxFormId);
+        String formVersion = ODKCursorUtils.getIndexAsString(c, idxFormVersion);
+        Long timestamp = ODKCursorUtils.getIndexAsType(c, Long.class, idxDate);
+        
+        File formDirectory = new File( ODKFileUtils.getFormFolder(appName, tableId, formId) );
+        File formDefJsonFile = new File(formDirectory, ODKFileUtils.FORMDEF_JSON_FILENAME);
 
-        Long timestamp = ODKDatabaseUtils.get().getIndexAsType(c, Long.class, date);
         FormIdStruct newForm = new FormIdStruct(formUri, formDefJsonFile,
-            ODKFileUtils.getRelativeFormPath(appName, formDefJsonFile), ODKDatabaseUtils.get().getIndexAsString(c, formId),
-            ODKDatabaseUtils.get().getIndexAsString(c, formVersion), ODKDatabaseUtils.get().getIndexAsString(c, tableId),
+            ODKFileUtils.getRelativeFormPath(appName, formDefJsonFile), 
+            formId, formVersion, tableId,
             (timestamp == null) ? null : new Date(timestamp));
         return newForm;
       }

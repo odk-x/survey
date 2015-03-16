@@ -14,12 +14,12 @@
 
 package org.opendatakit.survey.android.fragments;
 
+import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.views.ODKWebView;
+import org.opendatakit.survey.android.application.Survey;
 
 import android.app.Activity;
 import android.app.Fragment;
-import android.app.FragmentManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -50,12 +50,7 @@ public class WebViewFragment extends Fragment {
   public void onResume() {
     super.onResume();
     
-    if ( getActivity() != null ) {
-      FragmentManager mgr = getFragmentManager();
-      BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
-  
-      f.configureView();
-    }
+    Survey.getInstance().configureView();
   }
 
   @Override

@@ -11,6 +11,8 @@
 		License.
 	-->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2" xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+<string name="invalid_form_id">Invalid form_id: %1$s (form name: %2$s).</string>
+<!-- start pre restructuring -->
 <string name="accept_location">Record Location</string>
 <string name="activity_not_found">No activity found to handle: %s</string>
 <string name="app_name">ODK Survey</string>
@@ -161,7 +163,7 @@
 <string name="shortcut_name">ODK Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
-<string name="configuring_survey">Configuring ODK Survey &#8230;</string>
+<string name="configuring_app">Configuring ODK Survey &#8230;</string>
 <string name="expansion_unzipping_begins">Unzipping resources. Scanning zip directory.</string>
 <string name="expansion_unzipping_without_detail">Unzipping resources. Extracting %1$s (%2$d of %3$d)</string>
 <string name="expansion_create_dir_detail">Creating directory</string>
@@ -169,7 +171,7 @@
 <string name="expansion_unzipping_complete">Unzipping resources completed.</string>
 <string name="searching_for_form_defs">Searching for new form definitions &#8230;</string>
 <string name="searching_for_deleted_forms">Searching for deleted forms &#8230;</string>
-<string name="examining_form">Verifying form %1$s exists &#8230;</string>
+<string name="examining_form">Verifying form %2$s for table %1$s exists &#8230;</string>
 <string name="updating_form_information">Updating form information for form %1$s (%2$d of %3$d)</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>
 <string name="expanding_expansion_files">Processing APK expansion files</string>
@@ -193,4 +195,7 @@
 <string name="file_and_data_deleted_ok">%s form(s) and data successfully deleted!</string>
 <string name="sync_not_found">ODK Sync is not installed</string>
 <string name="initializing">Initializing Survey &#8230;</string>
+<string name="waiting_auth_title">Authenticating...</string>
+<string name="waiting_auth">Waiting on authentication...</string>
+<string name="database_unavailable">Database Unavailable</string>
 </resources>

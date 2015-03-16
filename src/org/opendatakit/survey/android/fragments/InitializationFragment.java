@@ -16,12 +16,17 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.ArrayList;
 
+import org.opendatakit.common.android.activities.IAppAwareActivity;
+import org.opendatakit.common.android.activities.IInitResumeActivity;
+import org.opendatakit.common.android.fragment.AlertDialogFragment;
+import org.opendatakit.common.android.fragment.AlertDialogFragment.ConfirmAlertDialog;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment.CancelProgressDialog;
+import org.opendatakit.common.android.listener.DatabaseConnectionListener;
+import org.opendatakit.common.android.listener.InitializationListener;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
-import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
-import org.opendatakit.survey.android.listeners.InitializationListener;
+import org.opendatakit.survey.android.application.Survey;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -37,11 +42,11 @@ import android.view.ViewGroup;
  *
  */
 public class InitializationFragment extends Fragment implements InitializationListener,
-    ConfirmAlertDialog, CancelProgressDialog {
+    ConfirmAlertDialog, CancelProgressDialog, DatabaseConnectionListener {
 
   private static final String t = "InitializationFragment";
 
-  public static final int ID = R.layout.copy_expansion_files_layout;
+  private static final int ID = R.layout.copy_expansion_files_layout;
 
   private static enum DialogState {
     Init, Progress, Alert, None
@@ -52,14 +57,13 @@ public class InitializationFragment extends Fragment implements InitializationLi
   private static final String DIALOG_TITLE = "dialogTitle";
   private static final String DIALOG_MSG = "dialogMsg";
   private static final String DIALOG_STATE = "dialogState";
-  private static final String FRAGMENT_TO_SHOW_NEXT = "fragmentToShowNext";
 
   // data to retain across orientation changes
 
   private String mAlertTitle;
   private String mAlertMsg;
   private DialogState mDialogState = DialogState.Init;
-  private String mFragmentToShowNext;
+  private DialogState mPendingDialogState = DialogState.Init;
 
   // data that is not retained
 
@@ -68,10 +72,6 @@ public class InitializationFragment extends Fragment implements InitializationLi
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-  }
-
-  public void setFragmentToShowNext(String nextFragment) {
-    mFragmentToShowNext = nextFragment;
   }
 
   @Override
@@ -95,10 +95,6 @@ public class InitializationFragment extends Fragment implements InitializationLi
       if (savedInstanceState.containsKey(DIALOG_STATE)) {
         mDialogState = DialogState.valueOf(savedInstanceState.getString(DIALOG_STATE));
       }
-
-      if (savedInstanceState.containsKey(FRAGMENT_TO_SHOW_NEXT)) {
-        mFragmentToShowNext = savedInstanceState.getString(FRAGMENT_TO_SHOW_NEXT);
-      }
     }
 
     return view;
@@ -109,16 +105,17 @@ public class InitializationFragment extends Fragment implements InitializationLi
    */
   private void intializeAppName() {
     // set up the first dialog, but don't show it...
-    mAlertTitle = getString(R.string.configuring_survey);
+    mAlertTitle = getString(R.string.configuring_app, 
+          getString(Survey.getInstance().getAppNameResourceId()));
     mAlertMsg = getString(R.string.please_wait);
     mDialogState = DialogState.Progress;
+    
+    restoreProgressDialog();
 
     // launch the copy operation
-    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
-        "background");
-    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
         "initializeAppName called ");
-    f.initializeAppName(((ODKActivity) getActivity()).getAppName(), this);
+    Survey.getInstance().initializeAppName(((IAppAwareActivity) getActivity()).getAppName(), this);
   }
 
   @Override
@@ -131,31 +128,33 @@ public class InitializationFragment extends Fragment implements InitializationLi
       outState.putString(DIALOG_MSG, mAlertMsg);
     }
     outState.putString(DIALOG_STATE, mDialogState.name());
-    outState.putString(FRAGMENT_TO_SHOW_NEXT, mFragmentToShowNext);
   }
 
   @Override
   public void onResume() {
-    FragmentManager mgr = getFragmentManager();
-
-    // re-attach to the background fragment for task notifications...
-    BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
-
-    f.establishInitializationListener(this);
-
     super.onResume();
 
     if (mDialogState == DialogState.Init) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "onResume -- calling initializeAppName");
       intializeAppName();
-    }
+    } else {
 
-    if (mDialogState == DialogState.Progress) {
-      restoreProgressDialog();
-    } else if (mDialogState == DialogState.Alert) {
-      restoreAlertDialog();
+      if (mDialogState == DialogState.Progress) {
+        restoreProgressDialog();
+      } else if (mDialogState == DialogState.Alert) {
+        restoreAlertDialog();
+      }
+
+      // re-attach to the task for task notifications...
+      Survey.getInstance().establishInitializationListener(this);
     }
+  }
+
+  @Override
+  public void onStart() {
+    super.onStart();
+    Survey.getInstance().possiblyFireDatabaseCallback(getActivity(), this);
   }
 
   @Override
@@ -172,6 +171,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
     if (progressDialog != null) {
       progressDialog.dismiss();
     }
+    mPendingDialogState = DialogState.None;
     super.onPause();
   }
 
@@ -180,23 +180,14 @@ public class InitializationFragment extends Fragment implements InitializationLi
     try {
       dismissProgressDialog();
     } catch (IllegalArgumentException e) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "Attempting to close a dialog that was not previously opened");
     }
 
-    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
-        "background");
-    f.clearInitializationTask();
+    Survey.getInstance().clearInitializationTask();
 
     if (overallSuccess && result.isEmpty()) {
-      // do not require an OK if everything went well
-      Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
-      if (progress != null) {
-        ((ProgressDialogFragment) progress).dismiss();
-        mDialogState = DialogState.None;
-      }
-
-      ((ODKActivity) getActivity()).initializationCompleted(mFragmentToShowNext);
+      ((IInitResumeActivity) getActivity()).initializationCompleted();
       return;
     }
 
@@ -229,13 +220,17 @@ public class InitializationFragment extends Fragment implements InitializationLi
           .newInstance(getId(), mAlertTitle, mAlertMsg);
 
       mDialogState = DialogState.Progress;
-      f.show(getFragmentManager(), "progressDialog");
+      if ( mPendingDialogState != mDialogState ) {
+        mPendingDialogState = mDialogState;
+        f.show(getFragmentManager(), "progressDialog");
+      }
     }
   }
 
   private void updateProgressDialogMessage(String message) {
     if (mDialogState == DialogState.Progress) {
-      mAlertTitle = getString(R.string.configuring_survey);
+      mAlertTitle = getString(R.string.configuring_app, 
+          getString(Survey.getInstance().getAppNameResourceId()));
       mAlertMsg = message;
       restoreProgressDialog();
     }
@@ -245,9 +240,15 @@ public class InitializationFragment extends Fragment implements InitializationLi
     if (mDialogState == DialogState.Progress) {
       mDialogState = DialogState.None;
     }
-    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
-    if (dialog != null) {
-      ((ProgressDialogFragment) dialog).dismiss();
+    FragmentManager mgr = getFragmentManager();
+    if ( mgr != null ) {
+      Fragment dialog = mgr.findFragmentByTag("progressDialog");
+      if (dialog != null) {
+        ((ProgressDialogFragment) dialog).dismiss();
+        mPendingDialogState = DialogState.None;
+      }
+    } else {
+      mPendingDialogState = DialogState.None;
     }
   }
 
@@ -269,14 +270,17 @@ public class InitializationFragment extends Fragment implements InitializationLi
       AlertDialogFragment f = AlertDialogFragment.newInstance(getId(), mAlertTitle, mAlertMsg);
 
       mDialogState = DialogState.Alert;
-      f.show(getFragmentManager(), "alertDialog");
+      if ( mPendingDialogState != mDialogState ) {
+        mPendingDialogState = mDialogState;
+        f.show(getFragmentManager(), "alertDialog");
+      }
     }
   }
 
   @Override
   public void okAlertDialog() {
     mDialogState = DialogState.None;
-    ((ODKActivity) getActivity()).initializationCompleted(mFragmentToShowNext);
+    ((IInitResumeActivity) getActivity()).initializationCompleted();
   }
 
   /**
@@ -299,15 +303,27 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
   @Override
   public void cancelProgressDialog() {
-    BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
-        "background");
-    WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
         "cancelProgressDialog -- calling cancelInitializationTask");
     // signal the task that we want it to be cancelled.
     // but keep the notification path...
     // the task will call back with a copyExpansionFilesComplete()
     // to report status (cancelled).
-    f.cancelInitializationTask();
+    Survey.getInstance().cancelInitializationTask();
+  }
+
+  @Override
+  public void databaseAvailable() {
+    if ( mDialogState == DialogState.Progress ) {
+      Survey.getInstance().initializeAppName(((IAppAwareActivity) getActivity()).getAppName(), this);
+    }
+  }
+
+  @Override
+  public void databaseUnavailable() {
+    if ( mDialogState == DialogState.Progress ) {
+      updateProgressDialogMessage(getString(R.string.database_unavailable));
+    }
   }
 
 }

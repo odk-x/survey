@@ -16,6 +16,8 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -34,30 +36,30 @@ import android.os.Bundle;
  * @author mitchellsundt@gmail.com
  *
  */
-public class MediaDeleteVideoActivity extends Activity {
+public class MediaDeleteVideoActivity extends BaseActivity {
   private static final String t = "MediaDeleteVideoActivity";
-  private static final String APP_NAME = "appName";
   private static final String URI_FRAGMENT = "uriFragment";
 
+  private String appName;
+  
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    String appName = null;
     String uriFragmentToMedia = null;
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-      appName = extras.getString(APP_NAME);
+      appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentToMedia = extras.getString(URI_FRAGMENT);
     }
 
     if (savedInstanceState != null) {
-      appName = savedInstanceState.getString(APP_NAME);
+      appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + APP_NAME
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
     }
 
@@ -78,4 +80,18 @@ public class MediaDeleteVideoActivity extends Activity {
     setResult(Activity.RESULT_OK, i);
     finish();
   }
+  
+  @Override
+  public String getAppName() {
+    return appName;
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
+  }
+
 }

@@ -16,8 +16,9 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.List;
 
+import org.opendatakit.common.android.activities.IAppAwareActivity;
+import org.opendatakit.common.android.activities.ODKActivity;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.ODKActivity;
 import org.opendatakit.survey.android.tasks.TableSetLoader;
 import org.opendatakit.survey.android.tasks.TableSetLoader.TableSetEntry;
 
@@ -142,7 +143,7 @@ public class InstanceUploaderTableChooserListFragment extends ListFragment imple
   public Loader<List<TableSetEntry>> onCreateLoader(int id, Bundle args) {
     // This is called when a new Loader needs to be created. This
     // sample only has one Loader, so we don't care about the ID.
-    return new TableSetLoader(getActivity(), ((ODKActivity) getActivity()).getAppName());
+    return new TableSetLoader(getActivity(), ((IAppAwareActivity) getActivity()).getAppName());
   }
 
   @Override

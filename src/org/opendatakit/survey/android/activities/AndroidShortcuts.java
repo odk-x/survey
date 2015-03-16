@@ -17,14 +17,15 @@ package org.opendatakit.survey.android.activities;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.provider.FormsProviderAPI;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -50,7 +51,7 @@ import android.widget.TextView;
  * @author ctsims
  * @author carlhartung (modified for ODK)
  */
-public class AndroidShortcuts extends Activity {
+public class AndroidShortcuts extends BaseActivity {
 
   private AlertDialog mAlertDialog;
   private static final boolean EXIT = true;
@@ -123,10 +124,10 @@ public class AndroidShortcuts extends Activity {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
             String formName = app.getName() + " > "
-                + ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+                + ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
                 Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
+                ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }
@@ -150,7 +151,6 @@ public class AndroidShortcuts extends Activity {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(R.id.shortcut_title);
-        vw.setTextSize(Survey.getQuestionFontsize(getItem(position).appName));
         vw.setText(getItem(position).name);
 
         ImageView iv = (ImageView) row.findViewById(R.id.shortcut_icon);
@@ -183,7 +183,7 @@ public class AndroidShortcuts extends Activity {
    */
   private void returnShortcut(Choice choice) {
     Intent shortcutIntent = new Intent(Intent.ACTION_VIEW);
-    shortcutIntent.putExtra(MainMenuActivity.APP_NAME, choice.appName);
+    shortcutIntent.putExtra(IntentConsts.INTENT_KEY_APP_NAME, choice.appName);
     shortcutIntent.setData(choice.command);
 
     Intent intent = new Intent();
@@ -218,6 +218,19 @@ public class AndroidShortcuts extends Activity {
     mAlertDialog.setCancelable(false);
     mAlertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok), errorListener);
     mAlertDialog.show();
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
+  }
+  
+  @Override
+  public String getAppName() {
+    return Survey.getInstance().getToolName();
   }
 
 }

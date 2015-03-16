@@ -20,15 +20,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
+import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,7 +52,7 @@ import android.widget.LinearLayout;
  * @author Carl Hartung
  *
  */
-public class SplashScreenActivity extends Activity {
+public class SplashScreenActivity extends BaseActivity {
 
   private static final String t = "SplashScreenActivity";
 
@@ -82,7 +83,7 @@ public class SplashScreenActivity extends Activity {
     setContentView(R.layout.splash_screen);
 
     // external intent
-    appName = getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    appName = getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( appName == null ) {
       appName = "survey";
     }
@@ -146,31 +147,37 @@ public class SplashScreenActivity extends Activity {
       e.printStackTrace();
     }
 
-    boolean firstRun = (PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_FIRST_RUN)).equals("true") ? true : false;
+    PropertiesSingleton props = SurveyToolProperties.get(getApplicationContext(), appName);
+    
+    Boolean firstRun = props.getBooleanProperty(SurveyToolProperties.KEY_FIRST_RUN);
+    Boolean showSplash = props.getBooleanProperty(SurveyToolProperties.KEY_SHOW_SPLASH);
 
-    boolean showSplash = (PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SHOW_SPLASH)).equals("true") ? true : false;
-
-    String splashPath = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SPLASH_PATH);
+    String splashPath = props.getProperty(SurveyToolProperties.KEY_SPLASH_PATH);
 
     // if you've increased version code, then update the version number and set firstRun to true
-    String sKeyLastVer = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_LAST_VERSION);
-    long keyLastVer =  Long.valueOf(sKeyLastVer);
+    String sKeyLastVer = props.getProperty(SurveyToolProperties.KEY_LAST_VERSION);
+    long keyLastVer =  (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
     if (keyLastVer < packageInfo.versionCode) {
-    	PropertiesSingleton.setProperty(appName, PreferencesActivity.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
-    	PropertiesSingleton.writeProperties(appName);
+      props.setProperty(SurveyToolProperties.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
+      props.writeProperties();
 
       firstRun = true;
     }
 
     // do all the first run things
-    if (firstRun || showSplash) {
-      PropertiesSingleton.setProperty(appName, PreferencesActivity.KEY_FIRST_RUN, "false");
-      PropertiesSingleton.writeProperties(appName);
+    if (((firstRun == null) ? true : firstRun) || ((showSplash == null) ? false : showSplash)) {
+      props.setBooleanProperty(SurveyToolProperties.KEY_FIRST_RUN, false);
+      props.writeProperties();
       startSplashScreen(splashPath);
     } else {
       endSplashScreen();
     }
 
+  }
+  
+  @Override
+  public String getAppName() {
+    return appName;
   }
 
   private void endSplashScreen() {
@@ -186,7 +193,7 @@ public class SplashScreenActivity extends Activity {
     if ( extras != null ) {
       i.putExtras(extras);
     }
-    i.putExtra(MainMenuActivity.APP_NAME, appName);
+    i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, appName);
     startActivity(i);
     finish();
   }
@@ -284,6 +291,14 @@ public class SplashScreenActivity extends Activity {
     mAlertDialog.setCancelable(false);
     mAlertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok), errorListener);
     mAlertDialog.show();
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 
 }

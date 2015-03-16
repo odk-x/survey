@@ -21,19 +21,19 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DatabaseFactory;
-import org.opendatakit.common.android.database.DatabaseConstants;
-import org.opendatakit.common.android.provider.KeyValueStoreColumns;
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.database.service.KeyValueStoreEntry;
+import org.opendatakit.database.service.OdkDbHandle;
+import org.opendatakit.survey.android.application.Survey;
 
 import android.content.AsyncTaskLoader;
 import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
+import android.os.RemoteException;
 
 public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSetEntry>>{
 
-  private static final String COMMON_JAVASCRIPT_FRAMEWORK = "\"Common Javascript Framework\"";
   public static final class TableSetEntry {
     public final String tableId;
     public final String displayName;
@@ -54,56 +54,49 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
   @Override
   public List<TableSetEntry> loadInBackground() {
 
-    SQLiteDatabase db = null;
-    Cursor c = null;
+    List<KeyValueStoreEntry> kvsEntries;
+    OdkDbHandle dbHandle = null;
     try {
-      db = DatabaseFactory.get().getDatabase(getContext(), appName);
-      c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
-            KeyValueStoreColumns.PARTITION + "=? AND " +
-            KeyValueStoreColumns.ASPECT + "=? AND " +
-            KeyValueStoreColumns.KEY + "=? AND " +
-            KeyValueStoreColumns.VALUE + "<>?",
-        new String[] { KeyValueStoreConstants.PARTITION_TABLE,
-                       KeyValueStoreConstants.ASPECT_DEFAULT,
-                       KeyValueStoreConstants.TABLE_DISPLAY_NAME,
-                       COMMON_JAVASCRIPT_FRAMEWORK}, null, null, null);
-
-      if ( c != null && c.getCount() > 0) {
-        List<TableSetEntry> entries = new ArrayList<TableSetEntry>();
-  
-        c.moveToFirst();
-        int idxTableId = c.getColumnIndex(KeyValueStoreColumns.TABLE_ID);
-        int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
-  
-        do {
-          String tableId = c.getString(idxTableId);
-          String value = c.getString(idxValue);
-          String displayName = ODKDataUtils.getLocalizedDisplayName(value);
-          if ( displayName == null ) {
-            displayName = tableId;
-          }
-          entries.add( new TableSetEntry(tableId, displayName));
-        } while ( c.moveToNext() );
-  
-        Collections.sort(entries, new Comparator<TableSetEntry>() {
-  
-          @Override
-          public int compare(TableSetEntry lhs, TableSetEntry rhs) {
-            return lhs.displayName.compareTo(rhs.displayName);
-          }});
-  
-        return entries;
-      }
+      dbHandle = Survey.getInstance().getDatabase().openDatabase(appName, false);
+      kvsEntries = Survey.getInstance().getDatabase().getDBTableMetadata(appName, dbHandle, null, 
+        KeyValueStoreConstants.PARTITION_TABLE,
+        KeyValueStoreConstants.ASPECT_DEFAULT, 
+        KeyValueStoreConstants.TABLE_DISPLAY_NAME);
+    } catch (RemoteException e) {
+      WebLogger.getLogger(appName).printStackTrace(e);
+      throw new IllegalStateException("unable to obtain data from remote service");
     } finally {
-      if ( c != null && !c.isClosed() ) {
-        c.close();
-      }
-      if ( db != null ) {
-        db.close();
+      try {
+        if ( dbHandle != null ) {
+          Survey.getInstance().getDatabase().closeDatabase(appName, dbHandle);
+        }
+      } catch (RemoteException e) {
+        WebLogger.getLogger(appName).printStackTrace(e);
       }
     }
+    
+    ArrayList<TableSetEntry> entries = new ArrayList<TableSetEntry>();
+    for ( KeyValueStoreEntry kvs : kvsEntries ) {
+      if ( kvs.tableId.equals(FormsColumns.COMMON_BASE_FORM_ID) ) {
+        continue;
+      }
+      String tableId = kvs.tableId;
+      String value = kvs.value;
+      String displayName = ODKDataUtils.getLocalizedDisplayName(value);
+      if ( displayName == null ) {
+        displayName = tableId;
+      }
+      entries.add( new TableSetEntry(tableId, displayName));
+    }
 
-    return new ArrayList<TableSetEntry>();
+    Collections.sort(entries, new Comparator<TableSetEntry>() {
+
+      @Override
+      public int compare(TableSetEntry lhs, TableSetEntry rhs) {
+        return lhs.displayName.compareTo(rhs.displayName);
+      }});
+
+    return entries;
   }
 
   /**

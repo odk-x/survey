@@ -36,6 +36,8 @@ import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
 import org.kxml2.kdom.Element;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
@@ -50,8 +52,7 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.app.Application;
 import android.os.AsyncTask;
@@ -84,15 +85,11 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     return e.getNamespace().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_MANIFEST);
   }
 
-  /** used only within doInBackground */
-  static enum DirType {
-    FORMS, FRAMEWORK, OTHER
-  };
-
   @Override
   protected HashMap<String, String> doInBackground(FormDetails... values) {
 
-    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton props = SurveyToolProperties.get(getApplication(), appName);
+    String auth = props.getProperty(CommonToolProperties.KEY_AUTH);
     setAuth(auth);
 
     int total = values.length;
@@ -114,8 +111,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
 
         String message = "";
         /*
-         * Downloaded forms are placed in a staging directory
-         * (STALE_FORMS_PATH). Once they are deemed complete, they are
+         * Downloaded table files and forms are placed in a staging directory
+         * (PENDING_TABLES_PATH). Once they are deemed complete, they are
          * atomically moved into the FORMS_PATH. For atomicity, the Form
          * definition file will be stored WITHIN the media folder.
          */
@@ -136,20 +133,8 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
           /*
            * path to the directory containing the newly downloaded or stale data
            */
-          String baseStaleMediaPath;
-          boolean isFramework;
-          if (fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID)) {
-            /*
-             * the Common Javascript Framework is stored in the Framework
-             * directories
-             */
-            baseStaleMediaPath = ODKFileUtils.getStaleFrameworkFolder(getAppName())
-                + File.separator;
-            isFramework = true;
-          } else {
-            baseStaleMediaPath = ODKFileUtils.getStaleFormsFolder(getAppName()) + File.separator;
-            isFramework = false;
-          }
+          String baseStaleMediaPath = ODKFileUtils.getPendingInsertionTablesFolder(getAppName()) + File.separator;
+          boolean isFramework = fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID);
 
           try {
             // clean up friendly form name...

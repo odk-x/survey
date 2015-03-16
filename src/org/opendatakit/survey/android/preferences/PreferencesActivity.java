@@ -14,12 +14,14 @@
 
 package org.opendatakit.survey.android.preferences;
 
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.AccountList;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -47,37 +49,6 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
   protected static final int IMAGE_CHOOSER = 0;
 
-  // keys used in Survey to manage Google play licensing and APK
-  // Expansion files
-  // public static final String KEY_SALT = "licenseSalt";
-  // public static final String KEY_APK_EXPANSIONS = "apkExpansions";
-
-  // keys used in SplashScreenActivity to manage splash screen
-  // presentation behavior.
-  public static final String KEY_LAST_VERSION = "lastVersion";
-  public static final String KEY_FIRST_RUN = "firstRun";
-
-  public static final String KEY_PROTOCOL = "protocol";
-
-  public static final String KEY_SERVER_URL = "server_url";
-  public static final String KEY_USERNAME = "username";
-  public static final String KEY_PASSWORD = "password";
-
-  public static final String KEY_SELECTED_GOOGLE_ACCOUNT = "selected_google_account";
-
-  public static final String KEY_FORMLIST_URL = "formlist_url";
-  public static final String KEY_SUBMISSION_URL = "submission_url";
-
-  public static final String KEY_FONT_SIZE = "font_size";
-  public static final String KEY_SHOW_SPLASH = "showSplash";
-  public static final String KEY_SPLASH_PATH = "splashPath";
-
-  public static final String PROTOCOL_ODK_DEFAULT = "odk_default";
-  public static final String PROTOCOL_OTHER = "";
-
-  public static final String KEY_AUTH = "auth";
-  public static final String KEY_ACCOUNT = "account";
-
   private ListPreference mServerProtocol;
   private EditTextPreference mServerUrlPreference;
   private EditTextPreference mUsernamePreference;
@@ -91,12 +62,15 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   private PreferenceScreen mSplashPathPreference;
 
   private String mAppName;
+  
+  private PropertiesSingleton mProps;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if (mAppName == null || mAppName.length() == 0) {
       mAppName = "survey";
     }
@@ -109,7 +83,9 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     // but I don't know how to get it there, or how to access this activity from it.
     //
     PasswordDialogPreference.appName = mAppName;
-
+    
+    mProps = SurveyToolProperties.get(this, mAppName);
+    
     setTitle(mAppName + " > " + getString(R.string.general_preferences));
 
     addPreferencesFromResource(R.xml.preferences);
@@ -119,18 +95,18 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     // would require code to access it
     boolean adminMode = getIntent().getBooleanExtra("adminMode", false);
 
-    boolean serverAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_CHANGE_SERVER)).equalsIgnoreCase("true") ? true : false;
+    boolean serverAvailable = (mProps.getProperty(
+        CommonToolProperties.KEY_CHANGE_LEGACY_SERVER)).equalsIgnoreCase("true") ? true : false;
 
     PreferenceCategory serverCategory = (PreferenceCategory) findPreference(getString(R.string.server_preferences));
 
     // Initialize the Server Protocol List Preference
-    mServerProtocol = (ListPreference) findPreference(KEY_PROTOCOL);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_PROTOCOL)) {
+    mServerProtocol = (ListPreference) findPreference(SurveyToolProperties.KEY_PROTOCOL);
+    if (mProps.containsKey(SurveyToolProperties.KEY_PROTOCOL)) {
       CharSequence entryValues[] = mServerProtocol.getEntryValues();
       for (int i = 0; i < entryValues.length; i++) {
         String entry = entryValues[i].toString();
-        if (entry.equals(PropertiesSingleton.getProperty(mAppName, KEY_PROTOCOL))) {
+        if (entry.equals(mProps.getProperty(SurveyToolProperties.KEY_PROTOCOL))) {
           mServerProtocol.setValue(entry);
         }
       }
@@ -139,15 +115,16 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mServerProtocol.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
-        PropertiesSingleton.setProperty(mAppName, KEY_PROTOCOL, newValue.toString());
+
+        mProps.setProperty(SurveyToolProperties.KEY_PROTOCOL, newValue.toString());
         return true;
       }
     });
 
     // Initialize the Server URL Text Preference
-    mServerUrlPreference = (EditTextPreference) findPreference(KEY_SERVER_URL);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_SERVER_URL)) {
-      String url = PropertiesSingleton.getProperty(mAppName, KEY_SERVER_URL);
+    mServerUrlPreference = (EditTextPreference) findPreference(CommonToolProperties.KEY_LEGACY_SERVER_URL);
+    if (mProps.containsKey(CommonToolProperties.KEY_LEGACY_SERVER_URL)) {
+      String url = mProps.getProperty(CommonToolProperties.KEY_LEGACY_SERVER_URL);
       mServerUrlPreference.setSummary(url);
       mServerUrlPreference.setText(url);
     }
@@ -155,6 +132,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mServerUrlPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
+
         String url = newValue.toString();
 
         // remove all trailing "/"s
@@ -164,7 +142,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
         if (UrlUtils.isValidUrl(url)) {
           preference.setSummary(newValue.toString());
-          PropertiesSingleton.setProperty(mAppName, KEY_SERVER_URL, newValue.toString());
+          mProps.setProperty(CommonToolProperties.KEY_LEGACY_SERVER_URL, newValue.toString());
           return true;
         } else {
           Toast.makeText(getApplicationContext(), R.string.url_error, Toast.LENGTH_SHORT).show();
@@ -176,14 +154,14 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
     mServerUrlPreference.getEditText().setFilters(new InputFilter[] { getReturnFilter() });
 
     if (!(serverAvailable || adminMode)) {
-      Preference protocol = findPreference(KEY_PROTOCOL);
+      Preference protocol = findPreference(SurveyToolProperties.KEY_PROTOCOL);
       serverCategory.removePreference(protocol);
       serverCategory.removePreference(mServerUrlPreference);
     }
 
-    mUsernamePreference = (EditTextPreference) findPreference(KEY_USERNAME);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_USERNAME)) {
-      String user = PropertiesSingleton.getProperty(mAppName, KEY_USERNAME);
+    mUsernamePreference = (EditTextPreference) findPreference(CommonToolProperties.KEY_USERNAME);
+    if (mProps.containsKey(CommonToolProperties.KEY_USERNAME)) {
+      String user = mProps.getProperty(CommonToolProperties.KEY_USERNAME);
       mUsernamePreference.setSummary(user);
       mUsernamePreference.setText(user);
     }
@@ -192,13 +170,13 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     mUsernamePreference.getEditText().setFilters(new InputFilter[] { getReturnFilter() });
 
-    boolean usernameAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_CHANGE_USERNAME)).equalsIgnoreCase("true") ? true : false;
+    boolean usernameAvailable = (mProps.getProperty(
+        CommonToolProperties.KEY_CHANGE_USERNAME)).equalsIgnoreCase("true") ? true : false;
     if (!(usernameAvailable || adminMode)) {
       serverCategory.removePreference(mUsernamePreference);
     }
 
-    mPasswordPreference = (EditTextPreference) findPreference(KEY_PASSWORD);
+    mPasswordPreference = (EditTextPreference) findPreference(CommonToolProperties.KEY_PASSWORD);
     mPasswordPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
@@ -209,55 +187,55 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         } else {
           mPasswordPreference.setSummary("");
         }
-        PropertiesSingleton.setProperty(mAppName, KEY_PASSWORD, pw);
+        mProps.setProperty(CommonToolProperties.KEY_PASSWORD, pw);
 
         return true;
       }
     });
 
-    if (PropertiesSingleton.containsKey(mAppName, KEY_PASSWORD)) {
-      String pwd = PropertiesSingleton.getProperty(mAppName, KEY_PASSWORD);
+    if (mProps.containsKey(CommonToolProperties.KEY_PASSWORD)) {
+      String pwd = mProps.getProperty(CommonToolProperties.KEY_PASSWORD);
       if (pwd != null && pwd.length() > 0) {
         mPasswordPreference.setSummary("********");
       }
     }
 
-    boolean passwordAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_CHANGE_PASSWORD)).equalsIgnoreCase("true") ? true : false;
+    boolean passwordAvailable = (mProps.getProperty(
+        CommonToolProperties.KEY_CHANGE_PASSWORD)).equalsIgnoreCase("true") ? true : false;
     if (!(passwordAvailable || adminMode)) {
       serverCategory.removePreference(mPasswordPreference);
     }
 
-    mSelectedGoogleAccountPreference = (PreferenceScreen) findPreference(KEY_SELECTED_GOOGLE_ACCOUNT);
+    mSelectedGoogleAccountPreference = (PreferenceScreen) findPreference(CommonToolProperties.KEY_ACCOUNT);
     mSelectedGoogleAccountPreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
       @Override
       public boolean onPreferenceClick(Preference preference) {
         Intent i = new Intent(getApplicationContext(), AccountList.class);
         // TODO: convert this activity into a preferences
         // fragment
-        i.putExtra(MainMenuActivity.APP_NAME, mAppName);
+        i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, mAppName);
         startActivity(i);
         return true;
       }
     });
 
-    if (PropertiesSingleton.containsKey(mAppName, KEY_SELECTED_GOOGLE_ACCOUNT)) {
-      mSelectedGoogleAccountPreference.setSummary(PropertiesSingleton.getProperty(mAppName,
-          KEY_SELECTED_GOOGLE_ACCOUNT));
+    if (mProps.containsKey(CommonToolProperties.KEY_ACCOUNT)) {
+      mSelectedGoogleAccountPreference.setSummary(mProps.getProperty(
+          CommonToolProperties.KEY_ACCOUNT));
     }
 
-    boolean googleAccountAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_CHANGE_GOOGLE_ACCOUNT)).equalsIgnoreCase("true") ? true
+    boolean googleAccountAvailable = (mProps.getProperty(
+        CommonToolProperties.KEY_CHANGE_GOOGLE_ACCOUNT)).equalsIgnoreCase("true") ? true
         : false;
     if (!(googleAccountAvailable || adminMode)) {
       serverCategory.removePreference(mSelectedGoogleAccountPreference);
     }
 
-    mFormListUrlPreference = (EditTextPreference) findPreference(KEY_FORMLIST_URL);
+    mFormListUrlPreference = (EditTextPreference) findPreference(SurveyToolProperties.KEY_FORMLIST_URL);
     mFormListUrlPreference.setOnPreferenceChangeListener(this);
 
-    if (PropertiesSingleton.containsKey(mAppName, KEY_FORMLIST_URL)) {
-      String formListURL = PropertiesSingleton.getProperty(mAppName, KEY_FORMLIST_URL);
+    if (mProps.containsKey(SurveyToolProperties.KEY_FORMLIST_URL)) {
+      String formListURL = mProps.getProperty(SurveyToolProperties.KEY_FORMLIST_URL);
       mFormListUrlPreference.setSummary(formListURL);
       mFormListUrlPreference.setText(formListURL);
     }
@@ -267,13 +245,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       serverCategory.removePreference(mFormListUrlPreference);
     }
 
-    mSubmissionUrlPreference = (EditTextPreference) findPreference(KEY_SUBMISSION_URL);
+    mSubmissionUrlPreference = (EditTextPreference) findPreference(SurveyToolProperties.KEY_SUBMISSION_URL);
     mSubmissionUrlPreference.setOnPreferenceChangeListener(this);
 
-    if (PropertiesSingleton.containsKey(mAppName, KEY_SUBMISSION_URL)) {
-      String keySubmissionURL = PropertiesSingleton.getProperty(mAppName, KEY_SUBMISSION_URL);
-      mSubmissionUrlPreference.setSummary(PropertiesSingleton.getProperty(mAppName,
-          keySubmissionURL));
+    if (mProps.containsKey(SurveyToolProperties.KEY_SUBMISSION_URL)) {
+      String keySubmissionURL = mProps.getProperty(SurveyToolProperties.KEY_SUBMISSION_URL);
+      mSubmissionUrlPreference.setSummary(keySubmissionURL);
       mSubmissionUrlPreference.setText(keySubmissionURL);
     }
     mServerUrlPreference.getEditText().setFilters(
@@ -288,14 +265,14 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     PreferenceCategory clientCategory = (PreferenceCategory) findPreference(getString(R.string.client));
 
-    boolean fontAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_CHANGE_FONT_SIZE)).equalsIgnoreCase("true") ? true : false;
-    mFontSizePreference = (ListPreference) findPreference(KEY_FONT_SIZE);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_FONT_SIZE)) {
+    boolean fontAvailable = (mProps.getProperty(
+        CommonToolProperties.KEY_CHANGE_FONT_SIZE)).equalsIgnoreCase("true") ? true : false;
+    mFontSizePreference = (ListPreference) findPreference(CommonToolProperties.KEY_FONT_SIZE);
+    if (mProps.containsKey(CommonToolProperties.KEY_FONT_SIZE)) {
       CharSequence entryValues[] = mFontSizePreference.getEntryValues();
       for (int i = 0; i < entryValues.length; i++) {
         String entry = entryValues[i].toString();
-        if (entry.equals(PropertiesSingleton.getProperty(mAppName, KEY_FONT_SIZE))) {
+        if (entry.equals(mProps.getProperty(CommonToolProperties.KEY_FONT_SIZE))) {
           mFontSizePreference.setValue(entry);
         }
       }
@@ -308,7 +285,8 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         int index = ((ListPreference) preference).findIndexOfValue(newValue.toString());
         String entry = (String) ((ListPreference) preference).getEntries()[index];
         ((ListPreference) preference).setSummary(entry);
-        PropertiesSingleton.setProperty(mAppName, KEY_FONT_SIZE, newValue.toString());
+
+        mProps.setProperty(CommonToolProperties.KEY_FONT_SIZE, newValue.toString());
         return true;
       }
     });
@@ -316,12 +294,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       clientCategory.removePreference(mFontSizePreference);
     }
 
-    boolean splashAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_SELECT_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
+    boolean splashAvailable = (mProps.getProperty(
+        SurveyToolProperties.KEY_SELECT_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
 
-    mSplashPathPreference = (PreferenceScreen) findPreference(KEY_SPLASH_PATH);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_SPLASH_PATH)) {
-      mSplashPathPreference.setSummary(PropertiesSingleton.getProperty(mAppName, KEY_SPLASH_PATH));
+    mSplashPathPreference = (PreferenceScreen) findPreference(SurveyToolProperties.KEY_SPLASH_PATH);
+    if (mProps.containsKey(SurveyToolProperties.KEY_SPLASH_PATH)) {
+      mSplashPathPreference.setSummary(mProps.getProperty(SurveyToolProperties.KEY_SPLASH_PATH));
     }
     mSplashPathPreference.setOnPreferenceClickListener(new OnPreferenceClickListener() {
 
@@ -374,12 +352,12 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
       clientCategory.removePreference(mSplashPathPreference);
     }
 
-    boolean showSplashAvailable = (PropertiesSingleton.getProperty(mAppName,
-        AdminPreferencesActivity.KEY_SHOW_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
+    boolean showSplashAvailable = (mProps.getProperty(
+        SurveyToolProperties.KEY_SHOW_SPLASH_SCREEN)).equalsIgnoreCase("true") ? true : false;
 
-    mShowSplashPreference = (CheckBoxPreference) findPreference(KEY_SHOW_SPLASH);
-    if (PropertiesSingleton.containsKey(mAppName, KEY_SHOW_SPLASH)) {
-      String checked = PropertiesSingleton.getProperty(mAppName, KEY_SHOW_SPLASH);
+    mShowSplashPreference = (CheckBoxPreference) findPreference(SurveyToolProperties.KEY_SHOW_SPLASH);
+    if (mProps.containsKey(SurveyToolProperties.KEY_SHOW_SPLASH)) {
+      String checked = mProps.getProperty(SurveyToolProperties.KEY_SHOW_SPLASH);
       if (checked.equals("true")) {
         mShowSplashPreference.setChecked(true);
       }
@@ -388,7 +366,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
       @Override
       public boolean onPreferenceChange(Preference preference, Object newValue) {
-        PropertiesSingleton.setProperty(mAppName, KEY_SHOW_SPLASH, newValue.toString());
+        mProps.setProperty(SurveyToolProperties.KEY_SHOW_SPLASH, newValue.toString());
         return true;
       }
     });
@@ -404,24 +382,22 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
   @Override
   protected void onSaveInstanceState(Bundle outState) {
-    // TODO Auto-generated method stub
     super.onSaveInstanceState(outState);
-    PropertiesSingleton.writeProperties(mAppName);
+    mProps.writeProperties();
+    mProps.writeProperties();
   }
 
   @Override
   public void finish() {
-    PropertiesSingleton.writeProperties(mAppName);
-
-    // TODO Auto-generated method stub
+    mProps.writeProperties();
+    mProps.writeProperties();
     super.finish();
   }
 
   private void setSplashPath(String path) {
-
-    mSplashPathPreference = (PreferenceScreen) findPreference(KEY_SPLASH_PATH);
+    mSplashPathPreference = (PreferenceScreen) findPreference(SurveyToolProperties.KEY_SPLASH_PATH);
     mSplashPathPreference.setSummary(path);
-    PropertiesSingleton.setProperty(mAppName, KEY_SPLASH_PATH, path);
+    mProps.setProperty(SurveyToolProperties.KEY_SPLASH_PATH, path);
   }
 
   @Override
@@ -447,7 +423,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
           c = getContentResolver().query(uri, projection, null, null, null);
           int i = c.getColumnIndexOrThrow(Images.Media.DATA);
           c.moveToFirst();
-          sourceImagePath = ODKDatabaseUtils.get().getIndexAsString(c, i);
+          sourceImagePath = ODKCursorUtils.getIndexAsString(c, i);
         } finally {
           if (c != null) {
             c.close();
@@ -507,7 +483,13 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   @Override
   public boolean onPreferenceChange(Preference preference, Object newValue) {
     preference.setSummary((CharSequence) newValue);
-    PropertiesSingleton.setProperty(mAppName, preference.getKey(), newValue.toString());
+    if ( mProps.containsKey(preference.getKey())) {
+      mProps.setProperty(preference.getKey(), newValue.toString());
+    } else if ( mProps.containsKey(preference.getKey())) {
+      mProps.setProperty(preference.getKey(), newValue.toString());
+    } else {
+      throw new IllegalStateException("Unexpected case");
+    }
     return true;
   }
 }

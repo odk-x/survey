@@ -33,16 +33,21 @@ import java.util.Map;
 
 import org.apache.commons.lang3.CharEncoding;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.opendatakit.ProviderConsts;
 import org.opendatakit.aggregate.odktables.rest.KeyValueStoreConstants;
-import org.opendatakit.common.android.database.DatabaseConstants;
-import org.opendatakit.common.android.database.DatabaseFactory;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.provider.InstanceColumns;
-import org.opendatakit.common.android.provider.KeyValueStoreColumns;
+import org.opendatakit.common.android.provider.InstanceProviderAPI;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
+import org.opendatakit.common.android.utilities.FileSet;
+import org.opendatakit.common.android.utilities.FileSet.MimeFile;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.ODKDataUtils;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.utilities.WebUtils;
+import org.opendatakit.database.service.KeyValueStoreEntry;
+import org.opendatakit.database.service.OdkDbHandle;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.ClientProtocolException;
@@ -56,21 +61,17 @@ import org.opendatakit.httpclientandroidlib.entity.mime.content.FileBody;
 import org.opendatakit.httpclientandroidlib.entity.mime.content.StringBody;
 import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
-import org.opendatakit.survey.android.provider.FileSet;
-import org.opendatakit.survey.android.provider.FileSet.MimeFile;
-import org.opendatakit.survey.android.provider.InstanceProviderAPI;
-import org.opendatakit.survey.android.provider.SubmissionProvider;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.app.Application;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.RemoteException;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -400,7 +401,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
   private FileSet constructSubmissionFiles(String instanceId, String submissionInstanceId)
       throws JsonParseException, JsonMappingException, IOException {
 
-    Uri manifest = Uri.parse(SubmissionProvider.XML_SUBMISSION_URL_PREFIX + "/"
+    Uri manifest = Uri.parse(ProviderConsts.XML_SUBMISSION_URL_PREFIX + "/"
         + URLEncoder.encode(appName, CharEncoding.UTF_8) + "/"
         + URLEncoder.encode(uploadTableId, CharEncoding.UTF_8) + "/"
         + URLEncoder.encode(instanceId, CharEncoding.UTF_8) + "/"
@@ -420,7 +421,8 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
     mOutcome.mResults = new HashMap<String, String>();
     mOutcome.mAuthRequestingServer = null;
 
-    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
+    PropertiesSingleton props = SurveyToolProperties.get(getApplication(), appName);
+    String auth = props.getProperty(CommonToolProperties.KEY_AUTH);
     setAuth(auth);
 
     String urlString = null;
@@ -430,34 +432,40 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
      * app property values to construct it.
      */
     {
-      SQLiteDatabase db = null;
-
-      Cursor c = null;
+      List<KeyValueStoreEntry> kvsEntries;
+      OdkDbHandle dbHandle = null;
       try {
-        db = DatabaseFactory.get().getDatabase(appContext, appName);
-        c = db.query(DatabaseConstants.KEY_VALUE_STORE_ACTIVE_TABLE_NAME, null,
-            KeyValueStoreColumns.TABLE_ID + "=? AND " + KeyValueStoreColumns.PARTITION + "=? AND "
-                + KeyValueStoreColumns.ASPECT + "=? AND " + KeyValueStoreColumns.KEY + "=?",
-            new String[] { uploadTableId, KeyValueStoreConstants.PARTITION_TABLE,
-                KeyValueStoreConstants.ASPECT_DEFAULT, KeyValueStoreConstants.XML_SUBMISSION_URL },
-            null, null, null);
-        if (c.getCount() == 1) {
-          c.moveToFirst();
-          int idxValue = c.getColumnIndex(KeyValueStoreColumns.VALUE);
-          urlString = c.getString(idxValue);
-        } else if (c.getCount() != 0) {
-          throw new IllegalStateException("two or more entries for "
-              + KeyValueStoreConstants.XML_SUBMISSION_URL);
-        }
+        dbHandle = Survey.getInstance().getDatabase().openDatabase(appName, false);
+        kvsEntries = Survey.getInstance().getDatabase().getDBTableMetadata(appName, dbHandle, uploadTableId, 
+          KeyValueStoreConstants.PARTITION_TABLE,
+          KeyValueStoreConstants.ASPECT_DEFAULT, 
+          KeyValueStoreConstants.XML_SUBMISSION_URL);
+      } catch (RemoteException e) {
+        WebLogger.getLogger(appName).printStackTrace(e);
+        throw new IllegalStateException("unable to obtain data from remote service");
       } finally {
-        c.close();
-        db.releaseReference();
+        try {
+          if ( dbHandle != null ) {
+            Survey.getInstance().getDatabase().closeDatabase(appName, dbHandle);
+          }
+        } catch (RemoteException e) {
+          WebLogger.getLogger(appName).printStackTrace(e);
+        }
+      }
+
+      if ( kvsEntries.size() > 1 ) {
+        throw new IllegalStateException("two or more entries for "
+            + KeyValueStoreConstants.XML_SUBMISSION_URL);
+      } else if ( kvsEntries.size() == 1 ) {
+        urlString = kvsEntries.get(0).value;
       }
 
       if (urlString == null) {
-        urlString = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_SERVER_URL);
-        String submissionUrl = PropertiesSingleton.getProperty(appName,
-            PreferencesActivity.KEY_SUBMISSION_URL);
+
+        urlString = props.getProperty(CommonToolProperties.KEY_LEGACY_SERVER_URL);
+
+        String submissionUrl = props.getProperty(SurveyToolProperties.KEY_SUBMISSION_URL);
+
         urlString = urlString + submissionUrl;
       }
     }
@@ -484,11 +492,11 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
         c = appContext.getContentResolver().query(toUpdate, null, null, null, null);
         if (c.getCount() == 1 && c.moveToFirst()) {
 
-          String id = ODKDatabaseUtils.get().getIndexAsString(c,
+          String id = ODKCursorUtils.getIndexAsString(c,
               c.getColumnIndex(InstanceColumns._ID));
-          String dataTableInstanceId = ODKDatabaseUtils.get().getIndexAsString(c,
+          String dataTableInstanceId = ODKCursorUtils.getIndexAsString(c,
               c.getColumnIndex(InstanceColumns.DATA_INSTANCE_ID));
-          String lastOutcome = ODKDatabaseUtils.get().getIndexAsString(c,
+          String lastOutcome = ODKCursorUtils.getIndexAsString(c,
               c.getColumnIndex(InstanceColumns.XML_PUBLISH_STATUS));
           String submissionInstanceId = ODKDataUtils.genUUID();
           // submissions always get a new legacy instance id UNLESS the last
@@ -498,7 +506,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
           // that failure. This supports resumption of sends of forms with many
           // attachments.
           if (lastOutcome != null && lastOutcome.equals(InstanceColumns.STATUS_SUBMISSION_FAILED)) {
-            String lastId = ODKDatabaseUtils.get().getIndexAsString(c,
+            String lastId = ODKCursorUtils.getIndexAsString(c,
                 c.getColumnIndex(InstanceColumns.SUBMISSION_INSTANCE_ID));
             if (lastId != null) {
               submissionInstanceId = lastId;

@@ -1,11 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<style name="Survey" parent="android:style/Theme.Holo.Light">
+    <!-- ActionBar style -->
+    <style name="OdkActionBar"
+           parent="@android:style/Widget.Holo.Light.ActionBar.Solid">
+        <item name="android:displayOptions">useLogo</item>
+        <item name="android:background">#ffffff</item>
+    </style>
+    
+    <style name="Opendatakit" parent="android:style/Theme.Holo.Light">
 	    <item name="android:scrollbarThumbHorizontal">@+drawable/thumb</item>
 	    <item name="android:scrollbarThumbVertical">@+drawable/thumb</item>
 	    <item name="android:scrollbarSize">2.5mm</item>
 	    <item name="android:scrollbarAlwaysDrawVerticalTrack">true</item>
 	    <item name="android:scrollbarAlwaysDrawHorizontalTrack">true</item>
 	    <item name="android:fadeScrollbars">false</item>
-	</style>
+        <item name="android:actionBarStyle">@+style/OdkActionBar</item>
+    </style>
 </resources>

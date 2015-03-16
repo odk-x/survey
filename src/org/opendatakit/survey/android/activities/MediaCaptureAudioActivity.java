@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -38,12 +40,11 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class MediaCaptureAudioActivity extends Activity {
+public class MediaCaptureAudioActivity extends BaseActivity {
   private static final String t = "MediaCaptureAudioActivity";
 
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "audio/";
-  private static final String APP_NAME = "appName";
   private static final String URI_FRAGMENT = "uriFragment";
   private static final String CONTENT_TYPE = "contentType";
 
@@ -65,7 +66,7 @@ public class MediaCaptureAudioActivity extends Activity {
 
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-        appName = extras.getString(APP_NAME);
+        appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
         uriFragmentToMedia = extras.getString(URI_FRAGMENT);
         hasLaunched = extras.getBoolean(HAS_LAUNCHED);
         afterResult = extras.getBoolean(AFTER_RESULT);
@@ -73,7 +74,7 @@ public class MediaCaptureAudioActivity extends Activity {
     }
 
     if (savedInstanceState != null) {
-      appName = savedInstanceState.getString(APP_NAME);
+      appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
@@ -81,7 +82,7 @@ public class MediaCaptureAudioActivity extends Activity {
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + APP_NAME
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
     }
 
@@ -93,6 +94,11 @@ public class MediaCaptureAudioActivity extends Activity {
       afterResult = false;
       hasLaunched = false;
     }
+  }
+  
+  @Override
+  public String getAppName() {
+    return appName;
   }
 
   @Override
@@ -131,7 +137,7 @@ public class MediaCaptureAudioActivity extends Activity {
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putString(APP_NAME, appName);
+    outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
     outState.putString(URI_FRAGMENT, uriFragmentToMedia);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
@@ -262,6 +268,14 @@ public class MediaCaptureAudioActivity extends Activity {
     hasLaunched = false;
     afterResult = true;
     super.finish();
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 
 }

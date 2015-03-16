@@ -17,6 +17,8 @@ package org.opendatakit.survey.android.tasks;
 import java.util.HashMap;
 
 import org.kxml2.kdom.Element;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
@@ -27,8 +29,7 @@ import org.opendatakit.httpclientandroidlib.protocol.HttpContext;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.app.Application;
 import android.os.AsyncTask;
@@ -68,15 +69,15 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
   @Override
   protected HashMap<String, FormDetails> doInBackground(Void... values) {
     // Getting from a file now
-    String downloadListUrl = PropertiesSingleton.getProperty(appName,
-        PreferencesActivity.KEY_SERVER_URL);
+    PropertiesSingleton props = SurveyToolProperties.get(getApplication(), appName);
+
+    String downloadListUrl = props.getProperty(CommonToolProperties.KEY_LEGACY_SERVER_URL);
 
     // NOTE: /formlist must not be translated! It is the well-known path on
     // the server.
-    String downloadPath = PropertiesSingleton.getProperty(appName,
-        PreferencesActivity.KEY_FORMLIST_URL);
+    String downloadPath = props.getProperty(SurveyToolProperties.KEY_FORMLIST_URL);
     downloadListUrl += downloadPath;
-    String auth = PropertiesSingleton.getProperty(appName, PreferencesActivity.KEY_AUTH);
+    String auth = props.getProperty(CommonToolProperties.KEY_AUTH);
 
     // We populate this with available forms from the specified server.
     // <formname, details>

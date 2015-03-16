@@ -21,6 +21,8 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -44,12 +46,11 @@ import android.widget.Toast;
  * @author mitchellsundt@gmail.com
  *
  */
-public class MediaCaptureVideoActivity extends Activity {
+public class MediaCaptureVideoActivity extends BaseActivity {
   private static final String t = "MediaCaptureVideoActivity";
 
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "video/";
-  private static final String APP_NAME = "appName";
   private static final String URI_FRAGMENT = "uriFragment";
   private static final String CONTENT_TYPE = "contentType";
 
@@ -76,7 +77,7 @@ public class MediaCaptureVideoActivity extends Activity {
 
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
-      appName = extras.getString(APP_NAME);
+      appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentToMedia = extras.getString(URI_FRAGMENT);
       hasLaunched = extras.getBoolean(HAS_LAUNCHED);
       afterResult = extras.getBoolean(AFTER_RESULT);
@@ -84,7 +85,7 @@ public class MediaCaptureVideoActivity extends Activity {
     }
 
     if (savedInstanceState != null) {
-      appName = savedInstanceState.getString(APP_NAME);
+      appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
       uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
@@ -92,7 +93,7 @@ public class MediaCaptureVideoActivity extends Activity {
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + APP_NAME
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
     }
 
@@ -104,6 +105,11 @@ public class MediaCaptureVideoActivity extends Activity {
       afterResult = false;
       hasLaunched = false;
     }
+  }
+  
+  @Override
+  public String getAppName() {
+    return appName;
   }
 
   @Override
@@ -153,7 +159,7 @@ public class MediaCaptureVideoActivity extends Activity {
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putString(APP_NAME, appName);
+    outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
     outState.putString(URI_FRAGMENT, uriFragmentToMedia);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
@@ -339,6 +345,14 @@ public class MediaCaptureVideoActivity extends Activity {
       }
 
       return mediaFile;
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 
 }

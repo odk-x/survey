@@ -14,11 +14,12 @@
 
 package org.opendatakit.survey.android.fragments;
 
+import org.opendatakit.common.android.activities.IAppAwareActivity;
+import org.opendatakit.common.android.activities.ODKActivity;
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.provider.FormsProviderAPI;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
 
 import android.app.ListFragment;
@@ -100,10 +101,10 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
 
     // get uri to form
     Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
-    String formId = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
+    String formId = ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
     Uri formUri = Uri.withAppendedPath(
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-            ((ODKActivity) getActivity()).getAppName()), formId);
+            ((IAppAwareActivity) getActivity()).getAppName()), formId);
 
     ((ODKActivity) getActivity()).chooseForm(formUri);
   }
@@ -115,7 +116,7 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
     // First, pick the base URI to use depending on whether we are
     // currently filtering.
     Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-        ((ODKActivity) getActivity()).getAppName());
+        ((IAppAwareActivity) getActivity()).getAppName());
 
     String selection = FormsColumns.FORM_ID + "<> ?";
     String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };

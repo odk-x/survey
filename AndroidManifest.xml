@@ -1,18 +1,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opendatakit.survey.android"
-    android:versionCode="125"
+    android:versionCode="127"
     android:versionName="2.0"
     android:sharedUserId="org.opendatakit"
     android:sharedUserLabel="@string/app_userLabel" >
 
     <uses-sdk
-        android:minSdkVersion="14"
+        android:minSdkVersion="16"
         android:targetSdkVersion="16" />
 
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
@@ -31,6 +32,11 @@
           android:protectionLevel="signature" />
     <uses-permission android:name="org.opendatakit.dbshim.RUN_DBSHIM" />
 	
+    <permission
+          android:name="org.opendatakit.database.RUN_DATABASE"
+          android:protectionLevel="signature" />
+    <uses-permission android:name="org.opendatakit.database.RUN_DATABASE" />
+	
     <supports-screens
         android:anyDensity="true"
         android:largeScreens="true"
@@ -41,34 +47,13 @@
     <application
         android:name="org.opendatakit.survey.android.application.Survey"
         android:icon="@drawable/snotes"
-      	android:logo="@drawable/odk_logo"
+      	android:logo="@+drawable/odk_logo"
         android:label="@string/app_name"
-        android:theme="@style/Survey"
         android:allowBackup="false"
         android:largeHeap="true"
         android:installLocation="auto"
-        android:hardwareAccelerated="true">
-
-        <!--  TODO: shouldn't this be established by androidcommon directly -->
-	    <provider
-            android:exported="true"
-	        android:syncable="false"
-	        android:initOrder="2"
-            android:authorities="org.opendatakit.common.android.provider.forms"
-            android:name="org.opendatakit.survey.android.provider.FormsProvider" />
-        <provider
-            android:exported="true"
-	        android:syncable="false"
-	        android:initOrder="3"
-            android:authorities="org.opendatakit.common.android.provider.instances"
-            android:name="org.opendatakit.survey.android.provider.InstanceProvider" />
-        <provider
-            android:exported="true"
-	        android:syncable="false"
-	        android:initOrder="4"
-            android:authorities="org.opendatakit.common.android.provider.submission.xml;org.opendatakit.common.android.provider.submission.json"
-            android:name="org.opendatakit.survey.android.provider.SubmissionProvider"
-            />
+        android:hardwareAccelerated="true"
+    	android:theme="@style/Opendatakit" >
 
         <activity
             android:name=".activities.MainMenuActivity"

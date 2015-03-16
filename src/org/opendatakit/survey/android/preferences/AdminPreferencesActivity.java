@@ -14,9 +14,10 @@
 
 package org.opendatakit.survey.android.preferences;
 
+import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.MainMenuActivity;
-import org.opendatakit.survey.android.logic.PropertiesSingleton;
+import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.os.Bundle;
 import android.preference.CheckBoxPreference;
@@ -31,41 +32,22 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
 
   public static final String ADMIN_PREFERENCES = "admin_prefs";
 
-  // key for this preference screen
-  public static final String KEY_ADMIN_PW = "admin_pw";
-
-  // keys for each preference
-  // main menu
-  public static final String KEY_EDIT_SAVED = "edit_saved";
-  public static final String KEY_SEND_FINALIZED = "send_finalized";
-  public static final String KEY_GET_BLANK = "get_blank";
-  public static final String KEY_MANAGE_FORMS = "delete_saved";
-  // server
-  public static final String KEY_CHANGE_SERVER = "change_server";
-  public static final String KEY_CHANGE_USERNAME = "change_username";
-  public static final String KEY_CHANGE_PASSWORD = "change_password";
-  public static final String KEY_CHANGE_GOOGLE_ACCOUNT = "change_google_account";
-  // client
-  public static final String KEY_CHANGE_FONT_SIZE = "change_font_size";
-  public static final String KEY_SHOW_SPLASH_SCREEN = "show_splash_screen";
-  public static final String KEY_SELECT_SPLASH_SCREEN = "select_splash_screen";
-  // form entry
-  public static final String KEY_ACCESS_SETTINGS = "access_settings";
-  public static final String KEY_CHANGE_LANGUAGE = "change_language";
-  public static final String KEY_JUMP_TO = "jump_to";
-
   private String mAppName;
+  
+  private PropertiesSingleton mProps;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    mAppName = this.getIntent().getStringExtra(MainMenuActivity.APP_NAME);
+    mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( mAppName == null || mAppName.length() == 0 ) {
     	mAppName = "survey";
     }
 
     setTitle(mAppName + " > " + getString(R.string.admin_preferences));
+    
+    mProps = SurveyToolProperties.get(this, mAppName);
 
     addPreferencesFromResource(R.xml.admin_preferences);
 
@@ -81,8 +63,8 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
       Class c = pref.getClass();
       if (c == CheckBoxPreference.class) {
         CheckBoxPreference checkBoxPref = (CheckBoxPreference)pref;
-        if (PropertiesSingleton.containsKey(mAppName, checkBoxPref.getKey())) {
-          String checked = PropertiesSingleton.getProperty(mAppName, checkBoxPref.getKey());
+        if (mProps.containsKey(checkBoxPref.getKey())) {
+          String checked = mProps.getProperty(checkBoxPref.getKey());
           if (checked.equals("true")) {
             checkBoxPref.setChecked(true);
           } else {
@@ -104,19 +86,19 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
    */
   @Override
   public boolean onPreferenceChange(Preference preference, Object newValue) {
-    PropertiesSingleton.setProperty(mAppName, preference.getKey(), newValue.toString());
+    mProps.setProperty(preference.getKey(), newValue.toString());
     return true;
   }
 
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    PropertiesSingleton.writeProperties(mAppName);
+    mProps.writeProperties();
   }
 
   @Override
   public void finish() {
-	  PropertiesSingleton.writeProperties(mAppName);
+    mProps.writeProperties();
     super.finish();
   }
 }

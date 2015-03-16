@@ -20,16 +20,20 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.opendatakit.common.android.activities.IAppAwareActivity;
+import org.opendatakit.common.android.activities.ODKActivity;
+import org.opendatakit.common.android.fragment.AlertDialogFragment;
+import org.opendatakit.common.android.fragment.AlertDialogFragment.ConfirmAlertDialog;
+import org.opendatakit.common.android.fragment.AuthDialogFragment;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment;
+import org.opendatakit.common.android.fragment.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.common.android.provider.InstanceColumns;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import org.opendatakit.common.android.provider.InstanceProviderAPI;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.ODKActivity;
-import org.opendatakit.survey.android.fragments.AlertDialogFragment.ConfirmAlertDialog;
-import org.opendatakit.survey.android.fragments.ProgressDialogFragment.CancelProgressDialog;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
-import org.opendatakit.survey.android.provider.InstanceProviderAPI;
 
 import android.app.AlertDialog;
 import android.app.Fragment;
@@ -173,7 +177,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           // add all items if mToggled sets to select all
           if (mToggled) {
             Cursor c = (Cursor) ls.getItemAtPosition(pos);
-            String uuid = ODKDatabaseUtils.get().getIndexAsString(c,
+            String uuid = ODKCursorUtils.getIndexAsString(c,
                 c.getColumnIndex(InstanceColumns._ID));
             mSelected.add(uuid);
           }
@@ -254,7 +258,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
-    String k = ODKDatabaseUtils.get().getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
+    String k = ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(InstanceColumns._ID));
 
     // add/remove from selected list
     if (mSelected.contains(k))
@@ -274,7 +278,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       BackgroundTaskFragment f = (BackgroundTaskFragment) getFragmentManager().findFragmentByTag(
           "background");
       String[] str = new String[mSelected.size()];
-      f.uploadInstances(this, ((ODKActivity) getActivity()).getAppName(),
+      f.uploadInstances(this, ((IAppAwareActivity) getActivity()).getAppName(),
           ((ODKActivity) getActivity()).getUploadTableId(), mSelected.toArray(str));
     }
   }
@@ -292,7 +296,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     for (String id : mSelected) {
       for (int pos = 0; pos < ls.getCount(); pos++) {
         Cursor c = (Cursor) ls.getItemAtPosition(pos);
-        String uuid = ODKDatabaseUtils.get().getIndexAsString(c,
+        String uuid = ODKCursorUtils.getIndexAsString(c,
             c.getColumnIndex(InstanceColumns._ID));
         if (id.equals(uuid)) {
           ls.setItemChecked(pos, true);
@@ -328,7 +332,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   }
 
   private void showAuthDialog() {
-    AuthDialogFragment f = AuthDialogFragment.newInstance(getId(),
+    AuthDialogFragment f = AuthDialogFragment.newInstance(
+        ((IAppAwareActivity) getActivity()).getAppName(), getId(),
         getString(R.string.server_requires_auth),
         getString(R.string.server_auth_credentials, mUrl.toString()), mUrl.toString());
 
@@ -457,8 +462,8 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
       mDialogState = DialogState.None;
       dismissProgressDialog();
     } catch (Exception e) {
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).printStackTrace(e);
-      WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).printStackTrace(e);
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "Attempting to close a dialog that was not previously opened");
     }
 
@@ -477,12 +482,12 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
         try {
           Uri uri = Uri.withAppendedPath(
               InstanceProviderAPI.CONTENT_URI,
-              ((ODKActivity) getActivity()).getAppName() + "/"
+              ((IAppAwareActivity) getActivity()).getAppName() + "/"
                   + ((ODKActivity) getActivity()).getUploadTableId() + "/"
                   + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
-            String name = ODKDatabaseUtils.get().getIndexAsString(results,
+            String name = ODKCursorUtils.getIndexAsString(results,
                 results.getColumnIndex(InstanceColumns.DISPLAY_NAME));
             message.append(name + " - " + outcome.mResults.get(id) + "\n\n");
           }
@@ -509,7 +514,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           String removeMe = itr.next();
           boolean removed = mSelected.remove(removeMe);
           if (removed) {
-            WebLogger.getLogger(((ODKActivity) getActivity()).getAppName()).i(t,
+            WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
                 removeMe + " was already sent, removing from queue before restarting task");
           }
         }
@@ -583,11 +588,11 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     if (((ODKActivity) getActivity()).getUploadTableId() != null) {
       baseUri = Uri.withAppendedPath(
           InstanceProviderAPI.CONTENT_URI,
-          ((ODKActivity) getActivity()).getAppName() + "/"
+          ((IAppAwareActivity) getActivity()).getAppName() + "/"
               + ((ODKActivity) getActivity()).getUploadTableId());
     } else {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
-          ((ODKActivity) getActivity()).getAppName());
+          ((IAppAwareActivity) getActivity()).getAppName());
     }
 
     String selection;

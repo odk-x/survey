@@ -14,15 +14,17 @@
 
 package org.opendatakit.survey.android.tasks;
 
-import org.opendatakit.common.android.database.DatabaseFactory;
-import org.opendatakit.common.android.database.IdInstanceNameStruct;
-import org.opendatakit.common.android.utilities.ODKDatabaseUtils;
+import java.util.HashSet;
+
+import org.opendatakit.common.android.provider.FormsColumns;
+import org.opendatakit.common.android.provider.FormsProviderAPI;
+import org.opendatakit.common.android.provider.InstanceProviderAPI;
+import org.opendatakit.common.android.provider.TablesProviderAPI;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
-import org.opendatakit.survey.android.provider.FormsProviderAPI;
 
 import android.app.Application;
-import android.database.sqlite.SQLiteDatabase;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 
@@ -61,20 +63,50 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
             Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
 
         if (deleteFormData) {
-          SQLiteDatabase db = null;
+          HashSet<String> tableIds = new HashSet<String>();
+          
+          Cursor c = null;
           try {
-            db = DatabaseFactory.get().getDatabase(appContext.getApplicationContext(), appName);
-            
-            IdInstanceNameStruct ids = IdInstanceNameStruct.getIds(db, params[i]);
-
-            ODKDatabaseUtils.get().deleteDBTableAndAllData(db, appName, ids.tableId);
+            c = appContext.getContentResolver().query(deleteForm, new String[] { FormsColumns.TABLE_ID }, 
+              null, null, null );
+            if ( c == null ) {
+              throw new IllegalStateException("Unexpected null value");
+            }
+            if ( c.moveToFirst() ) {
+              tableIds.add(c.getString(c.getColumnIndex(FormsColumns.TABLE_ID)));
+            }
+            c.close();
           } finally {
-            if ( db != null ) {
-              db.close();
+            if ( c != null && !c.isClosed() ) {
+              c.close();
             }
           }
+
+          int uploadDel = 0;
+          int tableDel = 0;
+          for ( String tableId : tableIds ) {
+            
+            // delete ALL forms for this tableId
+            deleted += appContext.getContentResolver().delete(
+                Uri.withAppendedPath(
+                    Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), tableId)
+                , null, null);
+            
+            // Delete all information related to the submission of these rows
+            // through the legacy pathway.
+            uploadDel += appContext.getContentResolver().delete( 
+                Uri.withAppendedPath(
+                    Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI, appName), tableId ) 
+                , null, null);
+            // Delete all table-level files and all data rows and attachments for this tableId. 
+            tableDel += appContext.getContentResolver().delete( 
+                Uri.withAppendedPath(
+                    Uri.withAppendedPath(TablesProviderAPI.CONTENT_URI, appName), tableId ) 
+                , null, null);
+          }
+        } else {
+          deleted += appContext.getContentResolver().delete(deleteForm, null, null);
         }
-        deleted += appContext.getContentResolver().delete(deleteForm, null, null);
 
       } catch (Exception ex) {
         WebLogger.getLogger(appName).e(t,
