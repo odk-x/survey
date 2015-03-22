@@ -345,12 +345,10 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
         ((IAppAwareActivity) getActivity()).getAppName());
 
-    String selection = FormsColumns.FORM_ID + "<> ?";
-    String[] selectionArgs = { FormsColumns.COMMON_BASE_FORM_ID };
     // Now create and return a CursorLoader that will take care of
     // creating a Cursor for the data being displayed.
     String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.FORM_VERSION + " DESC";
-    return new CursorLoader(getActivity(), baseUri, null, selection, selectionArgs, sortOrder);
+    return new CursorLoader(getActivity(), baseUri, null, null, null, sortOrder);
   }
 
   @Override

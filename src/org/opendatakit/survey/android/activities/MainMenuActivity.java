@@ -16,7 +16,9 @@ package org.opendatakit.survey.android.activities;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,10 +28,12 @@ import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.activities.ODKActivity;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
+import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.DynamicPropertiesCallback;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.logic.PropertyManager;
+import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
@@ -42,6 +46,7 @@ import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.database.service.TableHealthInfo;
 import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.MainMenuActivity.ScreenList;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
@@ -127,6 +132,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
   private static final String CURRENT_FRAGMENT = "currentFragment";
 
+  private static final String QUEUED_ACTIONS = "queuedActions";
+  
   /** tables that have conflict rows */
   public static final String CONFLICT_TABLES = "conflictTables";
 
@@ -287,11 +294,14 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   private Bundle sessionVariables = new Bundle();
   private ArrayList<SectionScreenStateHistory> sectionStateScreenHistory = new ArrayList<SectionScreenStateHistory>();
 
-  private String refId = UUID.randomUUID().toString();
+  private final String refId = UUID.randomUUID().toString();
   private String auxillaryHash = null;
 
   private String frameworkBaseUrl = null;
   private Long frameworkLastModifiedDate = 0L;
+
+  private LinkedList<String> queuedActions = new LinkedList<String>();
+
   // DO NOT USE THESE -- only used to determine if the current form has changed.
   private String trackingFormPath = null;
   private Long trackingFormLastModifiedDate = 0L;
@@ -368,6 +378,12 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
     outState.putParcelableArrayList(SECTION_STATE_SCREEN_HISTORY, sectionStateScreenHistory);
 
+    if ( !queuedActions.isEmpty() ) {
+      String[] actionOutcomesArray = new String[queuedActions.size()];
+      queuedActions.toArray(actionOutcomesArray);
+      outState.putStringArray(QUEUED_ACTIONS, actionOutcomesArray);
+    }
+    
     if (mConflictTables != null && !mConflictTables.isEmpty()) {
       outState.putBundle(CONFLICT_TABLES, mConflictTables);
     }
@@ -524,16 +540,36 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       }
     }
   }
-  
+
   @Override
   public void databaseAvailable() {
     if ( getAppName() != null ) {
       resolveAnyConflicts();
     }
+    FragmentManager mgr = this.getFragmentManager();
+    int idxLast = mgr.getBackStackEntryCount() - 1;
+    if (idxLast >= 0) {
+      BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
+      Fragment newFragment = null;
+      newFragment = mgr.findFragmentByTag(entry.getName());
+      if ( newFragment instanceof DatabaseConnectionListener ) {
+        ((DatabaseConnectionListener) newFragment).databaseAvailable();
+      }
+    }
   }
 
   @Override
   public void databaseUnavailable() {
+    FragmentManager mgr = this.getFragmentManager();
+    int idxLast = mgr.getBackStackEntryCount() - 1;
+    if (idxLast >= 0) {
+      BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
+      Fragment newFragment = null;
+      newFragment = mgr.findFragmentByTag(entry.getName());
+      if ( newFragment instanceof DatabaseConnectionListener ) {
+        ((DatabaseConnectionListener) newFragment).databaseUnavailable();
+      }
+    }
   }
 
   public void setCurrentForm(FormIdStruct currentForm) {
@@ -630,19 +666,10 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   }
 
   @Override
-  public File getFrameworkFormPath() {
-
-    // Find the formPath for the default form with the most recent
-    // version... this is always in the assets directory...
-    
-    File formPath = new File( ODKFileUtils.getAssetsFolder(appName), "formDef.json");
-    return formPath;
-  }
-
-  @Override
   public String getUrlBaseLocation(boolean ifChanged) {
     // Find the formPath for the framework formDef.json
-    File frameworkFormPath = getFrameworkFormPath();
+    File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName, 
+        FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
 
     // formPath always begins ../ -- strip that off to get explicit path
     // suffix...
@@ -665,7 +692,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     // for some reason, the jqMobile framework wants an empty search string...
     // add this here now...
     fullPath += "?";
-    Long frameworkLastModified = frameworkFormPath.lastModified();
+    Long frameworkLastModified = frameworkFormDef.lastModified();
 
     boolean changed = false;
 
@@ -700,14 +727,15 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   public String getUrlLocationHash() {
     if (currentForm == null) {
       // we want framework...
-      File frameworkFormPath = getFrameworkFormPath();
+      File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName, 
+          FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
       
       String hashUrl = "#formPath="
-          + StringEscapeUtils.escapeHtml4("../" + ODKFileUtils.asRelativePath(appName, frameworkFormPath))
+          + StringEscapeUtils.escapeHtml4(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
           + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
           + ((getScreenPath() == null) ? "" : "&screenPath="
               + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
+          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
           + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
       return hashUrl;
     } else {
@@ -716,7 +744,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
           + ((getScreenPath() == null) ? "" : "&screenPath="
               + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ((refId == null) ? "" : "&refId=" + StringEscapeUtils.escapeHtml4(refId))
+          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
           + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
 
       return hashUrl;
@@ -881,6 +909,13 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
         sectionStateScreenHistory = savedInstanceState
             .getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
+      }
+      
+      if (savedInstanceState.containsKey(QUEUED_ACTIONS)) {
+        String[] actionOutcomesArray = savedInstanceState
+            .getStringArray(QUEUED_ACTIONS);
+        queuedActions.clear();
+        queuedActions.addAll(Arrays.asList(actionOutcomesArray));
       }
     } else if (formUri != null) {
       // request specifies a specific formUri -- try to open that
@@ -1254,7 +1289,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         newFragment = new FormDeleteListFragment();
       }
     } else if (newScreenType == ScreenList.FORM_DOWNLOADER) {
-      newFragment = mgr.findFragmentById(FormDownloadListFragment.ID);
+      newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
         newFragment = new FormDownloadListFragment();
       }
@@ -1768,7 +1803,28 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       return "Application not found";
     }
   }
-
+  
+  @Override
+  public void queueActionOutcome(String outcome) {
+    queuedActions.addLast(outcome);
+  }
+  
+  @Override
+  public void queueUrlChange(String hash) {
+    try {
+      String jsonEncoded = ODKFileUtils.mapper.writeValueAsString(hash);
+      queuedActions.addLast(jsonEncoded);
+    } catch ( Exception e ) {
+      e.printStackTrace();
+    }
+  }
+  
+  @Override
+  public String getFirstQueuedAction() {
+    String outcome = 
+        queuedActions.isEmpty() ? null : queuedActions.removeFirst();
+    return outcome;
+  }
   /*
    * END - Interfaces to Javascript layer (also used in Java).
    * *********************************************************************
@@ -1793,15 +1849,37 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         String jsonObject = null;
         Bundle b = (intent == null) ? null : intent.getExtras();
         JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
-        jsonObject = "{\"status\":" + Integer.toString(resultCode)
-            + ((val == null) ? "" : ", \"result\":" + val.toString()) + "}";
+        JSONObject jsonValue = new JSONObject();
+        jsonValue.put("status", Integer.toString(resultCode));
+        if ( val != null ) {
+          jsonValue.put("result", val);
+        }
+        JSONObject result = new JSONObject();
+        result.put("page", pageWaitingForData);
+        result.put("path", (pathWaitingForData == null) ? JSONObject.NULL : pathWaitingForData);
+        result.put("action",  actionWaitingForData);
+        result.put("jsonValue", jsonValue);
+        this.queueActionOutcome(result.toString());
+        
         WebLogger.getLogger(getAppName()).i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
-        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
-            jsonObject);
+        view.signalQueuedActionAvailable();
       } catch (Exception e) {
-        view.doActionResult(pageWaitingForData, pathWaitingForData, actionWaitingForData,
-            "{ \"status\":0, \"result\":\"" + e.toString() + "\"}");
+        try {
+          JSONObject jsonValue = new JSONObject();
+          jsonValue.put("status", Integer.toString(0));
+          jsonValue.put("result", e.toString());
+          JSONObject result = new JSONObject();
+          result.put("page", pageWaitingForData);
+          result.put("path", (pathWaitingForData == null) ? JSONObject.NULL : pathWaitingForData);
+          result.put("action",  actionWaitingForData);
+          result.put("jsonValue", jsonValue);
+          this.queueActionOutcome(result.toString());
+
+          view.signalQueuedActionAvailable();
+        } catch (Exception ex) {
+          ex.printStackTrace();
+        }
       } finally {
         pathWaitingForData = null;
         pageWaitingForData = null;

@@ -38,7 +38,6 @@ import org.apache.commons.io.FileUtils;
 import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
-import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
 import org.opendatakit.common.android.utilities.DocumentFetchResult;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
@@ -134,7 +133,6 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
            * path to the directory containing the newly downloaded or stale data
            */
           String baseStaleMediaPath = ODKFileUtils.getPendingInsertionTablesFolder(getAppName()) + File.separator;
-          boolean isFramework = fd.formID.equals(FormsColumns.COMMON_BASE_FORM_ID);
 
           try {
             // clean up friendly form name...
@@ -203,11 +201,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
               // will eventually be placing this data, with
               // the tableId == the formId from the legacy
               // pathway.
-              if (isFramework) {
-                existingMediaPath = new File(ODKFileUtils.getAssetsFolder(getAppName()));
-              } else {
-                existingMediaPath = new File(ODKFileUtils.getTablesFolder(getAppName(), fd.formID));
-              }
+              existingMediaPath = new File(ODKFileUtils.getTablesFolder(getAppName(), fd.formID));
               ODKFileUtils.createFolder(existingMediaPath.getAbsolutePath());
 
               if (fd.manifestUrl == null) {

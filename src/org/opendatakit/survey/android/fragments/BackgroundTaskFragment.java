@@ -16,7 +16,6 @@ package org.opendatakit.survey.android.fragments;
 
 import java.util.HashMap;
 
-import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
