@@ -1850,7 +1850,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         Bundle b = (intent == null) ? null : intent.getExtras();
         JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
         JSONObject jsonValue = new JSONObject();
-        jsonValue.put("status", Integer.toString(resultCode));
+        jsonValue.put("status", resultCode);
         if ( val != null ) {
           jsonValue.put("result", val);
         }
@@ -1859,7 +1859,9 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         result.put("path", (pathWaitingForData == null) ? JSONObject.NULL : pathWaitingForData);
         result.put("action",  actionWaitingForData);
         result.put("jsonValue", jsonValue);
-        this.queueActionOutcome(result.toString());
+        
+        String actionOutcome = result.toString();
+        this.queueActionOutcome(actionOutcome);
         
         WebLogger.getLogger(getAppName()).i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
 
@@ -1867,7 +1869,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       } catch (Exception e) {
         try {
           JSONObject jsonValue = new JSONObject();
-          jsonValue.put("status", Integer.toString(0));
+          jsonValue.put("status", 0);
           jsonValue.put("result", e.toString());
           JSONObject result = new JSONObject();
           result.put("page", pageWaitingForData);
