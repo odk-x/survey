@@ -16,7 +16,6 @@ package org.opendatakit.survey.android.tasks;
 
 import java.util.HashMap;
 
-import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
@@ -30,6 +29,9 @@ import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.listeners.FormListDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.logic.SurveyToolProperties;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import android.app.Application;
 import android.os.AsyncTask;
@@ -58,7 +60,7 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
   private static final String NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_LIST = "http://openrosa.org/xforms/xformsList";
 
   private boolean isXformsListNamespacedElement(Element e) {
-    return e.getNamespace().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_LIST);
+    return e.getNamespaceURI().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_LIST);
   }
 
   public DownloadFormListTask(String appName) {
@@ -103,15 +105,15 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
 
     if (result.isOpenRosaResponse) {
       // Attempt OpenRosa 1.0 parsing
-      Element xformsElement = result.doc.getRootElement();
-      if (!xformsElement.getName().equals("xforms")) {
-        String error = "root element is not <xforms> : " + xformsElement.getName();
+      Element xformsElement = result.doc.getDocumentElement();
+      if (!xformsElement.getTagName().equals("xforms")) {
+        String error = "root element is not <xforms> : " + xformsElement.getTagName();
         WebLogger.getLogger(appName).e(t, "Parsing OpenRosa reply -- " + error);
         formList.put(DL_ERROR_MSG,
             new FormDetails(appContext.getString(R.string.parse_openrosa_formlist_failed, error)));
         return formList;
       }
-      String namespace = xformsElement.getNamespace();
+      String namespace = xformsElement.getNamespaceURI();
       if (!isXformsListNamespacedElement(xformsElement)) {
         String error = "root element namespace is incorrect:" + namespace;
         WebLogger.getLogger(appName).e(t, "Parsing OpenRosa reply -- " + error);
@@ -119,18 +121,20 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
             new FormDetails(appContext.getString(R.string.parse_openrosa_formlist_failed, error)));
         return formList;
       }
-      int nElements = xformsElement.getChildCount();
+      NodeList nl = xformsElement.getChildNodes();
+      int nElements = nl.getLength();
       for (int i = 0; i < nElements; ++i) {
-        if (xformsElement.getType(i) != Element.ELEMENT) {
+        Node nchild = nl.item(i);
+        if (nchild.getNodeType() != Element.ELEMENT_NODE) {
           // e.g., whitespace (text)
           continue;
         }
-        Element xformElement = (Element) xformsElement.getElement(i);
+        Element xformElement = (Element) nchild;
         if (!isXformsListNamespacedElement(xformElement)) {
           // someone else's extension?
           continue;
         }
-        String name = xformElement.getName();
+        String name = xformElement.getTagName();
         if (!name.equalsIgnoreCase("xform")) {
           // someone else's extension?
           continue;
@@ -145,18 +149,20 @@ public class DownloadFormListTask extends AsyncTask<Void, String, HashMap<String
         String manifestUrl = null;
         String hash = null;
         // don't process descriptionUrl
-        int fieldCount = xformElement.getChildCount();
+        NodeList nlElement = xformElement.getChildNodes();
+        int fieldCount = nlElement.getLength();
         for (int j = 0; j < fieldCount; ++j) {
-          if (xformElement.getType(j) != Element.ELEMENT) {
+          Node elementChild = nlElement.item(j);
+          if (elementChild.getNodeType() != Element.ELEMENT_NODE) {
             // whitespace
             continue;
           }
-          Element child = xformElement.getElement(j);
+          Element child = (Element) elementChild;
           if (!isXformsListNamespacedElement(child)) {
             // someone else's extension?
             continue;
           }
-          String tag = child.getName();
+          String tag = child.getTagName();
           if (tag.equals("formID")) {
             formId = ODKFileUtils.getXMLText(child, true);
             if (formId != null && formId.length() == 0) {

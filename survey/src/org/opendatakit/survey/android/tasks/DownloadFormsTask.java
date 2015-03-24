@@ -35,7 +35,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.apache.commons.io.FileUtils;
-import org.kxml2.kdom.Element;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.utilities.ClientConnectionManagerFactory;
@@ -52,6 +51,9 @@ import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.listeners.FormDownloaderListener;
 import org.opendatakit.survey.android.logic.FormDetails;
 import org.opendatakit.survey.android.logic.SurveyToolProperties;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import android.app.Application;
 import android.os.AsyncTask;
@@ -81,7 +83,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
   }
 
   private boolean isXformsManifestNamespacedElement(Element e) {
-    return e.getNamespace().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_MANIFEST);
+    return e.getNamespaceURI().equalsIgnoreCase(NAMESPACE_OPENROSA_ORG_XFORMS_XFORMS_MANIFEST);
   }
 
   @Override
@@ -571,47 +573,51 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
     }
 
     // Attempt OpenRosa 1.0 parsing
-    Element manifestElement = result.doc.getRootElement();
-    if (!manifestElement.getName().equals("manifest")) {
-      errMessage += appContext.getString(R.string.root_element_error, manifestElement.getName());
+    Element manifestElement = result.doc.getDocumentElement();
+    if (!manifestElement.getTagName().equals("manifest")) {
+      errMessage += appContext.getString(R.string.root_element_error, manifestElement.getTagName());
       WebLogger.getLogger(appName).e(t, errMessage);
       return errMessage;
     }
-    String namespace = manifestElement.getNamespace();
+    String namespace = manifestElement.getNamespaceURI();
     if (!isXformsManifestNamespacedElement(manifestElement)) {
       errMessage += appContext.getString(R.string.root_namespace_error, namespace);
       WebLogger.getLogger(appName).e(t, errMessage);
       return errMessage;
     }
-    int nElements = manifestElement.getChildCount();
+    NodeList manifestFields = manifestElement.getChildNodes();
+    int nElements = manifestFields.getLength();
     for (int i = 0; i < nElements; ++i) {
-      if (manifestElement.getType(i) != Element.ELEMENT) {
+      Node fieldElement = manifestFields.item(i);
+      if (fieldElement.getNodeType() != Element.ELEMENT_NODE) {
         // e.g., whitespace (text)
         continue;
       }
-      Element mediaFileElement = (Element) manifestElement.getElement(i);
+      Element mediaFileElement = (Element) fieldElement;
       if (!isXformsManifestNamespacedElement(mediaFileElement)) {
         // someone else's extension?
         continue;
       }
-      String name = mediaFileElement.getName();
+      String name = mediaFileElement.getTagName();
       if (name.equalsIgnoreCase("mediaFile")) {
         String filename = null;
         String hash = null;
         String downloadUrl = null;
         // don't process descriptionUrl
-        int childCount = mediaFileElement.getChildCount();
+        NodeList mediaFileList = mediaFileElement.getChildNodes();
+        int childCount = mediaFileList.getLength();
         for (int j = 0; j < childCount; ++j) {
-          if (mediaFileElement.getType(j) != Element.ELEMENT) {
+          Node fileNode = mediaFileList.item(j);
+          if (fileNode.getNodeType() != Element.ELEMENT_NODE) {
             // e.g., whitespace (text)
             continue;
           }
-          Element child = mediaFileElement.getElement(j);
+          Element child = (Element) fileNode;
           if (!isXformsManifestNamespacedElement(child)) {
             // someone else's extension?
             continue;
           }
-          String tag = child.getName();
+          String tag = child.getTagName();
           if (tag.equals("filename")) {
             filename = ODKFileUtils.getXMLText(child, true);
             if (filename != null && filename.length() == 0) {

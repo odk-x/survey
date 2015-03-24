@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- ActionBar style -->
+    <style name="OdkActionBar"
+           parent="@android:style/Widget.DeviceDefault.Light.ActionBar.Solid">
+        <item name="android:displayOptions">useLogo|showHome</item>
+        <item name="android:background">#ffffff</item>
+    </style>
+    
+    <style name="Opendatakit" parent="android:style/Theme.DeviceDefault.Light">
+	    <item name="android:scrollbarThumbHorizontal">@+drawable/thumb</item>
+	    <item name="android:scrollbarThumbVertical">@+drawable/thumb</item>
+	    <item name="android:scrollbarSize">2.5mm</item>
+	    <item name="android:scrollbarAlwaysDrawVerticalTrack">true</item>
+	    <item name="android:scrollbarAlwaysDrawHorizontalTrack">true</item>
+	    <item name="android:fadeScrollbars">false</item>
+        <item name="android:actionBarStyle">@style/OdkActionBar</item>
+    </style>
+    
+</resources>
