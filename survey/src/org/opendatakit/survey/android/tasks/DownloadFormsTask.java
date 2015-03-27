@@ -254,42 +254,22 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
             // tempMediaPath
             // directory... assume everything is OK and just move it...
 
-            // TODO: with the restructuring of the directory structure, step (3)
-            // won't be necessary
-            // (0) ensure there is no instances folder coming from the server
-            // (affects recovery)
             // (1) move the existingMediaPath to the staleMediaPath
             // (2) move the tempMediaPath to the existingMediaPath
-            // (3) move the staleMediaPath/instances folder to the
-            // existingMediaPath/instances.
-            File existingInstances = new File(existingMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
-            File staleInstances = new File(staleMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
-            File tempInstances = new File(tempMediaPath, ODKFileUtils.INSTANCES_FOLDER_NAME);
 
             try {
-              // (0) ensure there is no instances folder coming from the server
-              if (tempInstances.exists()) {
-                FileUtils.deleteDirectory(tempInstances);
-              }
               // (1) move any current directory to the stale tree.
               if (existingMediaPath.exists()) {
                 FileUtils.moveDirectory(existingMediaPath, staleMediaPath);
               }
               // (2) move the temp directory to the current location.
               FileUtils.moveDirectory(tempMediaPath, existingMediaPath);
-              // (3) move any instances back to the current location.
-              if (staleInstances.exists()) {
-                FileUtils.moveDirectory(staleInstances, existingInstances);
-              }
             } catch (IOException ex) {
               WebLogger.getLogger(appName).printStackTrace(ex);
               message += ex.toString();
               if (staleMediaPath.exists()) {
                 // try to move this back, since we failed somehow...
                 try {
-                  if (existingInstances.exists()) {
-                    FileUtils.moveDirectory(existingInstances, staleInstances);
-                  }
                   if (existingMediaPath.exists()) {
                     FileUtils.deleteDirectory(existingMediaPath);
                   }

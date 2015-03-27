@@ -673,10 +673,10 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
     // formPath always begins ../ -- strip that off to get explicit path
     // suffix...
-    File frameworkFolder = new File(ODKFileUtils.getFrameworkFolder(appName));
+    File systemFolder = new File(ODKFileUtils.getSystemFolder(appName));
 
     // File htmlFile = new File(mediaFolder, mPrompt.getAppearanceHint());
-    File htmlFile = new File(frameworkFolder, "index.html");
+    File htmlFile = new File(systemFolder, "index.html");
 
     if (!htmlFile.exists()) {
       return null;
