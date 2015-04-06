@@ -46,7 +46,6 @@ import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.database.service.TableHealthInfo;
 import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.activities.MainMenuActivity.ScreenList;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
