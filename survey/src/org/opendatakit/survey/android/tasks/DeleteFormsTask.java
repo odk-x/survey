@@ -35,7 +35,7 @@ import android.os.AsyncTask;
  * @author mitchellsundt@gmail.com
  *
  */
-public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
+public class DeleteFormsTask extends AsyncTask<Uri, Void, Integer> {
   private static final String t = "DeleteFormsTask";
 
   private Application appContext;
@@ -46,7 +46,7 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
   private int successCount = 0;
 
   @Override
-  protected Integer doInBackground(String... params) {
+  protected Integer doInBackground(Uri... params) {
     int deleted = 0;
 
     if (params == null || appContext == null || dl == null) {
@@ -59,8 +59,7 @@ public class DeleteFormsTask extends AsyncTask<String, Void, Integer> {
         break;
       }
       try {
-        Uri deleteForm = Uri.withAppendedPath(
-            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), params[i]);
+        Uri deleteForm = params[i];
 
         if (deleteFormData) {
           HashSet<String> tableIds = new HashSet<String>();

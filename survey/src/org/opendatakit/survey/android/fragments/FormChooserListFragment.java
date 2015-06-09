@@ -101,10 +101,13 @@ public class FormChooserListFragment extends ListFragment implements LoaderManag
 
     // get uri to form
     Cursor c = (Cursor) (((SimpleCursorAdapter) getListAdapter()).getItem(position));
+    String tableId = ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.TABLE_ID));
     String formId = ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID));
     Uri formUri = Uri.withAppendedPath(
-        Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-            ((IAppAwareActivity) getActivity()).getAppName()), formId);
+        Uri.withAppendedPath(
+          Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+            ((IAppAwareActivity) getActivity()).getAppName()), tableId),
+            formId);
 
     ((ODKActivity) getActivity()).chooseForm(formUri);
   }

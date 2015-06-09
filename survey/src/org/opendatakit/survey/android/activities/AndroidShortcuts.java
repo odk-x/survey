@@ -126,8 +126,10 @@ public class AndroidShortcuts extends BaseActivity {
             String formName = app.getName() + " > "
                 + ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             uri = Uri.withAppendedPath(
-                Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
+                    Uri.withAppendedPath(
+                      Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+                        ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.TABLE_ID))),
+                          ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }

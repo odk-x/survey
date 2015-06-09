@@ -270,12 +270,17 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     FragmentManager mgr = getFragmentManager();
     BackgroundTaskFragment f = (BackgroundTaskFragment) mgr.findFragmentByTag("background");
 
-    String[] selectedFormIds = new String[mSelected.size()];
+    Uri[] selectedFormUris = new Uri[mSelected.size()];
     for (int i = 0; i < mSelected.size(); i++) {
-      selectedFormIds[i] = mSelected.get(i).formId;
+      FormDeleteListFragmentSelection selected = mSelected.get(i);
+      selectedFormUris[i] = Uri.withAppendedPath(
+          Uri.withAppendedPath(
+              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, 
+                  ((IAppAwareActivity) getActivity()).getAppName()), 
+                    selected.tableId), selected.formId);
     }
 
-    f.deleteSelectedForms(((IAppAwareActivity) getActivity()).getAppName(), this, selectedFormIds,
+    f.deleteSelectedForms(((IAppAwareActivity) getActivity()).getAppName(), this, selectedFormUris,
         deleteFormAndData);
   }
 
@@ -285,6 +290,8 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     // get row id from db
     Cursor c = (Cursor) getListAdapter().getItem(position);
+    String tableId = ODKCursorUtils.getIndexAsString(c,
+        c.getColumnIndex(FormsColumns.TABLE_ID));
     String formId = ODKCursorUtils.getIndexAsString(c,
         c.getColumnIndex(FormsColumns.FORM_ID));
     String formName = ODKCursorUtils.getIndexAsString(c,
@@ -292,7 +299,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     String formVersion = ODKCursorUtils.getIndexAsString(c,
         c.getColumnIndex(FormsColumns.FORM_VERSION));
 
-    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(formId,
+    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(tableId, formId,
         formName, formVersion);
 
     if (mSelected.contains(clickedItem))

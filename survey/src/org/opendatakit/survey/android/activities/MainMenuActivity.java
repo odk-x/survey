@@ -809,8 +809,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         } else if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
-          formUri = Uri.withAppendedPath(Uri.withAppendedPath(uriFormsProvider, appName),
-              segments.get(1));
+          formUri = uri;
         } else {
           assignContentView();
           createErrorDialog(
@@ -1394,8 +1393,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           if (segments != null && segments.size() >= 2) {
             String appName = segments.get(0);
             setAppName(appName);
-            formUri = Uri.withAppendedPath(Uri.withAppendedPath(uriFormsProvider, appName),
-                segments.get(1));
+            formUri = uri;
           } else {
             swapToFragmentView(ScreenList.FORM_CHOOSER);
             createErrorDialog(

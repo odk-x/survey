@@ -29,6 +29,7 @@ import org.opendatakit.survey.android.tasks.DownloadFormsTask;
 import org.opendatakit.survey.android.tasks.InstanceUploaderTask;
 
 import android.app.Fragment;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.Toast;
@@ -206,7 +207,7 @@ public class BackgroundTaskFragment extends Fragment implements DeleteFormsListe
   // ///////////////////////////////////////////////////
   // actions
 
-  public synchronized void deleteSelectedForms(String appName, DeleteFormsListener listener, String[] toDelete, boolean deleteFormAndData) {
+  public synchronized void deleteSelectedForms(String appName, DeleteFormsListener listener, Uri[] toDelete, boolean deleteFormAndData) {
     mDeleteFormsListener = listener;
     if (mBackgroundTasks.mDeleteFormsTask != null
         && mBackgroundTasks.mDeleteFormsTask.getStatus() != AsyncTask.Status.FINISHED) {
