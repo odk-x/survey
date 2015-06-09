@@ -37,6 +37,7 @@ import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -809,7 +810,12 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         } else if (segments != null && segments.size() >= 2) {
           String appName = segments.get(0);
           setAppName(appName);
-          formUri = uri;
+          String tableId = segments.get(1);
+          String formId = (segments.size() > 2) ? segments.get(2) : null;
+          formUri = Uri.withAppendedPath(
+              Uri.withAppendedPath(
+                  Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+                    tableId), formId);
         } else {
           assignContentView();
           createErrorDialog(
@@ -1393,7 +1399,12 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           if (segments != null && segments.size() >= 2) {
             String appName = segments.get(0);
             setAppName(appName);
-            formUri = uri;
+            String tableId = segments.get(1);
+            String formId = (segments.size() > 2) ? segments.get(2) : null;
+            formUri = Uri.withAppendedPath(
+                Uri.withAppendedPath(
+                    Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+                      tableId), formId);
           } else {
             swapToFragmentView(ScreenList.FORM_CHOOSER);
             createErrorDialog(
