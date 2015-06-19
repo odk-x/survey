@@ -1,0 +1,5 @@
+include ':survey'
+include ':opendatakit.androidlibrary:androidlibrary'
+project(':opendatakit.androidlibrary:androidlibrary').setProjectDir(new File('../opendatakit.androidlibrary/androidlibrary'))
+include ':opendatakit.androidcommon:androidcommon'
+project(':opendatakit.androidcommon:androidcommon').setProjectDir(new File('../opendatakit.androidcommon/androidcommon'))
