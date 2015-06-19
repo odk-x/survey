@@ -3,3 +3,8 @@ survey.test/bin/**
 survey/bin/**
 survey/gen/**
 survey.test/gen/**
+build/**
+local.properties
+.idea/**
+.gradle/**
+*.iml
