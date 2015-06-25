@@ -2,20 +2,20 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 19
-    buildToolsVersion "23.0.0 rc2"
+    buildToolsVersion "22.0.1"
 
     defaultConfig {
         applicationId "org.opendatakit.survey.android"
         minSdkVersion 16
         targetSdkVersion 16
 
-        testApplicationId "org.opendatakit.survey.test"
         testInstrumentationRunner "android.test.InstrumentationTestRunner"
     }
 
     buildTypes {
         release {
             minifyEnabled false
+            //testApplicationId "org.opendatakit.survey.test"
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
