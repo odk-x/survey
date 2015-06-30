@@ -24,6 +24,8 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import android.net.Uri;
 import android.test.AndroidTestCase;
 
+import junit.framework.TestCase;
+
 public class FormIdStructTest extends AndroidTestCase {
   private static final String FORM_PATH = "tables/myTable/forms/formName";
   private static final String FORM_ID = "formName";

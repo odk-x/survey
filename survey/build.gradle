@@ -8,8 +8,6 @@ android {
         applicationId "org.opendatakit.survey.android"
         minSdkVersion 16
         targetSdkVersion 16
-
-        testInstrumentationRunner "android.test.InstrumentationTestRunner"
     }
 
     buildTypes {
@@ -39,4 +37,7 @@ dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
     compile project(':opendatakit.androidlibrary:androidlibrary')
     compile project(':opendatakit.androidcommon:androidcommon')
+
+    // Testing dependencies
+    androidTestCompile 'junit:junit:4.12'
 }

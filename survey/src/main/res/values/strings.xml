@@ -198,4 +198,8 @@
 <string name="waiting_auth_title">Authenticating...</string>
 <string name="waiting_auth">Waiting on authentication...</string>
 <string name="database_unavailable">Database Unavailable</string>
+<string name="still_reading_license_file">Sorry, the license file is still being read.</string>
+<string name="about">About</string>
+<string name="read_license_success">Read license file successfully</string>
+<string name="read_license_fail">Failed to read license file</string>
 </resources>
