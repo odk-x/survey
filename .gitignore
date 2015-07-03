@@ -1,9 +1,5 @@
 build
-local.properties
 .gradle
-.idea/workspace.xml
-.idea/tasks.xml
-.idea/libraries
-.idea/gradle.xml
-.idea/misc.xml
-.idea/vcs.xml
+.idea
+local.properties
+*.iml

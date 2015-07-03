@@ -1,0 +1,157 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.opendatakit.survey.android"
+    android:versionCode="127"
+    android:versionName="2.0"
+    android:sharedUserId="org.opendatakit"
+    android:sharedUserLabel="@string/app_userLabel" >
+
+    <uses-sdk
+        android:minSdkVersion="16"
+        android:targetSdkVersion="16" />
+
+
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+	<uses-permission android:name="com.android.vending.CHECK_LICENSE"/>
+    
+    <permission
+          android:name="org.opendatakit.webkitserver.RUN_WEBSERVER"
+          android:protectionLevel="signature" />
+    <uses-permission android:name="org.opendatakit.webkitserver.RUN_WEBSERVER" />
+	
+    <permission
+          android:name="org.opendatakit.dbshim.RUN_DBSHIM"
+          android:protectionLevel="signature" />
+    <uses-permission android:name="org.opendatakit.dbshim.RUN_DBSHIM" />
+	
+    <permission
+          android:name="org.opendatakit.database.RUN_DATABASE"
+          android:protectionLevel="signature" />
+    <uses-permission android:name="org.opendatakit.database.RUN_DATABASE" />
+	
+    <supports-screens
+        android:anyDensity="true"
+        android:largeScreens="true"
+        android:normalScreens="true"
+        android:resizeable="true"
+        android:smallScreens="true" />
+
+    <application
+        android:name="org.opendatakit.survey.android.application.Survey"
+        android:icon="@drawable/snotes"
+      	android:logo="@+drawable/odk_logo"
+        android:label="@string/app_name"
+        android:allowBackup="false"
+        android:largeHeap="true"
+        android:installLocation="auto"
+        android:hardwareAccelerated="true"
+    	android:theme="@style/Opendatakit" >
+
+        <activity
+            android:name=".activities.MainMenuActivity"
+            android:configChanges="orientation"
+            android:label="@string/app_name"
+            android:windowSoftInputMode="adjustResize" >
+        </activity>
+        <activity
+            android:name=".activities.AccountList"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.AccountInfo"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".preferences.AdminPreferencesActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".preferences.PreferencesActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaCaptureImageActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaChooseImageActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaDeleteImageActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaCaptureAudioActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaChooseAudioActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaDeleteAudioActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaCaptureVideoActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaChooseVideoActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.MediaDeleteVideoActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.GeoPointActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.SplashScreenActivity"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.Dialog" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <action android:name="android.intent.action.EDIT" />
+                <action android:name="android.intent.action.PICK" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="vnd.android.cursor.dir/vnd.opendatakit.form" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.form" />
+                <data android:mimeType="vnd.android.cursor.item/vnd.opendatakit.instance" />
+            </intent-filter>
+        </activity>
+        <!-- Enable Shortcuts for Command Actions -->
+        <activity
+            android:name="org.opendatakit.survey.android.activities.AndroidShortcuts"
+            android:label="@string/shortcut_name"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <uses-library
+            android:name="com.google.android.maps"
+            android:required="false" />
+    </application>
+</manifest>

@@ -1,0 +1,43 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 19
+    buildToolsVersion "22.0.1"
+
+    defaultConfig {
+        applicationId "org.opendatakit.survey.android"
+        minSdkVersion 16
+        targetSdkVersion 16
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            //testApplicationId "org.opendatakit.survey.test"
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+        }
+    }
+
+    packagingOptions {
+        pickFirst 'META-INF/LICENSE'        /* File 1: jackson-databind-2.4.1.3.jar
+                                               File 2: jackson-annotations-2.4.1.jar */
+
+        pickFirst 'META-INF/LICENSE.txt'    /* File 1: commons-io-2.4.jar
+                                               File 2: commons-lang3-3.1.jar */
+
+        pickFirst 'META-INF/NOTICE'         /* File 1: jackson-core-2.4.1.1.jar
+                                               File 2: jackson-databind-2.4.1.3.jar */
+
+        pickFirst 'META-INF/NOTICE.txt'     /* File 1: commons-io-2.4.jar
+                                               File 2: commons-lang3-3.1.jar */
+    }
+}
+
+dependencies {
+    compile fileTree(include: '*.jar', dir: 'libs')
+    compile project(':androidlibrary:androidlibrary_lib')
+    compile project(':androidcommon:androidcommon_lib')
+
+    // Testing dependencies
+    androidTestCompile 'junit:junit:4.12'
+}
