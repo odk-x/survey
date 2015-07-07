@@ -1,19 +1,26 @@
+/**************************************************************************************************
+                                        GRADLE CONFIG
+ *************************************************************************************************/
+
+apply plugin: 'jacoco'  // Can't (yet) use integrated Android JaCoCo for UnitTests
+                        // see: https://code.google.com/p/android/issues/detail?id=144664
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 19
     buildToolsVersion "22.0.1"
-
+    compileSdkVersion 20
     defaultConfig {
-        applicationId "org.opendatakit.survey.android"
+        applicationId "org.opendatakit.survey"
         minSdkVersion 16
-        targetSdkVersion 16
+        targetSdkVersion 20
     }
 
     buildTypes {
+        debug {
+            testCoverageEnabled true // Allows AndroidTest JaCoCo reports to be generated
+        }
         release {
             minifyEnabled false
-            //testApplicationId "org.opendatakit.survey.test"
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
         }
     }
@@ -40,4 +47,56 @@ dependencies {
 
     // Testing dependencies
     androidTestCompile 'junit:junit:4.12'
+}
+
+
+/**************************************************************************************************
+                                        CUSTOM TASKS
+ *************************************************************************************************/
+
+// Code to generate JaCoCo reports
+task jacocoTestDebugReport(type:JacocoReport, dependsOn: ["jacocoMergeGen"]) {
+    group = "Reporting"
+    description = "Generate a JaCoCo code-coverage report for debug tests"
+
+    classDirectories = fileTree( // Include relevant .class files
+            dir: "${buildDir}/intermediates/classes/debug",
+            excludes: ['**/R.class',
+                       '**/R$*.class',
+                       '**/*$ViewInjector*.*',
+                       '**/BuildConfig.*',
+                       '**/Manifest*.*']
+    )
+
+    sourceDirectories = files("${buildDir.parent}/src/main/java") // Set src directories
+    additionalSourceDirs = files([
+            "${buildDir}/generated/source/buildConfig/debug",
+            "${buildDir}/generated/source/r/debug"
+    ])
+
+    // Generate report from merged .exec file
+    executionData = files("${buildDir}/jacoco/jacocoMergeGen.exec")
+
+    reports { // Report output config
+        xml {
+            enabled = true
+            destination "${project.buildDir}/reports/jacoco/jacoco.xml"
+        }
+        html {
+            enabled = true
+            destination "${project.buildDir}/reports/jacoco"
+        }
+    }
+}
+
+// Code to merge JaCoCo .exec/.ec files
+// Outputs to ${buildDir}/jacoco/TASK_NAME.exec
+task jacocoMergeGen(type: JacocoMerge, dependsOn: ["testDebug", "connectedAndroidTestDebug"]) {
+    description = 'Merge test code-coverage results from all different test types'
+
+    executionData = files([
+            // Add any additional .exec/.ec files here if additional flavors of test need to be included
+            //"${buildDir}/jacoco/testDebug.exec", // UnitTest output TODO: Uncomment if/when they are implemented
+            "${buildDir}/outputs/code-coverage/connected/coverage.ec" // AndroidTest output
+    ])
 }
