@@ -10,7 +10,7 @@ android {
     buildToolsVersion "22.0.1"
     compileSdkVersion 19
     defaultConfig {
-        applicationId "org.opendatakit.survey"
+        applicationId "org.opendatakit.survey.android"
         minSdkVersion 16
         targetSdkVersion 16
     }
