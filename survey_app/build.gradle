@@ -6,13 +6,19 @@ apply plugin: 'jacoco'  // Can't (yet) use integrated Android JaCoCo for UnitTes
                         // see: https://code.google.com/p/android/issues/detail?id=144664
 apply plugin: 'com.android.application'
 
+group = 'org.opendatakit'
+def androidVersionCode = 127
+version = androidVersionCode
+
 android {
     buildToolsVersion "22.0.1"
     compileSdkVersion 19
     defaultConfig {
-        applicationId "org.opendatakit.survey.android"
+        applicationId "${group}.survey.android"
         minSdkVersion 16
         targetSdkVersion 16
+        versionCode androidVersionCode
+        versionName '2.0'
     }
 
     buildTypes {

@@ -1,13 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opendatakit.survey.android"
-    android:versionCode="127"
-    android:versionName="2.0"
     android:sharedUserId="org.opendatakit"
     android:sharedUserLabel="@string/app_userLabel" >
-
-    <uses-sdk
-        android:minSdkVersion="16"
-        android:targetSdkVersion="16" />
 
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
