@@ -42,8 +42,20 @@ android {
 
 dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
-    compile project(':androidlibrary:androidlibrary_lib')
-    compile project(':androidcommon:androidcommon_lib')
+
+    def libraryProjectGradle = new File('../androidlibrary/androidlibrary_lib/build.gradle')
+    if (libraryProjectGradle.isFile()) {
+        compile project(':androidlibrary:androidlibrary_lib')
+    } else {
+        compile(group: 'org.opendatakit', name: 'androidlibrary_lib', version: '127', ext: 'aar')
+    }
+
+    def commonProjectGradle = new File('../androidcommon/androidcommon_lib/build.gradle')
+    if (commonProjectGradle.isFile()) {
+        compile project(':androidcommon:androidcommon_lib')
+    } else {
+        compile(group: 'org.opendatakit', name: 'androidcommon_lib', version: '127', ext: 'aar')
+    }
 
     // Testing dependencies
     androidTestCompile 'junit:junit:4.12'
