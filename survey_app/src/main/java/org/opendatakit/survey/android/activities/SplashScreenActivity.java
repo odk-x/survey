@@ -24,6 +24,7 @@ import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
+import org.opendatakit.common.android.utilities.DependencyChecker;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
@@ -147,8 +148,14 @@ public class SplashScreenActivity extends BaseActivity {
       e.printStackTrace();
     }
 
+    DependencyChecker dc = new DependencyChecker(this);
+    boolean dependable = dc.checkDependencies();
+    if (!dependable) { // dependencies missing
+      return;
+    }
+
     PropertiesSingleton props = SurveyToolProperties.get(getApplicationContext(), appName);
-    
+
     Boolean firstRun = props.getBooleanProperty(SurveyToolProperties.KEY_FIRST_RUN);
     Boolean showSplash = props.getBooleanProperty(SurveyToolProperties.KEY_SHOW_SPLASH);
 
@@ -156,7 +163,7 @@ public class SplashScreenActivity extends BaseActivity {
 
     // if you've increased version code, then update the version number and set firstRun to true
     String sKeyLastVer = props.getProperty(SurveyToolProperties.KEY_LAST_VERSION);
-    long keyLastVer =  (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
+    long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
     if (keyLastVer < packageInfo.versionCode) {
       props.setProperty(SurveyToolProperties.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
       props.writeProperties();
@@ -172,7 +179,6 @@ public class SplashScreenActivity extends BaseActivity {
     } else {
       endSplashScreen();
     }
-
   }
   
   @Override
