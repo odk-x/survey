@@ -48,7 +48,7 @@ android {
 
 dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
-    compile(group: 'org.opendatakit', name: 'google-play-services', version: '12')
+    compile(group: 'org.opendatakit', name: 'google-play-services-ODK-SNAPSHOT', version: '1')
 
     def libraryProjectGradle = new File('../androidlibrary/androidlibrary_lib/build.gradle')
     if (libraryProjectGradle.isFile()) {
