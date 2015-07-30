@@ -1,13 +1,25 @@
-include ':survey_app'
+gradle.ext.local = '../gradle-config/local.gradle'
+gradle.ext.remote = 'https://raw.githubusercontent.com/opendatakit/gradle-config/master/remote.gradle'
+gradle.ext.useLocal = true // set to false to always build against remote artifacts
 
-def libraryProjectGradle = new File('../androidlibrary/androidlibrary_lib/build.gradle')
-if (libraryProjectGradle.isFile()) { // check if local project is present
-    include ':androidlibrary:androidlibrary_lib'
-    project(':androidlibrary:androidlibrary_lib').setProjectDir(new File('../androidlibrary/androidlibrary_lib')) // set local location
+if ((new File(gradle.ext.local)).exists()) {
+    apply from: gradle.ext.local
+} else {
+    apply from: gradle.ext.remote
 }
 
-def commonProjectGradle = new File('../androidcommon/androidcommon_lib/build.gradle')
-if (commonProjectGradle.isFile()) { // check if local project is present
-    include ':androidcommon:androidcommon_lib'
-    project(':androidcommon:androidcommon_lib').setProjectDir(new File('../androidcommon/androidcommon_lib')) // set local location
+settingsScripts.each {
+    apply from: it
+}
+
+include(surveyProjectChild)
+
+if (libraryProjectPath.exists() && gradle.ext.useLocal) { // check if local library project is present
+    include libraryProjectName
+    project(libraryProjectName).setProjectDir(libraryProjectPath) // set local location
+}
+
+if (commonProjectPath.exists() && gradle.ext.useLocal) { // check if local common project is present
+    include commonProjectName
+    project(commonProjectName).setProjectDir(commonProjectPath) // set local location
 }
