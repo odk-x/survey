@@ -1,4 +1,4 @@
-gradle.ext.gradleConfigVersion = 2
+gradle.ext.gradleConfigVersion = 3
 
 gradle.ext.local = '../gradle-config/remote.gradle'
 gradle.ext.remote = 'https://raw.githubusercontent.com/opendatakit/gradle-config/' + gradle.ext.gradleConfigVersion + '/remote.gradle'
