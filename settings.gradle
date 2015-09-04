@@ -1,6 +1,8 @@
 gradle.ext.gradleConfigVersion = 3
 
-gradle.ext.local = '../gradle-config/remote.gradle'
+gradle.ext.workspacePath = new File("..").getAbsolutePath();
+
+gradle.ext.local = gradle.ext.workspacePath + '/gradle-config/remote.gradle'
 gradle.ext.remote = 'https://raw.githubusercontent.com/opendatakit/gradle-config/' + gradle.ext.gradleConfigVersion + '/remote.gradle'
 gradle.ext.useLocal = true // set to false to always build against remote artifacts
 
