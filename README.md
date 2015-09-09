@@ -16,15 +16,30 @@ The Google group for software engineering questions is: [opendatakit-developers@
 
 ## Setting up your environment
 
+General instructions for setting up an ODK 2.0 environment can be found at our [DevEnv Setup wiki page](https://github.com/opendatakit/opendatakit/wiki/DevEnv-Setup)
+
 Install [Android Studio](http://developer.android.com/tools/studio/index.html) and the [SDK](http://developer.android.com/sdk/index.html#Other).
 
-This project depends on ODK's [androidlibrary](https://github.com/opendatakit/androidlibrary) and [androidcommon](https://github.com/opendatakit/androidcommon) projects, so be sure to clone those into the same parent directory as Survey. ODK [Core](https://github.com/opendatakit/core) must also be installed on your device, whether by installing the APK or by cloning the project and deploying it. ODK [Tables](https://github.com/opendatakit/tables) and ODK [Sync](https://github.com/opendatakit/sync) also integrate well with ODK Survey, but are not required.
+This project depends on ODK's [androidlibrary](https://github.com/opendatakit/androidlibrary) and [androidcommon](https://github.com/opendatakit/androidcommon) projects; their binaries will be downloaded automatically fom our maven repository during the build phase. If you wish to modify them yourself, you must clone them into the same parent directory as survey. You directory stucture should resemble the following:
+
+        |-- odk
+
+            |-- androidcommon
+
+            |-- androidlibrary
+
+            |-- survey
+
+
+  * Note that this only applies if you are modifying the library projects. If you use the maven dependencies (the default option), the projects will not show up in your directory. 
+    
+ODK [Core](https://github.com/opendatakit/core) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. ODK [Tables](https://github.com/opendatakit/tables) and ODK [Sync](https://github.com/opendatakit/sync) also integrate well with ODK Survey, but are not required.
 
 Now you should be ready to build.
 
 ## Building the project
 
-Open the Survey project in Android Studio. As long as androidlibrary and androidcommon are in the same parent directory, you should be able to select `Build->Make` Project to build the app.
+Open the Survey project in Android Studio. Select `Build->Make Project` to build the app.
 
 ## Running
 
@@ -33,7 +48,7 @@ Be sure to install ODK Core onto your device before attempting to run Survey.
 ## Source tree information
 Quick description of the content in the root folder:
 
-    |-- survey\_app     -- Source tree for Java components
+    |-- survey_app     -- Source tree for Java components
 
         |-- src
 
