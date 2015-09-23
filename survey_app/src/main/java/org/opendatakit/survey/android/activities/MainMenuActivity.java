@@ -41,6 +41,7 @@ import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.views.ICallbackFragment;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.service.OdkDbHandle;
 import org.opendatakit.database.service.OdkDbInterface;
@@ -1135,37 +1136,37 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     passwordDialog.setView(input, 20, 10, 20, 10);
 
     passwordDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
-        new DialogInterface.OnClickListener() {
-          public void onClick(DialogInterface dialog, int whichButton) {
-            PropertiesSingleton props = SurveyToolProperties.get(MainMenuActivity.this, getAppName());
+            new DialogInterface.OnClickListener() {
+              public void onClick(DialogInterface dialog, int whichButton) {
+                PropertiesSingleton props = SurveyToolProperties.get(MainMenuActivity.this, getAppName());
 
-            String value = input.getText().toString();
-            String pw = props.getProperty(CommonToolProperties.KEY_ADMIN_PW);
-            if (pw != null && pw.compareTo(value) == 0) {
-              Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
-              // TODO: convert this activity into a preferences fragment
-              i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-              startActivity(i);
-              input.setText("");
-              passwordDialog.dismiss();
-            } else {
-              Toast.makeText(MainMenuActivity.this, getString(R.string.admin_password_incorrect),
-                  Toast.LENGTH_SHORT).show();
-            }
-          }
-        });
+                String value = input.getText().toString();
+                String pw = props.getProperty(CommonToolProperties.KEY_ADMIN_PW);
+                if (pw != null && pw.compareTo(value) == 0) {
+                  Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
+                  // TODO: convert this activity into a preferences fragment
+                  i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
+                  startActivity(i);
+                  input.setText("");
+                  passwordDialog.dismiss();
+                } else {
+                  Toast.makeText(MainMenuActivity.this, getString(R.string.admin_password_incorrect),
+                          Toast.LENGTH_SHORT).show();
+                }
+              }
+            });
 
     passwordDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.cancel),
-        new DialogInterface.OnClickListener() {
+            new DialogInterface.OnClickListener() {
 
-          public void onClick(DialogInterface dialog, int which) {
-            input.setText("");
-            return;
-          }
-        });
+              public void onClick(DialogInterface dialog, int which) {
+                input.setText("");
+                return;
+              }
+            });
 
     passwordDialog.getWindow().setSoftInputMode(
-        WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
     mAlertDialog = passwordDialog;
     mAlertDialog.show();
   }
@@ -1174,7 +1175,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   public synchronized Bitmap getDefaultVideoPoster() {
     if (mDefaultVideoPoster == null) {
       mDefaultVideoPoster = BitmapFactory.decodeResource(getResources(),
-          R.drawable.default_video_poster);
+              R.drawable.default_video_poster);
     }
     return mDefaultVideoPoster;
   }
@@ -1261,6 +1262,18 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     wkt.invalidate();
     currentFragment = ScreenList.WEBKIT;
     levelSafeInvalidateOptionsMenu();
+  }
+
+  @Override
+  public ICallbackFragment getCallbackFragment() {
+    WebLogger.getLogger(getAppName()).i(t, "getCallbackFragment");
+    FragmentManager mgr = getFragmentManager();
+    Fragment newFragment = mgr.findFragmentByTag(ScreenList.WEBKIT.name());
+    if ( newFragment instanceof ICallbackFragment ) {
+      return (ICallbackFragment) newFragment;
+    } else {
+      return null;
+    }
   }
 
   public void swapToFragmentView(ScreenList newScreenType) {
