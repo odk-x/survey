@@ -51,8 +51,6 @@ public class MediaCaptureVideoActivity extends BaseActivity {
 
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "video/";
-  private static final String URI_FRAGMENT = "uriFragment";
-  private static final String CONTENT_TYPE = "contentType";
 
   private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
   private static final String HAS_LAUNCHED = "hasLaunched";
@@ -66,6 +64,8 @@ public class MediaCaptureVideoActivity extends BaseActivity {
   private Uri nexus7Uri;
 
   private String appName = null;
+  private String tableId = null;
+  private String instanceId = null;
   private String uriFragmentNewFileBase = null;
   private String uriFragmentToMedia = null;
   private boolean afterResult = false;
@@ -78,7 +78,9 @@ public class MediaCaptureVideoActivity extends BaseActivity {
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
       appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
-      uriFragmentToMedia = extras.getString(URI_FRAGMENT);
+      tableId = extras.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = extras.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+      uriFragmentToMedia = extras.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
       hasLaunched = extras.getBoolean(HAS_LAUNCHED);
       afterResult = extras.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -86,7 +88,9 @@ public class MediaCaptureVideoActivity extends BaseActivity {
 
     if (savedInstanceState != null) {
       appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
-      uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
+      tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+      uriFragmentToMedia = savedInstanceState.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -95,6 +99,15 @@ public class MediaCaptureVideoActivity extends BaseActivity {
     if (appName == null) {
       throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
+    }
+
+    if (tableId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_TABLE_ID
+              + " key in intent bundle. Not found.");
+    }
+    if (instanceId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID
+              + " key in intent bundle. Not found.");
     }
 
     if (uriFragmentToMedia == null) {
@@ -123,8 +136,8 @@ public class MediaCaptureVideoActivity extends BaseActivity {
     } else if (!hasLaunched && !afterResult) {
       Intent i = new Intent(MediaStore.ACTION_VIDEO_CAPTURE);
       // to make the name unique...
-      File f = ODKFileUtils.getAsFile(appName,
-          (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
+      File f = ODKFileUtils.getRowpathFile(appName, tableId, instanceId,
+              (uriFragmentToMedia == null ? uriFragmentNewFileBase : uriFragmentToMedia));
       int idx = f.getName().lastIndexOf('.');
       if (idx == -1) {
         i.putExtra(Video.Media.DISPLAY_NAME, f.getName());
@@ -160,7 +173,9 @@ public class MediaCaptureVideoActivity extends BaseActivity {
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
-    outState.putString(URI_FRAGMENT, uriFragmentToMedia);
+    outState.putString(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
+    outState.putString(IntentConsts.INTENT_KEY_INSTANCE_ID, instanceId);
+    outState.putString(IntentConsts.INTENT_KEY_URI_FRAGMENT, uriFragmentToMedia);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
     outState.putBoolean(AFTER_RESULT, afterResult);
@@ -171,7 +186,7 @@ public class MediaCaptureVideoActivity extends BaseActivity {
       return;
     }
     // get the file path and delete the file
-    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia);
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteVideoFileFromMediaProvider(this, appName, path);
@@ -221,11 +236,11 @@ public class MediaCaptureVideoActivity extends BaseActivity {
 
     // adjust the mediaPath (destination) to have the same extension
     // and delete any existing file.
-    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia);
     File sourceMedia = new File(f.getParentFile(), f.getName().substring(0,
         f.getName().lastIndexOf('.'))
         + extension);
-    uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
+    uriFragmentToMedia = ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia);
     deleteMedia();
 
     try {
@@ -250,7 +265,7 @@ public class MediaCaptureVideoActivity extends BaseActivity {
       Uri MediaURI = getApplicationContext().getContentResolver().insert(
           Video.Media.EXTERNAL_CONTENT_URI, values);
       WebLogger.getLogger(appName).i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
-      uriFragmentToMedia = ODKFileUtils.asUriFragment(appName,  sourceMedia);
+      uriFragmentToMedia = ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia);
       WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
       
       // Need to have this ugly code to account for 
@@ -277,12 +292,12 @@ public class MediaCaptureVideoActivity extends BaseActivity {
 
   private void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
-        ODKFileUtils.getAsFile(appName, uriFragmentToMedia) : null;
+        ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
-      i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, sourceMedia));
+      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT, ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia));
       String name = sourceMedia.getName();
-      i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {

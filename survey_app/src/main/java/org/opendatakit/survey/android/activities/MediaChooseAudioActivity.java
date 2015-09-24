@@ -44,12 +44,12 @@ public class MediaChooseAudioActivity extends BaseActivity {
   private static final String t = "MediaChooseAudioActivity";
   private static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "audio/";
-  private static final String URI_FRAGMENT = "uriFragment";
 
   private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
-  private static final String CONTENT_TYPE = "contentType";
 
   private String appName = null;
+  private String tableId = null;
+  private String instanceId = null;
   private String uriFragmentNewFileBase = null;
 
   @Override
@@ -59,17 +59,30 @@ public class MediaChooseAudioActivity extends BaseActivity {
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
       appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
+      tableId = extras.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = extras.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (savedInstanceState != null) {
       appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
+      tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (appName == null) {
       throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
             + " key in intent bundle. Not found.");
+    }
+
+    if (tableId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_TABLE_ID
+              + " key in intent bundle. Not found.");
+    }
+    if (instanceId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID
+              + " key in intent bundle. Not found.");
     }
 
     if (uriFragmentNewFileBase == null) {
@@ -99,6 +112,8 @@ public class MediaChooseAudioActivity extends BaseActivity {
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
+    outState.putString(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
+    outState.putString(IntentConsts.INTENT_KEY_INSTANCE_ID, instanceId);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
   }
 
@@ -124,7 +139,7 @@ public class MediaChooseAudioActivity extends BaseActivity {
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
-    File newMedia = ODKFileUtils.getAsFile(appName, uriFragmentNewFileBase + extension);
+    File newMedia = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
     try {
       FileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
@@ -160,9 +175,9 @@ public class MediaChooseAudioActivity extends BaseActivity {
 
       WebLogger.getLogger(appName).i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
-      i.putExtra(URI_FRAGMENT, ODKFileUtils.asUriFragment(appName, newMediaFromCP));
+      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT, ODKFileUtils.asRowpathUri(appName, tableId, instanceId, newMediaFromCP));
       String name = newMediaFromCP.getName();
-      i.putExtra(CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {

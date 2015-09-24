@@ -38,24 +38,29 @@ import android.os.Bundle;
  */
 public class MediaDeleteAudioActivity extends BaseActivity {
   private static final String t = "MediaDeleteAudioActivity";
-  private static final String URI_FRAGMENT = "uriFragment";
 
-  private String appName;
-  
+  private String appName = null;
+  private String tableId = null;
+  private String instanceId = null;
+  private String uriFragmentToMedia = null;
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    String uriFragmentToMedia = null;
     Bundle extras = getIntent().getExtras();
     if (extras != null) {
       appName = extras.getString(IntentConsts.INTENT_KEY_APP_NAME);
-      uriFragmentToMedia = extras.getString(URI_FRAGMENT);
+      tableId = extras.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = extras.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+      uriFragmentToMedia = extras.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
     }
 
     if (savedInstanceState != null) {
       appName = savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME);
-      uriFragmentToMedia = savedInstanceState.getString(URI_FRAGMENT);
+      tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
+      instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+      uriFragmentToMedia = savedInstanceState.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
     }
 
     if (appName == null) {
@@ -63,24 +68,42 @@ public class MediaDeleteAudioActivity extends BaseActivity {
             + " key in intent bundle. Not found.");
     }
 
+    if (tableId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_TABLE_ID
+              + " key in intent bundle. Not found.");
+    }
+    if (instanceId == null) {
+      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID
+              + " key in intent bundle. Not found.");
+    }
+
     if (uriFragmentToMedia == null) {
-        throw new IllegalArgumentException("Expected " + URI_FRAGMENT
+        throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_URI_FRAGMENT
             + " key in intent bundle. Not found.");
     }
 
-    File f = ODKFileUtils.getAsFile(appName, uriFragmentToMedia);
+    File f = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia);
 
     int del = MediaUtils.deleteAudioFileFromMediaProvider(this, appName, f.getAbsolutePath());
-    WebLogger.getLogger(appName).i(t, "Deleted " + del + " matching entries for " + URI_FRAGMENT + ": " + uriFragmentToMedia);
+    WebLogger.getLogger(appName).i(t, "Deleted " + del + " matching entries for " + IntentConsts.INTENT_KEY_URI_FRAGMENT + ": " + uriFragmentToMedia);
 
     Intent i = new Intent();
 
-    i.putExtra(URI_FRAGMENT, uriFragmentToMedia);
+    i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT, uriFragmentToMedia);
     i.putExtra("deleteCount", del);
     setResult(Activity.RESULT_OK, i);
     finish();
   }
-  
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
+    outState.putString(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
+    outState.putString(IntentConsts.INTENT_KEY_INSTANCE_ID, instanceId);
+    outState.putString(IntentConsts.INTENT_KEY_URI_FRAGMENT, uriFragmentToMedia);
+  }
+
   @Override
   public String getAppName() {
     return appName;
