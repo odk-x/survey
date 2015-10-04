@@ -61,7 +61,6 @@ dependencies {
         releaseCompile(group: groupId, name: libraryArtifactName, version: libraryRelease, ext: 'aar')
         snapshotCompile(group: groupId, name: libraryArtifactName, version: librarySnapshot, ext: 'aar')
         debugCompile(group: groupId, name: libraryArtifactName, version: librarySnapshot, ext: 'aar')
-        compile 'joda-time:joda-time:2.2'
     }
 
     if (commonProjectPath.exists() && gradle.useLocal) { // Local project is favoured

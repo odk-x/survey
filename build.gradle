@@ -19,3 +19,7 @@ allprojects {
         }
     }
 }
+
+configurations.all {
+    transitive = true
+}
