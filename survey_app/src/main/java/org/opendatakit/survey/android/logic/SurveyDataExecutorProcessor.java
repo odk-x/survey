@@ -18,6 +18,7 @@ import org.opendatakit.common.android.data.UserTable;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.database.service.KeyValueStoreEntry;
+import org.opendatakit.database.service.OdkDbHandle;
 
 import java.util.List;
 import java.util.Map;
@@ -32,7 +33,8 @@ public class SurveyDataExecutorProcessor extends ExecutorProcessor {
   }
 
   @Override
-  protected void extendQueryMetadata(List<KeyValueStoreEntry> entries, UserTable userTable, Map<String, Object> metadata) {
+  protected void extendQueryMetadata(OdkDbHandle dbHandle, List<KeyValueStoreEntry> entries,
+      UserTable userTable, Map<String, Object> metadata) {
     // do nothing -- survey does not enhance the returned object
   }
 }
