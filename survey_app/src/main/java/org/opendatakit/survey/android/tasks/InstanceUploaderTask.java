@@ -435,7 +435,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       List<KeyValueStoreEntry> kvsEntries;
       OdkDbHandle dbHandle = null;
       try {
-        dbHandle = Survey.getInstance().getDatabase().openDatabase(appName, false);
+        dbHandle = Survey.getInstance().getDatabase().openDatabase(appName);
         kvsEntries = Survey.getInstance().getDatabase().getDBTableMetadata(appName, dbHandle, uploadTableId, 
           KeyValueStoreConstants.PARTITION_TABLE,
           KeyValueStoreConstants.ASPECT_DEFAULT, 

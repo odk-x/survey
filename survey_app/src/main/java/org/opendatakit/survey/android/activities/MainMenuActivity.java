@@ -484,7 +484,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       List<TableHealthInfo> info;
       OdkDbHandle dbHandle = null;
       try {
-        dbHandle = db.openDatabase(appName, false);
+        dbHandle = db.openDatabase(appName);
         info = db.getTableHealthStatuses(getAppName(), dbHandle);
       } catch (RemoteException e) {
         WebLogger.getLogger(appName).printStackTrace(e);

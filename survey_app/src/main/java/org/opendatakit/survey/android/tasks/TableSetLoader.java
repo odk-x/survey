@@ -57,7 +57,7 @@ public class TableSetLoader extends AsyncTaskLoader<List<TableSetLoader.TableSet
     List<KeyValueStoreEntry> kvsEntries;
     OdkDbHandle dbHandle = null;
     try {
-      dbHandle = Survey.getInstance().getDatabase().openDatabase(appName, false);
+      dbHandle = Survey.getInstance().getDatabase().openDatabase(appName);
       kvsEntries = Survey.getInstance().getDatabase().getDBTableMetadata(appName, dbHandle, null, 
         KeyValueStoreConstants.PARTITION_TABLE,
         KeyValueStoreConstants.ASPECT_DEFAULT, 
