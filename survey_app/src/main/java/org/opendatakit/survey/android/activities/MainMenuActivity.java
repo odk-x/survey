@@ -35,12 +35,8 @@ import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.AndroidUtils;
+import org.opendatakit.common.android.utilities.*;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
-import org.opendatakit.common.android.utilities.ODKCursorUtils;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.UrlUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.views.ICallbackFragment;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.service.OdkDbHandle;
@@ -1458,7 +1454,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
    */
 
   private void dumpScreenStateHistory() {
-    WebLogger l = WebLogger.getLogger(getAppName());
+    WebLoggerIf l = WebLogger.getLogger(getAppName());
 
     l.d(t, "-------------*start* dumpScreenStateHistory--------------------");
     if (sectionStateScreenHistory.isEmpty()) {
