@@ -60,10 +60,6 @@
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.AccountInfo"
-            android:exported="false"
-            android:label="@string/app_name" />
-        <activity
             android:name=".preferences.AdminPreferencesActivity"
             android:exported="false"
             android:label="@string/app_name" />
