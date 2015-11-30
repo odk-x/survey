@@ -47,7 +47,7 @@ public class WebViewFragment extends Fragment implements ICallbackFragment, Data
   public static final int ID = R.layout.blank_layout;
   private static final String RESPONSE_JSON = "responseJSON";
 
-  Data mDataReference;
+  OdkData mDataReference;
   LinkedList<String> queueResponseJSON = new LinkedList<String>();
 
   DatabaseConnectionListener listener = null;
