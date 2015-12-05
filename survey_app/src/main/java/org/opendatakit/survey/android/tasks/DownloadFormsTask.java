@@ -301,7 +301,7 @@ public class DownloadFormsTask extends AsyncTask<FormDetails, String, HashMap<St
         result.put(fd.formID, message);
       }
     } finally {
-      Survey.getInstance().setRunInitializationTask(getAppName());
+      ((Survey) getApplication()).setRunInitializationTask(getAppName());
     }
     return result;
   }

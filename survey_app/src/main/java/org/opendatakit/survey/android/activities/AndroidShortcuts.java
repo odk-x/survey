@@ -232,7 +232,7 @@ public class AndroidShortcuts extends BaseActivity {
   
   @Override
   public String getAppName() {
-    return Survey.getInstance().getToolName();
+    return ((Survey) getApplication()).getToolName();
   }
 
 }

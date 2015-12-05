@@ -152,16 +152,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   private static final int SYNC_ACTIVITY_CODE = 22;
   private static final int CONFLICT_ACTIVITY_CODE = 23;
 
-  // values for external intents to resolve conflicts
-  /** Survey's package name as declared in the manifest. */
-  public static final String SYNC_PACKAGE_NAME = "org.opendatakit.sync";
-  /** The full path to Sync's checkpoint list activity. */
-  public static final String SYNC_CHECKPOINT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.CheckpointResolutionListActivity";
-  /** The full path to Sync's conflict list activity. */
-  public static final String SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME = "org.opendatakit.conflict.activities.ConflictResolutionListActivity";
-  /** The field name for the tableId to resolve conflicts on */
-  public static final String SYNC_TABLE_ID_PARAMETER = "tableId";
-
   private static final boolean EXIT = true;
 
   private static final FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER = new FrameLayout.LayoutParams(
@@ -475,7 +465,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
   public void scanForConflictAllTables() {
     
-    OdkDbInterface db = Survey.getInstance().getDatabase();
+    OdkDbInterface db = ((Survey) getApplication()).getDatabase();
     if ( db != null ) {
       List<TableHealthInfo> info;
       OdkDbHandle dbHandle = null;
@@ -524,15 +514,16 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
       Intent i;
       i = new Intent();
-      i.setComponent(new ComponentName(SYNC_PACKAGE_NAME, SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME));
+      i.setComponent(new ComponentName(IntentConsts.ResolveConflict.APPLICATION_NAME,
+          IntentConsts.ResolveConflict.ACTIVITY_NAME));
       i.setAction(Intent.ACTION_EDIT);
       i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-      i.putExtra(SYNC_TABLE_ID_PARAMETER, tableId);
+      i.putExtra(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
       try {
         this.startActivityForResult(i, CONFLICT_ACTIVITY_CODE);
       } catch (ActivityNotFoundException e) {
         Toast.makeText(this,
-            getString(R.string.activity_not_found, SYNC_CONFLICT_ACTIVITY_COMPONENT_NAME),
+            getString(R.string.activity_not_found, IntentConsts.ResolveConflict.ACTIVITY_NAME),
             Toast.LENGTH_LONG).show();
       }
     }
@@ -925,7 +916,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         // can't find it -- launch the initialization dialog to hopefully
         // discover it.
         WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
-        Survey.getInstance().setRunInitializationTask(getAppName());
+        ((Survey) getApplication()).setRunInitializationTask(getAppName());
         currentFragment = ScreenList.WEBKIT;
       } else {
         transitionToFormHelper(uri, newForm);
@@ -938,7 +929,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   @Override
   public void onPostResume() {
     super.onPostResume();
-    Survey.getInstance().establishDatabaseConnectionListener(this);
+    ((Survey) getApplication()).establishDatabaseConnectionListener(this);
   }
 
   /**
@@ -949,8 +940,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
     ActionBar actionBar = getActionBar();
     actionBar.show();
-    
-    Survey.getInstance().establishDatabaseConnectionListener(this);
+
+    ((Survey) getApplication()).establishDatabaseConnectionListener(this);
   }
 
   @Override
@@ -1376,10 +1367,10 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     
     // and see if we should re-initialize...
     if ((currentFragment != ScreenList.INITIALIZATION_DIALOG)
-        && Survey.getInstance().shouldRunInitializationTask(getAppName())) {
+        && ((Survey) getApplication()).shouldRunInitializationTask(getAppName())) {
       WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView -- calling clearRunInitializationTask");
       // and immediately clear the should-run flag...
-      Survey.getInstance().clearRunInitializationTask(getAppName());
+      ((Survey) getApplication()).clearRunInitializationTask(getAppName());
       // OK we should swap to the InitializationFragment view
       // this will skip the transition to whatever screen we were trying to 
       // go to and will instead show the InitializationFragment view. We
@@ -1905,7 +1896,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         actionWaitingForData = null;
       }
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      Survey.getInstance().setRunInitializationTask(getAppName());
+      ((Survey) getApplication()).setRunInitializationTask(getAppName());
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }

@@ -115,7 +115,7 @@ public class AccountList extends BaseListActivity {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(android.R.id.text1);
-        vw.setTextSize(Survey.getInstance().getQuestionFontsize(mAppName));
+        vw.setTextSize(((Survey) getApplication()).getQuestionFontsize(mAppName));
         String selected = props.getProperty(CommonToolProperties.KEY_ACCOUNT);
         if (accounts[position].name.equals(selected)) {
           vw.setBackgroundColor(Color.LTGRAY);

@@ -48,6 +48,7 @@ import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.utilities.WebUtils;
 import org.opendatakit.database.service.KeyValueStoreEntry;
 import org.opendatakit.database.service.OdkDbHandle;
+import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.httpclientandroidlib.Header;
 import org.opendatakit.httpclientandroidlib.HttpResponse;
 import org.opendatakit.httpclientandroidlib.client.ClientProtocolException;
@@ -392,11 +393,12 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
    * In theory we don't have to write to disk, and this is where you'd add other
    * methods.
    *
-   * @param markCompleted
+   * @param instanceId
+   * @param submissionInstanceId
    * @return
-   * @throws IOException
-   * @throws JsonMappingException
    * @throws JsonParseException
+   * @throws JsonMappingException
+   * @throws IOException
    */
   private FileSet constructSubmissionFiles(String instanceId, String submissionInstanceId)
       throws JsonParseException, JsonMappingException, IOException {
@@ -432,11 +434,12 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
      * app property values to construct it.
      */
     {
+      Survey survey = (Survey) getApplication();
       List<KeyValueStoreEntry> kvsEntries;
       OdkDbHandle dbHandle = null;
       try {
-        dbHandle = Survey.getInstance().getDatabase().openDatabase(appName);
-        kvsEntries = Survey.getInstance().getDatabase().getDBTableMetadata(appName, dbHandle, uploadTableId, 
+        dbHandle = survey.getDatabase().openDatabase(appName);
+        kvsEntries = survey.getDatabase().getDBTableMetadata(appName, dbHandle, uploadTableId,
           KeyValueStoreConstants.PARTITION_TABLE,
           KeyValueStoreConstants.ASPECT_DEFAULT, 
           KeyValueStoreConstants.XML_SUBMISSION_URL);
@@ -446,7 +449,7 @@ public class InstanceUploaderTask extends AsyncTask<String, Integer, InstanceUpl
       } finally {
         try {
           if ( dbHandle != null ) {
-            Survey.getInstance().getDatabase().closeDatabase(appName, dbHandle);
+            survey.getDatabase().closeDatabase(appName, dbHandle);
           }
         } catch (RemoteException e) {
           WebLogger.getLogger(appName).printStackTrace(e);
