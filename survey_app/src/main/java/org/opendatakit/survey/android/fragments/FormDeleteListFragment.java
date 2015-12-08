@@ -17,22 +17,19 @@ package org.opendatakit.survey.android.fragments;
 import java.util.ArrayList;
 
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.fragments.SelectConfirmationDialogFragment.SelectConfirmationDialog;
 import org.opendatakit.survey.android.listeners.DeleteFormsListener;
-import org.opendatakit.survey.android.utilities.VersionHidingCursorAdapter;
+import org.opendatakit.survey.android.utilities.FormInfo;
+import org.opendatakit.survey.android.utilities.FormListLoader;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.ListFragment;
 import android.app.LoaderManager;
-import android.content.CursorLoader;
 import android.content.Loader;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -40,19 +37,19 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.CursorAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import org.opendatakit.survey.android.utilities.TableIdFormIdVersionListAdapter;
 
 /**
  * List of form definitions on the device that can be deleted.
  *
  * @author mitchellsundt@gmail.com
- *
  */
-public class FormDeleteListFragment extends ListFragment implements DeleteFormsListener,
-    SelectConfirmationDialog, LoaderManager.LoaderCallbacks<Cursor> {
+public class FormDeleteListFragment extends ListFragment
+    implements DeleteFormsListener, SelectConfirmationDialog,
+    LoaderManager.LoaderCallbacks<ArrayList<FormInfo>> {
 
   private static final String t = "FormDeleteListFragment";
   private static final int FORM_DELETE_LIST_LOADER = 0x01;
@@ -61,7 +58,9 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   private static enum DialogState {
     Confirmation, None
-  };
+  }
+
+  ;
 
   // keys for the data being retained
 
@@ -78,40 +77,33 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   private Button mDeleteButton;
 
-  private CursorAdapter mInstances;
+  private TableIdFormIdVersionListAdapter mAdapter;
 
   private View view;
 
-  @Override
-  public void onCreate(Bundle savedInstanceState) {
+  @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
   }
 
-  @Override
-  public void onActivityCreated(Bundle savedInstanceState) {
+  @Override public void onActivityCreated(Bundle savedInstanceState) {
     super.onActivityCreated(savedInstanceState);
 
-    String[] data = new String[] { FormsColumns.DISPLAY_NAME, FormsColumns.DISPLAY_SUBTEXT,
-        FormsColumns.FORM_VERSION };
-    int[] viewParams = new int[] { R.id.text1, R.id.text2, R.id.text3 };
-
     // render total instance view
-    mInstances = new VersionHidingCursorAdapter(FormsColumns.FORM_VERSION, this.getActivity(),
-        R.layout.delete_multiple_choice, data, viewParams);
-    setListAdapter(mInstances);
+    mAdapter = new TableIdFormIdVersionListAdapter(getActivity(), R.layout.delete_multiple_choice,
+        R.id.text1, R.id.text2, R.id.text3);
+    setListAdapter(mAdapter);
 
     getLoaderManager().initLoader(FORM_DELETE_LIST_LOADER, null, this);
   }
 
-  @Override
-  public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+  @Override public View onCreateView(LayoutInflater inflater, ViewGroup container,
+      Bundle savedInstanceState) {
     view = inflater.inflate(ID, container, false);
 
     mDeleteButton = (Button) view.findViewById(R.id.delete_button);
     mDeleteButton.setText(getString(R.string.delete_file));
     mDeleteButton.setOnClickListener(new OnClickListener() {
-      @Override
-      public void onClick(View v) {
+      @Override public void onClick(View v) {
         if (mSelected.size() > 0) {
           createDeleteFormsDialog();
         } else {
@@ -144,8 +136,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     return view;
   }
 
-  @Override
-  public void onSaveInstanceState(Bundle outState) {
+  @Override public void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     FormDeleteListFragmentSelection[] selectedArray = new FormDeleteListFragmentSelection[mSelected
         .size()];
@@ -156,8 +147,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     outState.putString(DIALOG_STATE, mDialogState.name());
   }
 
-  @Override
-  public void onResume() {
+  @Override public void onResume() {
     super.onResume();
 
     getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
@@ -189,8 +179,7 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     }
   }
 
-  @Override
-  public void onPause() {
+  @Override public void onPause() {
     FragmentManager mgr = getFragmentManager();
 
     // dismiss dialogs...
@@ -204,55 +193,59 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   private void restoreConfirmationDialog() {
     Fragment dialog = getFragmentManager().findFragmentByTag("selectConfirmationDialog");
-    String alertMsg = getString(R.string.delete_confirm, mSelected.size());
+    StringBuilder b = new StringBuilder();
+    b.append(
+        getString(R.string.delete_confirm, mSelected.size()));
 
     FormDeleteListFragmentSelection sel;
     for (int i = 0; i < mSelected.size(); i++) {
       sel = mSelected.get(i);
-      alertMsg = alertMsg + "\n" + sel.formName + " id: " + sel.formId + " ver: " + sel.formVersion
-          + "\n";
+      b.append(
+          getString(R.string.delete_confirm_entry,
+              sel.formName, sel.tableId,
+              sel.formId, sel.formVersion));
     }
+
+    String alertMsg = b.toString();
 
     if (dialog != null && ((SelectConfirmationDialogFragment) dialog).getDialog() != null) {
       mDialogState = DialogState.Confirmation;
-      ((SelectConfirmationDialogFragment) dialog).getDialog().setTitle(
-          getString(R.string.delete_file));
+      ((SelectConfirmationDialogFragment) dialog).getDialog()
+          .setTitle(getString(R.string.delete_file));
       ((SelectConfirmationDialogFragment) dialog).setMessage(alertMsg);
       // TODO: may need to set the ok/cancel button text if this is ever
       // reused?
     } else {
 
-      SelectConfirmationDialogFragment f = SelectConfirmationDialogFragment.newInstance(getId(),
-          getString(R.string.delete_file), alertMsg, getString(R.string.delete_yes),
-          getString(R.string.delete_no), getString(R.string.delete_yes_with_options));
+      SelectConfirmationDialogFragment f = SelectConfirmationDialogFragment
+          .newInstance(getId(), getString(R.string.delete_file), alertMsg,
+              getString(R.string.delete_yes), getString(R.string.delete_no),
+              getString(R.string.delete_yes_with_options));
 
       mDialogState = DialogState.Confirmation;
       f.show(getFragmentManager(), "selectConfirmationDialog");
     }
   }
 
-  @Override
-  public void okConfirmationDialog() {
-    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
-        "ok (delete) selected files");
+  @Override public void okConfirmationDialog() {
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName())
+        .i(t, "ok (delete) selected files");
     mDialogState = DialogState.None;
     deleteSelectedForms(false);
   }
 
-  @Override
-  public void okWithOptionsConfirmationDialog() {
-    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
-        "ok (delete) selected files and data");
+  @Override public void okWithOptionsConfirmationDialog() {
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName())
+        .i(t, "ok (delete) selected files and data");
     mDialogState = DialogState.None;
     deleteSelectedForms(true);
   }
 
-  @Override
-  public void cancelConfirmationDialog() {
+  @Override public void cancelConfirmationDialog() {
     // no-op
     mDialogState = DialogState.None;
-    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
-        "cancel (do not delete) selected files");
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName())
+        .i(t, "cancel (do not delete) selected files");
   }
 
   /**
@@ -273,34 +266,24 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
     Uri[] selectedFormUris = new Uri[mSelected.size()];
     for (int i = 0; i < mSelected.size(); i++) {
       FormDeleteListFragmentSelection selected = mSelected.get(i);
-      selectedFormUris[i] = Uri.withAppendedPath(
-          Uri.withAppendedPath(
-              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, 
-                  ((IAppAwareActivity) getActivity()).getAppName()), 
-                    selected.tableId), selected.formId);
+      selectedFormUris[i] = Uri.withAppendedPath(Uri.withAppendedPath(
+              Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
+                  ((IAppAwareActivity) getActivity()).getAppName()), selected.tableId),
+          selected.formId);
     }
 
     f.deleteSelectedForms(((IAppAwareActivity) getActivity()).getAppName(), this, selectedFormUris,
         deleteFormAndData);
   }
 
-  @Override
-  public void onListItemClick(ListView l, View v, int position, long id) {
+  @Override public void onListItemClick(ListView l, View v, int position, long id) {
     super.onListItemClick(l, v, position, id);
 
     // get row id from db
-    Cursor c = (Cursor) getListAdapter().getItem(position);
-    String tableId = ODKCursorUtils.getIndexAsString(c,
-        c.getColumnIndex(FormsColumns.TABLE_ID));
-    String formId = ODKCursorUtils.getIndexAsString(c,
-        c.getColumnIndex(FormsColumns.FORM_ID));
-    String formName = ODKCursorUtils.getIndexAsString(c,
-        c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-    String formVersion = ODKCursorUtils.getIndexAsString(c,
-        c.getColumnIndex(FormsColumns.FORM_VERSION));
+    FormInfo info = (FormInfo) mAdapter.getItem(position);
 
-    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(tableId, formId,
-        formName, formVersion);
+    FormDeleteListFragmentSelection clickedItem = new FormDeleteListFragmentSelection(
+        info.tableId, info.formId, info.formDisplayName, info.formVersion);
 
     if (mSelected.contains(clickedItem))
       mSelected.remove(clickedItem);
@@ -311,9 +294,9 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
   }
 
-  @Override
-  public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
-    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t, "Delete forms complete");
+  @Override public void deleteFormsComplete(int deletedForms, boolean deleteFormData) {
+    WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName())
+        .i(t, "Delete forms complete");
     if (deletedForms == mSelected.size()) {
       if (deleteFormData) {
         // all form deletes were successful
@@ -327,13 +310,11 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
 
     } else {
       // had some failures
-      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).e(t,
-          "Failed to delete " + (mSelected.size() - deletedForms) + " forms");
-      Toast
-          .makeText(
-              getActivity(),
-              getString(R.string.file_deleted_error, mSelected.size() - deletedForms,
-                  mSelected.size()), Toast.LENGTH_LONG).show();
+      WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName())
+          .e(t, "Failed to delete " + (mSelected.size() - deletedForms) + " forms");
+      Toast.makeText(getActivity(),
+          getString(R.string.file_deleted_error, mSelected.size() - deletedForms, mSelected.size()),
+          Toast.LENGTH_LONG).show();
     }
     mSelected.clear();
     getListView().clearChoices(); // doesn't unset the checkboxes
@@ -341,35 +322,30 @@ public class FormDeleteListFragment extends ListFragment implements DeleteFormsL
       getListView().setItemChecked(i, false);
     }
     mDeleteButton.setEnabled(false);
+    // force a re-fetch of the list
+    getLoaderManager().restartLoader(FORM_DELETE_LIST_LOADER, null, this);
   }
 
-  @Override
-  public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+  @Override public Loader<ArrayList<FormInfo>> onCreateLoader(int id, Bundle args) {
     // This is called when a new Loader needs to be created. This
     // sample only has one Loader, so we don't care about the ID.
-    // First, pick the base URI to use depending on whether we are
-    // currently filtering.
-    Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-        ((IAppAwareActivity) getActivity()).getAppName());
-
-    // Now create and return a CursorLoader that will take care of
-    // creating a Cursor for the data being displayed.
-    String sortOrder = FormsColumns.DISPLAY_NAME + " ASC, " + FormsColumns.FORM_VERSION + " DESC";
-    return new CursorLoader(getActivity(), baseUri, null, null, null, sortOrder);
+    return new FormListLoader(getActivity(), ((IAppAwareActivity) getActivity()).getAppName());
   }
 
-  @Override
-  public void onLoadFinished(Loader<Cursor> loader, Cursor cursor) {
+  @Override public void onLoadFinished(Loader<ArrayList<FormInfo>> loader,
+      ArrayList<FormInfo> dataset) {
     // Swap the new cursor in. (The framework will take care of closing the
     // old cursor once we return.)
-    mInstances.swapCursor(cursor);
+    mAdapter.clear();
+    mAdapter.addAll(dataset);
+    mAdapter.notifyDataSetChanged();
   }
 
-  @Override
-  public void onLoaderReset(Loader<Cursor> loader) {
+  @Override public void onLoaderReset(Loader<ArrayList<FormInfo>> loader) {
     // This is called when the last Cursor provided to onLoadFinished()
     // above is about to be closed. We need to make sure we are no
     // longer using it.
-    mInstances.swapCursor(null);
+    mAdapter.clear();
+    mAdapter.notifyDataSetChanged();
   }
 }

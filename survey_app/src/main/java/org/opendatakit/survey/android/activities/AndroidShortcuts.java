@@ -22,6 +22,7 @@ import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.ODKCursorUtils;
+import org.opendatakit.common.android.utilities.ODKDataUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -123,8 +124,10 @@ public class AndroidShortcuts extends BaseActivity {
         if (c != null && c.getCount() > 0) {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
+            String localizableDisplayName =
+                ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             String formName = app.getName() + " > "
-                + ODKCursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+                + ODKDataUtils.getLocalizedDisplayName(localizableDisplayName);
             uri = Uri.withAppendedPath(
                     Uri.withAppendedPath(
                       Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),

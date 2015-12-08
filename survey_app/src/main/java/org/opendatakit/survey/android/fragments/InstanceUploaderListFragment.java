@@ -442,7 +442,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
    * set to true, the activity will exit when the user clicks "ok".
    *
    * @param title
-   * @param shouldExit
+   * @param message
    */
   private void createAlertDialog(String title, String message) {
     mAlertTitle = title;
