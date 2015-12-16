@@ -1,7 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.opendatakit.survey.android"
-    android:sharedUserId="org.opendatakit"
-    android:sharedUserLabel="@string/app_userLabel" >
+    package="org.opendatakit.survey.android" >
 
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />

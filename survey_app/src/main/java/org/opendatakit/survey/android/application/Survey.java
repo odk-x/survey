@@ -14,6 +14,8 @@
 package org.opendatakit.survey.android.application;
 
 import org.opendatakit.common.android.application.CommonApplication;
+import org.opendatakit.common.android.logic.CommonToolProperties;
+import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.survey.android.R;
 
 import android.annotation.SuppressLint;
@@ -36,6 +38,11 @@ public class Survey extends CommonApplication {
   @SuppressLint("NewApi")
   @Override
   public void onCreate() {
+    if (singleton == null) {
+      PropertiesSingleton props = CommonToolProperties
+          .get(this.getBaseContext(), this.getToolName());
+      props.setStartCoreServices(this.getBaseContext());
+    }
     singleton = this;
 
     super.onCreate();
