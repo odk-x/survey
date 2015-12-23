@@ -27,6 +27,10 @@ android {
         versionName(versionCodeName)
     }
 
+	jacoco {
+        version = jacocoVersionName
+    }
+
     buildTypes {
         release {
             minifyEnabled(minify)
