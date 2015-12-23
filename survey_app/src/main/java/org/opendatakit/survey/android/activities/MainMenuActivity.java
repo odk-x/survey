@@ -1012,8 +1012,9 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     } else if (item.getItemId() == MENU_CLOUD_FORMS) {
       try {
         Intent syncIntent = new Intent();
-        syncIntent.setComponent(new ComponentName("org.opendatakit.sync",
-            "org.opendatakit.sync.activities.SyncActivity"));
+        syncIntent.setComponent(new ComponentName(
+            IntentConsts.Sync.APPLICATION_NAME,
+            IntentConsts.Sync.ACTIVITY_NAME));
         syncIntent.setAction(Intent.ACTION_DEFAULT);
         Bundle bundle = new Bundle();
         bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
