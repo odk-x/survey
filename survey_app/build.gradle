@@ -27,9 +27,13 @@ android {
         versionName(versionCodeName)
     }
 
+    /* TODO: This is commented out because it makes the build hang on dexDebug. We need to figure
+     * out what causes this hang and then reinstate this code for proper code coverage.
 	jacoco {
         version = jacocoVersionName
     }
+    */
+
 
     buildTypes {
         release {
