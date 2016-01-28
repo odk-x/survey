@@ -103,7 +103,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -310,12 +310,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   // no need to preserve
   private AlertDialog mAlertDialog;
 
-  // cached for efficiency only -- no need to preserve
-  private Bitmap mDefaultVideoPoster = null;
-
-  // cached for efficiency only -- no need to preserve
-  private View mVideoProgressView = null;
-
   @Override
   protected void onPause() {
     // if (mAlertDialog != null && mAlertDialog.isShowing()) {
@@ -431,7 +425,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   protected void onStart() {
     super.onStart();
 
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
 
@@ -440,20 +433,11 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         || currentFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER
         || currentFragment == ScreenList.INSTANCE_UPLOADER
         || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
-      shadow.setVisibility(View.GONE);
-      shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
     } else if (currentFragment == ScreenList.WEBKIT) {
-      shadow.setVisibility(View.GONE);
-      shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
       wkt.invalidate();
-      frags.setVisibility(View.GONE);
-    } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
-      shadow.setVisibility(View.VISIBLE);
-      // shadow.removeAllViews();
-      wkt.setVisibility(View.GONE);
       frags.setVisibility(View.GONE);
     }
 
@@ -1159,24 +1143,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     mAlertDialog.show();
   }
 
-  @Override
-  public synchronized Bitmap getDefaultVideoPoster() {
-    if (mDefaultVideoPoster == null) {
-      mDefaultVideoPoster = BitmapFactory.decodeResource(getResources(),
-              R.drawable.default_video_poster);
-    }
-    return mDefaultVideoPoster;
-  }
-
-  @Override
-  public synchronized View getVideoLoadingProgressView() {
-    if (mVideoProgressView == null) {
-      LayoutInflater inflater = LayoutInflater.from(this);
-      mVideoProgressView = inflater.inflate(R.layout.video_loading_progress, null);
-    }
-    return mVideoProgressView;
-  }
-
   private void popBackStack() {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
@@ -1226,33 +1192,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   }
 
   @Override
-  public void swapToCustomView(View customView) {
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
-    View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
-    shadow.removeAllViews();
-    shadow.addView(customView, COVER_SCREEN_GRAVITY_CENTER);
-    frags.setVisibility(View.GONE);
-    wkt.setVisibility(View.GONE);
-    shadow.setVisibility(View.VISIBLE);
-    currentFragment = ScreenList.CUSTOM_VIEW;
-  }
-
-  @Override
-  public void swapOffCustomView() {
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
-    View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
-    shadow.setVisibility(View.GONE);
-    shadow.removeAllViews();
-    frags.setVisibility(View.GONE);
-    wkt.setVisibility(View.VISIBLE);
-    wkt.invalidate();
-    currentFragment = ScreenList.WEBKIT;
-    levelSafeInvalidateOptionsMenu();
-  }
-
-  @Override
   public ICallbackFragment getCallbackFragment() {
     WebLogger.getLogger(getAppName()).i(t, "getCallbackFragment");
     FragmentManager mgr = getFragmentManager();
@@ -1271,13 +1210,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     Fragment newFragment = null;
     if (newScreenType == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");
-    } else if (newScreenType == ScreenList.CUSTOM_VIEW) {
-      WebLogger.getLogger(getAppName()).w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
-      newScreenType = ScreenList.WEBKIT;
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new WebViewFragment();
-      }
     } else if (newScreenType == ScreenList.FORM_CHOOSER) {
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
@@ -1324,11 +1256,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
 
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     View wkt = findViewById(R.id.webkit_view);
-    shadow.setVisibility(View.GONE);
-    shadow.removeAllViews();
     if (newScreenType == ScreenList.WEBKIT) {
       frags.setVisibility(View.GONE);
       wkt.setVisibility(View.VISIBLE);
