@@ -21,7 +21,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.activities.ODKActivity;
+import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.common.android.fragment.AlertDialogFragment;
 import org.opendatakit.common.android.fragment.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.common.android.fragment.AuthDialogFragment;
@@ -271,7 +271,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
   }
 
   private void uploadSelectedFiles() {
-    if (mSelected.size() > 0 && ((ODKActivity) getActivity()).getUploadTableId() != null) {
+    if (mSelected.size() > 0 && ((IOdkSurveyActivity) getActivity()).getUploadTableId() != null) {
       // show dialog box
       showProgressDialog();
 
@@ -279,7 +279,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           "background");
       String[] str = new String[mSelected.size()];
       f.uploadInstances(this, ((IAppAwareActivity) getActivity()).getAppName(),
-          ((ODKActivity) getActivity()).getUploadTableId(), mSelected.toArray(str));
+          ((IOdkSurveyActivity) getActivity()).getUploadTableId(), mSelected.toArray(str));
     }
   }
 
@@ -472,7 +472,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     f.clearUploadInstancesTask();
 
     if (outcome.mAuthRequestingServer == null
-        && ((ODKActivity) getActivity()).getUploadTableId() != null) {
+        && ((IOdkSurveyActivity) getActivity()).getUploadTableId() != null) {
       StringBuilder message = new StringBuilder();
 
       Set<String> keys = outcome.mResults.keySet();
@@ -483,7 +483,7 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
           Uri uri = Uri.withAppendedPath(
               InstanceProviderAPI.CONTENT_URI,
               ((IAppAwareActivity) getActivity()).getAppName() + "/"
-                  + ((ODKActivity) getActivity()).getUploadTableId() + "/"
+                  + ((IOdkSurveyActivity) getActivity()).getUploadTableId() + "/"
                   + StringEscapeUtils.escapeHtml4(id));
           results = getActivity().getContentResolver().query(uri, null, null, null, null);
           if (results.getCount() == 1 && results.moveToFirst()) {
@@ -585,11 +585,11 @@ public class InstanceUploaderListFragment extends ListFragment implements OnLong
     // First, pick the base URI to use depending on whether we are
     // currently filtering.
     Uri baseUri;
-    if (((ODKActivity) getActivity()).getUploadTableId() != null) {
+    if (((IOdkSurveyActivity) getActivity()).getUploadTableId() != null) {
       baseUri = Uri.withAppendedPath(
           InstanceProviderAPI.CONTENT_URI,
           ((IAppAwareActivity) getActivity()).getAppName() + "/"
-              + ((ODKActivity) getActivity()).getUploadTableId());
+              + ((IOdkSurveyActivity) getActivity()).getUploadTableId());
     } else {
       baseUri = Uri.withAppendedPath(InstanceProviderAPI.CONTENT_URI,
           ((IAppAwareActivity) getActivity()).getAppName());

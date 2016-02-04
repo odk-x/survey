@@ -26,7 +26,8 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
-import org.opendatakit.common.android.activities.ODKActivity;
+import org.opendatakit.common.android.activities.IOdkSurveyActivity;
+import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.logic.CommonToolProperties;
@@ -37,7 +38,9 @@ import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.*;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
-import org.opendatakit.common.android.views.ICallbackFragment;
+import org.opendatakit.common.android.activities.IOdkDataActivity;
+import org.opendatakit.common.android.views.ExecutorContext;
+import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.service.OdkDbHandle;
 import org.opendatakit.database.service.OdkDbInterface;
@@ -54,6 +57,7 @@ import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
 import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.FormIdStruct;
+import org.opendatakit.survey.android.logic.SurveyDataExecutorProcessor;
 import org.opendatakit.survey.android.logic.SurveyToolProperties;
 import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
 import org.opendatakit.survey.android.preferences.PreferencesActivity;
@@ -72,7 +76,6 @@ import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcel;
@@ -81,7 +84,6 @@ import android.os.RemoteException;
 import android.text.InputType;
 import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -98,12 +100,12 @@ import android.widget.Toast;
  * @author Carl Hartung (carlhartung@gmail.com)
  * @author Yaw Anokwa (yanokwa@gmail.com)
  */
-public class MainMenuActivity extends BaseActivity implements ODKActivity {
+public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, CUSTOM_VIEW, INITIALIZATION_DIALOG, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -114,8 +116,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   public static final String LOCATION_ACCURACY_RESULT = "accuracy";
 
   // tags for retained context
-  private static final String PAGE_WAITING_FOR_DATA = "pageWaitingForData";
-  private static final String PATH_WAITING_FOR_DATA = "pathWaitingForData";
+  private static final String DISPATCH_STRING_WAITING_FOR_DATA = "dispatchStringWaitingForData";
   private static final String ACTION_WAITING_FOR_DATA = "actionWaitingForData";
 
   private static final String FORM_URI = "formUri";
@@ -130,7 +131,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   private static final String CURRENT_FRAGMENT = "currentFragment";
 
   private static final String QUEUED_ACTIONS = "queuedActions";
-  
+  private static final String RESPONSE_JSON = "responseJSON";
+
   /** tables that have conflict rows */
   public static final String CONFLICT_TABLES = "conflictTables";
 
@@ -269,8 +271,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
   private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
 
-  private String pageWaitingForData = null;
-  private String pathWaitingForData = null;
+  private String dispatchStringWaitingForData = null;
   private String actionWaitingForData = null;
 
   private String appName = null;
@@ -289,6 +290,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
   private LinkedList<String> queuedActions = new LinkedList<String>();
 
+  LinkedList<String> queueResponseJSON = new LinkedList<String>();
+
   // DO NOT USE THESE -- only used to determine if the current form has changed.
   private String trackingFormPath = null;
   private Long trackingFormLastModifiedDate = 0L;
@@ -304,6 +307,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
    * changes, etc.
    */
 
+  private DatabaseConnectionListener mIOdkDataDatabaseListener;
   // no need to preserve
   private PropertyManager mPropertyManager;
 
@@ -329,11 +333,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     // TODO Auto-generated method stub
     super.onSaveInstanceState(outState);
 
-    if (pageWaitingForData != null) {
-      outState.putString(PAGE_WAITING_FOR_DATA, pageWaitingForData);
-    }
-    if (pathWaitingForData != null) {
-      outState.putString(PATH_WAITING_FOR_DATA, pathWaitingForData);
+    if (dispatchStringWaitingForData != null) {
+      outState.putString(DISPATCH_STRING_WAITING_FOR_DATA, dispatchStringWaitingForData);
     }
     if (actionWaitingForData != null) {
       outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
@@ -370,7 +371,12 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       queuedActions.toArray(actionOutcomesArray);
       outState.putStringArray(QUEUED_ACTIONS, actionOutcomesArray);
     }
-    
+
+    if ( !queueResponseJSON.isEmpty() ) {
+      String[] qra = queueResponseJSON.toArray(new String[queueResponseJSON.size()]);
+      outState.putStringArray(RESPONSE_JSON, qra);
+    }
+
     if (mConflictTables != null && !mConflictTables.isEmpty()) {
       outState.putBundle(CONFLICT_TABLES, mConflictTables);
     }
@@ -431,7 +437,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   protected void onStart() {
     super.onStart();
 
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
 
@@ -440,20 +445,11 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         || currentFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER
         || currentFragment == ScreenList.INSTANCE_UPLOADER
         || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
-      shadow.setVisibility(View.GONE);
-      shadow.removeAllViews();
       wkt.setVisibility(View.GONE);
       frags.setVisibility(View.VISIBLE);
     } else if (currentFragment == ScreenList.WEBKIT) {
-      shadow.setVisibility(View.GONE);
-      shadow.removeAllViews();
       wkt.setVisibility(View.VISIBLE);
       wkt.invalidate();
-      frags.setVisibility(View.GONE);
-    } else if (currentFragment == ScreenList.CUSTOM_VIEW) {
-      shadow.setVisibility(View.VISIBLE);
-      // shadow.removeAllViews();
-      wkt.setVisibility(View.GONE);
       frags.setVisibility(View.GONE);
     }
 
@@ -544,6 +540,9 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         ((DatabaseConnectionListener) newFragment).databaseAvailable();
       }
     }
+    if ( mIOdkDataDatabaseListener != null ) {
+      mIOdkDataDatabaseListener.databaseAvailable();
+    }
   }
 
   @Override
@@ -557,6 +556,9 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       if ( newFragment instanceof DatabaseConnectionListener ) {
         ((DatabaseConnectionListener) newFragment).databaseUnavailable();
       }
+    }
+    if ( mIOdkDataDatabaseListener != null ) {
+      mIOdkDataDatabaseListener.databaseUnavailable();
     }
   }
 
@@ -739,16 +741,21 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     }
   }
 
+  @Override
+  public void clearAuxillaryHash() {
+    this.auxillaryHash = null;
+  }
+
+  public String getAuxillaryHash() {
+    return this.auxillaryHash;
+  }
+
   public void setAppName(String appName) {
     this.appName = appName;
   }
 
   public String getRefId() {
     return this.refId;
-  }
-
-  public String getAuxillaryHash() {
-    return this.auxillaryHash;
   }
 
   public BackgroundTaskFragment getBackgroundFragment() {
@@ -861,10 +868,9 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     if (savedInstanceState != null) {
       // if we are restoring, assume that initialization has already occurred.
 
-      pageWaitingForData = savedInstanceState.containsKey(PAGE_WAITING_FOR_DATA) ? savedInstanceState
-          .getString(PAGE_WAITING_FOR_DATA) : null;
-      pathWaitingForData = savedInstanceState.containsKey(PATH_WAITING_FOR_DATA) ? savedInstanceState
-          .getString(PATH_WAITING_FOR_DATA) : null;
+      dispatchStringWaitingForData =
+          savedInstanceState.containsKey(DISPATCH_STRING_WAITING_FOR_DATA) ?
+            savedInstanceState.getString(DISPATCH_STRING_WAITING_FOR_DATA) : null;
       actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ? savedInstanceState
           .getString(ACTION_WAITING_FOR_DATA) : null;
 
@@ -908,6 +914,11 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
             .getStringArray(QUEUED_ACTIONS);
         queuedActions.clear();
         queuedActions.addAll(Arrays.asList(actionOutcomesArray));
+      }
+
+      if ( savedInstanceState != null && savedInstanceState.containsKey(RESPONSE_JSON)) {
+        String[] pendingResponseJSON = savedInstanceState.getStringArray(RESPONSE_JSON);
+        queueResponseJSON.addAll(Arrays.asList(pendingResponseJSON));
       }
     } else if (formUri != null) {
       // request specifies a specific formUri -- try to open that
@@ -1159,24 +1170,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     mAlertDialog.show();
   }
 
-  @Override
-  public synchronized Bitmap getDefaultVideoPoster() {
-    if (mDefaultVideoPoster == null) {
-      mDefaultVideoPoster = BitmapFactory.decodeResource(getResources(),
-              R.drawable.default_video_poster);
-    }
-    return mDefaultVideoPoster;
-  }
-
-  @Override
-  public synchronized View getVideoLoadingProgressView() {
-    if (mVideoProgressView == null) {
-      LayoutInflater inflater = LayoutInflater.from(this);
-      mVideoProgressView = inflater.inflate(R.layout.video_loading_progress, null);
-    }
-    return mVideoProgressView;
-  }
-
   private void popBackStack() {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
@@ -1225,45 +1218,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     });
   }
 
-  @Override
-  public void swapToCustomView(View customView) {
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
-    View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
-    shadow.removeAllViews();
-    shadow.addView(customView, COVER_SCREEN_GRAVITY_CENTER);
-    frags.setVisibility(View.GONE);
-    wkt.setVisibility(View.GONE);
-    shadow.setVisibility(View.VISIBLE);
-    currentFragment = ScreenList.CUSTOM_VIEW;
-  }
-
-  @Override
-  public void swapOffCustomView() {
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
-    View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
-    shadow.setVisibility(View.GONE);
-    shadow.removeAllViews();
-    frags.setVisibility(View.GONE);
-    wkt.setVisibility(View.VISIBLE);
-    wkt.invalidate();
-    currentFragment = ScreenList.WEBKIT;
-    levelSafeInvalidateOptionsMenu();
-  }
-
-  @Override
-  public ICallbackFragment getCallbackFragment() {
-    WebLogger.getLogger(getAppName()).i(t, "getCallbackFragment");
-    FragmentManager mgr = getFragmentManager();
-    Fragment newFragment = mgr.findFragmentByTag(ScreenList.WEBKIT.name());
-    if ( newFragment instanceof ICallbackFragment ) {
-      return (ICallbackFragment) newFragment;
-    } else {
-      return null;
-    }
-  }
-
   public void swapToFragmentView(ScreenList newScreenType) {
     WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView: " + newScreenType.name());
     FragmentManager mgr = getFragmentManager();
@@ -1271,13 +1225,6 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
     Fragment newFragment = null;
     if (newScreenType == ScreenList.MAIN_SCREEN) {
       throw new IllegalStateException("unexpected reference to generic main screen");
-    } else if (newScreenType == ScreenList.CUSTOM_VIEW) {
-      WebLogger.getLogger(getAppName()).w(t, "swapToFragmentView: changing navigation to move to WebKit (was custom view)");
-      newScreenType = ScreenList.WEBKIT;
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new WebViewFragment();
-      }
     } else if (newScreenType == ScreenList.FORM_CHOOSER) {
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
@@ -1324,11 +1271,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
 
-    FrameLayout shadow = (FrameLayout) findViewById(R.id.shadow_content);
     View frags = findViewById(R.id.main_content);
     View wkt = findViewById(R.id.webkit_view);
-    shadow.setVisibility(View.GONE);
-    shadow.removeAllViews();
     if (newScreenType == ScreenList.WEBKIT) {
       frags.setVisibility(View.GONE);
       wkt.setVisibility(View.VISIBLE);
@@ -1652,10 +1596,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   /**
    * Invoked from within Javascript to launch an activity.
    *
-   * @param page
-   *          -- page containing prompt requesting the action
-   * @param path
-   *          -- prompt requesting the action
+   * @param dispatchString   Opaque string -- typically identifies prompt and user action
+   *
    * @param action
    *          -- the intent to be launched
    * @param valueContentMap
@@ -1673,8 +1615,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
    */
   @Override
   public String doAction(
-      String page,
-      String path,
+      String dispatchString,
       String action,
       JSONObject valueContentMap) {
 
@@ -1687,7 +1628,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
     Intent i;
     boolean isSurveyApp = false;
-    boolean isTablesApp = false;
+    boolean isOpendatakitApp = false;
     if (action.startsWith("org.opendatakit.survey")) {
       Class<?> clazz;
       try {
@@ -1702,8 +1643,8 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       i = new Intent(action);
     }
 
-    if (action.startsWith("org.opendatakit.tables")) {
-      isTablesApp = true;
+    if (action.startsWith("org.opendatakit.")) {
+      isOpendatakitApp = true;
     }
 
     try {
@@ -1785,7 +1726,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
         i.putExtras(b);
       }
 
-      if (isSurveyApp || isTablesApp) {
+      if (isSurveyApp || isOpendatakitApp) {
         // ensure that we supply our appName...
         if (!i.hasExtra(IntentConsts.INTENT_KEY_APP_NAME)) {
           i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
@@ -1799,8 +1740,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
       return "JSONException: " + ex.toString();
     }
 
-    pageWaitingForData = page;
-    pathWaitingForData = path;
+    dispatchStringWaitingForData = dispatchString;
     actionWaitingForData = action;
 
     try {
@@ -1829,11 +1769,70 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
   }
   
   @Override
-  public String getFirstQueuedAction() {
+  public String viewFirstQueuedAction() {
     String outcome = 
-        queuedActions.isEmpty() ? null : queuedActions.removeFirst();
+        queuedActions.isEmpty() ? null : queuedActions.getFirst();
     return outcome;
   }
+
+  @Override
+  public void removeFirstQueuedAction() {
+    if ( !queuedActions.isEmpty() ) {
+      queuedActions.removeFirst();
+    }
+  }
+
+  @Override
+  public void signalResponseAvailable(String responseJSON) {
+    if ( responseJSON == null ) {
+      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
+    } else {
+      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got "
+          + responseJSON.length() + " long responseJSON!");
+    }
+    if ( responseJSON != null) {
+      this.queueResponseJSON.push(responseJSON);
+      final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit_view);
+      if (webView != null) {
+        runOnUiThread(new Runnable() {
+          @Override
+          public void run() {
+            webView.loadUrl("javascript:odkData.responseAvailable();");
+          }
+        });
+      }
+    }
+  }
+
+  @Override
+  public String getResponseJSON() {
+    if ( queueResponseJSON.isEmpty() ) {
+      return null;
+    }
+    String responseJSON = queueResponseJSON.removeFirst();
+    return responseJSON;
+  }
+
+  @Override
+  public ExecutorProcessor newExecutorProcessor(ExecutorContext context) {
+    return new SurveyDataExecutorProcessor(context);
+  }
+
+  @Override
+  public void registerDatabaseConnectionBackgroundListener(DatabaseConnectionListener listener) {
+    mIOdkDataDatabaseListener = listener;
+  }
+
+  @Override
+  public OdkDbInterface getDatabase() {
+    return ((CommonApplication) getApplication()).getDatabase();
+  }
+
+  @Override
+  public Bundle getIntentExtras() {
+    return this.getIntent().getExtras();
+  }
+
   /*
    * END - Interfaces to Javascript layer (also used in Java).
    * *********************************************************************
@@ -1864,8 +1863,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           jsonValue.put("result", val);
         }
         JSONObject result = new JSONObject();
-        result.put("page", pageWaitingForData);
-        result.put("path", (pathWaitingForData == null) ? JSONObject.NULL : pathWaitingForData);
+        result.put("dispatchString", dispatchStringWaitingForData);
         result.put("action",  actionWaitingForData);
         result.put("jsonValue", jsonValue);
         
@@ -1881,8 +1879,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           jsonValue.put("status", 0);
           jsonValue.put("result", e.toString());
           JSONObject result = new JSONObject();
-          result.put("page", pageWaitingForData);
-          result.put("path", (pathWaitingForData == null) ? JSONObject.NULL : pathWaitingForData);
+          result.put("dispatchString", dispatchStringWaitingForData);
           result.put("action",  actionWaitingForData);
           result.put("jsonValue", jsonValue);
           this.queueActionOutcome(result.toString());
@@ -1892,8 +1889,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
           ex.printStackTrace();
         }
       } finally {
-        pathWaitingForData = null;
-        pageWaitingForData = null;
+        dispatchStringWaitingForData = null;
         actionWaitingForData = null;
       }
     } else if (requestCode == SYNC_ACTIVITY_CODE) {

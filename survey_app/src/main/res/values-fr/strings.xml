@@ -161,7 +161,6 @@ License.
 <string name="expanding_file">Accessing APK expansion file: %1$s</string>
 <string name="expansion_progress">%1$s\n\n(%2$s of %3$s).</string>
 <string name="expansion_failed">Unable to expand APK expansion files</string>
-<string name="loading_video">Loading video &#8230;</string>
 <string name="application">(Application)</string>
 <string name="delete_yes_with_options">Delete Forms &amp; Data</string>
 <string name="file_and_data_deleted_ok">%s form(s) and data successfully deleted!</string>

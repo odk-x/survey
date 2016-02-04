@@ -15,7 +15,7 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.activities.ODKActivity;
+import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.utilities.FormInfo;
@@ -92,7 +92,7 @@ public class FormChooserListFragment extends ListFragment
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
             ((IAppAwareActivity) getActivity()).getAppName()), info.tableId), info.formId);
 
-    ((ODKActivity) getActivity()).chooseForm(formUri);
+    ((IOdkSurveyActivity) getActivity()).chooseForm(formUri);
   }
 
   @Override public Loader<ArrayList<FormInfo>> onCreateLoader(int id, Bundle args) {

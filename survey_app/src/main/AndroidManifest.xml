@@ -18,12 +18,7 @@
           android:name="org.opendatakit.webkitserver.RUN_WEBSERVER"
           android:protectionLevel="signature" />
     <uses-permission android:name="org.opendatakit.webkitserver.RUN_WEBSERVER" />
-	
-    <permission
-          android:name="org.opendatakit.dbshim.RUN_DBSHIM"
-          android:protectionLevel="signature" />
-    <uses-permission android:name="org.opendatakit.dbshim.RUN_DBSHIM" />
-	
+
     <permission
           android:name="org.opendatakit.database.RUN_DATABASE"
           android:protectionLevel="signature" />
