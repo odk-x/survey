@@ -37,9 +37,6 @@ import android.widget.Toast;
 /**
  * Wrapper that holds all the background tasks that might be in-progress at any
  * time.
- * 
- * Also holds the service connection to the WebkitFileServer (localhost webserver)
- * and the service binder for the DbShim service (replacement for W3C SQL)
  *
  * @author mitchellsundt@gmail.com
  *

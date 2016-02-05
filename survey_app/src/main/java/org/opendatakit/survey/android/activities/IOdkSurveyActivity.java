@@ -19,7 +19,7 @@ import org.opendatakit.common.android.activities.IOdkCommonActivity;
 import org.opendatakit.common.android.activities.IOdkDataActivity;
 
 /**
- * Interface that implements the survey-specific shim.js callbacks from the WebKit.
+ * Interface that implements the survey-specific odkSurvey.js callbacks from the WebKit.
  *
  * @author mitchellsundt@gmail.com
  *

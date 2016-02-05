@@ -26,14 +26,14 @@ public class OdkSurveyIf {
 
   public static final String t = "OdkSurveyIf";
 
-  private WeakReference<OdkSurvey> weakShim;
+  private WeakReference<OdkSurvey> weakSurvey;
 
   OdkSurveyIf(OdkSurvey odkData) {
-    weakShim = new WeakReference<OdkSurvey>(odkData);
+    weakSurvey = new WeakReference<OdkSurvey>(odkData);
   }
 
   private boolean isInactive() {
-    return (weakShim.get() == null) || (weakShim.get().isInactive());
+    return (weakSurvey.get() == null) || (weakSurvey.get().isInactive());
   }
 
   /**
@@ -45,7 +45,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void clearAuxillaryHash() {
     if (isInactive()) return;
-    weakShim.get().clearAuxillaryHash();
+    weakSurvey.get().clearAuxillaryHash();
   }
 
   /**
@@ -57,7 +57,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void clearInstanceId(String refId) {
     if (isInactive()) return;
-    weakShim.get().clearInstanceId(refId);
+    weakSurvey.get().clearInstanceId(refId);
   }
 
   /**
@@ -70,7 +70,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void setInstanceId(String refId, String instanceId) {
     if (isInactive()) return;
-    weakShim.get().setInstanceId(refId, instanceId);
+    weakSurvey.get().setInstanceId(refId, instanceId);
   }
 
   /**
@@ -83,7 +83,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public String getInstanceId(String refId) {
     if (isInactive()) return null;
-    return weakShim.get().getInstanceId(refId);
+    return weakSurvey.get().getInstanceId(refId);
   }
 
   /**
@@ -93,7 +93,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void pushSectionScreenState(String refId) {
     if (isInactive()) return;
-    weakShim.get().pushSectionScreenState(refId);
+    weakSurvey.get().pushSectionScreenState(refId);
   }
 
   /**
@@ -105,7 +105,7 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void setSectionScreenState(String refId, String screenPath, String state) {
     if (isInactive()) return;
-    weakShim.get().setSectionScreenState(refId, screenPath, state);
+    weakSurvey.get().setSectionScreenState(refId, screenPath, state);
   }
 
   /**
@@ -115,72 +115,72 @@ public class OdkSurveyIf {
   @android.webkit.JavascriptInterface
   public void clearSectionScreenState(String refId) {
     if (isInactive()) return;
-    weakShim.get().clearSectionScreenState(refId);
+    weakSurvey.get().clearSectionScreenState(refId);
   }
 
   @android.webkit.JavascriptInterface
   public String getControllerState(String refId) {
     if (isInactive()) return null;
-    return weakShim.get().getControllerState(refId);
+    return weakSurvey.get().getControllerState(refId);
   }
 
   @android.webkit.JavascriptInterface
   public String getScreenPath(String refId) {
     if (isInactive()) return null;
-    return weakShim.get().getScreenPath(refId);
+    return weakSurvey.get().getScreenPath(refId);
   }
 
   @android.webkit.JavascriptInterface
   public boolean hasScreenHistory(String refId) {
     if (isInactive()) return false;
-    return weakShim.get().hasScreenHistory(refId);
+    return weakSurvey.get().hasScreenHistory(refId);
   }
 
   @android.webkit.JavascriptInterface
   public String popScreenHistory(String refId) {
     if (isInactive()) return null;
-    return weakShim.get().popScreenHistory(refId);
+    return weakSurvey.get().popScreenHistory(refId);
   }
 
   @android.webkit.JavascriptInterface
   public boolean hasSectionStack(String refId) {
     if (isInactive()) return false;
-    return weakShim.get().hasSectionStack(refId);
+    return weakSurvey.get().hasSectionStack(refId);
   }
 
   @android.webkit.JavascriptInterface
   public String popSectionStack(String refId) {
     if (isInactive()) return null;
-    return weakShim.get().popSectionStack(refId);
+    return weakSurvey.get().popSectionStack(refId);
   }
 
   @android.webkit.JavascriptInterface
   public void frameworkHasLoaded(String refId, boolean outcome) {
     if (isInactive()) return;
-    weakShim.get().frameworkHasLoaded(refId, outcome);
+    weakSurvey.get().frameworkHasLoaded(refId, outcome);
   }
 
   @android.webkit.JavascriptInterface
   public void ignoreAllChangesCompleted(String refId, String instanceId) {
     if (isInactive()) return;
-    weakShim.get().ignoreAllChangesCompleted(refId, instanceId);
+    weakSurvey.get().ignoreAllChangesCompleted(refId, instanceId);
   }
 
   @android.webkit.JavascriptInterface
   public void ignoreAllChangesFailed(String refId, String instanceId) {
     if (isInactive()) return;
-    weakShim.get().ignoreAllChangesFailed(refId, instanceId);
+    weakSurvey.get().ignoreAllChangesFailed(refId, instanceId);
   }
 
   @android.webkit.JavascriptInterface
   public void saveAllChangesCompleted(String refId, String instanceId, boolean asComplete) {
     if (isInactive()) return;
-    weakShim.get().saveAllChangesCompleted(refId, instanceId, asComplete);
+    weakSurvey.get().saveAllChangesCompleted(refId, instanceId, asComplete);
   }
 
   @android.webkit.JavascriptInterface
   public void saveAllChangesFailed(String refId, String instanceId) {
     if (isInactive()) return;
-    weakShim.get().saveAllChangesFailed(refId, instanceId);
+    weakSurvey.get().saveAllChangesFailed(refId, instanceId);
  }
 }

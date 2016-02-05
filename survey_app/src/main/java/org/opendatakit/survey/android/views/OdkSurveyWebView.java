@@ -12,14 +12,14 @@ import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 public class OdkSurveyWebView extends ODKWebView {
   private static final String t = "OdkSurveyWebView";
 
-  private OdkSurvey shim;
+  private OdkSurvey odkSurvey;
 
   public OdkSurveyWebView(Context context, AttributeSet attrs) {
     super(context, attrs);
 
     // stomp on the odkSurvey object...
-    shim = new OdkSurvey((IOdkSurveyActivity) context, this);
-    addJavascriptInterface(shim.getJavascriptInterfaceWithWeakReference(), "odkSurvey");
+    odkSurvey = new OdkSurvey((IOdkSurveyActivity) context, this);
+    addJavascriptInterface(odkSurvey.getJavascriptInterfaceWithWeakReference(), "odkSurvey");
   }
 
   @Override

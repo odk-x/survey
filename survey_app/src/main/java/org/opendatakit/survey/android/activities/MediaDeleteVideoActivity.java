@@ -29,7 +29,7 @@ import android.os.Bundle;
 /**
  * Simple wrapper for delete-file functionality.
  *
- * Called from javascript with: shim.doAction(promptPath, internalPromptContext,
+ * Called from javascript with: odkCommon.doAction(dispatchString,
  * "org.opendatakit.survey.android.activities.MediaDeleteVideoActivity",
  * JSON.stringify({ appName: 'myApp', uriFragment: uriFromDatabase }));
  *

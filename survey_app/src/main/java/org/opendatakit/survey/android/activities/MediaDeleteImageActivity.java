@@ -29,7 +29,7 @@ import android.os.Bundle;
 /**
  * Simple shim for media interactions.
  *
- * Called from javascript with: shim.doAction(promptPath, internalPromptContext,
+ * Called from javascript with: odkCommon.doAction(dispatchString,
  * "org.opendatakit.survey.android.activities.MediaDeleteImageActivity",
  * JSON.stringify({ appName: 'myApp', uriFragment: uriFromDatabase }));
  *
