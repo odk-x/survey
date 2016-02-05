@@ -12,14 +12,14 @@ import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 public class OdkSurveyWebView extends ODKWebView {
   private static final String t = "OdkSurveyWebView";
 
-  private ODKShimJavascriptCallback shim;
+  private OdkSurvey shim;
 
   public OdkSurveyWebView(Context context, AttributeSet attrs) {
     super(context, attrs);
 
-    // stomp on the shim object...
-    shim = new ODKShimJavascriptCallback(this, (IOdkSurveyActivity) context);
-    addJavascriptInterface(shim, "shim");
+    // stomp on the odkSurvey object...
+    shim = new OdkSurvey((IOdkSurveyActivity) context, this);
+    addJavascriptInterface(shim.getJavascriptInterfaceWithWeakReference(), "odkSurvey");
   }
 
   @Override
@@ -58,16 +58,16 @@ public class OdkSurveyWebView extends ODKWebView {
   }
 
   @Override
-  public synchronized void clearPage() {
-    log.i(t, "clearPage: current loadPageUrl: " + getLoadPageUrl());
+  public synchronized void reloadPage() {
+    log.i(t, "reloadPage: current loadPageUrl: " + getLoadPageUrl());
     String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(false);
 
     if ( baseUrl != null ) {
       resetLoadPageStatus(baseUrl);
-      log.i(t, "clearPage: full reload: " + baseUrl);
+      log.i(t, "reloadPage: full reload: " + baseUrl);
       loadUrl(baseUrl);
     } else {
-      log.w(t, "clearPage: framework did not load -- cannot load anything!");
+      log.w(t, "reloadPage: framework did not load -- cannot load anything!");
     }
   }
 
