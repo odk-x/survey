@@ -15,9 +15,9 @@
 package org.opendatakit.survey.android.fragments;
 
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 import org.opendatakit.survey.android.utilities.FormInfo;
 import org.opendatakit.survey.android.utilities.FormListLoader;
 

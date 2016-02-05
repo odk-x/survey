@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.common.android.fragment.AlertDialogFragment;
 import org.opendatakit.common.android.fragment.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.common.android.fragment.AuthDialogFragment;
@@ -32,6 +31,7 @@ import org.opendatakit.common.android.provider.InstanceProviderAPI;
 import org.opendatakit.common.android.utilities.ODKCursorUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 import org.opendatakit.survey.android.listeners.InstanceUploaderListener;
 import org.opendatakit.survey.android.logic.InstanceUploadOutcome;
 

@@ -17,8 +17,8 @@ package org.opendatakit.survey.android.fragments;
 import java.util.List;
 
 import org.opendatakit.common.android.activities.IAppAwareActivity;
-import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 import org.opendatakit.survey.android.tasks.TableSetLoader;
 import org.opendatakit.survey.android.tasks.TableSetLoader.TableSetEntry;
 

@@ -26,7 +26,6 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
-import org.opendatakit.common.android.activities.IOdkSurveyActivity;
 import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;

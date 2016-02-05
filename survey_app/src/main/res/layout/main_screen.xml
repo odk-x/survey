@@ -12,7 +12,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <org.opendatakit.common.android.views.ODKWebView
+    <org.opendatakit.survey.android.views.OdkSurveyWebView
         android:id="@+id/webkit_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
