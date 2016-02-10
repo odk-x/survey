@@ -8,22 +8,7 @@
   OR CONDITIONS OF ANY KIND, either express or implied. See the License for
   the specific language governing permissions and limitations under the License.
 -->
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent" >
-
-    <org.opendatakit.survey.android.views.OdkSurveyWebView
-        android:id="@+id/webkit_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/black"
-        android:visibility="gone" />
-
-    <FrameLayout
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:id="@+id/main_content"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@android:color/white"
-        android:visibility="visible"/>
-
-</merge>
+        android:layout_height="match_parent"/>

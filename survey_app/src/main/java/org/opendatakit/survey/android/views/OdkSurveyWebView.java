@@ -44,11 +44,14 @@ public class OdkSurveyWebView extends ODKWebView {
     String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
 
     if ( baseUrl != null ) {
-      resetLoadPageStatus(baseUrl);
+      // for Survey, we do care about the URL
+      String fullUrl = baseUrl + hash;
 
-      log.i(t, "loadPage: full reload: " + baseUrl + hash);
+      resetLoadPageStatus(fullUrl);
 
-      loadUrl(baseUrl + hash);
+      log.i(t, "loadPage: full reload: " + fullUrl);
+
+      loadUrl(fullUrl);
     } else if ( hasPageFrameworkFinishedLoading() ) {
       log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
       gotoUrlHash(hash);
@@ -59,13 +62,30 @@ public class OdkSurveyWebView extends ODKWebView {
 
   @Override
   public synchronized void reloadPage() {
+    if ( ((IOdkDataActivity) getContext()).getDatabase() == null ) {
+      // do not initiate reload until we have the database set up...
+      return;
+    }
+
     log.i(t, "reloadPage: current loadPageUrl: " + getLoadPageUrl());
     String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(false);
+    String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
 
     if ( baseUrl != null ) {
-      resetLoadPageStatus(baseUrl);
-      log.i(t, "reloadPage: full reload: " + baseUrl);
-      loadUrl(baseUrl);
+      // for Survey, we do care about the URL
+      String fullUrl = baseUrl + hash;
+
+      if ( shouldForceLoadDuringReload() ||
+          hasPageFrameworkFinishedLoading() || !fullUrl.equals(getLoadPageUrl()) ) {
+
+        resetLoadPageStatus(fullUrl);
+
+        log.i(t, "reloadPage: full reload: " + fullUrl);
+
+        loadUrl(fullUrl);
+      } else {
+        log.w(t, "reloadPage: framework in process of loading -- ignoring request!");
+      }
     } else {
       log.w(t, "reloadPage: framework did not load -- cannot load anything!");
     }

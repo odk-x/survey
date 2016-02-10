@@ -65,6 +65,6 @@ public class Survey extends CommonApplication {
 
   @Override
   public int getWebKitResourceId() {
-    return R.id.webkit_view;
+    return R.id.webkit;
   }
 }

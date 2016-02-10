@@ -13,19 +13,24 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 -->
-<LinearLayout
-	xmlns:android="http://schemas.android.com/apk/res/android"
-	android:orientation="vertical"
-	android:layout_width="fill_parent"
-	android:layout_height="fill_parent">
-		<TextView
-			android:layout_width="fill_parent"
-			android:layout_height="fill_parent"
-			android:text="@string/no_items_display"
-			android:textSize="21sp"
-			android:paddingLeft="20dp"
-			android:paddingRight="20dp"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			  android:layout_width="match_parent"
+			  android:layout_height="match_parent"
+			  android:orientation="vertical" >
+
+	<org.opendatakit.survey.android.views.OdkSurveyWebView
+			android:id="@+id/webkit"
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:background="@android:color/black"
+			android:visibility="gone" />
+
+	<!-- empty view -->
+	<TextView
+			android:id="@android:id/empty"
 			android:gravity="center"
-			android:background="@color/white"
-			android:textColor="@color/black" />
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:text="@string/database_unavailable" />
+
 </LinearLayout>

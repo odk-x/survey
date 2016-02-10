@@ -313,12 +313,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   // no need to preserve
   private AlertDialog mAlertDialog;
 
-  // cached for efficiency only -- no need to preserve
-  private Bitmap mDefaultVideoPoster = null;
-
-  // cached for efficiency only -- no need to preserve
-  private View mVideoProgressView = null;
-
   @Override
   protected void onPause() {
     // if (mAlertDialog != null && mAlertDialog.isShowing()) {
@@ -435,27 +429,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   protected void onStart() {
     super.onStart();
-
-    View frags = findViewById(R.id.main_content);
-    ODKWebView wkt = (ODKWebView) findViewById(R.id.webkit_view);
-
-    if (currentFragment == ScreenList.FORM_CHOOSER || currentFragment == ScreenList.FORM_DOWNLOADER
-        || currentFragment == ScreenList.FORM_DELETER
-        || currentFragment == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER
-        || currentFragment == ScreenList.INSTANCE_UPLOADER
-        || currentFragment == ScreenList.INITIALIZATION_DIALOG) {
-      wkt.setVisibility(View.GONE);
-      frags.setVisibility(View.VISIBLE);
-    } else if (currentFragment == ScreenList.WEBKIT) {
-      wkt.setVisibility(View.VISIBLE);
-      wkt.invalidate();
-      frags.setVisibility(View.GONE);
-    }
-
-    FragmentManager mgr = getFragmentManager();
-    if (mgr.getBackStackEntryCount() == 0) {
-      swapToFragmentView(currentFragment);
-    }
   }
 
   public void scanForConflictAllTables() {
@@ -776,182 +749,184 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     // android.os.Debug.waitForDebugger();
 
-    // ensure that we have a BackgroundTaskFragment...
-    // create it programmatically because if we place it in the 
-    // layout XML, it will be recreated with each screen rotation
-    // and we don't want that!!!
-    Fragment f = getBackgroundFragment();
+    try {
+      // ensure that we have a BackgroundTaskFragment...
+      // create it programmatically because if we place it in the
+      // layout XML, it will be recreated with each screen rotation
+      // and we don't want that!!!
+      Fragment f = getBackgroundFragment();
 
-    mPropertyManager = new PropertyManager(this);
+      mPropertyManager = new PropertyManager(this);
 
-    // must be at the beginning of any activity that can be called from an
-    // external intent
-    setAppName("survey");
-    Uri uri = getIntent().getData();
-    Uri formUri = null;
+      // must be at the beginning of any activity that can be called from an
+      // external intent
+      setAppName("survey");
+      Uri uri = getIntent().getData();
+      Uri formUri = null;
 
-    if (uri != null) {
-      // initialize to the URI, then we will customize further based upon the
-      // savedInstanceState...
-      final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
-      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme())
-          && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() == 1) {
-          String appName = segments.get(0);
-          setAppName(appName);
-        } else if (segments != null && segments.size() >= 2) {
-          String appName = segments.get(0);
-          setAppName(appName);
-          String tableId = segments.get(1);
-          String formId = (segments.size() > 2) ? segments.get(2) : null;
-          formUri = Uri.withAppendedPath(
-              Uri.withAppendedPath(
-                  Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+      if (uri != null) {
+        // initialize to the URI, then we will customize further based upon the
+        // savedInstanceState...
+        final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
+        final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+        if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+          List<String> segments = uri.getPathSegments();
+          if (segments != null && segments.size() == 1) {
+            String appName = segments.get(0);
+            setAppName(appName);
+          } else if (segments != null && segments.size() >= 2) {
+            String appName = segments.get(0);
+            setAppName(appName);
+            String tableId = segments.get(1);
+            String formId = (segments.size() > 2) ? segments.get(2) : null;
+            formUri = Uri.withAppendedPath(
+                Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
                     tableId), formId);
-        } else {
-          assignContentView();
-          createErrorDialog(
-              getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
-          return;
-        }
-      } else if (uri.getScheme().equals(uriWebView.getScheme())
-          && uri.getAuthority().equals(uriWebView.getAuthority())
-          && uri.getPort() == uriWebView.getPort()) {
-        List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() == 1) {
-          String appName = segments.get(0);
-          setAppName(appName);
-        } else {
-          assignContentView();
-          createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()),
-              EXIT);
-          return;
-        }
+          } else {
+            createErrorDialog(getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
+            return;
+          }
+        } else if (uri.getScheme().equals(uriWebView.getScheme()) && uri.getAuthority().equals(uriWebView.getAuthority())
+            && uri.getPort() == uriWebView.getPort()) {
+          List<String> segments = uri.getPathSegments();
+          if (segments != null && segments.size() == 1) {
+            String appName = segments.get(0);
+            setAppName(appName);
+          } else {
+            createErrorDialog(getString(R.string.invalid_uri_expecting_one_segment, uri.toString()),
+                EXIT);
+            return;
+          }
 
-      } else {
-        assignContentView();
-        createErrorDialog(
-            getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
-                uriFormsProvider.toString()), EXIT);
+        } else {
+          createErrorDialog(getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
+              uriFormsProvider.toString()), EXIT);
+          return;
+        }
+      }
+
+      if (savedInstanceState != null) {
+        // if appName is explicitly set, use it...
+        setAppName(savedInstanceState.containsKey(IntentConsts.INTENT_KEY_APP_NAME) ?
+            savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME) :
+            getAppName());
+
+        if (savedInstanceState.containsKey(CONFLICT_TABLES)) {
+          mConflictTables = savedInstanceState.getBundle(CONFLICT_TABLES);
+        }
+      }
+
+      try {
+        String appName = getAppName();
+        if (appName != null && appName.length() != 0) {
+          ODKFileUtils.verifyExternalStorageAvailability();
+          ODKFileUtils.assertDirectoryStructure(appName);
+        }
+      } catch (RuntimeException e) {
+        createErrorDialog(e.getMessage(), EXIT);
         return;
       }
-    }
 
-    if (savedInstanceState != null) {
-      // if appName is explicitly set, use it...
-      setAppName(savedInstanceState.containsKey(IntentConsts.INTENT_KEY_APP_NAME) ? 
-          savedInstanceState.getString(IntentConsts.INTENT_KEY_APP_NAME)
-          : getAppName());
+      WebLogger.getLogger(getAppName()).i(t, "Starting up, creating directories");
 
-      if (savedInstanceState.containsKey(CONFLICT_TABLES)) {
-        mConflictTables = savedInstanceState.getBundle(CONFLICT_TABLES);
-      }
-    }
+      if (savedInstanceState != null) {
+        // if we are restoring, assume that initialization has already occurred.
 
-    try {
-      String appName = getAppName();
-      if (appName != null && appName.length() != 0) {
-        ODKFileUtils.verifyExternalStorageAvailability();
-        ODKFileUtils.assertDirectoryStructure(appName);
-      }
-    } catch (RuntimeException e) {
-      assignContentView();
-      createErrorDialog(e.getMessage(), EXIT);
-      return;
-    }
-
-    WebLogger.getLogger(getAppName()).i(t, "Starting up, creating directories");
-
-    if (savedInstanceState != null) {
-      // if we are restoring, assume that initialization has already occurred.
-
-      dispatchStringWaitingForData =
-          savedInstanceState.containsKey(DISPATCH_STRING_WAITING_FOR_DATA) ?
+        dispatchStringWaitingForData = savedInstanceState.containsKey(DISPATCH_STRING_WAITING_FOR_DATA) ?
             savedInstanceState.getString(DISPATCH_STRING_WAITING_FOR_DATA) : null;
-      actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ? savedInstanceState
-          .getString(ACTION_WAITING_FOR_DATA) : null;
+        actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ?
+            savedInstanceState.getString(ACTION_WAITING_FOR_DATA) :
+            null;
 
-      currentFragment = ScreenList
-          .valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ? savedInstanceState
-              .getString(CURRENT_FRAGMENT) : currentFragment.name());
+        currentFragment = ScreenList.valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ?
+            savedInstanceState.getString(CURRENT_FRAGMENT) :
+            currentFragment.name());
 
-      if (savedInstanceState.containsKey(FORM_URI)) {
-        FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(),
-            Uri.parse(savedInstanceState.getString(FORM_URI)));
-        if (newForm != null) {
-          setAppName(newForm.appName);
-          setCurrentForm(newForm);
+        if (savedInstanceState.containsKey(FORM_URI)) {
+          FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), Uri.parse(savedInstanceState.getString(FORM_URI)));
+          if (newForm != null) {
+            setAppName(newForm.appName);
+            setCurrentForm(newForm);
+          }
+        }
+        setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ?
+            savedInstanceState.getString(INSTANCE_ID) :
+            getInstanceId());
+        setUploadTableId(savedInstanceState.containsKey(UPLOAD_TABLE_ID) ?
+            savedInstanceState.getString(UPLOAD_TABLE_ID) :
+            getUploadTableId());
+
+        String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ?
+            savedInstanceState.getString(SCREEN_PATH) :
+            getScreenPath();
+        String tmpControllerState = savedInstanceState.containsKey(CONTROLLER_STATE) ?
+            savedInstanceState.getString(CONTROLLER_STATE) :
+            getControllerState();
+        setSectionScreenState(tmpScreenPath, tmpControllerState);
+
+        setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ?
+            savedInstanceState.getString(AUXILLARY_HASH) :
+            getAuxillaryHash());
+
+        if (savedInstanceState.containsKey(SESSION_VARIABLES)) {
+          sessionVariables = savedInstanceState.getBundle(SESSION_VARIABLES);
+        }
+
+        if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
+          sectionStateScreenHistory = savedInstanceState.getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
+        }
+
+        if (savedInstanceState.containsKey(QUEUED_ACTIONS)) {
+          String[] actionOutcomesArray = savedInstanceState.getStringArray(QUEUED_ACTIONS);
+          queuedActions.clear();
+          queuedActions.addAll(Arrays.asList(actionOutcomesArray));
+        }
+
+        if (savedInstanceState != null && savedInstanceState.containsKey(RESPONSE_JSON)) {
+          String[] pendingResponseJSON = savedInstanceState.getStringArray(RESPONSE_JSON);
+          queueResponseJSON.addAll(Arrays.asList(pendingResponseJSON));
+        }
+      } else if (formUri != null) {
+        // request specifies a specific formUri -- try to open that
+        FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
+        if (newForm == null) {
+          // can't find it -- launch the initialization dialog to hopefully
+          // discover it.
+          WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
+          ((Survey) getApplication()).setRunInitializationTask(getAppName());
+          currentFragment = ScreenList.WEBKIT;
+        } else {
+          transitionToFormHelper(uri, newForm);
         }
       }
-      setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ? savedInstanceState
-          .getString(INSTANCE_ID) : getInstanceId());
-      setUploadTableId(savedInstanceState.containsKey(UPLOAD_TABLE_ID) ? savedInstanceState
-          .getString(UPLOAD_TABLE_ID) : getUploadTableId());
+    } catch (Exception e) {
+      createErrorDialog(e.getMessage(), EXIT);
+    } finally {
+      setContentView(R.layout.main_screen);
 
-      String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ? savedInstanceState
-          .getString(SCREEN_PATH) : getScreenPath();
-      String tmpControllerState = savedInstanceState.containsKey(CONTROLLER_STATE) ? savedInstanceState
-          .getString(CONTROLLER_STATE) : getControllerState();
-      setSectionScreenState(tmpScreenPath, tmpControllerState);
-
-      setAuxillaryHash(savedInstanceState.containsKey(AUXILLARY_HASH) ? savedInstanceState
-          .getString(AUXILLARY_HASH) : getAuxillaryHash());
-
-      if (savedInstanceState.containsKey(SESSION_VARIABLES)) {
-        sessionVariables = savedInstanceState.getBundle(SESSION_VARIABLES);
-      }
-
-      if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
-        sectionStateScreenHistory = savedInstanceState
-            .getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
-      }
-      
-      if (savedInstanceState.containsKey(QUEUED_ACTIONS)) {
-        String[] actionOutcomesArray = savedInstanceState
-            .getStringArray(QUEUED_ACTIONS);
-        queuedActions.clear();
-        queuedActions.addAll(Arrays.asList(actionOutcomesArray));
-      }
-
-      if ( savedInstanceState != null && savedInstanceState.containsKey(RESPONSE_JSON)) {
-        String[] pendingResponseJSON = savedInstanceState.getStringArray(RESPONSE_JSON);
-        queueResponseJSON.addAll(Arrays.asList(pendingResponseJSON));
-      }
-    } else if (formUri != null) {
-      // request specifies a specific formUri -- try to open that
-      FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
-      if (newForm == null) {
-        // can't find it -- launch the initialization dialog to hopefully
-        // discover it.
-        WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
-        ((Survey) getApplication()).setRunInitializationTask(getAppName());
-        currentFragment = ScreenList.WEBKIT;
-      } else {
-        transitionToFormHelper(uri, newForm);
-      }
+      ActionBar actionBar = getActionBar();
+      actionBar.show();
     }
+  }
 
-    assignContentView();
+  @Override
+  public void onResume() {
+    super.onResume();
+
+    ((Survey) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
+
+    FragmentManager mgr = getFragmentManager();
+    if (mgr.getBackStackEntryCount() == 0) {
+      swapToFragmentView(currentFragment);
+    } else {
+      invalidateOptionsMenu();
+    }
   }
 
   @Override
   public void onPostResume() {
     super.onPostResume();
-    ((Survey) getApplication()).establishDatabaseConnectionListener(this);
-  }
-
-  /**
-   * This creates the WebKit. We need all our values initialized by this point.
-   */
-  private void assignContentView() {
-    setContentView(R.layout.main_screen);
-
-    ActionBar actionBar = getActionBar();
-    actionBar.show();
-
-    ((Survey) getApplication()).establishDatabaseConnectionListener(this);
+    ((Survey) getApplication()).fireDatabaseConnectionListener();
   }
 
   @Override
@@ -1207,7 +1182,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // In the fragment UI, we want to return to not having any
         // instanceId defined.
         // JQueryODKView webkitView = (JQueryODKView)
-        // findViewById(R.id.webkit_view);
+        // findViewById(R.id.webkit);
         // setInstanceId(null);
         // setSectionScreenState(null,null);
         // setAuxillaryHash(null);
@@ -1268,17 +1243,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     } else {
       throw new IllegalStateException("Unrecognized ScreenList type");
-    }
-
-    View frags = findViewById(R.id.main_content);
-    View wkt = findViewById(R.id.webkit_view);
-    if (newScreenType == ScreenList.WEBKIT) {
-      frags.setVisibility(View.GONE);
-      wkt.setVisibility(View.VISIBLE);
-      wkt.invalidate();
-    } else {
-      wkt.setVisibility(View.GONE);
-      frags.setVisibility(View.VISIBLE);
     }
 
     boolean matchingBackStackEntry = false;
@@ -1791,7 +1755,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     }
     if ( responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
-      final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit_view);
+      final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
         runOnUiThread(new Runnable() {
           @Override
@@ -1849,7 +1813,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     WebLogger.getLogger(getAppName()).i(t, "onActivityResult");
-    ODKWebView view = (ODKWebView) findViewById(R.id.webkit_view);
+    ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       try {
