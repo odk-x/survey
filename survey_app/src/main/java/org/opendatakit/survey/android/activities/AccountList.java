@@ -73,7 +73,7 @@ public class AccountList extends BaseListActivity {
     	mAppName = "survey";
     }
     
-    if ( savedInstanceState.containsKey(KEY_AUTHENTICATING)) {
+    if ( savedInstanceState != null && savedInstanceState.containsKey(KEY_AUTHENTICATING)) {
       mAuthenticating = savedInstanceState.getBoolean(KEY_AUTHENTICATING);
     }
     
@@ -260,9 +260,11 @@ public class AccountList extends BaseListActivity {
   protected void gotAuthToken(Bundle bundle) {
     // Set the authentication token and dismiss the dialog.
     String auth_token = bundle.getString(AccountManager.KEY_AUTHTOKEN);
-    
+    String account = bundle.getString(AccountManager.KEY_ACCOUNT_NAME);
+
     PropertiesSingleton props = CommonToolProperties.get(this, mAppName);
 
+    props.setProperty(CommonToolProperties.KEY_ACCOUNT, account);
     props.setProperty(CommonToolProperties.KEY_AUTH, auth_token);
     props.writeProperties();
 

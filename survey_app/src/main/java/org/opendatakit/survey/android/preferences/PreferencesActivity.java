@@ -48,6 +48,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
   private static final String t = "PreferencesActivity";
 
   protected static final int IMAGE_CHOOSER = 0;
+  protected static final int ACCOUNT_CHOOSER = 1;
 
   private ListPreference mServerProtocol;
   private EditTextPreference mServerUrlPreference;
@@ -214,7 +215,8 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
         // TODO: convert this activity into a preferences
         // fragment
         i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, mAppName);
-        startActivity(i);
+        mProps.writeProperties();
+        startActivityForResult(i, ACCOUNT_CHOOSER);
         return true;
       }
     });
@@ -433,6 +435,15 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
       // setting image path
       setSplashPath(sourceImagePath);
+      break;
+    case ACCOUNT_CHOOSER:
+      // update the account
+      mProps = SurveyToolProperties.get(this, mAppName);
+      mProps.readProperties();
+      if (mProps.containsKey(CommonToolProperties.KEY_ACCOUNT)) {
+        mSelectedGoogleAccountPreference.setSummary(mProps.getProperty(
+            CommonToolProperties.KEY_ACCOUNT));
+      }
       break;
     }
   }
