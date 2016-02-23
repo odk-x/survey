@@ -13,7 +13,7 @@
 	<PreferenceCategory android:key="@string/server_preferences" android:title="@string/server_preferences">
 		<ListPreference
 			android:id="@+id/protocol"
-			android:key="protocol"
+			android:key="legacy.protocol"
 			android:title="@string/protocol"
 			android:dialogTitle="@string/change_protocol"
 			android:defaultValue="odk_default"
@@ -22,7 +22,7 @@
 			android:persistent="false" />
 		<EditTextPreference
 			android:id="@+id/server_url"
-			android:key="server_url"
+			android:key="common.legacy_server_url"
 			android:defaultValue="@string/default_server_url"
 			android:title="@string/server_url"
 			android:inputType="textNoSuggestions"
@@ -30,14 +30,14 @@
 			android:persistent="false"/>
 		<EditTextPreference
 			android:id="@+id/username"
-			android:key="username"
+			android:key="common.username"
 			android:title="@string/username"
 			android:inputType="textNoSuggestions"
 			android:dialogTitle="@string/change_username" 
 			android:persistent="false"/>
 		<EditTextPreference
 			android:id="@+id/password"
-			android:key="password"
+			android:key="common.password"
 			android:title="@string/password"
 			android:inputType="textNoSuggestions"
 			android:dialogTitle="@string/change_password" 
@@ -45,13 +45,13 @@
 		<!-- android:password="true" -->
 		<PreferenceScreen
 			android:id="@+id/selected_google_account"
-			android:key="selected_google_account"
+			android:key="common.account"
 			android:defaultValue=""
 			android:title="@string/selected_google_account_text"
 			android:persistent="false" />
 		<EditTextPreference
 			android:id="@+id/formlist_url"
-			android:key="formlist_url"
+			android:key="legacy.formlist_url"
 			android:title="@string/formlist_url"
 			android:inputType="textNoSuggestions"
 			android:defaultValue="@string/default_odk_formlist"
@@ -59,7 +59,7 @@
 			android:persistent="false"/>
 		<EditTextPreference
 			android:id="@+id/submission_url"
-			android:key="submission_url"
+			android:key="legacy.submission_url"
 			android:title="@string/submission_url"
 			android:inputType="textNoSuggestions"
 			android:defaultValue="@string/default_odk_submission"
@@ -69,7 +69,7 @@
 	<PreferenceCategory android:key="@string/client" android:title="@string/client">
 		<ListPreference
 			android:id="@+id/font_size"
-			android:key="font_size"
+			android:key="common.font_size"
 			android:title="@string/font_size"
 			android:dialogTitle="@string/change_font_size"
 			android:defaultValue="21"
@@ -78,16 +78,16 @@
 			android:persistent="false"/>
 		<CheckBoxPreference
 			android:id="@+id/show_splash"
-			android:key="showSplash"
+			android:key="survey.showSplash"
 			android:title="@string/show_splash"
 			android:summary="@string/show_splash_summary" 
 			android:persistent="false"/>
 		<PreferenceScreen
 			android:id="@+id/splash_path"
-			android:key="splashPath"
+			android:key="survey.splashPath"
 			android:defaultValue="@string/default_splash_path"
 			android:title="@string/splash_path"
-			android:dependency="showSplash"
+			android:dependency="survey.showSplash"
 			android:layout="?android:attr/preferenceLayoutChild" 
 			android:persistent="false"/>
 	</PreferenceCategory>
