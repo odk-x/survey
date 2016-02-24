@@ -764,7 +764,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
     // must be at the beginning of any activity that can be called from an
     // external intent
-    setAppName("survey");
+    setAppName("tables");
     Uri uri = getIntent().getData();
     Uri formUri = null;
 
