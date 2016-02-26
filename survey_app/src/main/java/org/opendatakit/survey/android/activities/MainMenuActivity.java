@@ -1393,11 +1393,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   public void setSectionScreenState(String screenPath, String state) {
     if (screenPath == null) {
       WebLogger.getLogger(getAppName()).e(t,
-          "pushSectionScreenState: NULL currentScreen.screenPath!");
+          "setSectionScreenState: NULL currentScreen.screenPath!");
       return;
     } else {
       String[] splits = screenPath.split("/");
       String sectionName = splits[0] + "/";
+
+      WebLogger.getLogger(getAppName()).e(t,
+          "setSectionScreenState( " + screenPath + ", " + state + ")");
 
       SectionScreenStateHistory lastSection;
       if (sectionStateScreenHistory.size() == 0) {
