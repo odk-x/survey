@@ -75,12 +75,7 @@ dependencies {
                 version: (useLatestCommon ? latestVersion : commonSnapshot), ext: 'aar')
     }
 
-    if (playServicesPath.exists() && gradle.useLocal) { // Local project is favoured
-        compile project(playServicesName)
-    } else {
-        compile(group: groupId, name: playServicesArtifactName,
-                version: (useLatestPlayServices ? latestVersion : playServicesSnapshot), ext: 'aar')
-    }
+    compile 'com.google.android.gms:play-services:6.5.87'
 
     // Testing dependencies
     androidTestCompile 'junit:junit:4.12'
