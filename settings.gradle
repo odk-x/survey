@@ -42,8 +42,3 @@ if (commonProjectPath.exists() && gradle.ext.useLocal) { // check if local commo
     include commonProjectName
     project(commonProjectName).setProjectDir(commonProjectPath) // set local location
 }
-
-if (playServicesPath.exists() && gradle.ext.useLocal) { // check if local common project is present
-    include playServicesName
-    project(playServicesName).setProjectDir(playServicesPath) // set local location
-}
