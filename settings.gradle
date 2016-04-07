@@ -1,4 +1,4 @@
-gradle.ext.gradleConfigVersion = 35
+gradle.ext.gradleConfigVersion = 36
 
 if ( !gradle.ext.has('workspacePath') ) {
 	def env = System.getProperties();
