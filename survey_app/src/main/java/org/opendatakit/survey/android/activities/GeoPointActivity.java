@@ -19,6 +19,7 @@ import java.util.List;
 
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 
@@ -52,7 +53,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( mAppName == null || mAppName.length() == 0 ) {
-      mAppName = "survey";
+      mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
     WebLogger.getLogger(mAppName).i(t, t + ".onCreate appName=" + mAppName);
 

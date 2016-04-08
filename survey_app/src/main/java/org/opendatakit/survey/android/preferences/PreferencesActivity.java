@@ -18,6 +18,7 @@ import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.utilities.ODKCursorUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.activities.AccountList;
@@ -73,7 +74,7 @@ public class PreferencesActivity extends PreferenceActivity implements OnPrefere
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if (mAppName == null || mAppName.length() == 0) {
-      mAppName = "survey";
+      mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
     // TODO: HACK HACK HACK HACK
     // TODO: HACK HACK HACK HACK

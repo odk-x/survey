@@ -21,6 +21,7 @@ import org.opendatakit.common.android.activities.BaseListActivity;
 import org.opendatakit.common.android.fragment.AlertDialogFragment;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
@@ -70,7 +71,7 @@ public class AccountList extends BaseListActivity {
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( mAppName == null || mAppName.length() == 0 ) {
-    	mAppName = "survey";
+    	mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
     
     if ( savedInstanceState != null && savedInstanceState.containsKey(KEY_AUTHENTICATING)) {
