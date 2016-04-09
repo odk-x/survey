@@ -16,6 +16,7 @@ package org.opendatakit.survey.android.preferences;
 
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
@@ -42,7 +43,7 @@ public class AdminPreferencesActivity extends PreferenceActivity implements OnPr
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( mAppName == null || mAppName.length() == 0 ) {
-    	mAppName = "survey";
+    	mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
 
     setTitle(mAppName + " > " + getString(R.string.admin_preferences));

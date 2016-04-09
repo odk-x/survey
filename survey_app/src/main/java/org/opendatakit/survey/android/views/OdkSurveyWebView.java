@@ -1,6 +1,7 @@
 package org.opendatakit.survey.android.views;
 
 import android.content.Context;
+import android.os.Looper;
 import android.util.AttributeSet;
 import org.opendatakit.common.android.activities.IOdkDataActivity;
 import org.opendatakit.common.android.views.ODKWebView;
@@ -45,13 +46,23 @@ public class OdkSurveyWebView extends ODKWebView {
 
     if ( baseUrl != null ) {
       // for Survey, we do care about the URL
-      String fullUrl = baseUrl + hash;
+      final String fullUrl = baseUrl + hash;
 
       resetLoadPageStatus(fullUrl);
 
       log.i(t, "loadPage: full reload: " + fullUrl);
 
-      loadUrl(fullUrl);
+      // Ensure that this is run on the UI thread
+      if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+        post(new Runnable() {
+          public void run() {
+            loadUrl(fullUrl);
+          }
+        });
+      } else {
+        loadUrl(fullUrl);
+      }
+
     } else if ( hasPageFrameworkFinishedLoading() ) {
       log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
       gotoUrlHash(hash);
@@ -73,7 +84,7 @@ public class OdkSurveyWebView extends ODKWebView {
 
     if ( baseUrl != null ) {
       // for Survey, we do care about the URL
-      String fullUrl = baseUrl + hash;
+      final String fullUrl = baseUrl + hash;
 
       if ( shouldForceLoadDuringReload() ||
           hasPageFrameworkFinishedLoading() || !fullUrl.equals(getLoadPageUrl()) ) {
@@ -82,7 +93,17 @@ public class OdkSurveyWebView extends ODKWebView {
 
         log.i(t, "reloadPage: full reload: " + fullUrl);
 
-        loadUrl(fullUrl);
+        // Ensure that this is run on the UI thread
+        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
+          post(new Runnable() {
+            public void run() {
+              loadUrl(fullUrl);
+            }
+          });
+        } else {
+          loadUrl(fullUrl);
+        }
+
       } else {
         log.w(t, "reloadPage: framework in process of loading -- ignoring request!");
       }

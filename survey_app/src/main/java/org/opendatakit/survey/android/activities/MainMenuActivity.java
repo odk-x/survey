@@ -760,7 +760,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
       // must be at the beginning of any activity that can be called from an
       // external intent
-      setAppName("survey");
+      setAppName(ODKFileUtils.getOdkDefaultAppName());
       Uri uri = getIntent().getData();
       Uri formUri = null;
 

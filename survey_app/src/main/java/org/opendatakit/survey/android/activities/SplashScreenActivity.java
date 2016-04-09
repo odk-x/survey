@@ -86,7 +86,7 @@ public class SplashScreenActivity extends BaseActivity {
     // external intent
     appName = getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
     if ( appName == null ) {
-      appName = "survey";
+      appName = ODKFileUtils.getOdkDefaultAppName();
     }
 
     Uri uri = getIntent().getData();

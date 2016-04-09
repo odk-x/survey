@@ -166,7 +166,7 @@
 <string name="shortcut_name">ODK Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
-<string name="configuring_app">Configuring ODK Survey &#8230;</string>
+<string name="configuring_app">Configuring %1$s &#8230;</string>
 <string name="expansion_unzipping_begins">Unzipping resources. Scanning zip directory.</string>
 <string name="expansion_unzipping_without_detail">Unzipping resources. Extracting %1$s (%2$d of %3$d)</string>
 <string name="expansion_create_dir_detail">Creating directory</string>
