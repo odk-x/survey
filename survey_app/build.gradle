@@ -1,0 +1,122 @@
+/**************************************************************************************************
+                                        GRADLE CONFIG
+ *************************************************************************************************/
+
+if ((new File(gradle.local)).exists()) {
+    apply from: gradle.local
+} else {
+    apply from: gradle.remote
+}
+
+applicationScripts.each {
+    apply from: it
+}
+
+apply plugin: 'com.android.application'
+
+android {
+    // The following are set in the common.gradle file
+    compileSdkVersion(compileVersion)
+    buildToolsVersion(buildTools)
+
+    defaultConfig {
+        applicationId(groupId + surveyName)
+        minSdkVersion(minVersion)
+        targetSdkVersion(targetVersion)
+        versionCode(releaseVersionCode)
+        versionName(versionCodeName)
+    }
+
+    productFlavors {
+        demo {
+        }
+
+        master {
+        }
+
+        snapshot {
+        }
+
+        uitest {
+        }
+    }
+
+    signingConfigs {
+        release {
+            if (shouldSign) {
+                storeFile file(signStoreFilePath)
+                storePassword signStorePass
+                keyAlias signKeyAlias
+                keyPassword signKeyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled(minify)
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+
+            if (shouldSign) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            debuggable(true)
+            testCoverageEnabled(testCoverage) // Allows AndroidTest JaCoCo reports to be generated
+        }
+    }
+
+    packagingOptions { // Pick first occurrence of any files that cause conflicts, as defined in common.gradle
+        packageList.each {
+            pickFirst it
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility javaVersion
+        targetCompatibility javaVersion
+    }
+}
+
+configurations.all {
+  resolutionStrategy {
+    cacheDynamicVersionsFor(0, 'seconds')
+    cacheChangingModulesFor(0, 'seconds')
+  }
+}
+
+dependencies {
+    compile fileTree(include: '*.jar', dir: 'libs')
+
+    if (libraryProjectPath.exists() && gradle.useLocal) { // Local project is favoured
+        compile project(libraryProjectName)
+    } else {
+        demoCompile(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
+                version: latestVersion, ext: 'aar')
+        masterCompile(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
+                version: latestVersion, ext: 'aar')
+        snapshotCompile(group: groupId, name: librarySnapshotArtifactName,
+                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        uitestCompile(group: groupId, name: librarySnapshotArtifactName,
+                      classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+    }
+
+    if (commonProjectPath.exists() && gradle.useLocal) { // Local project is favoured
+        compile project(commonProjectName)
+    } else {
+        demoCompile(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
+                version: latestVersion, ext: 'aar')
+        masterCompile(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
+                version: latestVersion, ext: 'aar')
+        snapshotCompile(group: groupId, name: commonSnapshotArtifactName,
+                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        uitestCompile(group: groupId, name: commonSnapshotArtifactName,
+                      classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+    }
+
+    compile 'com.google.android.gms:play-services:' + gpsVersion
+
+    // Testing dependencies
+    androidTestCompile 'junit:junit:4.12'
+}

@@ -1,0 +1,44 @@
+gradle.ext.gradleConfigVersion = 39
+
+if ( !gradle.ext.has('workspacePath') ) {
+	def env = System.getProperties();
+	logger.warn("survey/settings.gradle System.getProperties().stringPropertyNames(): " + env.stringPropertyNames());
+    def path = System.getProperty('com.android.studio.gradle.project.path');
+    if ( path != null ) {
+        logger.warn("survey/settings.gradle Found value for System.getProperty('com.android.studio.gradle.project.path')");
+        gradle.ext.workspacePath = (new File(path)).getParentFile().getAbsolutePath();
+    } else {
+        logger.warn("survey/settings.gradle No value found for System.getProperty('com.android.studio.gradle.project.path')");
+        gradle.ext.workspacePath = new File("..").getAbsolutePath();
+    }
+}
+
+logger.warn('survey/settings.gradle -- gradle.ext.workspacePath: ' + gradle.ext.workspacePath)
+
+gradle.ext.local = gradle.ext.workspacePath + '/gradle-config/remote.gradle'
+gradle.ext.remote = 'https://raw.githubusercontent.com/opendatakit/gradle-config/' + gradle.ext.gradleConfigVersion + '/remote.gradle'
+gradle.ext.useLocal = true // set to false to always build against remote artifacts
+
+if ((new File(gradle.ext.local)).exists()) {
+    gradle.ext.useLocalPaths = true
+    apply from: gradle.ext.local
+} else {
+    gradle.ext.useLocalPaths = false
+    apply from: gradle.ext.remote
+}
+
+settingsScripts.each {
+    apply from: it
+}
+
+include(surveyProjectChild)
+
+if (libraryProjectPath.exists() && gradle.ext.useLocal) { // check if local library project is present
+    include libraryProjectName
+    project(libraryProjectName).setProjectDir(libraryProjectPath) // set local location
+}
+
+if (commonProjectPath.exists() && gradle.ext.useLocal) { // check if local common project is present
+    include commonProjectName
+    project(commonProjectName).setProjectDir(commonProjectPath) // set local location
+}
