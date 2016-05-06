@@ -41,6 +41,7 @@ import org.opendatakit.common.android.activities.IOdkDataActivity;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
+import org.opendatakit.database.OdkDbSerializedInterface;
 import org.opendatakit.database.service.OdkDbHandle;
 import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.database.service.TableHealthInfo;
@@ -433,7 +434,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   public void scanForConflictAllTables() {
     
-    OdkDbInterface db = ((Survey) getApplication()).getDatabase();
+    OdkDbSerializedInterface db = ((Survey) getApplication()).getDatabase();
     if ( db != null ) {
       List<TableHealthInfo> info;
       OdkDbHandle dbHandle = null;
@@ -1790,7 +1791,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public OdkDbInterface getDatabase() {
+  public OdkDbSerializedInterface getDatabase() {
     return ((CommonApplication) getApplication()).getDatabase();
   }
 

@@ -21,7 +21,6 @@ import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.views.*;
-import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 
