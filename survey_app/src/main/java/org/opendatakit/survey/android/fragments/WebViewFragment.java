@@ -19,7 +19,7 @@ import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.common.android.views.*;
-import org.opendatakit.database.service.OdkDbInterface;
+import org.opendatakit.database.OdkDbSerializedInterface;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 
@@ -147,7 +147,7 @@ public class WebViewFragment extends Fragment implements ICallbackFragment, Data
   }
 
   @Override
-  public OdkDbInterface getDatabase() {
+  public OdkDbSerializedInterface getDatabase() {
     return ((CommonApplication) this.getActivity().getApplication()).getDatabase();
   }
 

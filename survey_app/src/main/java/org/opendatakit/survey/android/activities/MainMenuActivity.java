@@ -40,7 +40,7 @@ import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander
 import org.opendatakit.common.android.views.ICallbackFragment;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.service.OdkDbHandle;
-import org.opendatakit.database.service.OdkDbInterface;
+import org.opendatakit.database.OdkDbSerializedInterface;
 import org.opendatakit.database.service.TableHealthInfo;
 import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
@@ -449,7 +449,7 @@ public class MainMenuActivity extends BaseActivity implements ODKActivity {
 
   public void scanForConflictAllTables() {
     
-    OdkDbInterface db = ((Survey) getApplication()).getDatabase();
+    OdkDbSerializedInterface db = ((Survey) getApplication()).getDatabase();
     if ( db != null ) {
       List<TableHealthInfo> info;
       OdkDbHandle dbHandle = null;
