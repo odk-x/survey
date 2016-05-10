@@ -68,7 +68,4 @@ public interface IOdkSurveyActivity extends IOdkCommonActivity, IOdkDataActivity
 
   // for FormChooserListFragment
   public void chooseForm(Uri formUri);
-
-  // for InstanceUploaderTableChooserListFragment
-  public void chooseInstanceUploaderTable(String tableId);
 }

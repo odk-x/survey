@@ -22,7 +22,7 @@
 		android:layout_height="wrap_content"
 		android:gravity="center_vertical"
 		android:layout_alignParentTop="true"
-		android:drawableLeft="@+drawable/ic_action_av_upload"
+		android:drawableLeft="@drawable/ic_action_av_upload"
 		android:textAppearance="?android:attr/textAppearanceLarge"/>
 	<TextView
 		android:id="@+id/text3"
