@@ -22,6 +22,9 @@ import java.util.List;
 
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
+import org.opendatakit.common.android.application.AppAwareApplication;
+import org.opendatakit.common.android.application.CommonApplication;
+import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.DependencyChecker;
@@ -29,7 +32,6 @@ import org.opendatakit.common.android.utilities.ODKFileUtils;
 import org.opendatakit.common.android.utilities.UrlUtils;
 import org.opendatakit.common.android.utilities.WebLogger;
 import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.logic.SurveyToolProperties;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -154,18 +156,26 @@ public class SplashScreenActivity extends BaseActivity {
       return;
     }
 
-    PropertiesSingleton props = SurveyToolProperties.get(getApplicationContext(), appName);
+    PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
 
-    Boolean firstRun = props.getBooleanProperty(SurveyToolProperties.KEY_FIRST_RUN);
-    Boolean showSplash = props.getBooleanProperty(SurveyToolProperties.KEY_SHOW_SPLASH);
+    String toolFirstRunKey = PropertiesSingleton.toolFirstRunPropertyName
+        (((AppAwareApplication) getApplication()).getToolName());
 
-    String splashPath = props.getProperty(SurveyToolProperties.KEY_SPLASH_PATH);
+    String toolVersionKey = PropertiesSingleton.toolVersionPropertyName
+        (((AppAwareApplication) getApplication()).getToolName());
+
+
+
+    Boolean firstRun = props.getBooleanProperty(toolFirstRunKey);
+    Boolean showSplash = props.getBooleanProperty(CommonToolProperties.KEY_SHOW_SPLASH);
+
+    String splashPath = props.getProperty(CommonToolProperties.KEY_SPLASH_PATH);
 
     // if you've increased version code, then update the version number and set firstRun to true
-    String sKeyLastVer = props.getProperty(SurveyToolProperties.KEY_LAST_VERSION);
+    String sKeyLastVer = props.getProperty(toolVersionKey);
     long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
     if (keyLastVer < packageInfo.versionCode) {
-      props.setProperty(SurveyToolProperties.KEY_LAST_VERSION, Integer.toString(packageInfo.versionCode));
+      props.setProperty(toolVersionKey, Integer.toString(packageInfo.versionCode));
       props.writeProperties();
 
       firstRun = true;
@@ -173,7 +183,7 @@ public class SplashScreenActivity extends BaseActivity {
 
     // do all the first run things
     if (((firstRun == null) ? true : firstRun) || ((showSplash == null) ? false : showSplash)) {
-      props.setBooleanProperty(SurveyToolProperties.KEY_FIRST_RUN, false);
+      props.setBooleanProperty(toolFirstRunKey, false);
       props.writeProperties();
       startSplashScreen(splashPath);
     } else {

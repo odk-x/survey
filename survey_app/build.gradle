@@ -86,6 +86,12 @@ configurations.all {
   }
 }
 
+allprojects {
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:deprecation" << "-Xlint:unchecked"
+    }
+}
+
 dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
 
