@@ -22,11 +22,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import android.app.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.application.CommonApplication;
+import org.opendatakit.common.android.data.OrderedColumns;
+import org.opendatakit.common.android.data.UserTable;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.logic.CommonToolProperties;
@@ -42,11 +45,11 @@ import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.OdkDbSerializedInterface;
 import org.opendatakit.database.service.OdkDbHandle;
-import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.database.service.TableHealthInfo;
 import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
+import org.opendatakit.survey.android.fragments.BackPressWebkitConfirmationDialogFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
 import org.opendatakit.survey.android.fragments.InitializationFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
@@ -54,14 +57,8 @@ import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.SurveyDataExecutorProcessor;
 
 import android.annotation.SuppressLint;
-import android.app.ActionBar;
 import android.app.ActionBar.Tab;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.FragmentManager.BackStackEntry;
-import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
@@ -134,6 +131,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private static final int SYNC_ACTIVITY_CODE = 22;
   private static final int CONFLICT_ACTIVITY_CODE = 23;
   private static final int APP_PROPERTIES_ACTIVITY_CODE = 24;
+
+  private static final String BACKPRESS_DIALOG_TAG = "backPressDialog";
 
   private static final boolean EXIT = true;
 
@@ -1028,6 +1027,94 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void onBackPressed() {
+    if ( (currentFragment == ScreenList.WEBKIT) &&
+        getInstanceId() != null && getCurrentForm() != null &&
+        getCurrentForm().tableId != null) {
+
+      // try to retrieve the active dialog
+      DialogFragment dialog = (DialogFragment)
+          getFragmentManager().findFragmentByTag(BACKPRESS_DIALOG_TAG);
+
+      if (dialog != null && dialog.getDialog() != null) {
+        // as-is
+      } else {
+        dialog = new BackPressWebkitConfirmationDialogFragment();
+      }
+      dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
+    } else {
+      popBackStack();
+    }
+  }
+
+  // for back press suppression
+  // trigger save of everything...
+  @Override
+  public void saveAllAsIncompleteThenPopBackStack() {
+    String tableId = this.getCurrentForm().tableId;
+    String rowId = this.getInstanceId();
+
+    if ( rowId != null && tableId != null ) {
+      OdkDbHandle dbHandleName = null;
+      try {
+        dbHandleName = this.getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = this.getDatabase()
+            .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
+        UserTable table = this.getDatabase()
+            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, null, rowId);
+        // this should not be possible, but if somehow we exit before anything is written
+        // clear instanceId if the row no longer exists
+        if ( table.getNumberOfRows() == 0 ) {
+          setInstanceId(null);
+        }
+      } catch (RemoteException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
+      } finally {
+        if ( dbHandleName != null ) {
+          try {
+            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+          } catch (RemoteException e) {
+            // ignore
+            WebLogger.getLogger(getAppName()).printStackTrace(e);
+          }
+        }
+      }
+    }
+    popBackStack();
+  }
+
+  // trigger resolve UI...
+  @Override
+  public void resolveAllCheckpointsThenPopBackStack() {
+    String tableId = this.getCurrentForm().tableId;
+    String rowId = this.getInstanceId();
+
+    if ( rowId != null && tableId != null ) {
+      OdkDbHandle dbHandleName = null;
+      try {
+        dbHandleName = this.getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = this.getDatabase()
+            .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
+        UserTable table = this.getDatabase()
+            .deleteAllCheckpointRowsWithId(getAppName(), dbHandleName, tableId, cols, rowId);
+        // clear instanceId if the row no longer exists
+        if ( table.getNumberOfRows() == 0 ) {
+          setInstanceId(null);
+        }
+      } catch (RemoteException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
+      } finally {
+        if ( dbHandleName != null ) {
+          try {
+            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+          } catch (RemoteException e) {
+            // ignore
+            WebLogger.getLogger(getAppName()).printStackTrace(e);
+          }
+        }
+      }
+    }
     popBackStack();
   }
 
