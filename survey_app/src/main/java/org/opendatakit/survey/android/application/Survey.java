@@ -38,9 +38,6 @@ public class Survey extends CommonApplication {
   @SuppressLint("NewApi")
   @Override
   public void onCreate() {
-    if (singleton == null) {
-      PropertiesSingleton.setToolStartedProperty(this.getBaseContext(), this.getToolName());
-    }
     singleton = this;
 
     super.onCreate();
