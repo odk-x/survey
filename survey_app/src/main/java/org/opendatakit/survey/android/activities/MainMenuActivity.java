@@ -22,11 +22,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
+import android.app.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.application.CommonApplication;
+import org.opendatakit.common.android.data.OrderedColumns;
+import org.opendatakit.common.android.data.UserTable;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.logic.CommonToolProperties;
@@ -37,59 +40,38 @@ import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
 import org.opendatakit.common.android.utilities.*;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
-import org.opendatakit.common.android.activities.IOdkDataActivity;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
 import org.opendatakit.database.OdkDbSerializedInterface;
 import org.opendatakit.database.service.OdkDbHandle;
-import org.opendatakit.database.service.OdkDbInterface;
 import org.opendatakit.database.service.TableHealthInfo;
 import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
-import org.opendatakit.survey.android.fragments.BackgroundTaskFragment;
+import org.opendatakit.survey.android.fragments.BackPressWebkitConfirmationDialogFragment;
 import org.opendatakit.survey.android.fragments.FormChooserListFragment;
-import org.opendatakit.survey.android.fragments.FormDeleteListFragment;
-import org.opendatakit.survey.android.fragments.FormDownloadListFragment;
 import org.opendatakit.survey.android.fragments.InitializationFragment;
-import org.opendatakit.survey.android.fragments.InstanceUploaderListFragment;
-import org.opendatakit.survey.android.fragments.InstanceUploaderTableChooserListFragment;
 import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.SurveyDataExecutorProcessor;
-import org.opendatakit.survey.android.logic.SurveyToolProperties;
-import org.opendatakit.survey.android.preferences.AdminPreferencesActivity;
-import org.opendatakit.survey.android.preferences.PreferencesActivity;
 
 import android.annotation.SuppressLint;
-import android.app.ActionBar;
 import android.app.ActionBar.Tab;
-import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Fragment;
-import android.app.FragmentManager;
 import android.app.FragmentManager.BackStackEntry;
-import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.RemoteException;
-import android.text.InputType;
-import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
@@ -97,15 +79,14 @@ import android.widget.Toast;
  * Responsible for displaying buttons to launch the major activities. Launches
  * some activities based on returns of others.
  *
- * @author Carl Hartung (carlhartung@gmail.com)
- * @author Yaw Anokwa (yanokwa@gmail.com)
+ * @author mitchellsundt@gmail.com
  */
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
   private static final String t = "MainMenuActivity";
 
   public static enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, FORM_DOWNLOADER, FORM_DELETER, WEBKIT, INSTANCE_UPLOADER_TABLE_CHOOSER, INSTANCE_UPLOADER, INITIALIZATION_DIALOG, ABOUT_MENU
+    MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
@@ -139,20 +120,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   // menu options
 
   private static final int MENU_FILL_FORM = Menu.FIRST;
-  private static final int MENU_PULL_FORMS = Menu.FIRST + 1;
-  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 2;
-  private static final int MENU_MANAGE_FORMS = Menu.FIRST + 3;
-  private static final int MENU_PREFERENCES = Menu.FIRST + 4;
-  private static final int MENU_ADMIN_PREFERENCES = Menu.FIRST + 5;
-  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 6;
-  private static final int MENU_PUSH_FORMS = Menu.FIRST + 7;
-  private static final int MENU_ABOUT = Menu.FIRST + 8;
+  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 1;
+  private static final int MENU_PREFERENCES = Menu.FIRST + 2;
+  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 3;
+  private static final int MENU_ABOUT = Menu.FIRST + 4;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
   private static final int INTERNAL_ACTIVITY_CODE = 21;
   private static final int SYNC_ACTIVITY_CODE = 22;
   private static final int CONFLICT_ACTIVITY_CODE = 23;
+  private static final int APP_PROPERTIES_ACTIVITY_CODE = 24;
+
+  private static final String BACKPRESS_DIALOG_TAG = "backPressDialog";
 
   private static final boolean EXIT = true;
 
@@ -731,19 +711,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     return this.refId;
   }
 
-  public BackgroundTaskFragment getBackgroundFragment() {
-    Fragment f = getFragmentManager().findFragmentByTag("background");
-    if ( f == null ) {
-      f = new BackgroundTaskFragment();
-      FragmentTransaction trans = getFragmentManager().beginTransaction();
-      trans.add(f, "background");
-      trans.commit();
-    }
-    BackgroundTaskFragment bf = (BackgroundTaskFragment) f;
-    return bf;
-  }
-  
-  
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -755,8 +722,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       // create it programmatically because if we place it in the
       // layout XML, it will be recreated with each screen rotation
       // and we don't want that!!!
-      Fragment f = getBackgroundFragment();
-
       mPropertyManager = new PropertyManager(this);
 
       // must be at the beginning of any activity that can be called from an
@@ -933,7 +898,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
-    PropertiesSingleton props = SurveyToolProperties.get(this, getAppName());
+    PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
 
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
@@ -944,37 +909,11 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
-      // Using a file for this work now
-      String get = props.getProperty(SurveyToolProperties.KEY_GET_BLANK);
-      if (get.equalsIgnoreCase("true")) {
-        item = menu.add(Menu.NONE, MENU_PULL_FORMS, Menu.NONE, getString(R.string.get_forms));
-        item.setIcon(R.drawable.ic_action_av_download).setShowAsAction(showOption);
+      item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
+      item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
 
-        item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
-        item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
-      }
-
-      String send = props.getProperty(SurveyToolProperties.KEY_SEND_FINALIZED);
-      if (send.equalsIgnoreCase("true")) {
-        item = menu.add(Menu.NONE, MENU_PUSH_FORMS, Menu.NONE, getString(R.string.send_data));
-        item.setIcon(R.drawable.ic_action_av_upload).setShowAsAction(showOption);
-      }
-
-      String manage = props.getProperty(SurveyToolProperties.KEY_MANAGE_FORMS);
-      if (manage.equalsIgnoreCase("true")) {
-        item = menu.add(Menu.NONE, MENU_MANAGE_FORMS, Menu.NONE, getString(R.string.manage_files));
-        item.setIcon(R.drawable.trash).setShowAsAction(showOption);
-      }
-
-      String settings = props.getProperty(SurveyToolProperties.KEY_ACCESS_SETTINGS);
-      if (settings.equalsIgnoreCase("true")) {
-        item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE,
-            getString(R.string.general_preferences));
-        item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
-      }
-      item = menu.add(Menu.NONE, MENU_ADMIN_PREFERENCES, Menu.NONE,
-          getString(R.string.admin_preferences));
-      item.setIcon(R.drawable.ic_action_device_access_accounts).setShowAsAction(showOption);
+      item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE, getString(R.string.general_preferences));
+      item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
       item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
@@ -992,9 +931,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (item.getItemId() == MENU_FILL_FORM) {
       swapToFragmentView(ScreenList.FORM_CHOOSER);
       return true;
-    } else if (item.getItemId() == MENU_PULL_FORMS) {
-      swapToFragmentView(ScreenList.FORM_DOWNLOADER);
-      return true;
     } else if (item.getItemId() == MENU_CLOUD_FORMS) {
       try {
         Intent syncIntent = new Intent();
@@ -1011,34 +947,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
       }
       return true;
-    } else if (item.getItemId() == MENU_MANAGE_FORMS) {
-      swapToFragmentView(ScreenList.FORM_DELETER);
-      return true;
     } else if (item.getItemId() == MENU_EDIT_INSTANCE) {
       swapToFragmentView(ScreenList.WEBKIT);
       return true;
-    } else if (item.getItemId() == MENU_PUSH_FORMS) {
-      swapToFragmentView(ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER);
-      return true;
     } else if (item.getItemId() == MENU_PREFERENCES) {
-      // PreferenceFragment missing from support library...
-      Intent ig = new Intent(this, PreferencesActivity.class);
-      // TODO: convert this activity into a preferences fragment
-      ig.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-      startActivity(ig);
-      return true;
-    } else if (item.getItemId() == MENU_ADMIN_PREFERENCES) {
-      PropertiesSingleton props = SurveyToolProperties.get(this, getAppName());
-
-      String pw = props.getProperty(CommonToolProperties.KEY_ADMIN_PW);
-      if (pw == null || "".equalsIgnoreCase(pw)) {
-        Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
-        // TODO: convert this activity into a preferences fragment
-        i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-        startActivity(i);
-      } else {
-        createPasswordDialog();
-      }
+      // launch the intent in Services
+      Intent preferenceIntent = new Intent();
+      preferenceIntent.setComponent(new ComponentName(IntentConsts.AppProperties.APPLICATION_NAME,
+          IntentConsts.AppProperties.ACTIVITY_NAME));
+      preferenceIntent.setAction(Intent.ACTION_DEFAULT);
+      Bundle bundle = new Bundle();
+      bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
+      preferenceIntent.putExtras(bundle);
+      this.startActivityForResult(preferenceIntent, APP_PROPERTIES_ACTIVITY_CODE);
       return true;
     } else if (item.getItemId() == MENU_ABOUT) {
       swapToFragmentView(ScreenList.ABOUT_MENU);
@@ -1049,23 +970,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void chooseForm(Uri formUri) {
-
     Intent i = new Intent(Intent.ACTION_EDIT, formUri, this, MainMenuActivity.class);
     startActivityForResult(i, INTERNAL_ACTIVITY_CODE);
-  }
-
-  @Override
-  public void chooseInstanceUploaderTable(String tableId) {
-    boolean success = true;
-
-    // TODO: Verify there are no checkpoint saves on this tableId
-    // TODO: Verify there are no checkpoint saves on this tableId
-    // TODO: Verify there are no checkpoint saves on this tableId
-    // TODO: Verify there are no checkpoint saves on this tableId
-    // TODO: Verify there are no checkpoint saves on this tableId
-    setUploadTableId(tableId);
-
-    swapToFragmentView(ScreenList.INSTANCE_UPLOADER);
   }
 
   private void createErrorDialog(String errorMsg, final boolean shouldExit) {
@@ -1096,55 +1002,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     mAlertDialog.show();
   }
 
-  protected void createPasswordDialog() {
-    if (mAlertDialog != null) {
-      mAlertDialog.dismiss();
-      mAlertDialog = null;
-    }
-    final AlertDialog passwordDialog = new AlertDialog.Builder(this).create();
-
-    passwordDialog.setTitle(getString(R.string.enter_admin_password));
-    final EditText input = new EditText(this);
-    input.setInputType(InputType.TYPE_TEXT_VARIATION_PASSWORD);
-    input.setTransformationMethod(PasswordTransformationMethod.getInstance());
-    passwordDialog.setView(input, 20, 10, 20, 10);
-
-    passwordDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok),
-            new DialogInterface.OnClickListener() {
-              public void onClick(DialogInterface dialog, int whichButton) {
-                PropertiesSingleton props = SurveyToolProperties.get(MainMenuActivity.this, getAppName());
-
-                String value = input.getText().toString();
-                String pw = props.getProperty(CommonToolProperties.KEY_ADMIN_PW);
-                if (pw != null && pw.compareTo(value) == 0) {
-                  Intent i = new Intent(getApplicationContext(), AdminPreferencesActivity.class);
-                  // TODO: convert this activity into a preferences fragment
-                  i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-                  startActivity(i);
-                  input.setText("");
-                  passwordDialog.dismiss();
-                } else {
-                  Toast.makeText(MainMenuActivity.this, getString(R.string.admin_password_incorrect),
-                          Toast.LENGTH_SHORT).show();
-                }
-              }
-            });
-
-    passwordDialog.setButton(AlertDialog.BUTTON_NEGATIVE, getString(R.string.cancel),
-            new DialogInterface.OnClickListener() {
-
-              public void onClick(DialogInterface dialog, int which) {
-                input.setText("");
-                return;
-              }
-            });
-
-    passwordDialog.getWindow().setSoftInputMode(
-            WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-    mAlertDialog = passwordDialog;
-    mAlertDialog.show();
-  }
-
   private void popBackStack() {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
@@ -1170,6 +1027,94 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void onBackPressed() {
+    if ( (currentFragment == ScreenList.WEBKIT) &&
+        getInstanceId() != null && getCurrentForm() != null &&
+        getCurrentForm().tableId != null) {
+
+      // try to retrieve the active dialog
+      DialogFragment dialog = (DialogFragment)
+          getFragmentManager().findFragmentByTag(BACKPRESS_DIALOG_TAG);
+
+      if (dialog != null && dialog.getDialog() != null) {
+        // as-is
+      } else {
+        dialog = new BackPressWebkitConfirmationDialogFragment();
+      }
+      dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
+    } else {
+      popBackStack();
+    }
+  }
+
+  // for back press suppression
+  // trigger save of everything...
+  @Override
+  public void saveAllAsIncompleteThenPopBackStack() {
+    String tableId = this.getCurrentForm().tableId;
+    String rowId = this.getInstanceId();
+
+    if ( rowId != null && tableId != null ) {
+      OdkDbHandle dbHandleName = null;
+      try {
+        dbHandleName = this.getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = this.getDatabase()
+            .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
+        UserTable table = this.getDatabase()
+            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, null, rowId);
+        // this should not be possible, but if somehow we exit before anything is written
+        // clear instanceId if the row no longer exists
+        if ( table.getNumberOfRows() == 0 ) {
+          setInstanceId(null);
+        }
+      } catch (RemoteException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
+      } finally {
+        if ( dbHandleName != null ) {
+          try {
+            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+          } catch (RemoteException e) {
+            // ignore
+            WebLogger.getLogger(getAppName()).printStackTrace(e);
+          }
+        }
+      }
+    }
+    popBackStack();
+  }
+
+  // trigger resolve UI...
+  @Override
+  public void resolveAllCheckpointsThenPopBackStack() {
+    String tableId = this.getCurrentForm().tableId;
+    String rowId = this.getInstanceId();
+
+    if ( rowId != null && tableId != null ) {
+      OdkDbHandle dbHandleName = null;
+      try {
+        dbHandleName = this.getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = this.getDatabase()
+            .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
+        UserTable table = this.getDatabase()
+            .deleteAllCheckpointRowsWithId(getAppName(), dbHandleName, tableId, cols, rowId);
+        // clear instanceId if the row no longer exists
+        if ( table.getNumberOfRows() == 0 ) {
+          setInstanceId(null);
+        }
+      } catch (RemoteException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
+      } finally {
+        if ( dbHandleName != null ) {
+          try {
+            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+          } catch (RemoteException e) {
+            // ignore
+            WebLogger.getLogger(getAppName()).printStackTrace(e);
+          }
+        }
+      }
+    }
     popBackStack();
   }
 
@@ -1210,27 +1155,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       if (newFragment == null) {
         newFragment = new InitializationFragment();
       }
-    } else if (newScreenType == ScreenList.FORM_DELETER) {
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new FormDeleteListFragment();
-      }
-    } else if (newScreenType == ScreenList.FORM_DOWNLOADER) {
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new FormDownloadListFragment();
-      }
-    } else if (newScreenType == ScreenList.INSTANCE_UPLOADER_TABLE_CHOOSER) {
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new InstanceUploaderTableChooserListFragment();
-      }
-    } else if (newScreenType == ScreenList.INSTANCE_UPLOADER) {
-      newFragment = mgr.findFragmentByTag(newScreenType.name());
-      if (newFragment == null) {
-        newFragment = new InstanceUploaderListFragment();
-      }
-      ((InstanceUploaderListFragment) newFragment).changeUploadTableId();
     } else if (newScreenType == ScreenList.WEBKIT) {
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
@@ -1662,7 +1586,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
       if (valueMap != null) {
         Bundle b;    
-        PropertiesSingleton props = SurveyToolProperties.get(MainMenuActivity.this, getAppName());
+        PropertiesSingleton props = CommonToolProperties.get(MainMenuActivity.this, getAppName());
 
         final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
             getCurrentForm().tableId, getInstanceId(),
