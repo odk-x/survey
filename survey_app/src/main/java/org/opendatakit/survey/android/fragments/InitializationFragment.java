@@ -187,6 +187,13 @@ public class InitializationFragment extends Fragment implements InitializationLi
     Survey.getInstance().clearInitializationTask();
 
     if (overallSuccess && result.isEmpty()) {
+      // do not require an OK if everything went well
+      Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+      if (progress != null) {
+        ((ProgressDialogFragment) progress).dismiss();
+        mDialogState = DialogState.None;
+      }
+
       ((IInitResumeActivity) getActivity()).initializationCompleted();
       return;
     }
