@@ -497,26 +497,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getActiveUser() {
-    FormIdStruct form = getCurrentForm();
     PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
-    
-    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
-        form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            props.getProperty(CommonToolProperties.KEY_USERNAME),
-            props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
-    String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
-    if (name == null || name.length() == 0) {
-      name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
-      if (name != null && name.length() != 0) {
-        name = "username:" + name;
-      } else {
-        name = null;
-      }
-    } else {
-      name = "mailto:" + name;
-    }
-    return name;
+    return props.getActiveUser();
   }
 
   @Override
@@ -526,6 +509,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
+            props.getActiveUser(), props.getLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
@@ -844,13 +828,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
-      item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
+      item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE, getString(R.string.general_preferences));
-      item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
+      item.setIcon(R.drawable.ic_settings_black_24dp).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
-      item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+      item.setIcon(R.drawable.ic_info_outline_black_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
       ActionBar actionBar = getActionBar();
       actionBar.hide();
@@ -1524,6 +1508,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
         final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
             getCurrentForm().tableId, getInstanceId(),
+            props.getActiveUser(), props.getLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
