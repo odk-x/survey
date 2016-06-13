@@ -14,15 +14,27 @@
 
 package org.opendatakit.survey.android.activities;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.AlertDialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentManager.BackStackEntry;
+import android.app.FragmentTransaction;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.RemoteException;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
-import android.app.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
@@ -38,8 +50,12 @@ import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.*;
+import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.UrlUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.utilities.WebLoggerIf;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
@@ -56,20 +72,13 @@ import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.SurveyDataExecutorProcessor;
 
-import android.annotation.SuppressLint;
-import android.app.FragmentManager.BackStackEntry;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.os.RemoteException;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.widget.Toast;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches
@@ -1076,6 +1085,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     } else if (newScreenType == ScreenList.WEBKIT) {
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
+        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "] creating new webkit fragment " + newScreenType.name());
         newFragment = new WebViewFragment();
       }
     } else if (newScreenType == ScreenList.ABOUT_MENU) {
@@ -1104,6 +1114,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       // flush backward, to the screen we want to go back to
       currentFragment = newScreenType;
+      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] popping back stack " + currentFragment.name());
       mgr.popBackStackImmediate(currentFragment.name(), 0);
     } else {
       // add transaction to show the screen we want
@@ -1112,6 +1123,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       currentFragment = newScreenType;
       trans.replace(R.id.main_content, newFragment, currentFragment.name());
+      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
       trans.addToBackStack(currentFragment.name());
     }
 
@@ -1604,6 +1616,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
+        WebLogger.getLogger(getAppName()).e(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
