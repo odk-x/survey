@@ -1123,7 +1123,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       currentFragment = newScreenType;
       trans.replace(R.id.main_content, newFragment, currentFragment.name());
-      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
+      WebLogger.getLogger(getAppName()).i(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
       trans.addToBackStack(currentFragment.name());
     }
 
@@ -1616,7 +1616,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
-        WebLogger.getLogger(getAppName()).e(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
+        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
