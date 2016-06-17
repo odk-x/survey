@@ -14,15 +14,27 @@
 
 package org.opendatakit.survey.android.activities;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
+import android.app.AlertDialog;
+import android.app.DialogFragment;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.app.FragmentManager.BackStackEntry;
+import android.app.FragmentTransaction;
+import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.net.Uri;
+import android.os.Bundle;
+import android.os.Parcel;
+import android.os.Parcelable;
+import android.os.RemoteException;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.widget.Toast;
 
-import android.app.*;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.opendatakit.IntentConsts;
@@ -38,8 +50,12 @@ import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.*;
+import org.opendatakit.common.android.utilities.AndroidUtils;
 import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.common.android.utilities.UrlUtils;
+import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.utilities.WebLoggerIf;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
@@ -56,24 +72,13 @@ import org.opendatakit.survey.android.fragments.WebViewFragment;
 import org.opendatakit.survey.android.logic.FormIdStruct;
 import org.opendatakit.survey.android.logic.SurveyDataExecutorProcessor;
 
-import android.annotation.SuppressLint;
-import android.app.ActionBar.Tab;
-import android.app.FragmentManager.BackStackEntry;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.os.RemoteException;
-import android.view.Gravity;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.FrameLayout;
-import android.widget.Toast;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches
@@ -135,57 +140,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private static final String BACKPRESS_DIALOG_TAG = "backPressDialog";
 
   private static final boolean EXIT = true;
-
-  private static final FrameLayout.LayoutParams COVER_SCREEN_GRAVITY_CENTER = new FrameLayout.LayoutParams(
-      ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
-
-  public static class TabListener<T extends Fragment> implements ActionBar.TabListener {
-    private Fragment mFragment;
-    private final Activity mActivity;
-    private final String mTag;
-    private final Class<T> mClass;
-
-    /**
-     * Constructor used each time a new tab is created.
-     *
-     * @param activity
-     *          The host Activity, used to instantiate the fragment
-     * @param tag
-     *          The identifier tag for the fragment
-     * @param clz
-     *          The fragment's Class, used to instantiate the fragment
-     */
-    public TabListener(Activity activity, String tag, Class<T> clz) {
-      mActivity = activity;
-      mTag = tag;
-      mClass = clz;
-    }
-
-    /* The following are each of the ActionBar.TabListener callbacks */
-
-    public void onTabSelected(Tab tab, FragmentTransaction ft) {
-      // Check if the fragment is already initialized
-      if (mFragment == null) {
-        // If not, instantiate and add it to the activity
-        mFragment = Fragment.instantiate(mActivity, mClass.getName());
-        ft.add(android.R.id.content, mFragment, mTag);
-      } else {
-        // If it exists, simply attach it in order to show it
-        ft.attach(mFragment);
-      }
-    }
-
-    public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-      if (mFragment != null) {
-        // Detach the fragment, because another one is being attached
-        ft.detach(mFragment);
-      }
-    }
-
-    public void onTabReselected(Tab tab, FragmentTransaction ft) {
-      // User selected the already selected tab. Usually do nothing.
-    }
-  }
 
   private static class ScreenState {
     String screenPath;
@@ -484,13 +438,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       resolveAnyConflicts();
     }
     FragmentManager mgr = this.getFragmentManager();
-    int idxLast = mgr.getBackStackEntryCount() - 1;
-    if (idxLast >= 0) {
-      BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
-      Fragment newFragment = null;
-      newFragment = mgr.findFragmentByTag(entry.getName());
-      if ( newFragment instanceof DatabaseConnectionListener ) {
-        ((DatabaseConnectionListener) newFragment).databaseAvailable();
+    if ( currentFragment != null ) {
+      Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
+      if (fragment instanceof DatabaseConnectionListener) {
+        ((DatabaseConnectionListener) fragment).databaseAvailable();
       }
     }
     if ( mIOdkDataDatabaseListener != null ) {
@@ -501,13 +452,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void databaseUnavailable() {
     FragmentManager mgr = this.getFragmentManager();
-    int idxLast = mgr.getBackStackEntryCount() - 1;
-    if (idxLast >= 0) {
-      BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
-      Fragment newFragment = null;
-      newFragment = mgr.findFragmentByTag(entry.getName());
-      if ( newFragment instanceof DatabaseConnectionListener ) {
-        ((DatabaseConnectionListener) newFragment).databaseUnavailable();
+    if ( currentFragment != null ) {
+      Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
+      if (fragment instanceof DatabaseConnectionListener) {
+        ((DatabaseConnectionListener) fragment).databaseUnavailable();
       }
     }
     if ( mIOdkDataDatabaseListener != null ) {
@@ -558,26 +506,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getActiveUser() {
-    FormIdStruct form = getCurrentForm();
     PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
-    
-    final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
-        form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            props.getProperty(CommonToolProperties.KEY_USERNAME),
-            props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
-    String name = mPropertyManager.getSingularProperty(PropertyManager.EMAIL, cb);
-    if (name == null || name.length() == 0) {
-      name = mPropertyManager.getSingularProperty(PropertyManager.USERNAME, cb);
-      if (name != null && name.length() != 0) {
-        name = "username:" + name;
-      } else {
-        name = null;
-      }
-    } else {
-      name = "mailto:" + name;
-    }
-    return name;
+    return props.getActiveUser();
   }
 
   @Override
@@ -587,6 +518,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
+            props.getActiveUser(), props.getLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
@@ -881,12 +813,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     ((Survey) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
 
-    FragmentManager mgr = getFragmentManager();
-    if (mgr.getBackStackEntryCount() == 0) {
-      swapToFragmentView(currentFragment);
-    } else {
-      invalidateOptionsMenu();
-    }
+    swapToFragmentView(currentFragment);
   }
 
   @Override
@@ -910,13 +837,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
-      item.setIcon(R.drawable.ic_action_cloud).setShowAsAction(showOption);
+      item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE, getString(R.string.general_preferences));
-      item.setIcon(R.drawable.ic_menu_preferences).setShowAsAction(showOption);
+      item.setIcon(R.drawable.ic_settings_black_24dp).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
-      item.setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+      item.setIcon(R.drawable.ic_info_outline_black_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
       ActionBar actionBar = getActionBar();
       actionBar.hide();
@@ -1158,6 +1085,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     } else if (newScreenType == ScreenList.WEBKIT) {
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
+        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "] creating new webkit fragment " + newScreenType.name());
         newFragment = new WebViewFragment();
       }
     } else if (newScreenType == ScreenList.ABOUT_MENU) {
@@ -1186,6 +1114,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       // flush backward, to the screen we want to go back to
       currentFragment = newScreenType;
+      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] popping back stack " + currentFragment.name());
       mgr.popBackStackImmediate(currentFragment.name(), 0);
     } else {
       // add transaction to show the screen we want
@@ -1194,6 +1123,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       currentFragment = newScreenType;
       trans.replace(R.id.main_content, newFragment, currentFragment.name());
+      WebLogger.getLogger(getAppName()).i(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
       trans.addToBackStack(currentFragment.name());
     }
 
@@ -1590,6 +1520,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
         final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
             getCurrentForm().tableId, getInstanceId(),
+            props.getActiveUser(), props.getLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
@@ -1685,6 +1616,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
+        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
