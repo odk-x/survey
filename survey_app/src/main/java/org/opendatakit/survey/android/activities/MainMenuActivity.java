@@ -987,7 +987,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         OrderedColumns cols = this.getDatabase()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
         UserTable table = this.getDatabase()
-            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, null, rowId);
+            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, rowId);
         // this should not be possible, but if somehow we exit before anything is written
         // clear instanceId if the row no longer exists
         if ( table.getNumberOfRows() == 0 ) {
