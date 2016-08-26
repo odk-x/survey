@@ -30,7 +30,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.RemoteException;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
@@ -42,6 +41,8 @@ import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.data.OrderedColumns;
 import org.opendatakit.common.android.data.UserTable;
+import org.opendatakit.common.android.exception.ActionNotAuthorizedException;
+import org.opendatakit.common.android.exception.ServicesAvailabilityException;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
 import org.opendatakit.common.android.listener.DatabaseConnectionListener;
 import org.opendatakit.common.android.logic.CommonToolProperties;
@@ -375,7 +376,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       try {
         dbHandle = db.openDatabase(appName);
         info = db.getTableHealthStatuses(getAppName(), dbHandle);
-      } catch (RemoteException e) {
+      } catch (ServicesAvailabilityException e) {
         WebLogger.getLogger(appName).printStackTrace(e);
         return;
       } finally {
@@ -383,7 +384,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
           if ( dbHandle != null ) {
             db.closeDatabase(appName, dbHandle);
           }
-        } catch (RemoteException e) {
+        } catch (ServicesAvailabilityException e) {
           WebLogger.getLogger(appName).printStackTrace(e);
         }
       }
@@ -987,20 +988,24 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         OrderedColumns cols = this.getDatabase()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
         UserTable table = this.getDatabase()
-            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, null, rowId);
+            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, rowId);
         // this should not be possible, but if somehow we exit before anything is written
         // clear instanceId if the row no longer exists
         if ( table.getNumberOfRows() == 0 ) {
           setInstanceId(null);
         }
-      } catch (RemoteException e) {
+      } catch (ActionNotAuthorizedException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_authorization_error_occured, Toast.LENGTH_LONG)
+            .show();
+      } catch (ServicesAvailabilityException e) {
         WebLogger.getLogger(getAppName()).printStackTrace(e);
         Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
       } finally {
         if ( dbHandleName != null ) {
           try {
             this.getDatabase().closeDatabase(getAppName(), dbHandleName);
-          } catch (RemoteException e) {
+          } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
           }
@@ -1028,14 +1033,18 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         if ( table.getNumberOfRows() == 0 ) {
           setInstanceId(null);
         }
-      } catch (RemoteException e) {
+      } catch (ActionNotAuthorizedException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.database_authorization_error_occured, Toast.LENGTH_LONG)
+            .show();
+      } catch (ServicesAvailabilityException e) {
         WebLogger.getLogger(getAppName()).printStackTrace(e);
         Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
       } finally {
         if ( dbHandleName != null ) {
           try {
             this.getDatabase().closeDatabase(getAppName(), dbHandleName);
-          } catch (RemoteException e) {
+          } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
           }
