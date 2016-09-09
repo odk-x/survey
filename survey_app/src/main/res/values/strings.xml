@@ -212,4 +212,5 @@
     <string name="backpress_discard_all_checkpoints_exit">Ignore Changes</string>
     <string name="backpress_ignore">Cancel</string>
     <string name="database_error_occured">Database error occurred</string>
+    <string name="database_authorization_error_occured">Insufficient privileges for this action.</string>
 </resources>
