@@ -18,7 +18,7 @@ import java.io.File;
 import java.util.Date;
 
 import org.opendatakit.common.android.provider.FormsColumns;
-import org.opendatakit.common.android.utilities.ODKCursorUtils;
+import org.opendatakit.common.android.database.utilities.CursorUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
 
 import android.content.ContentResolver;
@@ -80,10 +80,10 @@ public class FormIdStruct {
 
         c.moveToFirst();
 
-        String tableId = ODKCursorUtils.getIndexAsString(c, idxTableId);
-        String formId = ODKCursorUtils.getIndexAsString(c, idxFormId);
-        String formVersion = ODKCursorUtils.getIndexAsString(c, idxFormVersion);
-        Long timestamp = ODKCursorUtils.getIndexAsType(c, Long.class, idxDate);
+        String tableId = CursorUtils.getIndexAsString(c, idxTableId);
+        String formId = CursorUtils.getIndexAsString(c, idxFormId);
+        String formVersion = CursorUtils.getIndexAsString(c, idxFormVersion);
+        Long timestamp = CursorUtils.getIndexAsType(c, Long.class, idxDate);
         
         File formDirectory = new File( ODKFileUtils.getFormFolder(appName, tableId, formId) );
         File formDefJsonFile = new File(formDirectory, ODKFileUtils.FORMDEF_JSON_FILENAME);

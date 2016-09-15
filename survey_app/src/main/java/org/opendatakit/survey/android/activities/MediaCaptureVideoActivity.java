@@ -21,11 +21,11 @@ import java.util.Date;
 import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.MediaUtils;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.logging.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.Activity;

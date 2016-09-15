@@ -20,7 +20,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.ODKDataUtils;
+import org.opendatakit.common.android.utilities.LocalizationUtils;
 import org.opendatakit.survey.android.R;
 
 import java.text.SimpleDateFormat;
@@ -73,7 +73,7 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
               c.getString(idxTableId),
               c.getString(idxFormId),
               formVersion,
-              ODKDataUtils.getLocalizedDisplayName(formTitle),
+              LocalizationUtils.getLocalizedDisplayName(formTitle),
               formatter.format(lastModificationDate));
           forms.add(info);
         } while ( c.moveToNext());

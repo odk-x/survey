@@ -17,10 +17,10 @@ package org.opendatakit.survey.android.activities;
 import java.text.DecimalFormat;
 import java.util.List;
 
-import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.logging.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.ProgressDialog;

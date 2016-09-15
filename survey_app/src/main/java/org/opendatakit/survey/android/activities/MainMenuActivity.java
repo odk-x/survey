@@ -36,11 +36,11 @@ import android.widget.Toast;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
-import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.application.CommonApplication;
-import org.opendatakit.common.android.data.OrderedColumns;
-import org.opendatakit.common.android.data.UserTable;
+import org.opendatakit.common.android.database.data.OrderedColumns;
+import org.opendatakit.common.android.database.data.UserTable;
 import org.opendatakit.common.android.exception.ActionNotAuthorizedException;
 import org.opendatakit.common.android.exception.ServicesAvailabilityException;
 import org.opendatakit.common.android.fragment.AboutMenuFragment;
@@ -51,19 +51,19 @@ import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.logic.PropertyManager;
 import org.opendatakit.common.android.provider.FormsColumns;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.AndroidUtils;
-import org.opendatakit.common.android.utilities.AndroidUtils.MacroStringExpander;
+import org.opendatakit.common.android.webkitserver.utilities.SerializationUtils;
+import org.opendatakit.common.android.webkitserver.utilities.SerializationUtils.MacroStringExpander;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.UrlUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
-import org.opendatakit.common.android.utilities.WebLoggerIf;
+import org.opendatakit.common.android.webkitserver.utilities.UrlUtils;
+import org.opendatakit.common.android.logging.WebLogger;
+import org.opendatakit.common.android.logging.WebLoggerIf;
 import org.opendatakit.common.android.views.ExecutorContext;
 import org.opendatakit.common.android.views.ExecutorProcessor;
 import org.opendatakit.common.android.views.ODKWebView;
-import org.opendatakit.database.OdkDbSerializedInterface;
-import org.opendatakit.database.service.OdkDbHandle;
-import org.opendatakit.database.service.TableHealthInfo;
-import org.opendatakit.database.service.TableHealthStatus;
+import org.opendatakit.common.android.database.service.UserDbInterface;
+import org.opendatakit.common.android.database.service.DbHandle;
+import org.opendatakit.common.android.database.service.TableHealthInfo;
+import org.opendatakit.common.android.database.service.TableHealthStatus;
 import org.opendatakit.survey.android.R;
 import org.opendatakit.survey.android.application.Survey;
 import org.opendatakit.survey.android.fragments.BackPressWebkitConfirmationDialogFragment;
@@ -369,10 +369,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   public void scanForConflictAllTables() {
     
-    OdkDbSerializedInterface db = ((Survey) getApplication()).getDatabase();
+    UserDbInterface db = ((Survey) getApplication()).getDatabase();
     if ( db != null ) {
       List<TableHealthInfo> info;
-      OdkDbHandle dbHandle = null;
+      DbHandle dbHandle = null;
       try {
         dbHandle = db.openDatabase(appName);
         info = db.getTableHealthStatuses(getAppName(), dbHandle);
@@ -982,7 +982,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String rowId = this.getInstanceId();
 
     if ( rowId != null && tableId != null ) {
-      OdkDbHandle dbHandleName = null;
+      DbHandle dbHandleName = null;
       try {
         dbHandleName = this.getDatabase().openDatabase(getAppName());
         OrderedColumns cols = this.getDatabase()
@@ -1022,7 +1022,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String rowId = this.getInstanceId();
 
     if ( rowId != null && tableId != null ) {
-      OdkDbHandle dbHandleName = null;
+      DbHandle dbHandleName = null;
       try {
         dbHandleName = this.getDatabase().openDatabase(getAppName());
         OrderedColumns cols = this.getDatabase()
@@ -1533,7 +1533,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
-        b = AndroidUtils.convertToBundle(valueMap, new MacroStringExpander() {
+        b = SerializationUtils.convertToBundle(valueMap, new MacroStringExpander() {
 
           @Override
           public String expandString(String value) {
@@ -1656,7 +1656,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public OdkDbSerializedInterface getDatabase() {
+  public UserDbInterface getDatabase() {
     return ((CommonApplication) getApplication()).getDatabase();
   }
 
@@ -1688,7 +1688,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       try {
         String jsonObject = null;
         Bundle b = (intent == null) ? null : intent.getExtras();
-        JSONObject val = (b == null) ? null : AndroidUtils.convertFromBundle(getAppName(), b);
+        JSONObject val = (b == null) ? null : SerializationUtils.convertFromBundle(getAppName(), b);
         JSONObject jsonValue = new JSONObject();
         jsonValue.put("status", resultCode);
         if ( val != null ) {

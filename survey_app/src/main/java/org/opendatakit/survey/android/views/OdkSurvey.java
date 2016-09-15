@@ -14,8 +14,8 @@
 
 package org.opendatakit.survey.android.views;
 
-import org.opendatakit.common.android.utilities.WebLogger;
-import org.opendatakit.common.android.utilities.WebLoggerIf;
+import org.opendatakit.common.android.logging.WebLogger;
+import org.opendatakit.common.android.logging.WebLoggerIf;
 import org.opendatakit.survey.android.activities.IOdkSurveyActivity;
 
 import java.lang.ref.WeakReference;

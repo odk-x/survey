@@ -20,17 +20,17 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
-import org.opendatakit.IntentConsts;
+import org.opendatakit.common.android.logic.IntentConsts;
 import org.opendatakit.common.android.activities.BaseActivity;
 import org.opendatakit.common.android.application.AppAwareApplication;
 import org.opendatakit.common.android.application.CommonApplication;
 import org.opendatakit.common.android.logic.CommonToolProperties;
 import org.opendatakit.common.android.logic.PropertiesSingleton;
 import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.DependencyChecker;
+import org.opendatakit.common.android.dependencies.DependencyChecker;
 import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.utilities.UrlUtils;
-import org.opendatakit.common.android.utilities.WebLogger;
+import org.opendatakit.common.android.webkitserver.utilities.UrlUtils;
+import org.opendatakit.common.android.logging.WebLogger;
 import org.opendatakit.survey.android.R;
 
 import android.app.AlertDialog;
