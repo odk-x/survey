@@ -53,6 +53,14 @@
             android:exported="false"
             android:label="@string/app_name" />
         <activity
+            android:name=".activities.SignatureActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name=".activities.DrawActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
             android:name=".activities.MediaChooseImageActivity"
             android:exported="false"
             android:label="@string/app_name" />

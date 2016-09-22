@@ -14,17 +14,6 @@
 
 package org.opendatakit.survey.android.activities;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.logic.IntentConsts;
-import org.opendatakit.common.android.activities.BaseActivity;
-import org.opendatakit.common.android.utilities.MediaUtils;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.common.android.logging.WebLogger;
-import org.opendatakit.survey.android.R;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
@@ -35,6 +24,17 @@ import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
 
+import org.apache.commons.io.FileUtils;
+import org.opendatakit.common.android.activities.BaseActivity;
+import org.opendatakit.common.android.logging.WebLogger;
+import org.opendatakit.common.android.logic.IntentConsts;
+import org.opendatakit.common.android.utilities.MediaUtils;
+import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.survey.android.R;
+
+import java.io.File;
+import java.io.IOException;
+
 /**
  * Simple shim for media interactions.
  *
@@ -44,10 +44,10 @@ import android.widget.Toast;
 public class MediaCaptureImageActivity extends BaseActivity {
   private static final String t = "MediaCaptureImageActivity";
 
-  private static final int ACTION_CODE = 1;
+  protected static final int ACTION_CODE = 1;
   private static final String MEDIA_CLASS = "image/";
 
-  private static final String TMP_EXTENSION = ".tmp.jpg";
+  protected static final String TMP_EXTENSION = ".tmp.jpg";
 
   private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
   private static final String HAS_LAUNCHED = "hasLaunched";
@@ -55,13 +55,16 @@ public class MediaCaptureImageActivity extends BaseActivity {
   private static final String ERROR_NO_FILE = "Media file does not exist! ";
   private static final String ERROR_COPY_FILE = "Media file copy failed! ";
 
-  private String appName = null;
-  private String tableId = null;
-  private String instanceId = null;
-  private String uriFragmentNewFileBase = null;
-  private String uriFragmentToMedia = null;
-  private boolean afterResult = false;
-  private boolean hasLaunched = false;
+  protected String appName = null;
+  protected String tableId = null;
+  protected String instanceId = null;
+  protected String uriFragmentNewFileBase = null;
+  protected String uriFragmentToMedia = null;
+  protected String savedUri = null;
+  protected boolean afterResult = false;
+  protected boolean hasLaunched = false;
+  protected Intent launchIntent = null;
+
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -73,6 +76,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
       tableId = extras.getString(IntentConsts.INTENT_KEY_TABLE_ID);
       instanceId = extras.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentToMedia = extras.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
+      savedUri = extras.getString(IntentConsts.INTENT_KEY_SAVED_URI);
       hasLaunched = extras.getBoolean(HAS_LAUNCHED);
       afterResult = extras.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -83,6 +87,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
       tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
       instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentToMedia = savedInstanceState.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
+      savedUri = extras.getString(IntentConsts.INTENT_KEY_SAVED_URI);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -126,7 +131,12 @@ public class MediaCaptureImageActivity extends BaseActivity {
       // action
       returnResult();
     } else if (!hasLaunched && !afterResult) {
-      Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+      Intent i = null;
+      if (launchIntent == null) {
+        i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+      } else {
+        i = launchIntent;
+      }
       // workaround for image capture bug
       // create an empty file and pass filename to Camera app.
       if (uriFragmentToMedia == null) {
@@ -161,8 +171,11 @@ public class MediaCaptureImageActivity extends BaseActivity {
         hasLaunched = true;
         startActivityForResult(i, ACTION_CODE);
       } catch (ActivityNotFoundException e) {
-        String err = getString(R.string.activity_not_found,
-            android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        String intentActivityName = null;
+        if (launchIntent != null && launchIntent.getComponent() != null ) {
+          intentActivityName = launchIntent.getComponent().getClassName();
+        }
+        String err = getString(R.string.activity_not_found, intentActivityName);
         WebLogger.getLogger(appName).e(t, err);
         deleteMedia();
         Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
@@ -179,12 +192,13 @@ public class MediaCaptureImageActivity extends BaseActivity {
     outState.putString(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
     outState.putString(IntentConsts.INTENT_KEY_INSTANCE_ID, instanceId);
     outState.putString(IntentConsts.INTENT_KEY_URI_FRAGMENT, uriFragmentToMedia);
+    outState.putString(IntentConsts.INTENT_KEY_SAVED_URI, savedUri);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
     outState.putBoolean(AFTER_RESULT, afterResult);
   }
 
-  private void deleteMedia() {
+  protected void deleteMedia() {
     if (uriFragmentToMedia == null) {
       return;
     }
@@ -275,7 +289,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
     return;
   }
 
-  private void returnResult() {
+  protected void returnResult() {
     File sourceMedia = (uriFragmentToMedia != null) ?
         ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia) : null;
     if (sourceMedia != null && sourceMedia.exists()) {
