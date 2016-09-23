@@ -17,14 +17,11 @@ package org.opendatakit.survey.logic;
 import java.io.File;
 import java.util.Date;
 
-import org.opendatakit.common.android.provider.FormsProviderAPI;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.logic.FormIdStruct;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.utilities.ODKFileUtils;
 
 import android.net.Uri;
 import android.test.AndroidTestCase;
-
-import junit.framework.TestCase;
 
 public class FormIdStructTest extends AndroidTestCase {
   private static final String FORM_PATH = "tables/myTable/forms/formName";
