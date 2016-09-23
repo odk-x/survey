@@ -30,7 +30,7 @@ import android.os.Bundle;
  * Simple wrapper for delete-file functionality.
  *
  * Called from javascript with: odkCommon.doAction(dispatchString,
- * "org.opendatakit.survey.android.activities.MediaDeleteVideoActivity",
+ * "org.opendatakit.survey.aactivities.MediaDeleteVideoActivity",
  * JSON.stringify({ appName: 'myApp', uriFragment: uriFromDatabase }));
  *
  * @author mitchellsundt@gmail.com

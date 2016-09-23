@@ -30,7 +30,7 @@ import android.os.Bundle;
  * Simple shim for media interactions.
  *
  * Called from javascript with: odkCommon.doAction(dispatchString,
- * "org.opendatakit.survey.android.activities.MediaDeleteAudioActivity",
+ * "org.opendatakit.survey.activities.MediaDeleteAudioActivity",
  * JSON.stringify({ appName: 'myApp', uriFragment: uriFromDatabase }));
  *
  * @author mitchellsundt@gmail.com
