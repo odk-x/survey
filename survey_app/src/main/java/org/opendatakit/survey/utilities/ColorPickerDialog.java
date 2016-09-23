@@ -12,7 +12,7 @@
  * the License.
  */
 
-package org.opendatakit.survey.android.utilities;
+package org.opendatakit.survey.utilities;
 
 import android.app.Dialog;
 import android.content.Context;
@@ -29,7 +29,7 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.HorizontalScrollView;
 import android.widget.ScrollView;
 
-import org.opendatakit.survey.android.R;
+import org.opendatakit.survey.R;
 
 /**
  * Based heavily upon:

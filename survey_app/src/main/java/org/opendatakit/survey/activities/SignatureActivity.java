@@ -1,9 +1,10 @@
-package org.opendatakit.survey.android.activities;
+package org.opendatakit.survey.activities;
 
 import android.content.Intent;
 import android.net.Uri;
 
-import org.opendatakit.common.android.utilities.ODKFileUtils;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.survey.activities.DrawActivity;
 
 import java.io.File;
 

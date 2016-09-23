@@ -27,7 +27,7 @@ import android.widget.Toast;
 import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.logging.WebLogger;
-import org.opendatakit.properties.IntentConsts;
+import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.utilities.MediaUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.survey.R;

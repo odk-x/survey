@@ -1,4 +1,4 @@
-package org.opendatakit.survey.android.activities;
+package org.opendatakit.survey.activities;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,12 +27,12 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
 import org.apache.commons.io.FileUtils;
-import org.opendatakit.common.android.activities.BaseActivity;
-import org.opendatakit.common.android.logging.WebLogger;
-import org.opendatakit.common.android.logic.IntentConsts;
-import org.opendatakit.common.android.utilities.ODKFileUtils;
-import org.opendatakit.survey.android.R;
-import org.opendatakit.survey.android.utilities.ColorPickerDialog;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.utilities.ColorPickerDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
