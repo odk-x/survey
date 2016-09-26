@@ -60,7 +60,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
   protected String instanceId = null;
   protected String uriFragmentNewFileBase = null;
   protected String uriFragmentToMedia = null;
-  protected String savedUri = null;
+  protected String currentUriFragment = null;
   protected boolean afterResult = false;
   protected boolean hasLaunched = false;
   protected Intent launchIntent = null;
@@ -76,7 +76,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
       tableId = extras.getString(IntentConsts.INTENT_KEY_TABLE_ID);
       instanceId = extras.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentToMedia = extras.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
-      savedUri = extras.getString(IntentConsts.INTENT_KEY_SAVED_URI);
+      currentUriFragment = extras.getString(IntentConsts.INTENT_KEY_CURRENT_URI_FRAGMENT);
       hasLaunched = extras.getBoolean(HAS_LAUNCHED);
       afterResult = extras.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = extras.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -87,7 +87,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
       tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
       instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentToMedia = savedInstanceState.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
-      savedUri = extras.getString(IntentConsts.INTENT_KEY_SAVED_URI);
+      currentUriFragment = extras.getString(IntentConsts.INTENT_KEY_CURRENT_URI_FRAGMENT);
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
@@ -193,7 +193,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
     outState.putString(IntentConsts.INTENT_KEY_TABLE_ID, tableId);
     outState.putString(IntentConsts.INTENT_KEY_INSTANCE_ID, instanceId);
     outState.putString(IntentConsts.INTENT_KEY_URI_FRAGMENT, uriFragmentToMedia);
-    outState.putString(IntentConsts.INTENT_KEY_SAVED_URI, savedUri);
+    outState.putString(IntentConsts.INTENT_KEY_CURRENT_URI_FRAGMENT, currentUriFragment);
     outState.putString(URI_FRAGMENT_NEW_FILE_BASE, uriFragmentNewFileBase);
     outState.putBoolean(HAS_LAUNCHED, hasLaunched);
     outState.putBoolean(AFTER_RESULT, afterResult);

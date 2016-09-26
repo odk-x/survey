@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 
 import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.survey.activities.DrawActivity;
 
 import java.io.File;
 
@@ -21,8 +20,8 @@ public class SignatureActivity extends MediaCaptureImageActivity {
     launchIntent.putExtra(DrawActivity.OPTION, DrawActivity.OPTION_SIGNATURE);
 
     // Pass the ref image if we already have an image
-    if (savedUri != null) {
-      File mediaFile = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, savedUri);
+    if (currentUriFragment != null) {
+      File mediaFile = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, currentUriFragment);
       if (mediaFile.exists()) {
         launchIntent.putExtra(DrawActivity.REF_IMAGE, Uri.fromFile(mediaFile));
       }
