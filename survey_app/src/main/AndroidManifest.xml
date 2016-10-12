@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="org.opendatakit.survey.android" >
+    package="org.opendatakit.survey" >
 
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
@@ -32,7 +32,7 @@
         android:smallScreens="true" />
 
     <application
-        android:name="org.opendatakit.survey.android.application.Survey"
+        android:name="org.opendatakit.survey.application.Survey"
         android:icon="@drawable/snotes"
       	android:logo="@drawable/odk_logo"
         android:label="@string/app_name"
@@ -43,53 +43,61 @@
     	android:theme="@style/Opendatakit" >
 
         <activity
-            android:name=".activities.MainMenuActivity"
+            android:name="org.opendatakit.survey.activities.MainMenuActivity"
             android:configChanges="orientation"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustResize" >
         </activity>
         <activity
-            android:name=".activities.MediaCaptureImageActivity"
+            android:name="org.opendatakit.survey.activities.MediaCaptureImageActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaChooseImageActivity"
+            android:name="org.opendatakit.survey.activities.SignatureActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaDeleteImageActivity"
+            android:name="org.opendatakit.survey.activities.DrawActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaCaptureAudioActivity"
+            android:name="org.opendatakit.survey.activities.MediaChooseImageActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaChooseAudioActivity"
+            android:name="org.opendatakit.survey.activities.MediaDeleteImageActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaDeleteAudioActivity"
+            android:name="org.opendatakit.survey.activities.MediaCaptureAudioActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaCaptureVideoActivity"
+            android:name="org.opendatakit.survey.activities.MediaChooseAudioActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaChooseVideoActivity"
+            android:name="org.opendatakit.survey.activities.MediaDeleteAudioActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.MediaDeleteVideoActivity"
+            android:name="org.opendatakit.survey.activities.MediaCaptureVideoActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.GeoPointActivity"
+            android:name="org.opendatakit.survey.activities.MediaChooseVideoActivity"
             android:exported="false"
             android:label="@string/app_name" />
         <activity
-            android:name=".activities.SplashScreenActivity"
+            android:name="org.opendatakit.survey.activities.MediaDeleteVideoActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name="org.opendatakit.survey.activities.GeoPointActivity"
+            android:exported="false"
+            android:label="@string/app_name" />
+        <activity
+            android:name="org.opendatakit.survey.activities.SplashScreenActivity"
             android:label="@string/app_name"
             android:theme="@android:style/Theme.Dialog" >
             <intent-filter>
@@ -111,7 +119,7 @@
         </activity>
         <!-- Enable Shortcuts for Command Actions -->
         <activity
-            android:name="org.opendatakit.survey.android.activities.AndroidShortcuts"
+            android:name="org.opendatakit.survey.activities.AndroidShortcuts"
             android:label="@string/shortcut_name"
             android:theme="@android:style/Theme.Translucent.NoTitleBar" >
             <intent-filter>
