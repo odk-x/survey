@@ -18,7 +18,7 @@ the License.
 			  android:layout_height="match_parent"
 			  android:orientation="vertical" >
 
-	<org.opendatakit.survey.android.views.OdkSurveyWebView
+	<org.opendatakit.survey.views.OdkSurveyWebView
 			android:id="@+id/webkit"
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"

@@ -125,4 +125,6 @@ dependencies {
 
     // Testing dependencies
     androidTestCompile 'junit:junit:4.12'
+	androidTestCompile 'joda-time:joda-time:2.2'
+	testCompile 'joda-time:joda-time:2.2'
 }
