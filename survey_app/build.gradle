@@ -25,6 +25,7 @@ android {
         targetSdkVersion(targetVersion)
         versionCode(releaseVersionCode)
         versionName(versionCodeName)
+        multiDexEnabled(true)
     }
 
     productFlavors {
@@ -65,6 +66,10 @@ android {
             debuggable(true)
             testCoverageEnabled(testCoverage) // Allows AndroidTest JaCoCo reports to be generated
         }
+    }
+
+    dexOptions {
+        javaMaxHeapSize "2g"
     }
 
     packagingOptions { // Pick first occurrence of any files that cause conflicts, as defined in common.gradle
