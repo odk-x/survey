@@ -46,22 +46,9 @@ public class OdkSurveyWebView extends ODKWebView {
 
     if ( baseUrl != null ) {
       // for Survey, we do care about the URL
-      final String fullUrl = baseUrl + hash;
+      String fullUrl = baseUrl + hash;
 
-      resetLoadPageStatus(fullUrl);
-
-      log.i(t, "loadPage: full reload: " + fullUrl);
-
-      // Ensure that this is run on the UI thread
-      if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-        post(new Runnable() {
-          public void run() {
-            loadUrl(fullUrl);
-          }
-        });
-      } else {
-        loadUrl(fullUrl);
-      }
+      loadPageOnUiThread(fullUrl, false);
 
     } else if ( hasPageFrameworkFinishedLoading() ) {
       log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
@@ -84,29 +71,8 @@ public class OdkSurveyWebView extends ODKWebView {
 
     if ( baseUrl != null ) {
       // for Survey, we do care about the URL
-      final String fullUrl = baseUrl + hash;
-
-      if ( shouldForceLoadDuringReload() ||
-          hasPageFrameworkFinishedLoading() || !fullUrl.equals(getLoadPageUrl()) ) {
-
-        resetLoadPageStatus(fullUrl);
-
-        log.i(t, "reloadPage: full reload: " + fullUrl);
-
-        // Ensure that this is run on the UI thread
-        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-          post(new Runnable() {
-            public void run() {
-              loadUrl(fullUrl);
-            }
-          });
-        } else {
-          loadUrl(fullUrl);
-        }
-
-      } else {
-        log.w(t, "reloadPage: framework in process of loading -- ignoring request!");
-      }
+      String fullUrl = baseUrl + hash;
+       loadPageOnUiThread(fullUrl, true);
     } else {
       log.w(t, "reloadPage: framework did not load -- cannot load anything!");
     }
