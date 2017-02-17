@@ -22,7 +22,7 @@ import java.util.List;
 
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.application.AppAwareApplication;
+import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.provider.FormsProviderAPI;
@@ -158,10 +158,10 @@ public class SplashScreenActivity extends BaseActivity {
     PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
 
     String toolFirstRunKey = PropertiesSingleton.toolFirstRunPropertyName
-        (((AppAwareApplication) getApplication()).getToolName());
+        (((ToolAwareApplication) getApplication()).getToolName());
 
     String toolVersionKey = PropertiesSingleton.toolVersionPropertyName
-        (((AppAwareApplication) getApplication()).getToolName());
+        (((ToolAwareApplication) getApplication()).getToolName());
 
 
 
