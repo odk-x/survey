@@ -63,6 +63,7 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
             .last_updated_on_date_at_time), Locale.getDefault());
 
         do {
+          String tableId = c.getString(idxTableId);
           String formVersion = c.isNull(idxFormVersion) ? null :
               c.getString(idxFormVersion);
           long timestamp = c.getLong(idxLastUpdateDate);
@@ -70,10 +71,10 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
           String formTitle = c.getString(idxFormTitle);
 
           FormInfo info = new FormInfo(
-              c.getString(idxTableId),
+              tableId,
               c.getString(idxFormId),
               formVersion,
-              LocalizationUtils.getLocalizedDisplayName(formTitle),
+              LocalizationUtils.getLocalizedDisplayName(appName, tableId, formTitle),
               formatter.format(lastModificationDate));
           forms.add(info);
         } while ( c.moveToNext());

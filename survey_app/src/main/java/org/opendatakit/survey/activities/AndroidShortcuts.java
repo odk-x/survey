@@ -124,10 +124,13 @@ public class AndroidShortcuts extends BaseActivity {
         if (c != null && c.getCount() > 0) {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
+            String tableId = CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns
+                .TABLE_ID));
             String localizableDisplayName =
                 CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             String formName = app.getName() + " > "
-                + LocalizationUtils.getLocalizedDisplayName(localizableDisplayName);
+                + LocalizationUtils.getLocalizedDisplayName(appName, tableId,
+                localizableDisplayName);
             uri = Uri.withAppendedPath(
                     Uri.withAppendedPath(
                       Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
