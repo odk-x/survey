@@ -19,6 +19,8 @@ import java.util.ArrayList;
 
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.database.utilities.CursorUtils;
@@ -112,6 +114,7 @@ public class AndroidShortcuts extends BaseActivity {
     File[] directories = ODKFileUtils.getAppFolders();
     for (File app : directories) {
       String appName = app.getName();
+      PropertiesSingleton props = CommonToolProperties.get(this, appName);
       Uri uri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, app.getName());
       choices.add(new Choice(R.drawable.snotes_app, appIcon, uri, appName, appName));
 
@@ -130,6 +133,7 @@ public class AndroidShortcuts extends BaseActivity {
                 CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
             String formName = app.getName() + " > "
                 + LocalizationUtils.getLocalizedDisplayName(appName, tableId,
+                props.getUserSelectedDefaultLocale(),
                 localizableDisplayName);
             uri = Uri.withAppendedPath(
                     Uri.withAppendedPath(
