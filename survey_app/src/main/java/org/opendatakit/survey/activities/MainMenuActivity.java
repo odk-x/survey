@@ -519,7 +519,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            props.getActiveUser(), props.getLocale(),
+            props.getActiveUser(), props.getUserSelectedDefaultLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
@@ -1529,7 +1529,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
         final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
             getCurrentForm().tableId, getInstanceId(),
-            props.getActiveUser(), props.getLocale(),
+            props.getActiveUser(), props.getUserSelectedDefaultLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
