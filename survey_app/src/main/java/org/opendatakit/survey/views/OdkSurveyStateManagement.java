@@ -26,15 +26,15 @@ import java.lang.ref.WeakReference;
  * @author mitchellsundt@gmail.com
  *
  */
-public class OdkSurvey {
+public class OdkSurveyStateManagement {
 
-  public static final String t = "OdkSurvey";
+  public static final String t = "OdkSurveyStateManagement";
 
   private WeakReference<OdkSurveyWebView> mWebView;
   private IOdkSurveyActivity mActivity;
   private final WebLoggerIf log;
 
-  public OdkSurvey(IOdkSurveyActivity activity, OdkSurveyWebView webView) {
+  public OdkSurveyStateManagement(IOdkSurveyActivity activity, OdkSurveyWebView webView) {
     mWebView = new WeakReference<OdkSurveyWebView>(webView);
     mActivity = activity;
     log = WebLogger.getLogger(mActivity.getAppName());
@@ -45,8 +45,8 @@ public class OdkSurvey {
   }
 
 
-  public OdkSurveyIf getJavascriptInterfaceWithWeakReference() {
-    return new OdkSurveyIf(this);
+  public OdkSurveyStateManagementIf getJavascriptInterfaceWithWeakReference() {
+    return new OdkSurveyStateManagementIf(this);
   }
 
   public void clearAuxillaryHash() {

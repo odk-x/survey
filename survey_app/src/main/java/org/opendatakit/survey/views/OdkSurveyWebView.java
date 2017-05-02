@@ -1,9 +1,7 @@
 package org.opendatakit.survey.views;
 
 import android.content.Context;
-import android.os.Looper;
 import android.util.AttributeSet;
-import org.opendatakit.activities.IOdkDataActivity;
 import org.opendatakit.views.ODKWebView;
 import org.opendatakit.survey.activities.IOdkSurveyActivity;
 
@@ -13,14 +11,14 @@ import org.opendatakit.survey.activities.IOdkSurveyActivity;
 public class OdkSurveyWebView extends ODKWebView {
    private static final String t = "OdkSurveyWebView";
 
-   private OdkSurvey odkSurvey;
+   private OdkSurveyStateManagement odkSurveyStateManagement;
 
    public OdkSurveyWebView(Context context, AttributeSet attrs) {
       super(context, attrs);
 
-      // stomp on the odkSurvey object...
-      odkSurvey = new OdkSurvey((IOdkSurveyActivity) context, this);
-      addJavascriptInterface(odkSurvey.getJavascriptInterfaceWithWeakReference(), "odkSurvey");
+      // stomp on the odkSurveyStateManagement object...
+      odkSurveyStateManagement = new OdkSurveyStateManagement((IOdkSurveyActivity) context, this);
+      addJavascriptInterface(odkSurveyStateManagement.getJavascriptInterfaceWithWeakReference(), "odkSurveyStateManagement");
    }
 
    @Override public boolean hasPageFramework() {
