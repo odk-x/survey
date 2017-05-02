@@ -6,12 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
+import android.graphics.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -419,8 +414,10 @@ public class DrawActivity extends BaseActivity {
     public void reset() {
       Display display = ((WindowManager) getContext().getSystemService(
               Context.WINDOW_SERVICE)).getDefaultDisplay();
-      int screenWidth = display.getWidth();
-      int screenHeight = display.getHeight();
+      Point size = new Point();
+      display.getSize(size);
+      int screenWidth = size.x;
+      int screenHeight = size.y;
       resetImage(screenWidth, screenHeight);
     }
 
