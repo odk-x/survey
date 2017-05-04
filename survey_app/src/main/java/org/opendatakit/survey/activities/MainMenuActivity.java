@@ -34,11 +34,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import org.apache.commons.lang3.StringEscapeUtils;
-import org.json.JSONArray;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
-import org.json.JSONTokener;
-import org.opendatakit.activities.IOdkCommonActivity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
@@ -54,9 +51,8 @@ import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.provider.FormsProviderUtils;
 import org.opendatakit.webkitserver.utilities.DoActionUtils;
-import org.opendatakit.webkitserver.utilities.SerializationUtils;
-import org.opendatakit.webkitserver.utilities.SerializationUtils.MacroStringExpander;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.webkitserver.utilities.UrlUtils;
 import org.opendatakit.logging.WebLogger;
@@ -78,6 +74,7 @@ import org.opendatakit.survey.logic.FormIdStruct;
 import org.opendatakit.survey.logic.SurveyDataExecutorProcessor;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -321,42 +318,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     setAppName(newForm.appName);
     setCurrentForm(newForm);
     clearSectionScreenState();
-    String fragment = uri.getFragment();
-    if (fragment != null && fragment.length() != 0) {
-      // and process the fragment to find the instanceId, screenPath and other
-      // kv pairs
-      String[] pargs = fragment.split("&");
-      boolean first = true;
-      StringBuilder b = new StringBuilder();
-      int i;
-      for (i = 0; i < pargs.length; ++i) {
-        String[] keyValue = pargs[i].split("=");
-        if ("instanceId".equals(keyValue[0])) {
-          if (keyValue.length == 2) {
-            setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
-          }
-        } else if ("screenPath".equals(keyValue[0])) {
-          if (keyValue.length == 2) {
-            setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]), null);
-          }
-        } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
-          // ignore
-        } else {
-          if (!first) {
-            b.append("&");
-          }
-          first = false;
-          b.append(pargs[i]);
-        }
-      }
-      String aux = b.toString();
-      if (aux.length() != 0) {
-        setAuxillaryHash(aux);
-      }
-    } else {
-      setInstanceId(null);
-      setAuxillaryHash(null);
+
+    FormsProviderUtils.ParsedFragment pf;
+    try {
+      pf = FormsProviderUtils.parseUri(uri);
+    } catch ( UnsupportedEncodingException e ) {
+      WebLogger.getLogger(getAppName()).e(t, "transitionToFormHelper: " + e.toString());
+      throw new IllegalStateException("unexpected");
     }
+    setInstanceId(pf.instanceId);
+    if ( pf.screenPath != null ) {
+      setSectionScreenState(pf.screenPath, null);
+    }
+    setAuxillaryHash(pf.auxillaryHash);
     currentFragment = ScreenList.WEBKIT;
   }
 
@@ -613,29 +587,39 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getUrlLocationHash() {
-    if (currentForm == null) {
-      // we want framework...
-      File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName, 
-          FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
-      
-      String hashUrl = "#formPath="
-          + StringEscapeUtils.escapeHtml4(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
-          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath="
-              + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
-          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
-      return hashUrl;
-    } else {
-      String hashUrl = "#formPath="
-          + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
-          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath="
-              + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
-          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+    try {
+      if (currentForm == null) {
+        // we want framework...
+        File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName,
+            FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
 
-      return hashUrl;
+        String hashUrl = "#formPath="
+          + FormsProviderUtils.encodeFragmentUnquotedStringValue(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
+          + ((instanceId == null) ? "" : "&instanceId=" +
+              FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
+          + ((getScreenPath() == null) ? "" : "&screenPath="
+              + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
+          + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
+          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+        return hashUrl;
+      } else{
+          String hashUrl = "#formPath=" +
+              FormsProviderUtils.encodeFragmentUnquotedStringValue((currentForm == null) ? "" : currentForm.formPath)
+              + ((instanceId == null) ? "" : "&instanceId=" +
+                FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
+              + ((getScreenPath() == null) ? "" : "&screenPath="
+                + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
+              + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
+              + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+
+        return hashUrl;
+      }
+    } catch ( JsonProcessingException e ) {
+      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
+      throw new IllegalStateException("Unexpected");
+    } catch ( UnsupportedEncodingException e ) {
+      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
+      throw new IllegalStateException("Unexpected");
     }
   }
 
