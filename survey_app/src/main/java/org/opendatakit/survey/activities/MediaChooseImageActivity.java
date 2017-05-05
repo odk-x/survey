@@ -17,7 +17,6 @@ package org.opendatakit.survey.activities;
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.utilities.MediaUtils;
@@ -141,7 +140,7 @@ public class MediaChooseImageActivity extends BaseActivity {
 
     File newMedia = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
     try {
-      FileUtils.copyFile(sourceMedia, newMedia);
+      ODKFileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
       WebLogger.getLogger(appName).e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();

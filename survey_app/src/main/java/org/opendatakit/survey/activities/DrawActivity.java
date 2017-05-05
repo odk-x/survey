@@ -21,7 +21,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
@@ -122,7 +121,7 @@ public class DrawActivity extends BaseActivity {
         if (!savepointImage.exists() && refImage != null
                 && refImage.exists()) {
           try {
-            FileUtils.copyFile(refImage, savepointImage);
+            ODKFileUtils.copyFile(refImage, savepointImage);
           } catch (IOException e) {
             e.printStackTrace();
           }
@@ -132,7 +131,7 @@ public class DrawActivity extends BaseActivity {
         savepointImage.delete();
         if (refImage != null && refImage.exists()) {
           try {
-            FileUtils.copyFile(refImage, savepointImage);
+            ODKFileUtils.copyFile(refImage, savepointImage);
           } catch (IOException e) {
             e.printStackTrace();
           }
@@ -297,7 +296,7 @@ public class DrawActivity extends BaseActivity {
     if (!OPTION_SIGNATURE.equals(loadOption) && refImage != null
             && refImage.exists()) {
       try {
-        FileUtils.copyFile(refImage, savepointImage);
+        ODKFileUtils.copyFile(refImage, savepointImage);
       } catch (IOException e) {
         e.printStackTrace();
       }
