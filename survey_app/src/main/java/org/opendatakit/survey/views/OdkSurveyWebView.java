@@ -44,7 +44,7 @@ public class OdkSurveyWebView extends ODKWebView {
          // for Survey, we do care about the URL
          String fullUrl = baseUrl + hash;
 
-         loadPageOnUiThread(fullUrl, false);
+         loadPageOnUiThread(fullUrl, null, false);
 
       } else if (hasPageFrameworkFinishedLoading()) {
          log.i(t, "loadPage: delegate to gotoUrlHash: " + hash);
@@ -68,7 +68,7 @@ public class OdkSurveyWebView extends ODKWebView {
       if (baseUrl != null) {
          // for Survey, we do care about the URL
          String fullUrl = baseUrl + hash;
-         loadPageOnUiThread(fullUrl, true);
+         loadPageOnUiThread(fullUrl, null, true);
       } else {
          log.w(t, "reloadPage: framework did not load -- cannot load anything!");
       }

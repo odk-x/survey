@@ -52,14 +52,12 @@ import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.provider.FormsProviderUtils;
+import org.opendatakit.views.*;
 import org.opendatakit.webkitserver.utilities.DoActionUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.webkitserver.utilities.UrlUtils;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.logging.WebLoggerIf;
-import org.opendatakit.views.ExecutorContext;
-import org.opendatakit.views.ExecutorProcessor;
-import org.opendatakit.views.ODKWebView;
 import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.database.service.DbHandle;
 import org.opendatakit.database.service.TableHealthInfo;
@@ -1489,7 +1487,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public void signalResponseAvailable(String responseJSON) {
+  public void signalResponseAvailable(String responseJSON, String viewID) {
+    // Ignore viewID as there is only one webkit
+
     if ( responseJSON == null ) {
       WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
     } else {
@@ -1571,5 +1571,30 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       ((Survey) getApplication()).setRunInitializationTask(getAppName());
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
+  }
+
+  @Override
+  public ViewDataQueryParams getViewQueryParams(String viewID){
+    // Ignore viewID as there is only one fragment
+
+    Bundle bundle = this.getIntentExtras();
+
+    String tableId = bundle.getString(OdkData.IntentKeys.TABLE_ID);
+    if (tableId == null || tableId.isEmpty()) {
+      throw new IllegalArgumentException("Tables view launched without tableId specified");
+    }
+
+    String rowId = bundle.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+    String whereClause = bundle.getString(OdkData.IntentKeys.SQL_WHERE);
+    String[] selArgs = bundle.getStringArray(OdkData.IntentKeys.SQL_SELECTION_ARGS);
+    String[] groupBy = bundle.getStringArray(OdkData.IntentKeys.SQL_GROUP_BY_ARGS);
+    String havingClause = bundle.getString(OdkData.IntentKeys.SQL_HAVING);
+    String orderByElemKey = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_ELEMENT_KEY);
+    String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
+
+    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, selArgs,
+        groupBy, havingClause, orderByElemKey, orderByDir);
+
+    return params;
   }
 }
