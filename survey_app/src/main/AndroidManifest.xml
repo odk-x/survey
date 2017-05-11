@@ -13,15 +13,11 @@
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="com.android.vending.CHECK_LICENSE"/>
-    
-    <permission
-          android:name="org.opendatakit.webkitserver.RUN_WEBSERVER"
-          android:protectionLevel="signature" />
+
+    <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.webkitserver.RUN_WEBSERVER" />
 
-    <permission
-          android:name="org.opendatakit.database.RUN_DATABASE"
-          android:protectionLevel="signature" />
+    <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.database.RUN_DATABASE" />
 	
     <supports-screens
