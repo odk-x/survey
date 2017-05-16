@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 
+import android.app.Activity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.ToolAwareApplication;
@@ -64,6 +65,8 @@ public class SplashScreenActivity extends BaseActivity {
   private String appName;
   private AlertDialog mAlertDialog;
   private static final boolean EXIT = true;
+
+  private static final int ACTION_CODE = 1;
 
   @SuppressWarnings("deprecation")
   @Override
@@ -209,8 +212,7 @@ public class SplashScreenActivity extends BaseActivity {
       i.putExtras(extras);
     }
     i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, appName);
-    startActivity(i);
-    finish();
+    startActivityForResult(i, ACTION_CODE);
   }
 
   // decodes image and scales it to reduce memory consumption
@@ -316,4 +318,9 @@ public class SplashScreenActivity extends BaseActivity {
   public void databaseUnavailable() {
   }
 
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    setResult(resultCode, intent);
+    finish();
+  }
 }
