@@ -820,7 +820,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
-    PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
 
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;

@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 
 import org.opendatakit.consts.IntentConsts;
@@ -174,16 +175,15 @@ public class SplashScreenActivity extends BaseActivity {
     String sKeyLastVer = props.getProperty(toolVersionKey);
     long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
     if (keyLastVer < packageInfo.versionCode) {
-      props.setProperty(toolVersionKey, Integer.toString(packageInfo.versionCode));
-      props.writeProperties();
+      props.setProperties(Collections.singletonMap(toolVersionKey, Integer.toString(packageInfo
+          .versionCode)));
 
       firstRun = true;
     }
 
     // do all the first run things
     if (((firstRun == null) ? true : firstRun) || ((showSplash == null) ? false : showSplash)) {
-      props.setBooleanProperty(toolFirstRunKey, false);
-      props.writeProperties();
+      props.setProperties(Collections.singletonMap(toolFirstRunKey, Boolean.toString(false)));
       startSplashScreen(splashPath);
     } else {
       endSplashScreen();
