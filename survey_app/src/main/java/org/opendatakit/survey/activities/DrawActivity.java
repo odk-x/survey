@@ -24,6 +24,7 @@ import android.widget.RelativeLayout;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.utilities.BitmapUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.utilities.ColorPickerDialog;
@@ -422,7 +423,7 @@ public class DrawActivity extends BaseActivity {
 
     public void resetImage(int w, int h) {
       if (mBackgroundBitmapFile.exists()) {
-        mBitmap = ODKFileUtils.getBitmapScaledToDisplay(mAppName,
+        mBitmap = BitmapUtils.getBitmapScaledToDisplay(mAppName,
                 mBackgroundBitmapFile, w, h).copy(
                 Bitmap.Config.ARGB_8888, true);
         // mBitmap =
