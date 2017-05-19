@@ -483,9 +483,12 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getActiveUser() {
-    PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
-
-    return props.getActiveUser();
+    try {
+      return getDatabase().getActiveUser(getAppName());
+    } catch (ServicesAvailabilityException e) {
+      WebLogger.getLogger(getAppName()).printStackTrace(e);
+      return CommonToolProperties.ANONYMOUS_USER;
+    }
   }
 
   @Override
@@ -503,7 +506,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            props.getActiveUser(), props.getUserSelectedDefaultLocale(),
+            getActiveUser(), props.getUserSelectedDefaultLocale(),
             props.getProperty(CommonToolProperties.KEY_USERNAME),
             props.getProperty(CommonToolProperties.KEY_ACCOUNT));
 
