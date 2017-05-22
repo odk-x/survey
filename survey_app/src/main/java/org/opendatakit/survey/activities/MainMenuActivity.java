@@ -786,11 +786,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // request specifies a specific formUri -- try to open that
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
         if (newForm == null) {
-          // can't find it -- launch the initialization dialog to hopefully
-          // discover it.
-          WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
-          ((Survey) getApplication()).setRunInitializationTask(getAppName());
-          currentFragment = ScreenList.WEBKIT;
+          // can't find it -- display list of forms
+          currentFragment = ScreenList.FORM_CHOOSER;
         } else {
           transitionToFormHelper(uri, newForm);
         }
@@ -1570,7 +1567,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         actionWaitingForData = null;
       }
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      ((Survey) getApplication()).setRunInitializationTask(getAppName());
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }
