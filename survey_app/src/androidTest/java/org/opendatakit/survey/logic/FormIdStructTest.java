@@ -17,19 +17,27 @@ package org.opendatakit.survey.logic;
 import java.io.File;
 import java.util.Date;
 
+import android.support.test.filters.LargeTest;
+import android.support.test.runner.AndroidJUnit4;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.utilities.ODKFileUtils;
 
 import android.net.Uri;
-import android.test.AndroidTestCase;
 
-public class FormIdStructTest extends AndroidTestCase {
+import static junit.framework.TestCase.assertEquals;
+
+@RunWith(AndroidJUnit4.class)
+@LargeTest
+public class FormIdStructTest {
   private static final String FORM_PATH = "tables/myTable/forms/formName";
   private static final String FORM_ID = "formName";
   private static final String TABLE_ID = "myTable";
   private static final String FORM_VERSION = "12";
   private static final String APP_NAME = "survey.test";
 
+	@Test
   public void testValuesMatch() {
 	Uri formUri = Uri.parse("content://" + FormsProviderAPI.AUTHORITY + "/" + APP_NAME + "/" + TABLE_ID + "/1");
 	File formDefFile = ODKFileUtils.asAppFile(APP_NAME,FORM_PATH);
