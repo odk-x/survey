@@ -153,8 +153,7 @@ public class SplashScreenActivity extends BaseActivity {
       e.printStackTrace();
     }
 
-    DependencyChecker dc = new DependencyChecker(this);
-    boolean dependable = dc.checkDependencies();
+    boolean dependable = DependencyChecker.checkDependencies(this);
     if (!dependable) { // dependencies missing
       return;
     }
