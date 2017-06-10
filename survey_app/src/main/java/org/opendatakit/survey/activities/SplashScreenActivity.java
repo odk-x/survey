@@ -14,26 +14,6 @@
 
 package org.opendatakit.survey.activities;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
-import android.app.Activity;
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.application.ToolAwareApplication;
-import org.opendatakit.properties.CommonToolProperties;
-import org.opendatakit.properties.PropertiesSingleton;
-import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.dependencies.DependencyChecker;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.webkitserver.utilities.UrlUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -44,21 +24,37 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.application.ToolAwareApplication;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.dependencies.DependencyChecker;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.survey.R;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.webkitserver.utilities.UrlUtils;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Code to display a splash screen
  *
  * @author Carl Hartung
- *
  */
 public class SplashScreenActivity extends BaseActivity {
 
-  private static final String t = "SplashScreenActivity";
+  private static final String TAG = SplashScreenActivity.class.getSimpleName();
 
   private int mImageMaxWidth;
   private int mSplashTimeout = 2000; // milliseconds
@@ -68,11 +64,26 @@ public class SplashScreenActivity extends BaseActivity {
   private static final boolean EXIT = true;
 
   private static final int ACTION_CODE = 1;
+  /**
+   * We need this variable here (and we need to save it to the saved instance state) because if
+   * we start MainMenuActivity, then get destroyed, then MainMenuActivity finish()-es back to us,
+   * it will instantiate a new SplashScreenActivity all over again, and the SplashScreenActivity
+   * will think that it's supposed to be starting MainMenuActivity even if we were actually
+   * supposed to finish() back to Tables. That was a really hard bug to track down.
+   */
+  private boolean started = false;
 
-  @SuppressWarnings("deprecation")
+  @Override
+  public void onSaveInstanceState(Bundle outState) {
+    outState.putBoolean("started", started);
+  }
+
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    if (savedInstanceState != null && savedInstanceState.containsKey("started")) {
+      started = savedInstanceState.getBoolean("started");
+    }
 
     // verify that the external SD Card is available.
     try {
@@ -90,7 +101,7 @@ public class SplashScreenActivity extends BaseActivity {
 
     // external intent
     appName = getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
-    if ( appName == null ) {
+    if (appName == null) {
       appName = ODKFileUtils.getOdkDefaultAppName();
     }
 
@@ -100,8 +111,8 @@ public class SplashScreenActivity extends BaseActivity {
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
       final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
-      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) &&
-          uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+      if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
+          .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           appName = segments.get(0);
@@ -109,46 +120,44 @@ public class SplashScreenActivity extends BaseActivity {
           appName = segments.get(0);
         } else {
           String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
-          Log.e(t, err);
+          WebLogger.getLogger(appName).e(TAG, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
-      } else if ( uri.getScheme().equals(uriWebView.getScheme()) &&
-          uri.getAuthority().equals(uriWebView.getAuthority()) &&
-          uri.getPort() == uriWebView.getPort()) {
+      } else if (uri.getScheme().equals(uriWebView.getScheme()) && uri.getAuthority()
+          .equals(uriWebView.getAuthority()) && uri.getPort() == uriWebView.getPort()) {
         List<String> segments = uri.getPathSegments();
         if (segments != null && segments.size() == 1) {
           appName = segments.get(0);
         } else {
-          String err = "Invalid " + uri.toString() +
-              " uri. Expected one segment (the application name).";
-          Log.e(t, err);
+          String err =
+              "Invalid " + uri.toString() + " uri. Expected one segment (the application name).";
+          WebLogger.getLogger(appName).e(TAG, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
           finish();
           return;
         }
       } else {
-        String err = getString(R.string.unrecognized_uri,
-            uri.toString(),
-            uriWebView.toString(),
+        // TODO why in the world is a log message being translated
+        String err = getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
             uriFormsProvider.toString());
-        Log.e(t, err);
+        WebLogger.getLogger(appName).e(TAG, err);
         Intent i = new Intent();
         setResult(RESULT_CANCELED, i);
         finish();
         return;
       }
     }
-    WebLogger.getLogger(appName).i(t, "SplashScreenActivity appName: " + appName);
+    WebLogger.getLogger(appName).i(TAG, "SplashScreenActivity appName: " + appName);
 
     // get the package info object with version number
     PackageInfo packageInfo = null;
     try {
-      packageInfo = getPackageManager().getPackageInfo(getPackageName(),
-          PackageManager.GET_META_DATA);
+      packageInfo = getPackageManager()
+          .getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
     } catch (NameNotFoundException e) {
       e.printStackTrace();
     }
@@ -160,13 +169,11 @@ public class SplashScreenActivity extends BaseActivity {
 
     PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
 
-    String toolFirstRunKey = PropertiesSingleton.toolFirstRunPropertyName
-        (((ToolAwareApplication) getApplication()).getToolName());
+    String toolFirstRunKey = PropertiesSingleton
+        .toolFirstRunPropertyName(((ToolAwareApplication) getApplication()).getToolName());
 
-    String toolVersionKey = PropertiesSingleton.toolVersionPropertyName
-        (((ToolAwareApplication) getApplication()).getToolName());
-
-
+    String toolVersionKey = PropertiesSingleton
+        .toolVersionPropertyName(((ToolAwareApplication) getApplication()).getToolName());
 
     Boolean firstRun = props.getBooleanProperty(toolFirstRunKey);
     Boolean showSplash = props.getBooleanProperty(CommonToolProperties.KEY_SHOW_SPLASH);
@@ -175,10 +182,12 @@ public class SplashScreenActivity extends BaseActivity {
 
     // if you've increased version code, then update the version number and set firstRun to true
     String sKeyLastVer = props.getProperty(toolVersionKey);
-    long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ? -1L : Long.valueOf(sKeyLastVer);
+    long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ?
+        -1L :
+        Long.valueOf(sKeyLastVer);
     if (keyLastVer < packageInfo.versionCode) {
-      props.setProperties(Collections.singletonMap(toolVersionKey, Integer.toString(packageInfo
-          .versionCode)));
+      props.setProperties(
+          Collections.singletonMap(toolVersionKey, Integer.toString(packageInfo.versionCode)));
 
       firstRun = true;
     }
@@ -191,7 +200,7 @@ public class SplashScreenActivity extends BaseActivity {
       endSplashScreen();
     }
   }
-  
+
   @Override
   public String getAppName() {
     return appName;
@@ -204,14 +213,20 @@ public class SplashScreenActivity extends BaseActivity {
     Bundle extras = getIntent().getExtras();
 
     Intent i = new Intent(this, MainMenuActivity.class);
-    if ( data != null ) {
+    if (data != null) {
       i.setData(data);
     }
-    if ( extras != null ) {
+    if (extras != null) {
       i.putExtras(extras);
     }
     i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, appName);
-    startActivityForResult(i, ACTION_CODE);
+    if (!started) {
+      started = true;
+      startActivityForResult(i, ACTION_CODE);
+    } else {
+      WebLogger.getLogger(appName).i(TAG, "Don't know what to do here");
+      // Don't need to finish() because that's handled by onActivityResult
+    }
   }
 
   // decodes image and scales it to reduce memory consumption
@@ -232,10 +247,8 @@ public class SplashScreenActivity extends BaseActivity {
 
       int scale = 1;
       if (o.outHeight > mImageMaxWidth || o.outWidth > mImageMaxWidth) {
-        scale = (int) Math.pow(
-            2,
-            (int) Math.round(Math.log(mImageMaxWidth / (double) Math.max(o.outHeight, o.outWidth))
-                / Math.log(0.5)));
+        scale = (int) Math.pow(2, (int) Math.round(
+            Math.log(mImageMaxWidth / (double) Math.max(o.outHeight, o.outWidth)) / Math.log(0.5)));
       }
 
       // Decode with inSampleSize
@@ -320,6 +333,14 @@ public class SplashScreenActivity extends BaseActivity {
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     setResult(resultCode, intent);
+    WebLogger.getLogger(appName).i(TAG,
+        "MainMenu finish()'d back to SplashScreen: " + (requestCode == ACTION_CODE ?
+            "true" :
+            "THIS SHOULDN'T HAPPEN"));
+    WebLogger.getLogger(appName).i(TAG, "SplashScreenActivity finish()-ing back to " + (
+        getCallingActivity() == null ?
+            null :
+            getCallingActivity().getClassName()));
     finish();
   }
 }
