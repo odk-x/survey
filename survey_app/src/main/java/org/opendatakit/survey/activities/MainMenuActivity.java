@@ -141,6 +141,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   private static final boolean EXIT = true;
 
+  private enum PopBackStackArgs {CANCEL_IGNORE_CHANGES,SAVE_INCOMPLETE,NOT_A_FORM};
+
   private static class ScreenState {
     String screenPath;
     String state;
@@ -923,17 +925,25 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     mAlertDialog.show();
   }
 
-  private void popBackStack() {
+
+  private void popBackStack(PopBackStackArgs arg) {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
       Intent result = new Intent();
       // If we are in a WEBKIT, return the instanceId and the savepoint_type...
-      if (this.getInstanceId() != null && currentFragment == ScreenList.WEBKIT) {
+      if (this.getInstanceId() != null && !arg.equals(PopBackStackArgs.NOT_A_FORM)) {
         result.putExtra("instanceId", getInstanceId());
         // in this case, the savepoint_type is null (a checkpoint).
       }
-      this.setResult(RESULT_OK, result);
+      if (arg.equals(PopBackStackArgs.SAVE_INCOMPLETE)) {
+        result.putExtra("savepoint_type", "INCOMPLETE");
+      }
+      if (arg.equals(PopBackStackArgs.CANCEL_IGNORE_CHANGES)) {
+        this.setResult(RESULT_CANCELED, result);
+      } else {
+        this.setResult(RESULT_OK, result);
+      }
       finish();
     } else {
       BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
@@ -943,7 +953,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void initializationCompleted() {
-    popBackStack();
+    popBackStack(PopBackStackArgs.NOT_A_FORM);
   }
 
   @Override
@@ -963,7 +973,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
     } else {
-      popBackStack();
+      popBackStack(PopBackStackArgs.NOT_A_FORM);
     }
   }
 
@@ -1005,7 +1015,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
       }
     }
-    popBackStack();
+    popBackStack(PopBackStackArgs.SAVE_INCOMPLETE);
   }
 
   // trigger resolve UI...
@@ -1044,7 +1054,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
       }
     }
-    popBackStack();
+    popBackStack(PopBackStackArgs.CANCEL_IGNORE_CHANGES);
   }
 
   public void hideWebkitView() {
