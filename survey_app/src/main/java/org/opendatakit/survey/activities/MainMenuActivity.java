@@ -89,8 +89,7 @@ import java.util.UUID;
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
   private static final String t = "MainMenuActivity";
-
-  public static enum ScreenList {
+  public enum ScreenList {
     MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
@@ -141,7 +140,12 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   private static final boolean EXIT = true;
 
-  private enum PopBackStackArgs {CANCEL_IGNORE_CHANGES,SAVE_INCOMPLETE,NOT_A_FORM};
+  /*
+    * canceled and ignore all changes -> do not set savepoint type, and set instance id, and set result to cancelled
+    * canceled and save to resume later -> set savepoint type to incomplete and set instance id, and set result to OK
+    * other -> result ok, everything else ignore
+    */
+  private enum PopBackStackArgs {CANCEL_IGNORE_CHANGES,SAVE_INCOMPLETE,NOT_A_FORM}
 
   private static class ScreenState {
     String screenPath;
