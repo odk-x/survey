@@ -58,7 +58,9 @@ public class SplashScreenActivity extends BaseActivity {
   private static final String TAG = SplashScreenActivity.class.getSimpleName();
 
   private int mImageMaxWidth;
-  private int mSplashTimeout = 2000; // milliseconds
+  //private int mSplashTimeout = 10000; // milliseconds
+  private int mSplashTimeout = 2000;
+  //private int mSplashTimeout = 0;
 
   private String appName;
   private AlertDialog mAlertDialog;

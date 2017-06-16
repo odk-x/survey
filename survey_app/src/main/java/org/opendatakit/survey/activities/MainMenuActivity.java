@@ -94,7 +94,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   };
 
   // Extra returned from gp activity
-  // TODO: move to Survey???
   public static final String LOCATION_LATITUDE_RESULT = "latitude";
   public static final String LOCATION_LONGITUDE_RESULT = "longitude";
   public static final String LOCATION_ALTITUDE_RESULT = "altitude";
@@ -681,6 +680,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             setAppName(appName);
             String tableId = segments.get(1);
             String formId = (segments.size() > 2) ? segments.get(2) : "";
+            String formDir = ODKFileUtils.getFormFolder(appName, tableId, formId);
+            File f = new File(formDir);
+            File formDefJson = new File(f, ODKFileUtils.FORMDEF_JSON_FILENAME);
+            if (!f.exists() || !f.isDirectory() || !formDefJson.exists() || !formDefJson.isFile()) {
+              createErrorDialog(getString(R.string.invalid_form_id, formId, formId), EXIT);
+              return;
+            }
             formUri = Uri.withAppendedPath(
                 Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
                     tableId), formId);
