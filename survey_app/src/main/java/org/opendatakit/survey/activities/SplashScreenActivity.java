@@ -198,7 +198,7 @@ public class SplashScreenActivity extends BaseActivity {
     }
 
     // do all the first run things
-    if (((firstRun == null) ? true : firstRun) || ((showSplash == null) ? false : showSplash)) {
+    if (((firstRun == null) ? true : firstRun) && ((showSplash == null) ? false : showSplash)) {
       props.setProperties(Collections.singletonMap(toolFirstRunKey, Boolean.toString(false)));
       startSplashScreen(splashPath);
     } else {
