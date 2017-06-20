@@ -41,6 +41,7 @@ import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
+import org.opendatakit.database.queries.BindArgs;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
@@ -1604,13 +1605,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     String rowId = bundle.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
     String whereClause = bundle.getString(OdkData.IntentKeys.SQL_WHERE);
-    String[] selArgs = bundle.getStringArray(OdkData.IntentKeys.SQL_SELECTION_ARGS);
+    String selArgs = bundle.getString(OdkData.IntentKeys.SQL_SELECTION_ARGS);
     String[] groupBy = bundle.getStringArray(OdkData.IntentKeys.SQL_GROUP_BY_ARGS);
     String havingClause = bundle.getString(OdkData.IntentKeys.SQL_HAVING);
     String orderByElemKey = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_ELEMENT_KEY);
     String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
 
-    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, selArgs,
+    BindArgs bindArgs = new BindArgs(selArgs);
+    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
         groupBy, havingClause, orderByElemKey, orderByDir);
 
     return params;
