@@ -621,9 +621,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
         return hashUrl;
       }
-    } catch ( JsonProcessingException e ) {
-      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
-      throw new IllegalStateException("Unexpected");
     } catch ( UnsupportedEncodingException e ) {
       WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
       throw new IllegalStateException("Unexpected");
