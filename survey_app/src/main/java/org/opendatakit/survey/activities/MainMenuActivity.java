@@ -512,9 +512,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            getActiveUser(), props.getUserSelectedDefaultLocale(),
-            props.getProperty(CommonToolProperties.KEY_USERNAME),
-            props.getProperty(CommonToolProperties.KEY_ACCOUNT));
+            getActiveUser(), props.getUserSelectedDefaultLocale());
 
     String value = mPropertyManager.getSingularProperty(propertyId, cb);
     return value;
@@ -621,9 +619,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
         return hashUrl;
       }
-    } catch ( JsonProcessingException e ) {
-      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
-      throw new IllegalStateException("Unexpected");
     } catch ( UnsupportedEncodingException e ) {
       WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
       throw new IllegalStateException("Unexpected");
