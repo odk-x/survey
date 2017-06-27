@@ -131,6 +131,8 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
           mLocation = null;
           finish();
           break;
+        default:
+          // do nothing
         }
       }
     };
@@ -172,7 +174,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     }
   }
 
-  private String truncateDouble(float number) {
+  private static String truncateDouble(float number) {
     DecimalFormat df = new DecimalFormat("#.##");
     return df.format(number);
   }

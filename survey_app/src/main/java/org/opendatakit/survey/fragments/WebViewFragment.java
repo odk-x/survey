@@ -15,6 +15,7 @@
 package org.opendatakit.survey.fragments;
 
 import android.widget.TextView;
+import org.opendatakit.application.CommonApplication;
 import org.opendatakit.listener.DatabaseConnectionListener;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.application.Survey;
@@ -54,7 +55,7 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
   @Override
   public void onResume() {
     super.onResume();
-    Survey.getInstance().possiblyFireDatabaseCallback(getActivity(), this);
+    Survey.getInstance(getActivity()).possiblyFireDatabaseCallback(getActivity(), this);
   }
 
   public OdkSurveyWebView getWebKit() {
@@ -73,7 +74,7 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
     OdkSurveyWebView webView = (OdkSurveyWebView) getView().findViewById(R.id.webkit);
     TextView noDatabase = (TextView) getView().findViewById(android.R.id.empty);
 
-    if ( Survey.getInstance().getDatabase() != null ) {
+    if (((CommonApplication) getActivity().getApplication()).getDatabase() != null) {
       webView.setVisibility(View.VISIBLE);
       noDatabase.setVisibility(View.GONE);
     } else {

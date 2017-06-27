@@ -15,13 +15,8 @@
 package org.opendatakit.survey.activities;
 
 import android.annotation.SuppressLint;
-import android.app.ActionBar;
-import android.app.AlertDialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
-import android.app.FragmentManager;
+import android.app.*;
 import android.app.FragmentManager.BackStackEntry;
-import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
@@ -33,19 +28,23 @@ import android.os.Parcelable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
-import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
+import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
+import org.opendatakit.database.service.DbHandle;
+import org.opendatakit.database.service.TableHealthInfo;
+import org.opendatakit.database.service.TableHealthStatus;
+import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
 import org.opendatakit.listener.DatabaseConnectionListener;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.logging.WebLoggerIf;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.DynamicPropertiesCallback;
 import org.opendatakit.properties.PropertiesSingleton;
@@ -53,16 +52,6 @@ import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.provider.FormsProviderUtils;
-import org.opendatakit.views.*;
-import org.opendatakit.webkitserver.utilities.DoActionUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.webkitserver.utilities.UrlUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.logging.WebLoggerIf;
-import org.opendatakit.database.service.UserDbInterface;
-import org.opendatakit.database.service.DbHandle;
-import org.opendatakit.database.service.TableHealthInfo;
-import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.fragments.BackPressWebkitConfirmationDialogFragment;
@@ -71,15 +60,14 @@ import org.opendatakit.survey.fragments.InitializationFragment;
 import org.opendatakit.survey.fragments.WebViewFragment;
 import org.opendatakit.survey.logic.FormIdStruct;
 import org.opendatakit.survey.logic.SurveyDataExecutorProcessor;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.views.*;
+import org.opendatakit.webkitserver.utilities.DoActionUtils;
+import org.opendatakit.webkitserver.utilities.UrlUtils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * Responsible for displaying buttons to launch the major activities. Launches
@@ -89,23 +77,32 @@ import java.util.UUID;
  */
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
-  private static final String t = "MainMenuActivity";
-  public enum ScreenList {
-    MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
-  };
-
-  // Extra returned from gp activity
+  /**
+   * Key used for returning latitude via an intent from a GeoPointActivity
+   */
   public static final String LOCATION_LATITUDE_RESULT = "latitude";
+  /**
+   * Key used for returning longitude via an intent from a GeoPointActivity
+   */
   public static final String LOCATION_LONGITUDE_RESULT = "longitude";
+  /**
+   * Key used for returning altitude via an intent from a GeoPointActivity
+   */
   public static final String LOCATION_ALTITUDE_RESULT = "altitude";
+  /**
+   * Key used for returning location accuracy via an intent from a GeoPointActivity
+   */
   public static final String LOCATION_ACCURACY_RESULT = "accuracy";
-
+  /**
+   * tables that have conflict rows
+   */
+  public static final String CONFLICT_TABLES = "conflictTables";
+  private static final String TAG = "MainMenuActivity";
   // tags for retained context
   private static final String DISPATCH_STRING_WAITING_FOR_DATA = "dispatchStringWaitingForData";
   private static final String ACTION_WAITING_FOR_DATA = "actionWaitingForData";
 
   private static final String FORM_URI = "formUri";
-  private static final String UPLOAD_TABLE_ID = "uploadTableId";
   private static final String INSTANCE_ID = "instanceId";
   private static final String SCREEN_PATH = "screenPath";
   private static final String CONTROLLER_STATE = "controllerState";
@@ -117,131 +114,47 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   private static final String QUEUED_ACTIONS = "queuedActions";
   private static final String RESPONSE_JSON = "responseJSON";
-
-  /** tables that have conflict rows */
-  public static final String CONFLICT_TABLES = "conflictTables";
+  private static final int MENU_FILL_FORM = Menu.FIRST;
 
   // menu options
-
-  private static final int MENU_FILL_FORM = Menu.FIRST;
   private static final int MENU_CLOUD_FORMS = Menu.FIRST + 1;
   private static final int MENU_PREFERENCES = Menu.FIRST + 2;
   private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 3;
   private static final int MENU_ABOUT = Menu.FIRST + 4;
-
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
   private static final int INTERNAL_ACTIVITY_CODE = 21;
   private static final int SYNC_ACTIVITY_CODE = 22;
   private static final int CONFLICT_ACTIVITY_CODE = 23;
   private static final int APP_PROPERTIES_ACTIVITY_CODE = 24;
-
   private static final String BACKPRESS_DIALOG_TAG = "backPressDialog";
-
   private static final boolean EXIT = true;
-
-  /*
-    * canceled and ignore all changes -> do not set savepoint type, and set instance id, and set result to cancelled
-    * canceled and save to resume later -> set savepoint type to incomplete and set instance id, and set result to OK
-    * other -> result ok, everything else ignore
-    */
-  private enum PopBackStackArgs {CANCEL_IGNORE_CHANGES,SAVE_INCOMPLETE,NOT_A_FORM}
-
-  private static class ScreenState {
-    String screenPath;
-    String state;
-
-    ScreenState(String screenPath, String state) {
-      this.screenPath = screenPath;
-      this.state = state;
-    }
-  }
-
-  private static class SectionScreenStateHistory implements Parcelable {
-    ScreenState currentScreen = new ScreenState(null, null);
-    ArrayList<ScreenState> history = new ArrayList<ScreenState>();
-
-    @Override
-    public int describeContents() {
-      return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-      dest.writeString(currentScreen.screenPath);
-      dest.writeString(currentScreen.state);
-
-      dest.writeInt(history.size());
-      for (int i = 0; i < history.size(); ++i) {
-        ScreenState screen = history.get(i);
-        dest.writeString(screen.screenPath);
-        dest.writeString(screen.state);
-      }
-    }
-
-    public static final Parcelable.Creator<SectionScreenStateHistory> CREATOR = new Parcelable.Creator<SectionScreenStateHistory>() {
-      public SectionScreenStateHistory createFromParcel(Parcel in) {
-        SectionScreenStateHistory cur = new SectionScreenStateHistory();
-        String screenPath = in.readString();
-        String state = in.readString();
-        cur.currentScreen = new ScreenState(screenPath, state);
-        int count = in.readInt();
-        for (int i = 0; i < count; ++i) {
-          screenPath = in.readString();
-          state = in.readString();
-          cur.history.add(new ScreenState(screenPath, state));
-        }
-        return cur;
-      }
-
-      @Override
-      public SectionScreenStateHistory[] newArray(int size) {
-        SectionScreenStateHistory[] array = new SectionScreenStateHistory[size];
-        for (int i = 0; i < size; ++i) {
-          array[i] = null;
-        }
-        return array;
-      }
-    };
-  }
-
-  /**
-   * Member variables that are saved and restored across orientation changes.
-   */
-
-  private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
-
-  private String dispatchStringWaitingForData = null;
-  private String actionWaitingForData = null;
-
-  private String appName = null;
-  private String uploadTableId = null;
-  private FormIdStruct currentForm = null; // via FORM_URI (formUri)
-  private String instanceId = null;
-
-  private Bundle sessionVariables = new Bundle();
-  private ArrayList<SectionScreenStateHistory> sectionStateScreenHistory = new ArrayList<SectionScreenStateHistory>();
-
   private final String refId = UUID.randomUUID().toString();
-  private String auxillaryHash = null;
-
-  private String frameworkBaseUrl = null;
-  private Long frameworkLastModifiedDate = 0L;
-
-  private LinkedList<String> queuedActions = new LinkedList<String>();
-
-  LinkedList<String> queueResponseJSON = new LinkedList<String>();
-
-  // DO NOT USE THESE -- only used to determine if the current form has changed.
-  private String trackingFormPath = null;
-  private Long trackingFormLastModifiedDate = 0L;
-
+  private LinkedList<String> queueResponseJSON = new LinkedList<>();
   /**
    * track which tables have conflicts (these need to be resolved before Survey
    * can operate)
    */
   Bundle mConflictTables = new Bundle();
+  /**
+   * Member variables that are saved and restored across orientation changes.
+   */
 
+  private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
+  private String dispatchStringWaitingForData = null;
+  private String actionWaitingForData = null;
+  private String appName = null;
+  private FormIdStruct currentForm = null; // via FORM_URI (formUri)
+  private String instanceId = null;
+  private Bundle sessionVariables = new Bundle();
+  private ArrayList<SectionScreenStateHistory> sectionStateScreenHistory = new ArrayList<>();
+  private String auxillaryHash = null;
+  private String frameworkBaseUrl = null;
+  private Long frameworkLastModifiedDate = 0L;
+  private LinkedList<String> queuedActions = new LinkedList<>();
+  // DO NOT USE THESE -- only used to determine if the current form has changed.
+  private String trackingFormPath = null;
+  private Long trackingFormLastModifiedDate = 0L;
   /**
    * Member variables that do not need to be preserved across orientation
    * changes, etc.
@@ -250,7 +163,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private DatabaseConnectionListener mIOdkDataDatabaseListener;
   // no need to preserve
   private PropertyManager mPropertyManager;
-
   // no need to preserve
   private AlertDialog mAlertDialog;
 
@@ -281,9 +193,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (getInstanceId() != null) {
       outState.putString(INSTANCE_ID, getInstanceId());
     }
-    if (getUploadTableId() != null) {
-      outState.putString(UPLOAD_TABLE_ID, getUploadTableId());
-    }
     if (getScreenPath() != null) {
       outState.putString(SCREEN_PATH, getScreenPath());
     }
@@ -300,13 +209,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     outState.putParcelableArrayList(SECTION_STATE_SCREEN_HISTORY, sectionStateScreenHistory);
 
-    if ( !queuedActions.isEmpty() ) {
+    if (!queuedActions.isEmpty()) {
       String[] actionOutcomesArray = new String[queuedActions.size()];
       queuedActions.toArray(actionOutcomesArray);
       outState.putStringArray(QUEUED_ACTIONS, actionOutcomesArray);
     }
 
-    if ( !queueResponseJSON.isEmpty() ) {
+    if (!queueResponseJSON.isEmpty()) {
       String[] qra = queueResponseJSON.toArray(new String[queueResponseJSON.size()]);
       outState.putStringArray(RESPONSE_JSON, qra);
     }
@@ -326,12 +235,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     FormsProviderUtils.ParsedFragment pf;
     try {
       pf = FormsProviderUtils.parseUri(uri);
-    } catch ( UnsupportedEncodingException e ) {
-      WebLogger.getLogger(getAppName()).e(t, "transitionToFormHelper: " + e.toString());
+    } catch (UnsupportedEncodingException e) {
+      WebLogger.getLogger(getAppName()).e(TAG, "transitionToFormHelper: " + e);
+      WebLogger.getLogger(getAppName()).printStackTrace(e);
       throw new IllegalStateException("unexpected");
     }
     setInstanceId(pf.instanceId);
-    if ( pf.screenPath != null ) {
+    if (pf.screenPath != null) {
       setSectionScreenState(pf.screenPath, null);
     }
     setAuxillaryHash(pf.auxillaryHash);
@@ -349,10 +259,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     super.onStart();
   }
 
+  /**
+   *
+   */
   public void scanForConflictAllTables() {
-    
-    UserDbInterface db = ((Survey) getApplication()).getDatabase();
-    if ( db != null ) {
+
+    UserDbInterface db = ((CommonApplication) getApplication()).getDatabase();
+    if (db != null) {
       List<TableHealthInfo> info;
       DbHandle dbHandle = null;
       try {
@@ -363,26 +276,26 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         return;
       } finally {
         try {
-          if ( dbHandle != null ) {
+          if (dbHandle != null) {
             db.closeDatabase(appName, dbHandle);
           }
         } catch (ServicesAvailabilityException e) {
           WebLogger.getLogger(appName).printStackTrace(e);
         }
       }
-      
-      if ( info != null ) {
+
+      if (info != null) {
 
         Bundle conflictTables = new Bundle();
 
         for (TableHealthInfo tableInfo : info) {
           TableHealthStatus status = tableInfo.getHealthStatus();
-          if ( status == TableHealthStatus.TABLE_HEALTH_HAS_CONFLICTS ||
-               status == TableHealthStatus.TABLE_HEALTH_HAS_CHECKPOINTS_AND_CONFLICTS ) {
-              conflictTables.putString(tableInfo.getTableId(), tableInfo.getTableId());
+          if (status == TableHealthStatus.TABLE_HEALTH_HAS_CONFLICTS
+              || status == TableHealthStatus.TABLE_HEALTH_HAS_CHECKPOINTS_AND_CONFLICTS) {
+            conflictTables.putString(tableInfo.getTableId(), tableInfo.getTableId());
           }
         }
-        
+
         mConflictTables = conflictTables;
       }
     }
@@ -393,7 +306,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       scanForConflictAllTables();
     }
 
-    if ((mConflictTables != null) && !mConflictTables.isEmpty()) {
+    if (mConflictTables != null && !mConflictTables.isEmpty()) {
       Iterator<String> iterator = mConflictTables.keySet().iterator();
       String tableId = iterator.next();
       mConflictTables.remove(tableId);
@@ -408,6 +321,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       try {
         this.startActivityForResult(i, CONFLICT_ACTIVITY_CODE);
       } catch (ActivityNotFoundException e) {
+        WebLogger.getLogger(appName).printStackTrace(e);
         Toast.makeText(this,
             getString(R.string.activity_not_found, IntentConsts.ResolveConflict.ACTIVITY_NAME),
             Toast.LENGTH_LONG).show();
@@ -417,17 +331,17 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void databaseAvailable() {
-    if ( getAppName() != null ) {
+    if (getAppName() != null) {
       resolveAnyConflicts();
     }
     FragmentManager mgr = this.getFragmentManager();
-    if ( currentFragment != null ) {
+    if (currentFragment != null) {
       Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
       if (fragment instanceof DatabaseConnectionListener) {
         ((DatabaseConnectionListener) fragment).databaseAvailable();
       }
     }
-    if ( mIOdkDataDatabaseListener != null ) {
+    if (mIOdkDataDatabaseListener != null) {
       mIOdkDataDatabaseListener.databaseAvailable();
     }
   }
@@ -435,41 +349,25 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void databaseUnavailable() {
     FragmentManager mgr = this.getFragmentManager();
-    if ( currentFragment != null ) {
+    if (currentFragment != null) {
       Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
       if (fragment instanceof DatabaseConnectionListener) {
         ((DatabaseConnectionListener) fragment).databaseUnavailable();
       }
     }
-    if ( mIOdkDataDatabaseListener != null ) {
+    if (mIOdkDataDatabaseListener != null) {
       mIOdkDataDatabaseListener.databaseUnavailable();
     }
-  }
-
-  public void setCurrentForm(FormIdStruct currentForm) {
-    WebLogger.getLogger(getAppName()).i(t,
-        "setCurrentForm: " + ((currentForm == null) ? "null" : currentForm.formPath));
-    this.currentForm = currentForm;
   }
 
   public FormIdStruct getCurrentForm() {
     return this.currentForm;
   }
 
-  private void setUploadTableId(String uploadTableId) {
-    WebLogger.getLogger(getAppName()).i(t, "setUploadTableId: " + uploadTableId);
-    this.uploadTableId = uploadTableId;
-  }
-
-  @Override
-  public String getUploadTableId() {
-    return this.uploadTableId;
-  }
-
-  @Override
-  public void setInstanceId(String instanceId) {
-    WebLogger.getLogger(getAppName()).i(t, "setInstanceId: " + instanceId);
-    this.instanceId = instanceId;
+  public void setCurrentForm(FormIdStruct currentForm) {
+    WebLogger.getLogger(getAppName())
+        .i(TAG, "setCurrentForm: " + (currentForm == null ? "null" : currentForm.formPath));
+    this.currentForm = currentForm;
   }
 
   @Override
@@ -477,14 +375,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     return this.instanceId;
   }
 
-  public void setAuxillaryHash(String auxillaryHash) {
-    WebLogger.getLogger(getAppName()).i(t, "setAuxillaryHash: " + auxillaryHash);
-    this.auxillaryHash = auxillaryHash;
+  @Override
+  public void setInstanceId(String instanceId) {
+    WebLogger.getLogger(getAppName()).i(TAG, "setInstanceId: " + instanceId);
+    this.instanceId = instanceId;
   }
 
   @Override
   public String getAppName() {
     return this.appName;
+  }
+
+  public void setAppName(String appName) {
+    this.appName = appName;
   }
 
   @Override
@@ -499,7 +402,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getTableId() {
-    if ( getCurrentForm() != null ) {
+    if (getCurrentForm() != null) {
       return getCurrentForm().tableId;
     }
     return null;
@@ -511,11 +414,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
-        form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            getActiveUser(), props.getUserSelectedDefaultLocale());
+        form == null ? null : getCurrentForm().tableId, getInstanceId(), getActiveUser(),
+        props.getUserSelectedDefaultLocale());
 
-    String value = mPropertyManager.getSingularProperty(propertyId, cb);
-    return value;
+    return mPropertyManager.getSingularProperty(propertyId, cb);
   }
 
   @Override
@@ -535,8 +437,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public String getUrlBaseLocation(boolean ifChanged) {
     // Find the formPath for the framework formDef.json
-    File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName, 
-        FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
+    File frameworkFormDef = new File(ODKFileUtils
+        .getFormFolder(appName, FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID),
+        "formDef.json");
 
     // formPath always begins ../ -- strip that off to get explicit path
     // suffix...
@@ -549,8 +452,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       return null;
     }
 
-    String fullPath = UrlUtils.getAsWebViewUri(this, appName,
-        ODKFileUtils.asUriFragment(appName, htmlFile));
+    String fullPath = UrlUtils
+        .getAsWebViewUri(this, appName, ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
       return null;
@@ -568,26 +471,26 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       // or in the form. If there are, reload. Otherwise,
       // return null.
 
-      changed = (!frameworkLastModified.equals(frameworkLastModifiedDate));
+      changed = !frameworkLastModified.equals(frameworkLastModifiedDate);
     }
 
     if (currentForm == null) {
       trackingFormPath = null;
       trackingFormLastModifiedDate = 0L;
       changed = true;
-    } else if (trackingFormPath == null || !trackingFormPath.equals(currentForm.formPath)) {
+    } else //noinspection EqualsReplaceableByObjectsCall
+      if (trackingFormPath == null || !trackingFormPath.equals(currentForm.formPath)) {
       trackingFormPath = currentForm.formPath;
       trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
     } else {
-      changed = changed
-          || (Long.valueOf(trackingFormLastModifiedDate).compareTo(
-              currentForm.lastDownloadDate.getTime()) < 0);
+      changed = changed || trackingFormLastModifiedDate
+          .compareTo(currentForm.lastDownloadDate.getTime()) < 0;
       trackingFormLastModifiedDate = currentForm.lastDownloadDate.getTime();
     }
 
     frameworkBaseUrl = fullPath;
     frameworkLastModifiedDate = frameworkLastModified;
-    return (ifChanged && !changed) ? null : frameworkBaseUrl;
+    return ifChanged && !changed ? null : frameworkBaseUrl;
   }
 
   @Override
@@ -595,32 +498,35 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     try {
       if (currentForm == null) {
         // we want framework...
-        File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName,
-            FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
+        File frameworkFormDef = new File(ODKFileUtils
+            .getFormFolder(appName, FormsColumns.COMMON_BASE_FORM_ID,
+                FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
 
-        String hashUrl = "#formPath="
-          + FormsProviderUtils.encodeFragmentUnquotedStringValue(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
-          + ((instanceId == null) ? "" : "&instanceId=" +
-              FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath="
-              + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
-          + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
-          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
-        return hashUrl;
-      } else{
-          String hashUrl = "#formPath=" +
-              FormsProviderUtils.encodeFragmentUnquotedStringValue((currentForm == null) ? "" : currentForm.formPath)
-              + ((instanceId == null) ? "" : "&instanceId=" +
-                FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
-              + ((getScreenPath() == null) ? "" : "&screenPath="
-                + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
-              + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
-              + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
-
-        return hashUrl;
+        return "#formPath=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(
+            ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef)) + (instanceId == null ?
+            "" :
+            "&instanceId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId)) + (
+            getScreenPath() == null ?
+                "" :
+                "&screenPath=" + FormsProviderUtils
+                    .encodeFragmentUnquotedStringValue(getScreenPath())) + ("&refId="
+            + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId)) + (
+            auxillaryHash == null ? "" : "&" + auxillaryHash);
+      } else {
+        return "#formPath=" + FormsProviderUtils
+            .encodeFragmentUnquotedStringValue(currentForm.formPath) + (instanceId == null ?
+            "" :
+            "&instanceId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId)) + (
+            getScreenPath() == null ?
+                "" :
+                "&screenPath=" + FormsProviderUtils
+                    .encodeFragmentUnquotedStringValue(getScreenPath())) + ("&refId="
+            + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId)) + (
+            auxillaryHash == null ? "" : "&" + auxillaryHash);
       }
-    } catch ( UnsupportedEncodingException e ) {
-      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
+    } catch (UnsupportedEncodingException e) {
+      WebLogger.getLogger(getAppName()).i(TAG, "getUrlLocationHash: " + e);
+      WebLogger.getLogger(getAppName()).printStackTrace(e);
       throw new IllegalStateException("Unexpected");
     }
   }
@@ -634,8 +540,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     return this.auxillaryHash;
   }
 
-  public void setAppName(String appName) {
-    this.appName = appName;
+  public void setAuxillaryHash(String auxillaryHash) {
+    WebLogger.getLogger(getAppName()).i(TAG, "setAuxillaryHash: " + auxillaryHash);
+    this.auxillaryHash = auxillaryHash;
   }
 
   public String getRefId() {
@@ -666,7 +573,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // savedInstanceState...
         final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
         final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
-        if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
+            .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
           List<String> segments = uri.getPathSegments();
           if (segments != null && segments.size() == 1) {
             String appName = segments.get(0);
@@ -675,7 +583,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             String appName = segments.get(0);
             setAppName(appName);
             String tableId = segments.get(1);
-            String formId = (segments.size() > 2) ? segments.get(2) : "";
+            String formId = segments.size() > 2 ? segments.get(2) : "";
             String formDir = ODKFileUtils.getFormFolder(appName, tableId, formId);
             File f = new File(formDir);
             File formDefJson = new File(f, ODKFileUtils.FORMDEF_JSON_FILENAME);
@@ -687,11 +595,12 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
                 Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
                     tableId), formId);
           } else {
-            createErrorDialog(getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
+            createErrorDialog(
+                getString(R.string.invalid_uri_expecting_n_segments, uri.toString(), 2), EXIT);
             return;
           }
-        } else if (uri.getScheme().equals(uriWebView.getScheme()) && uri.getAuthority().equals(uriWebView.getAuthority())
-            && uri.getPort() == uriWebView.getPort()) {
+        } else if (uri.getScheme().equals(uriWebView.getScheme()) && uri.getAuthority()
+            .equals(uriWebView.getAuthority()) && uri.getPort() == uriWebView.getPort()) {
           List<String> segments = uri.getPathSegments();
           if (segments != null && segments.size() == 1) {
             String appName = segments.get(0);
@@ -703,8 +612,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
           }
 
         } else {
-          createErrorDialog(getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
-              uriFormsProvider.toString()), EXIT);
+          createErrorDialog(
+              getString(R.string.unrecognized_uri, uri.toString(), uriWebView.toString(),
+                  uriFormsProvider.toString()), EXIT);
           return;
         }
       }
@@ -722,7 +632,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
       try {
         String appName = getAppName();
-        if (appName != null && appName.length() != 0) {
+        if (appName != null && !appName.isEmpty()) {
           ODKFileUtils.verifyExternalStorageAvailability();
           ODKFileUtils.assertDirectoryStructure(appName);
         }
@@ -731,13 +641,15 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         return;
       }
 
-      WebLogger.getLogger(getAppName()).i(t, "Starting up, creating directories");
+      WebLogger.getLogger(getAppName()).i(TAG, "Starting up, creating directories");
 
       if (savedInstanceState != null) {
         // if we are restoring, assume that initialization has already occurred.
 
-        dispatchStringWaitingForData = savedInstanceState.containsKey(DISPATCH_STRING_WAITING_FOR_DATA) ?
-            savedInstanceState.getString(DISPATCH_STRING_WAITING_FOR_DATA) : null;
+        dispatchStringWaitingForData = savedInstanceState
+            .containsKey(DISPATCH_STRING_WAITING_FOR_DATA) ?
+            savedInstanceState.getString(DISPATCH_STRING_WAITING_FOR_DATA) :
+            null;
         actionWaitingForData = savedInstanceState.containsKey(ACTION_WAITING_FOR_DATA) ?
             savedInstanceState.getString(ACTION_WAITING_FOR_DATA) :
             null;
@@ -747,7 +659,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             currentFragment.name());
 
         if (savedInstanceState.containsKey(FORM_URI)) {
-          FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), Uri.parse(savedInstanceState.getString(FORM_URI)));
+          FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(),
+              Uri.parse(savedInstanceState.getString(FORM_URI)));
           if (newForm != null) {
             setAppName(newForm.appName);
             setCurrentForm(newForm);
@@ -756,9 +669,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         setInstanceId(savedInstanceState.containsKey(INSTANCE_ID) ?
             savedInstanceState.getString(INSTANCE_ID) :
             getInstanceId());
-        setUploadTableId(savedInstanceState.containsKey(UPLOAD_TABLE_ID) ?
-            savedInstanceState.getString(UPLOAD_TABLE_ID) :
-            getUploadTableId());
 
         String tmpScreenPath = savedInstanceState.containsKey(SCREEN_PATH) ?
             savedInstanceState.getString(SCREEN_PATH) :
@@ -777,18 +687,23 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
 
         if (savedInstanceState.containsKey(SECTION_STATE_SCREEN_HISTORY)) {
-          sectionStateScreenHistory = savedInstanceState.getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
+          sectionStateScreenHistory = savedInstanceState
+              .getParcelableArrayList(SECTION_STATE_SCREEN_HISTORY);
         }
 
         if (savedInstanceState.containsKey(QUEUED_ACTIONS)) {
           String[] actionOutcomesArray = savedInstanceState.getStringArray(QUEUED_ACTIONS);
           queuedActions.clear();
-          queuedActions.addAll(Arrays.asList(actionOutcomesArray));
+          if (actionOutcomesArray != null) {
+            queuedActions.addAll(Arrays.asList(actionOutcomesArray));
+          }
         }
 
-        if (savedInstanceState != null && savedInstanceState.containsKey(RESPONSE_JSON)) {
+        if (savedInstanceState.containsKey(RESPONSE_JSON)) {
           String[] pendingResponseJSON = savedInstanceState.getStringArray(RESPONSE_JSON);
-          queueResponseJSON.addAll(Arrays.asList(pendingResponseJSON));
+          if (pendingResponseJSON != null) {
+            queueResponseJSON.addAll(Arrays.asList(pendingResponseJSON));
+          }
         }
       } else if (formUri != null) {
         // request specifies a specific formUri -- try to open that
@@ -806,7 +721,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       setContentView(R.layout.main_screen);
 
       ActionBar actionBar = getActionBar();
-      actionBar.show();
+      if (actionBar != null) {
+        actionBar.show();
+      }
     }
   }
 
@@ -814,7 +731,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   public void onResume() {
     super.onResume();
 
-    ((Survey) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
+    ((CommonApplication) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
 
     swapToFragmentView(currentFragment);
   }
@@ -822,7 +739,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void onPostResume() {
     super.onPostResume();
-    ((Survey) getApplication()).fireDatabaseConnectionListener();
+    ((CommonApplication) getApplication()).fireDatabaseConnectionListener();
   }
 
   @Override
@@ -833,7 +750,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     MenuItem item;
     if (currentFragment != ScreenList.WEBKIT) {
       ActionBar actionBar = getActionBar();
-      actionBar.show();
+      if (actionBar != null) {
+        actionBar.show();
+      }
 
       item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
       item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
@@ -841,14 +760,18 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
       item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
 
-      item = menu.add(Menu.NONE, MENU_PREFERENCES, Menu.NONE, getString(R.string.general_preferences));
+      item = menu
+          .add(Menu.NONE, MENU_PREFERENCES, Menu.NONE, getString(R.string.general_preferences));
       item.setIcon(R.drawable.ic_settings_black_24dp).setShowAsAction(showOption);
 
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
-      item.setIcon(R.drawable.ic_info_outline_black_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
+      item.setIcon(R.drawable.ic_info_outline_black_24dp)
+          .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
       ActionBar actionBar = getActionBar();
-      actionBar.hide();
+      if (actionBar != null) {
+        actionBar.hide();
+      }
     }
 
     return true;
@@ -863,9 +786,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     } else if (item.getItemId() == MENU_CLOUD_FORMS) {
       try {
         Intent syncIntent = new Intent();
-        syncIntent.setComponent(new ComponentName(
-            IntentConsts.Sync.APPLICATION_NAME,
-            IntentConsts.Sync.ACTIVITY_NAME));
+        syncIntent.setComponent(
+            new ComponentName(IntentConsts.Sync.APPLICATION_NAME, IntentConsts.Sync.ACTIVITY_NAME));
         syncIntent.setAction(Intent.ACTION_DEFAULT);
         Bundle bundle = new Bundle();
         bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
@@ -899,12 +821,12 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void chooseForm(Uri formUri) {
-    Intent i = new Intent(Intent.ACTION_EDIT, formUri, this, MainMenuActivity.class);
+    Intent i = new Intent(Intent.ACTION_EDIT, formUri, this, getClass());
     startActivityForResult(i, INTERNAL_ACTIVITY_CODE);
   }
 
   private void createErrorDialog(String errorMsg, final boolean shouldExit) {
-    WebLogger.getLogger(getAppName()).e(t, errorMsg);
+    WebLogger.getLogger(getAppName()).e(TAG, errorMsg);
     if (mAlertDialog != null) {
       mAlertDialog.dismiss();
       mAlertDialog = null;
@@ -915,14 +837,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int button) {
-        switch (button) {
-        case DialogInterface.BUTTON_POSITIVE:
-          if (shouldExit) {
-            Intent i = new Intent();
-            setResult(RESULT_CANCELED, i);
-            finish();
-          }
-          break;
+        if (button == DialogInterface.BUTTON_POSITIVE && shouldExit) {
+          Intent i = new Intent();
+          setResult(RESULT_CANCELED, i);
+          finish();
         }
       }
     };
@@ -931,21 +849,20 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     mAlertDialog.show();
   }
 
-
   private void popBackStack(PopBackStackArgs arg) {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
       Intent result = new Intent();
       // If we are in a WEBKIT, return the instanceId and the savepoint_type...
-      if (this.getInstanceId() != null && !arg.equals(PopBackStackArgs.NOT_A_FORM)) {
+      if (this.getInstanceId() != null && arg != PopBackStackArgs.NOT_A_FORM) {
         result.putExtra("instanceId", getInstanceId());
         // in this case, the savepoint_type is null (a checkpoint).
       }
-      if (arg.equals(PopBackStackArgs.SAVE_INCOMPLETE)) {
+      if (arg == PopBackStackArgs.SAVE_INCOMPLETE) {
         result.putExtra("savepoint_type", "INCOMPLETE");
       }
-      if (arg.equals(PopBackStackArgs.CANCEL_IGNORE_CHANGES)) {
+      if (arg == PopBackStackArgs.CANCEL_IGNORE_CHANGES) {
         this.setResult(RESULT_CANCELED, result);
       } else {
         this.setResult(RESULT_OK, result);
@@ -964,17 +881,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void onBackPressed() {
-    if ( (currentFragment == ScreenList.WEBKIT) &&
-        getInstanceId() != null && getCurrentForm() != null &&
-        getCurrentForm().tableId != null) {
+    if (currentFragment == ScreenList.WEBKIT && getInstanceId() != null
+        && getCurrentForm() != null && getCurrentForm().tableId != null) {
 
       // try to retrieve the active dialog
-      DialogFragment dialog = (DialogFragment)
-          getFragmentManager().findFragmentByTag(BACKPRESS_DIALOG_TAG);
+      DialogFragment dialog = (DialogFragment) getFragmentManager()
+          .findFragmentByTag(BACKPRESS_DIALOG_TAG);
 
-      if (dialog != null && dialog.getDialog() != null) {
-        // as-is
-      } else {
+      if (dialog == null || dialog.getDialog() == null) {
         dialog = new BackPressWebkitConfirmationDialogFragment();
       }
       dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
@@ -990,17 +904,18 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String tableId = this.getCurrentForm().tableId;
     String rowId = this.getInstanceId();
 
-    if ( rowId != null && tableId != null ) {
+    if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
         dbHandleName = this.getDatabase().openDatabase(getAppName());
         OrderedColumns cols = this.getDatabase()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
         UserTable table = this.getDatabase()
-            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId, cols, rowId);
+            .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId,
+                cols, rowId);
         // this should not be possible, but if somehow we exit before anything is written
         // clear instanceId if the row no longer exists
-        if ( table.getNumberOfRows() == 0 ) {
+        if (table.getNumberOfRows() == 0) {
           setInstanceId(null);
         }
       } catch (ActionNotAuthorizedException e) {
@@ -1011,7 +926,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         WebLogger.getLogger(getAppName()).printStackTrace(e);
         Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
       } finally {
-        if ( dbHandleName != null ) {
+        if (dbHandleName != null) {
           try {
             this.getDatabase().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
@@ -1030,7 +945,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String tableId = this.getCurrentForm().tableId;
     String rowId = this.getInstanceId();
 
-    if ( rowId != null && tableId != null ) {
+    if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
         dbHandleName = this.getDatabase().openDatabase(getAppName());
@@ -1039,7 +954,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         UserTable table = this.getDatabase()
             .deleteAllCheckpointRowsWithId(getAppName(), dbHandleName, tableId, cols, rowId);
         // clear instanceId if the row no longer exists
-        if ( table.getNumberOfRows() == 0 ) {
+        if (table.getNumberOfRows() == 0) {
           setInstanceId(null);
         }
       } catch (ActionNotAuthorizedException e) {
@@ -1050,7 +965,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         WebLogger.getLogger(getAppName()).printStackTrace(e);
         Toast.makeText(this, R.string.database_error_occured, Toast.LENGTH_LONG).show();
       } finally {
-        if ( dbHandleName != null ) {
+        if (dbHandleName != null) {
           try {
             this.getDatabase().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
@@ -1063,103 +978,88 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     popBackStack(PopBackStackArgs.CANCEL_IGNORE_CHANGES);
   }
 
-  public void hideWebkitView() {
-    // This is a callback thread.
-    // We must invalidate the options menu on the UI thread
-    this.runOnUiThread(new Runnable() {
-      @Override
-      public void run() {
-        WebLogger.getLogger(getAppName()).i(t, "hideWebkitView");
-        // In the fragment UI, we want to return to not having any
-        // instanceId defined.
-        // JQueryODKView webkitView = (JQueryODKView)
-        // findViewById(R.id.webkit);
-        // setInstanceId(null);
-        // setSectionScreenState(null,null);
-        // setAuxillaryHash(null);
-        // webkitView.loadPage();
-        levelSafeInvalidateOptionsMenu();
-      }
-    });
-  }
-
+  /**
+   * Changes the currently shown fragment to the passed type
+   * @param newScreenType the new fragment to show
+   */
   public void swapToFragmentView(ScreenList newScreenType) {
-    WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView: " + newScreenType.name());
+    WebLogger.getLogger(getAppName()).i(TAG, "swapToFragmentView: " + newScreenType.name());
     FragmentManager mgr = getFragmentManager();
     FragmentTransaction trans = null;
-    Fragment newFragment = null;
-    if (newScreenType == ScreenList.MAIN_SCREEN) {
+    Fragment newFragment;
+    switch (newScreenType) {
+    case MAIN_SCREEN:
       throw new IllegalStateException("unexpected reference to generic main screen");
-    } else if (newScreenType == ScreenList.FORM_CHOOSER) {
+    case FORM_CHOOSER:
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
         newFragment = new FormChooserListFragment();
       }
-    } else if (newScreenType == ScreenList.INITIALIZATION_DIALOG) {
+      break;
+    case INITIALIZATION_DIALOG:
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
         newFragment = new InitializationFragment();
       }
-    } else if (newScreenType == ScreenList.WEBKIT) {
+      break;
+    case WEBKIT:
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
-        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "] creating new webkit fragment " + newScreenType.name());
+        WebLogger.getLogger(getAppName())
+            .i(TAG, "[" + this.hashCode() + "] creating new webkit fragment " + newScreenType.name());
         newFragment = new WebViewFragment();
       }
-    } else if (newScreenType == ScreenList.ABOUT_MENU) {
+      break;
+    case ABOUT_MENU:
       newFragment = mgr.findFragmentByTag(newScreenType.name());
       if (newFragment == null) {
         newFragment = new AboutMenuFragment();
       }
-
-    } else {
+      break;
+    default:
       throw new IllegalStateException("Unrecognized ScreenList type");
     }
 
     boolean matchingBackStackEntry = false;
     for (int i = 0; i < mgr.getBackStackEntryCount(); ++i) {
       BackStackEntry e = mgr.getBackStackEntryAt(i);
-      WebLogger.getLogger(getAppName()).i(t, "BackStackEntry["+i+"] " + e.getName());
+      WebLogger.getLogger(getAppName()).i(TAG, "BackStackEntry[" + i + "] " + e.getName());
       if (e.getName().equals(newScreenType.name())) {
         matchingBackStackEntry = true;
       }
     }
 
     if (matchingBackStackEntry) {
-      if ( trans != null ) {
-        WebLogger.getLogger(getAppName()).e(t,  "Unexpected active transaction when popping state!");
-        trans = null;
-      }
       // flush backward, to the screen we want to go back to
       currentFragment = newScreenType;
-      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] popping back stack " + currentFragment.name());
+      WebLogger.getLogger(getAppName())
+          .e(TAG, "[" + this.hashCode() + "] popping back stack " + currentFragment.name());
       mgr.popBackStackImmediate(currentFragment.name(), 0);
     } else {
       // add transaction to show the screen we want
-      if ( trans == null ) {
-        trans = mgr.beginTransaction();
-      }
+      trans = mgr.beginTransaction();
       currentFragment = newScreenType;
       trans.replace(R.id.main_content, newFragment, currentFragment.name());
-      WebLogger.getLogger(getAppName()).i(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
+      WebLogger.getLogger(getAppName())
+          .i(TAG, "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
       trans.addToBackStack(currentFragment.name());
     }
 
-    
     // and see if we should re-initialize...
-    if ((currentFragment != ScreenList.INITIALIZATION_DIALOG)
-        && ((Survey) getApplication()).shouldRunInitializationTask(getAppName())) {
-      WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView -- calling clearRunInitializationTask");
+    if (currentFragment != ScreenList.INITIALIZATION_DIALOG
+        && ((CommonApplication) getApplication()).shouldRunInitializationTask(getAppName())) {
+      WebLogger.getLogger(getAppName())
+          .i(TAG, "swapToFragmentView -- calling clearRunInitializationTask");
       // and immediately clear the should-run flag...
-      ((Survey) getApplication()).clearRunInitializationTask(getAppName());
+      ((CommonApplication) getApplication()).clearRunInitializationTask(getAppName());
       // OK we should swap to the InitializationFragment view
-      // this will skip the transition to whatever screen we were trying to 
+      // this will skip the transition to whatever screen we were trying to
       // go to and will instead show the InitializationFragment view. We
       // restore to the desired screen via the setFragmentToShowNext()
       //
       // NOTE: this discards the uncommitted transaction.
       // Robolectric complains about a recursive state transition.
-      if ( trans != null ) {
+      if (trans != null) {
         trans.commit();
       }
       swapToFragmentView(ScreenList.INITIALIZATION_DIALOG);
@@ -1172,20 +1072,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // and, if we cannot find it, report an error to the user.
         final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
         Uri uri = getIntent().getData();
-        Uri formUri = null;
+        Uri formUri;
 
-        if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme())
-            && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
+        if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
+            .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
           List<String> segments = uri.getPathSegments();
           if (segments != null && segments.size() >= 2) {
             String appName = segments.get(0);
             setAppName(appName);
             String tableId = segments.get(1);
-            String formId = (segments.size() > 2) ? segments.get(2) : null;
+            String formId = segments.size() > 2 ? segments.get(2) : null;
             formUri = Uri.withAppendedPath(
-                Uri.withAppendedPath(
-                    Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                      tableId), formId);
+                Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+                    tableId), formId);
           } else {
             swapToFragmentView(ScreenList.FORM_CHOOSER);
             createErrorDialog(
@@ -1205,15 +1104,11 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
       }
 
-      if ( trans != null ) {
+      if (trans != null) {
         trans.commit();
       }
       invalidateOptionsMenu();
     }
-  }
-
-  private void levelSafeInvalidateOptionsMenu() {
-    invalidateOptionsMenu();
   }
 
   /***********************************************************************
@@ -1228,106 +1123,133 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private void dumpScreenStateHistory() {
     WebLoggerIf l = WebLogger.getLogger(getAppName());
 
-    l.d(t, "-------------*start* dumpScreenStateHistory--------------------");
+    l.d(TAG, "-------------*start* dumpScreenStateHistory--------------------");
     if (sectionStateScreenHistory.isEmpty()) {
-      l.d(t, "sectionScreenStateHistory EMPTY");
+      l.d(TAG, "sectionScreenStateHistory EMPTY");
     } else {
       for (int i = sectionStateScreenHistory.size() - 1; i >= 0; --i) {
         SectionScreenStateHistory thisSection = sectionStateScreenHistory.get(i);
-        l.d(t, "[" + i + "] screenPath: " + thisSection.currentScreen.screenPath);
-        l.d(t, "[" + i + "] state:      " + thisSection.currentScreen.state);
+        l.d(TAG, "[" + i + "] screenPath: " + thisSection.currentScreen.screenPath);
+        l.d(TAG, "[" + i + "] state:      " + thisSection.currentScreen.state);
         if (thisSection.history.isEmpty()) {
-          l.d(t, "[" + i + "] history[] EMPTY");
+          l.d(TAG, "[" + i + "] history[] EMPTY");
         } else {
           for (int j = thisSection.history.size() - 1; j >= 0; --j) {
             ScreenState ss = thisSection.history.get(j);
-            l.d(t, "[" + i + "] history[" + j + "] screenPath: " + ss.screenPath);
-            l.d(t, "[" + i + "] history[" + j + "] state:      " + ss.state);
+            l.d(TAG, "[" + i + "] history[" + j + "] screenPath: " + ss.screenPath);
+            l.d(TAG, "[" + i + "] history[" + j + "] state:      " + ss.state);
           }
         }
       }
     }
-    l.d(t, "------------- *end*  dumpScreenStateHistory--------------------");
+    l.d(TAG, "------------- *end*  dumpScreenStateHistory--------------------");
   }
 
   @Override
   public void pushSectionScreenState() {
-    if (sectionStateScreenHistory.size() == 0) {
-      WebLogger.getLogger(getAppName()).i(t, "pushSectionScreenState: NULL!");
+    if (sectionStateScreenHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(TAG, "pushSectionScreenState: NULL!");
       return;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
-        .size() - 1);
-    lastSection.history.add(new ScreenState(lastSection.currentScreen.screenPath,
-        lastSection.currentScreen.state));
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory
+        .get(sectionStateScreenHistory.size() - 1);
+    lastSection.history.add(
+        new ScreenState(lastSection.currentScreen.screenPath, lastSection.currentScreen.state));
   }
 
   @Override
   public void setSectionScreenState(String screenPath, String state) {
     if (screenPath == null) {
-      WebLogger.getLogger(getAppName()).e(t,
-          "setSectionScreenState: NULL currentScreen.screenPath!");
+      WebLogger.getLogger(getAppName())
+          .e(TAG, "setSectionScreenState: NULL currentScreen.screenPath!");
       return;
+    }
+    String[] splits = screenPath.split("/");
+    String sectionName = splits[0] + "/";
+
+    WebLogger.getLogger(getAppName())
+        .e(TAG, "setSectionScreenState( " + screenPath + ", " + state + ")");
+
+    SectionScreenStateHistory lastSection;
+    if (sectionStateScreenHistory.isEmpty()) {
+      sectionStateScreenHistory.add(new SectionScreenStateHistory());
+      lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
+      lastSection.currentScreen.screenPath = screenPath;
+      lastSection.currentScreen.state = state;
+      lastSection.history.clear();
     } else {
-      String[] splits = screenPath.split("/");
-      String sectionName = splits[0] + "/";
-
-      WebLogger.getLogger(getAppName()).e(t,
-          "setSectionScreenState( " + screenPath + ", " + state + ")");
-
-      SectionScreenStateHistory lastSection;
-      if (sectionStateScreenHistory.size() == 0) {
+      lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
+      if (lastSection.currentScreen.screenPath.startsWith(sectionName)) {
+        lastSection.currentScreen.screenPath = screenPath;
+        lastSection.currentScreen.state = state;
+      } else {
         sectionStateScreenHistory.add(new SectionScreenStateHistory());
         lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
         lastSection.currentScreen.screenPath = screenPath;
         lastSection.currentScreen.state = state;
         lastSection.history.clear();
-      } else {
-        lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
-        if (lastSection.currentScreen.screenPath.startsWith(sectionName)) {
-          lastSection.currentScreen.screenPath = screenPath;
-          lastSection.currentScreen.state = state;
-        } else {
-          sectionStateScreenHistory.add(new SectionScreenStateHistory());
-          lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
-          lastSection.currentScreen.screenPath = screenPath;
-          lastSection.currentScreen.state = state;
-          lastSection.history.clear();
-        }
       }
     }
   }
+
+  /*
+  public void hideWebkitView() {
+    // This is a callback thread.
+    // We must invalidate the options menu on the UI thread
+    this.runOnUiThread(new Runnable() {
+      @Override
+      public void run() {
+        WebLogger.getLogger(getAppName()).i(t, "hideWebkitView");
+        // In the fragment UI, we want to return to not having any
+        // instanceId defined.
+        // JQueryODKView webkitView = (JQueryODKView)
+        // findViewById(R.id.webkit);
+        // setInstanceId(null);
+        // setSectionScreenState(null,null);
+        // setAuxillaryHash(null);
+        // webkitView.loadPage();
+        levelSafeInvalidateOptionsMenu();
+      }
+    });
+  }
+  */
 
   @Override
   public void clearSectionScreenState() {
     sectionStateScreenHistory.clear();
     sectionStateScreenHistory.add(new SectionScreenStateHistory());
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
-        .size() - 1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory
+        .get(sectionStateScreenHistory.size() - 1);
     lastSection.currentScreen.screenPath = "initial/0";
     lastSection.currentScreen.state = null;
     lastSection.history.clear();
   }
 
+  /*
+  private void levelSafeInvalidateOptionsMenu() {
+    invalidateOptionsMenu();
+  }
+  */
+
   @Override
   public String getControllerState() {
-    if (sectionStateScreenHistory.size() == 0) {
-      WebLogger.getLogger(getAppName()).i(t, "getControllerState: NULL!");
+    if (sectionStateScreenHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(TAG, "getControllerState: NULL!");
       return null;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
-        .size() - 1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory
+        .get(sectionStateScreenHistory.size() - 1);
     return lastSection.currentScreen.state;
   }
 
   public String getScreenPath() {
     dumpScreenStateHistory();
-    if (sectionStateScreenHistory.size() == 0) {
-      WebLogger.getLogger(getAppName()).i(t, "getScreenPath: NULL!");
+    if (sectionStateScreenHistory.isEmpty()) {
+      WebLogger.getLogger(getAppName()).i(TAG, "getScreenPath: NULL!");
       return null;
     }
-    SectionScreenStateHistory lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory
-        .size() - 1);
+    SectionScreenStateHistory lastSection = sectionStateScreenHistory
+        .get(sectionStateScreenHistory.size() - 1);
     return lastSection.currentScreen.screenPath;
   }
 
@@ -1338,23 +1260,23 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       return true;
     }
     // no sections -- no history
-    if (sectionStateScreenHistory.size() == 0) {
+    if (sectionStateScreenHistory.isEmpty()) {
       return false;
     }
 
     SectionScreenStateHistory thisSection = sectionStateScreenHistory.get(0);
-    return thisSection.history.size() != 0;
+    return !thisSection.history.isEmpty();
   }
 
   @Override
   public String popScreenHistory() {
-    if (sectionStateScreenHistory.size() == 0) {
+    if (sectionStateScreenHistory.isEmpty()) {
       return null;
     }
 
     SectionScreenStateHistory lastSection;
     lastSection = sectionStateScreenHistory.get(sectionStateScreenHistory.size() - 1);
-    if (lastSection.history.size() != 0) {
+    if (!lastSection.history.isEmpty()) {
       ScreenState lastHistory = lastSection.history.remove(lastSection.history.size() - 1);
       lastSection.currentScreen.screenPath = lastHistory.screenPath;
       lastSection.currentScreen.state = lastHistory.state;
@@ -1364,7 +1286,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     // pop to an enclosing screen
     sectionStateScreenHistory.remove(sectionStateScreenHistory.size() - 1);
 
-    if (sectionStateScreenHistory.size() == 0) {
+    if (sectionStateScreenHistory.isEmpty()) {
       return null;
     }
 
@@ -1374,16 +1296,16 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public boolean hasSectionStack() {
-    return sectionStateScreenHistory.size() != 0;
+    return !sectionStateScreenHistory.isEmpty();
   }
 
   @Override
   public String popSectionStack() {
-    if (sectionStateScreenHistory.size() != 0) {
+    if (!sectionStateScreenHistory.isEmpty()) {
       sectionStateScreenHistory.remove(sectionStateScreenHistory.size() - 1);
     }
 
-    if (sectionStateScreenHistory.size() != 0) {
+    if (!sectionStateScreenHistory.isEmpty()) {
       SectionScreenStateHistory lastSection = sectionStateScreenHistory
           .get(sectionStateScreenHistory.size() - 1);
       return lastSection.currentScreen.screenPath;
@@ -1434,28 +1356,26 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   /**
    * Invoked from within Javascript to launch an activity.
-   *
+   * <p>
    * See interface for argument spec.
    *
    * @return "OK" if successfully launched intent
    */
   @Override
-  public String doAction(
-      String dispatchStructAsJSONstring,
-      String action,
+  public String doAction(String dispatchStructAsJSONstring, String action,
       JSONObject valueContentMap) {
 
     // android.os.Debug.waitForDebugger();
 
     if (isWaitingForBinaryData()) {
-      WebLogger.getLogger(getAppName()).w(t, "Already waiting for data -- ignoring");
+      WebLogger.getLogger(getAppName()).w(TAG, "Already waiting for data -- ignoring");
       return "IGNORE";
     }
 
-    Intent i = DoActionUtils.buildIntent(this, mPropertyManager, dispatchStructAsJSONstring, action,
-        valueContentMap);
+    Intent i = DoActionUtils
+        .buildIntent(this, mPropertyManager, dispatchStructAsJSONstring, action, valueContentMap);
 
-    if ( i == null ) {
+    if (i == null) {
       return "JSONException";
     }
 
@@ -1466,37 +1386,35 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
-      WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
+      WebLogger.getLogger(getAppName()).e(TAG, "Unable to launch activity: " + ex);
       WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
     }
   }
-  
+
   @Override
   public void queueActionOutcome(String outcome) {
     queuedActions.addLast(outcome);
   }
-  
+
   @Override
   public void queueUrlChange(String hash) {
     try {
       String jsonEncoded = ODKFileUtils.mapper.writeValueAsString(hash);
       queuedActions.addLast(jsonEncoded);
-    } catch ( Exception e ) {
-      e.printStackTrace();
+    } catch (Exception e) {
+      WebLogger.getLogger(appName).printStackTrace(e);
     }
   }
-  
+
   @Override
   public String viewFirstQueuedAction() {
-    String outcome = 
-        queuedActions.isEmpty() ? null : queuedActions.getFirst();
-    return outcome;
+    return queuedActions.isEmpty() ? null : queuedActions.getFirst();
   }
 
   @Override
   public void removeFirstQueuedAction() {
-    if ( !queuedActions.isEmpty() ) {
+    if (!queuedActions.isEmpty()) {
       queuedActions.removeFirst();
     }
   }
@@ -1505,17 +1423,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   public void signalResponseAvailable(String responseJSON, String viewID) {
     // Ignore viewID as there is only one webkit
 
-    if ( responseJSON == null ) {
-      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
+    if (responseJSON == null) {
+      WebLogger.getLogger(getAppName()).e(TAG, "signalResponseAvailable -- got null responseJSON!");
     } else {
-      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got "
-          + responseJSON.length() + " long responseJSON!");
+      WebLogger.getLogger(getAppName())
+          .e(TAG, "signalResponseAvailable -- got " + responseJSON.length() + " long responseJSON!");
     }
-    if ( responseJSON != null) {
+    if (responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
-        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
+        WebLogger.getLogger(getAppName()).i(TAG,
+            "[" + this.hashCode() + "][WebView: " + webView.hashCode()
+                + "] signalResponseAvailable webView.loadUrl will be called");
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
@@ -1528,11 +1448,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getResponseJSON() {
-    if ( queueResponseJSON.isEmpty() ) {
+    if (queueResponseJSON.isEmpty()) {
       return null;
     }
-    String responseJSON = queueResponseJSON.removeFirst();
-    return responseJSON;
+    return queueResponseJSON.removeFirst();
   }
 
   @Override
@@ -1555,40 +1474,32 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     return this.getIntent().getExtras();
   }
 
-  /*
-   * END - Interfaces to Javascript layer (also used in Java).
-   * *********************************************************************
-   * *********************************************************************
-   * *********************************************************************
-   * *********************************************************************
-   * *********************************************************************
-   * *********************************************************************
-   */
-
   public boolean isWaitingForBinaryData() {
     return actionWaitingForData != null;
   }
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    WebLogger.getLogger(getAppName()).i(t, "onActivityResult");
+    WebLogger.getLogger(getAppName()).i(TAG, "onActivityResult");
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       try {
-        DoActionUtils.processActivityResult(this, view, resultCode, intent,
-            dispatchStringWaitingForData, actionWaitingForData);
+        DoActionUtils
+            .processActivityResult(this, view, resultCode, intent, dispatchStringWaitingForData,
+                actionWaitingForData);
       } finally {
         dispatchStringWaitingForData = null;
         actionWaitingForData = null;
       }
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
+      this.swapToFragmentView(
+          currentFragment == null ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }
 
   @Override
-  public ViewDataQueryParams getViewQueryParams(String viewID){
+  public ViewDataQueryParams getViewQueryParams(String viewID) {
     // Ignore viewID as there is only one fragment
 
     Bundle bundle = this.getIntentExtras();
@@ -1607,9 +1518,93 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
 
     BindArgs bindArgs = new BindArgs(selArgs);
-    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
-        groupBy, havingClause, orderByElemKey, orderByDir);
 
-    return params;
+    return new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
+        groupBy, havingClause, orderByElemKey, orderByDir);
+  }
+
+  /**
+   * The types of fragments we can have shown
+   * Currently only used in this file, can be private
+   */
+  @SuppressWarnings("JavaDoc")
+  public enum ScreenList {
+    MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
+  }
+
+  /*
+   * END - Interfaces to Javascript layer (also used in Java).
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   * *********************************************************************
+   */
+
+  /*
+    * canceled and ignore all changes -> do not set savepoint type, and set instance id, and set result to cancelled
+    * canceled and save to resume later -> set savepoint type to incomplete and set instance id, and set result to OK
+    * other -> result ok, everything else ignore
+    */
+  private enum PopBackStackArgs {
+    CANCEL_IGNORE_CHANGES, SAVE_INCOMPLETE, NOT_A_FORM
+  }
+
+  private static class ScreenState {
+    String screenPath;
+    String state;
+
+    ScreenState(String screenPath, String state) {
+      this.screenPath = screenPath;
+      this.state = state;
+    }
+  }
+
+  private static class SectionScreenStateHistory implements Parcelable {
+    public static final Parcelable.Creator<SectionScreenStateHistory> CREATOR = new Parcelable.Creator<SectionScreenStateHistory>() {
+      public SectionScreenStateHistory createFromParcel(Parcel in) {
+        SectionScreenStateHistory cur = new SectionScreenStateHistory();
+        String screenPath = in.readString();
+        String state = in.readString();
+        cur.currentScreen = new ScreenState(screenPath, state);
+        int count = in.readInt();
+        for (int i = 0; i < count; ++i) {
+          screenPath = in.readString();
+          state = in.readString();
+          cur.history.add(new ScreenState(screenPath, state));
+        }
+        return cur;
+      }
+
+      @Override
+      public SectionScreenStateHistory[] newArray(int size) {
+        SectionScreenStateHistory[] array = new SectionScreenStateHistory[size];
+        for (int i = 0; i < size; ++i) {
+          array[i] = null;
+        }
+        return array;
+      }
+    };
+    ScreenState currentScreen = new ScreenState(null, null);
+    ArrayList<ScreenState> history = new ArrayList<>();
+
+    @Override
+    public int describeContents() {
+      return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+      dest.writeString(currentScreen.screenPath);
+      dest.writeString(currentScreen.state);
+
+      dest.writeInt(history.size());
+      for (int i = 0; i < history.size(); ++i) {
+        ScreenState screen = history.get(i);
+        dest.writeString(screen.screenPath);
+        dest.writeString(screen.state);
+      }
+    }
   }
 }

@@ -18,6 +18,7 @@ import java.util.ArrayList;
 
 import org.opendatakit.activities.IAppAwareActivity;
 import org.opendatakit.activities.IInitResumeActivity;
+import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.fragment.AlertDialogFragment;
 import org.opendatakit.fragment.AlertDialogFragment.ConfirmAlertDialog;
 import org.opendatakit.fragment.ProgressDialogFragment;
@@ -106,7 +107,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
   private void intializeAppName() {
     // set up the first dialog, but don't show it...
     mAlertTitle = getString(R.string.configuring_app, 
-          getString(Survey.getInstance().getApkDisplayNameResourceId()));
+          getString(((ToolAwareApplication) getActivity().getApplication()).getApkDisplayNameResourceId()));
     mAlertMsg = getString(R.string.please_wait);
     mDialogState = DialogState.Progress;
     
@@ -115,7 +116,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
     // launch the copy operation
     WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
         "initializeAppName called ");
-    Survey.getInstance().initializeAppName(((IAppAwareActivity) getActivity()).getAppName(), this);
+    Survey.getInstance(getActivity()).initializeAppName(((IAppAwareActivity) getActivity()).getAppName(),
+        this);
   }
 
   @Override
@@ -147,14 +149,14 @@ public class InitializationFragment extends Fragment implements InitializationLi
       }
 
       // re-attach to the task for task notifications...
-      Survey.getInstance().establishInitializationListener(this);
+      Survey.getInstance(getActivity()).establishInitializationListener(this);
     }
   }
 
   @Override
   public void onStart() {
     super.onStart();
-    Survey.getInstance().possiblyFireDatabaseCallback(getActivity(), this);
+    Survey.getInstance(getActivity()).possiblyFireDatabaseCallback(getActivity(), this);
   }
 
   @Override
@@ -184,7 +186,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
           "Attempting to close a dialog that was not previously opened");
     }
 
-    Survey.getInstance().clearInitializationTask();
+    Survey.getInstance(getActivity()).clearInitializationTask();
 
     if (overallSuccess && result.isEmpty()) {
       // do not require an OK if everything went well
@@ -237,7 +239,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
   private void updateProgressDialogMessage(String message) {
     if (mDialogState == DialogState.Progress) {
       mAlertTitle = getString(R.string.configuring_app, 
-          getString(Survey.getInstance().getApkDisplayNameResourceId()));
+          getString(Survey.getInstance(getActivity()).getApkDisplayNameResourceId()));
       mAlertMsg = message;
       restoreProgressDialog();
     }
@@ -316,13 +318,14 @@ public class InitializationFragment extends Fragment implements InitializationLi
     // but keep the notification path...
     // the task will call back with a copyExpansionFilesComplete()
     // to report status (cancelled).
-    Survey.getInstance().cancelInitializationTask();
+    Survey.getInstance(getActivity()).cancelInitializationTask();
   }
 
   @Override
   public void databaseAvailable() {
     if ( mDialogState == DialogState.Progress ) {
-      Survey.getInstance().initializeAppName(((IAppAwareActivity) getActivity()).getAppName(), this);
+      Survey.getInstance(getActivity()).initializeAppName(((IAppAwareActivity) getActivity()).getAppName(),
+          this);
     }
   }
 
