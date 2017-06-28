@@ -14,6 +14,7 @@
 package org.opendatakit.survey.application;
 
 import android.app.Activity;
+import android.app.Application;
 import org.opendatakit.application.CommonApplication;
 import org.opendatakit.survey.R;
 
@@ -30,9 +31,15 @@ public class Survey extends CommonApplication {
   @SuppressWarnings("unused")
   public static final String TAG = Survey.class.getSimpleName();
 
+  /**
+   * Gets the application singleton that can be used to get the database interface
+   * @param act an activity to pull the application from
+   * @return act.getApplication() if possible
+   */
   public static CommonApplication getInstance(Activity act) {
-    if (act.getApplication() instanceof CommonApplication) {
-      return (CommonApplication) act.getApplication();
+    Application app = act.getApplication();
+    if (app instanceof CommonApplication) {
+      return (CommonApplication) app;
     }
     throw new IllegalArgumentException("Bad application");
   }

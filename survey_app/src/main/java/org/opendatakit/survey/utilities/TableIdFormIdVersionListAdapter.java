@@ -18,31 +18,48 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.*;
+import android.widget.BaseAdapter;
+import android.widget.TextView;
 import org.opendatakit.survey.R;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Implementation of cursor adapter that displays the version of a form if a
  * form has a version.
  *
  * @author mitchellsundt@gmail.com
- *
  */
 public class TableIdFormIdVersionListAdapter extends BaseAdapter {
 
+  /**
+   * Used for logging
+   */
+  @SuppressWarnings("unused")
+  private static final String TAG = TableIdFormIdVersionListAdapter.class.getSimpleName();
   private final Context mContext;
   private final int mLayout;
   private final int mFormDisplayNameId;
   private final int mFormLastUpdateDateId;
   private final int mTableIdFormVersionId;
-  private final ArrayList<FormInfo> mItems = new ArrayList<FormInfo>();
+  private final List<FormInfo> mItems = new ArrayList<>();
 
-  private static final String TAG = TableIdFormIdVersionListAdapter.class.getSimpleName();
-
+  /**
+   * Constructs a new TableIdFormIdVersionListAdapter, an adapter that maps from a list of form
+   * info objects to let the user select a form in
+   * {@link org.opendatakit.survey.fragments.FormChooserListFragment}
+   *
+   * @param context Used for inflating the layout
+   * @param layout The layout to use in the view
+   * @param form_display_name_id A resource id for the form display name
+   * @param form_last_update_date_id A resource id for the last form update date
+   * @param form_version_id A resource id for the form version
+   */
   public TableIdFormIdVersionListAdapter(Context context, int layout, int form_display_name_id,
       int form_last_update_date_id, int form_version_id) {
+    super();
     this.mContext = context;
     this.mLayout = layout;
     this.mFormDisplayNameId = form_display_name_id;
@@ -50,11 +67,18 @@ public class TableIdFormIdVersionListAdapter extends BaseAdapter {
     this.mTableIdFormVersionId = form_version_id;
   }
 
+  /**
+   * Removes all form info objects
+   */
   public void clear() {
     mItems.clear();
   }
 
-  public void addAll(ArrayList<FormInfo> items) {
+  /**
+   * Adds the given items to the list so the user can choose from them
+   * @param items the items to add
+   */
+  public void addAll(Collection<FormInfo> items) {
     mItems.addAll(items);
   }
 
@@ -91,23 +115,23 @@ public class TableIdFormIdVersionListAdapter extends BaseAdapter {
   @Override
   public View getView(int position, View view, ViewGroup parent) {
     FormInfo info = mItems.get(position);
-    if (view == null ) {
-      LayoutInflater layoutInflater =
-        (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+    if (view == null) {
+      LayoutInflater layoutInflater = (LayoutInflater) mContext
+          .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
       view = layoutInflater.inflate(mLayout, parent, false);
     }
     TextView formTitleView = (TextView) view.findViewById(mFormDisplayNameId);
     formTitleView.setText(info.formDisplayName);
 
-    if ( mFormLastUpdateDateId != -1) {
+    if (mFormLastUpdateDateId != -1) {
       TextView formDateView = (TextView) view.findViewById(mFormLastUpdateDateId);
       formDateView.setText(info.formDisplaySubtext);
     }
 
-    if ( mTableIdFormVersionId != -1 ) {
+    if (mTableIdFormVersionId != -1) {
       TextView v = (TextView) view.findViewById(mTableIdFormVersionId);
       v.setVisibility(View.VISIBLE);
-      if ( info.formVersion != null) {
+      if (info.formVersion != null) {
         v.setText(mContext.getString(R.string.table_id_form_id_version, info.tableId, info.formId,
             info.formVersion));
       } else {

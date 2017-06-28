@@ -12,7 +12,11 @@ import java.io.File;
  */
 public class SignatureActivity extends MediaCaptureImageActivity {
 
-  private final static String t = "SignatureActivity";
+  /**
+   * Used for logging
+   */
+  @SuppressWarnings("unused")
+  private static final String TAG = SignatureActivity.class.getSimpleName();
 
   @Override
   protected void onResume() {

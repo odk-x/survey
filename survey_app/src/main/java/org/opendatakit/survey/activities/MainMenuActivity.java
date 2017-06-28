@@ -27,6 +27,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.webkit.WebView;
 import android.widget.Toast;
 import org.json.JSONObject;
 import org.opendatakit.activities.BaseActivity;
@@ -53,7 +54,6 @@ import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.provider.FormsProviderUtils;
 import org.opendatakit.survey.R;
-import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.fragments.BackPressWebkitConfirmationDialogFragment;
 import org.opendatakit.survey.fragments.FormChooserListFragment;
 import org.opendatakit.survey.fragments.InitializationFragment;
@@ -264,7 +264,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
    */
   public void scanForConflictAllTables() {
 
-    UserDbInterface db = ((CommonApplication) getApplication()).getDatabase();
+    UserDbInterface db = getDbInt();
     if (db != null) {
       List<TableHealthInfo> info;
       DbHandle dbHandle = null;
@@ -393,7 +393,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public String getActiveUser() {
     try {
-      return getDatabase().getActiveUser(getAppName());
+      return getDbInt().getActiveUser(getAppName());
     } catch (ServicesAvailabilityException e) {
       WebLogger.getLogger(getAppName()).printStackTrace(e);
       return CommonToolProperties.ANONYMOUS_USER;
@@ -849,7 +849,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     mAlertDialog.show();
   }
 
-  private void popBackStack(PopBackStackArgs arg) {
+  private void popBackStack(Object arg) {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
@@ -907,10 +907,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
-        dbHandleName = this.getDatabase().openDatabase(getAppName());
-        OrderedColumns cols = this.getDatabase()
+        dbHandleName = this.getDbInt().openDatabase(getAppName());
+        OrderedColumns cols = this.getDbInt()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
-        UserTable table = this.getDatabase()
+        UserTable table = this.getDbInt()
             .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId,
                 cols, rowId);
         // this should not be possible, but if somehow we exit before anything is written
@@ -928,7 +928,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       } finally {
         if (dbHandleName != null) {
           try {
-            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+            this.getDbInt().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
@@ -948,10 +948,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
-        dbHandleName = this.getDatabase().openDatabase(getAppName());
-        OrderedColumns cols = this.getDatabase()
+        dbHandleName = this.getDbInt().openDatabase(getAppName());
+        OrderedColumns cols = this.getDbInt()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
-        UserTable table = this.getDatabase()
+        UserTable table = this.getDbInt()
             .deleteAllCheckpointRowsWithId(getAppName(), dbHandleName, tableId, cols, rowId);
         // clear instanceId if the row no longer exists
         if (table.getNumberOfRows() == 0) {
@@ -967,7 +967,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       } finally {
         if (dbHandleName != null) {
           try {
-            this.getDatabase().closeDatabase(getAppName(), dbHandleName);
+            this.getDbInt().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
@@ -1431,7 +1431,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     }
     if (responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
-      final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
+      final WebView webView = (WebView) findViewById(R.id.webkit);
       if (webView != null) {
         WebLogger.getLogger(getAppName()).i(TAG,
             "[" + this.hashCode() + "][WebView: " + webView.hashCode()
@@ -1462,11 +1462,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void registerDatabaseConnectionBackgroundListener(DatabaseConnectionListener listener) {
     mIOdkDataDatabaseListener = listener;
-  }
-
-  @Override
-  public UserDbInterface getDatabase() {
-    return ((CommonApplication) getApplication()).getDatabase();
   }
 
   @Override

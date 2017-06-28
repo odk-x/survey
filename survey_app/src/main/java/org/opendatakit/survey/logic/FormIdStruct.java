@@ -14,33 +14,64 @@
 
 package org.opendatakit.survey.logic;
 
-import java.io.File;
-import java.util.Date;
-
-import org.opendatakit.provider.FormsColumns;
-import org.opendatakit.database.utilities.CursorUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
+import org.opendatakit.database.utilities.CursorUtils;
+import org.opendatakit.provider.FormsColumns;
+import org.opendatakit.utilities.ODKFileUtils;
+
+import java.io.File;
+import java.util.Date;
 
 /**
  * Basic definitions of the current form being processed.
  *
  * @author mitchellsundt@gmail.com
- *
  */
 public class FormIdStruct {
+  /**
+   * The uri for the form
+   */
   public final Uri formUri;
+  /**
+   * The path to the formDef.json
+   */
   public final File formDefFile;
+  /**
+   * The path to the form
+   */
   public final String formPath;
+  /**
+   * The form id
+   */
   public final String formId;
+  /**
+   * The table id associated with the form
+   */
   public final String tableId;
+  /**
+   * the app name
+   */
   public final String appName;
+  /**
+   * The form version
+   */
   public final String formVersion;
+  /**
+   * The date the form was downloaded from the server
+   */
   public final Date lastDownloadDate;
 
+  /**
+   * @param formUri          The uri for the form
+   * @param formDefFile      The path to the formDef.json
+   * @param formPath         The path to the form
+   * @param formId           The form id
+   * @param formVersion      The form version
+   * @param tableId          The table id associated with the form
+   * @param lastModifiedDate The date the form was downloaded from the server
+   */
   public FormIdStruct(Uri formUri, File formDefFile, String formPath, String formId,
       String formVersion, String tableId, Date lastModifiedDate) {
     this.appName = FormsColumns.extractAppNameFromFormsUri(formUri);
@@ -50,9 +81,16 @@ public class FormIdStruct {
     this.formId = formId;
     this.formVersion = formVersion;
     this.tableId = tableId;
+    // TODO this is a really bad idea, should be (Date) lastModifiedDate.clone() but that's just
+    // as bad
     this.lastDownloadDate = lastModifiedDate;
   }
 
+  /**
+   * Copy constructor
+   *
+   * @param original The struct to copy
+   */
   public FormIdStruct(FormIdStruct original) {
     this.formUri = original.formUri;
     this.formDefFile = original.formDefFile;
@@ -64,7 +102,13 @@ public class FormIdStruct {
     this.lastDownloadDate = original.lastDownloadDate;
   }
 
-  public static final FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
+  /**
+   * Static FormIdStruct factory that generates the right fields from a resolver and uri
+   * @param resolver A content resolver that can get us the right fields given the uri
+   * @param formUri a form uri
+   * @return a FormIdStruct with the right properties set
+   */
+  public static FormIdStruct retrieveFormIdStruct(ContentResolver resolver, Uri formUri) {
     if (formUri == null) {
       return null;
     }
@@ -84,15 +128,13 @@ public class FormIdStruct {
         String formId = CursorUtils.getIndexAsString(c, idxFormId);
         String formVersion = CursorUtils.getIndexAsString(c, idxFormVersion);
         Long timestamp = CursorUtils.getIndexAsType(c, Long.class, idxDate);
-        
-        File formDirectory = new File( ODKFileUtils.getFormFolder(appName, tableId, formId) );
+
+        File formDirectory = new File(ODKFileUtils.getFormFolder(appName, tableId, formId));
         File formDefJsonFile = new File(formDirectory, ODKFileUtils.FORMDEF_JSON_FILENAME);
 
-        FormIdStruct newForm = new FormIdStruct(formUri, formDefJsonFile,
-            ODKFileUtils.getRelativeFormPath(appName, formDefJsonFile), 
-            formId, formVersion, tableId,
-            (timestamp == null) ? null : new Date(timestamp));
-        return newForm;
+        return new FormIdStruct(formUri, formDefJsonFile,
+            ODKFileUtils.getRelativeFormPath(appName, formDefJsonFile), formId, formVersion,
+            tableId, timestamp == null ? null : new Date(timestamp));
       }
     } finally {
       if (c != null) {
