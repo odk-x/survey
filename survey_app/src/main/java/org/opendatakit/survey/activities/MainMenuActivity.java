@@ -31,7 +31,6 @@ import android.webkit.WebView;
 import android.widget.Toast;
 import org.json.JSONObject;
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.application.CommonApplication;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
@@ -264,7 +263,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
    */
   public void scanForConflictAllTables() {
 
-    UserDbInterface db = getDbInt();
+    UserDbInterface db = getDatabase();
     if (db != null) {
       List<TableHealthInfo> info;
       DbHandle dbHandle = null;
@@ -393,7 +392,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public String getActiveUser() {
     try {
-      return getDbInt().getActiveUser(getAppName());
+      return getDatabase().getActiveUser(getAppName());
     } catch (ServicesAvailabilityException e) {
       WebLogger.getLogger(getAppName()).printStackTrace(e);
       return CommonToolProperties.ANONYMOUS_USER;
@@ -731,7 +730,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   public void onResume() {
     super.onResume();
 
-    ((CommonApplication) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
+    getCommonApplication().establishDoNotFireDatabaseConnectionListener(this);
 
     swapToFragmentView(currentFragment);
   }
@@ -739,7 +738,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void onPostResume() {
     super.onPostResume();
-    ((CommonApplication) getApplication()).fireDatabaseConnectionListener();
+    getCommonApplication().fireDatabaseConnectionListener();
   }
 
   @Override
@@ -907,10 +906,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
-        dbHandleName = this.getDbInt().openDatabase(getAppName());
-        OrderedColumns cols = this.getDbInt()
+        dbHandleName = getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = getDatabase()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
-        UserTable table = this.getDbInt()
+        UserTable table = getDatabase()
             .saveAsIncompleteMostRecentCheckpointRowWithId(getAppName(), dbHandleName, tableId,
                 cols, rowId);
         // this should not be possible, but if somehow we exit before anything is written
@@ -928,7 +927,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       } finally {
         if (dbHandleName != null) {
           try {
-            this.getDbInt().closeDatabase(getAppName(), dbHandleName);
+            getDatabase().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
@@ -948,10 +947,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (rowId != null && tableId != null) {
       DbHandle dbHandleName = null;
       try {
-        dbHandleName = this.getDbInt().openDatabase(getAppName());
-        OrderedColumns cols = this.getDbInt()
+        dbHandleName = getDatabase().openDatabase(getAppName());
+        OrderedColumns cols = getDatabase()
             .getUserDefinedColumns(getAppName(), dbHandleName, tableId);
-        UserTable table = this.getDbInt()
+        UserTable table = getDatabase()
             .deleteAllCheckpointRowsWithId(getAppName(), dbHandleName, tableId, cols, rowId);
         // clear instanceId if the row no longer exists
         if (table.getNumberOfRows() == 0) {
@@ -967,7 +966,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       } finally {
         if (dbHandleName != null) {
           try {
-            this.getDbInt().closeDatabase(getAppName(), dbHandleName);
+            getDatabase().closeDatabase(getAppName(), dbHandleName);
           } catch (ServicesAvailabilityException e) {
             // ignore
             WebLogger.getLogger(getAppName()).printStackTrace(e);
@@ -1047,11 +1046,11 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     // and see if we should re-initialize...
     if (currentFragment != ScreenList.INITIALIZATION_DIALOG
-        && ((CommonApplication) getApplication()).shouldRunInitializationTask(getAppName())) {
+        && getCommonApplication().shouldRunInitializationTask(getAppName())) {
       WebLogger.getLogger(getAppName())
           .i(TAG, "swapToFragmentView -- calling clearRunInitializationTask");
       // and immediately clear the should-run flag...
-      ((CommonApplication) getApplication()).clearRunInitializationTask(getAppName());
+      getCommonApplication().clearRunInitializationTask(getAppName());
       // OK we should swap to the InitializationFragment view
       // this will skip the transition to whatever screen we were trying to
       // go to and will instead show the InitializationFragment view. We
