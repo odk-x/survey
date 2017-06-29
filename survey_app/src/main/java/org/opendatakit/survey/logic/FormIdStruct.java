@@ -81,8 +81,8 @@ public class FormIdStruct {
     this.formId = formId;
     this.formVersion = formVersion;
     this.tableId = tableId;
-    // TODO this is a really bad idea, should be (Date) lastModifiedDate.clone() but that's just
-    // as bad
+    // TODO this is a really bad idea, should be (Date) lastModifiedDate.clone() or the caller
+    // might unexpectedly change the date on us
     this.lastDownloadDate = lastModifiedDate;
   }
 

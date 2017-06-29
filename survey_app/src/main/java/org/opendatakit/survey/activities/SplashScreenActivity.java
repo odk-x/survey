@@ -29,7 +29,6 @@ import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.dependencies.DependencyChecker;
 import org.opendatakit.logging.WebLogger;
@@ -110,7 +109,7 @@ public class SplashScreenActivity extends BaseActivity {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      final Uri uriWebView = UrlUtils.getWebViewContentUri();
       if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
           .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();

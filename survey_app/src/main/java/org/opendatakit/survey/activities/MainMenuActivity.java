@@ -421,7 +421,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getWebViewContentUri() {
-    Uri u = UrlUtils.getWebViewContentUri(this);
+    Uri u = UrlUtils.getWebViewContentUri();
 
     String uriString = u.toString();
 
@@ -571,7 +571,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // initialize to the URI, then we will customize further based upon the
         // savedInstanceState...
         final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-        final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+        final Uri uriWebView = UrlUtils.getWebViewContentUri();
         if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
             .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
           List<String> segments = uri.getPathSegments();
