@@ -14,17 +14,6 @@
 
 package org.opendatakit.survey.activities;
 
-import java.io.File;
-import java.io.IOException;
-
-import org.apache.commons.io.FileUtils;
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.utilities.MediaUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
@@ -33,12 +22,20 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.widget.Toast;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
+import org.opendatakit.utilities.MediaUtils;
+import org.opendatakit.utilities.ODKFileUtils;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Simple shim for media interactions.
  *
  * @author mitchellsundt@gmail.com
- *
  */
 public class MediaChooseAudioActivity extends BaseActivity {
   private static final String t = "MediaChooseAudioActivity";
@@ -72,22 +69,22 @@ public class MediaChooseAudioActivity extends BaseActivity {
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
-            + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_APP_NAME + " key in intent bundle. Not found.");
     }
 
     if (tableId == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_TABLE_ID
-              + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_TABLE_ID + " key in intent bundle. Not found.");
     }
     if (instanceId == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID
-              + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID + " key in intent bundle. Not found.");
     }
 
     if (uriFragmentNewFileBase == null) {
-      throw new IllegalArgumentException("Expected " + URI_FRAGMENT_NEW_FILE_BASE
-          + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + URI_FRAGMENT_NEW_FILE_BASE + " key in intent bundle. Not found.");
     }
 
     Intent i = new Intent(Intent.ACTION_GET_CONTENT);
@@ -95,6 +92,7 @@ public class MediaChooseAudioActivity extends BaseActivity {
     try {
       startActivityForResult(i, ACTION_CODE);
     } catch (ActivityNotFoundException e) {
+      WebLogger.getLogger(appName).printStackTrace(e);
       Toast.makeText(this,
           getString(R.string.activity_not_found, Intent.ACTION_GET_CONTENT + " " + MEDIA_CLASS),
           Toast.LENGTH_SHORT).show();
@@ -102,7 +100,7 @@ public class MediaChooseAudioActivity extends BaseActivity {
       finish();
     }
   }
-  
+
   @Override
   public String getAppName() {
     return appName;
@@ -137,23 +135,26 @@ public class MediaChooseAudioActivity extends BaseActivity {
     Uri selectedMedia = intent.getData();
     String sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Audio.Media.DATA);
     File sourceMedia = new File(sourceMediaPath);
-    String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
+    String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf('.'));
 
-    File newMedia = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
+    File newMedia = ODKFileUtils
+        .getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
     try {
-      FileUtils.copyFile(sourceMedia, newMedia);
+      ODKFileUtils.copyFile(sourceMedia, newMedia);
     } catch (IOException e) {
       WebLogger.getLogger(appName).e(t, "Failed to copy " + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       // keep the image as a captured image so user can choose it.
+      WebLogger.getLogger(appName).printStackTrace(e);
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
     }
 
-    WebLogger.getLogger(appName).i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
+    WebLogger.getLogger(appName)
+        .i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
 
-    Uri mediaURI = null;
+    Uri mediaURI;
     if (newMedia.exists()) {
       // Add the new image to the Media content provider so that the
       // viewing is fast in Android 2.0+
@@ -165,7 +166,7 @@ public class MediaChooseAudioActivity extends BaseActivity {
       values.put(Audio.Media.DATA, newMedia.getAbsolutePath());
 
       mediaURI = getContentResolver().insert(Audio.Media.EXTERNAL_CONTENT_URI, values);
-      WebLogger.getLogger(appName).i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI.toString());
+      WebLogger.getLogger(appName).i(t, "Insert " + MEDIA_CLASS + " returned uri = " + mediaURI);
 
       // if you are replacing an answer. delete the previous image using
       // the
@@ -175,13 +176,16 @@ public class MediaChooseAudioActivity extends BaseActivity {
 
       WebLogger.getLogger(appName).i(t, "Return mediaFile: " + newMediaFromCP.getAbsolutePath());
       Intent i = new Intent();
-      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT, ODKFileUtils.asRowpathUri(appName, tableId, instanceId, newMediaFromCP));
+      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT,
+          ODKFileUtils.asRowpathUri(appName, tableId, instanceId, newMediaFromCP));
       String name = newMediaFromCP.getName();
-      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE,
+          MEDIA_CLASS + name.substring(name.lastIndexOf('.') + 1));
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      WebLogger.getLogger(appName).e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
+      WebLogger.getLogger(appName)
+          .e(t, "No " + MEDIA_CLASS + " exists at: " + newMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();

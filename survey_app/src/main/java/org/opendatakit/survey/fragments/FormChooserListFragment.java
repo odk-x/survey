@@ -14,13 +14,6 @@
 
 package org.opendatakit.survey.fragments;
 
-import org.opendatakit.activities.IAppAwareActivity;
-import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.activities.IOdkSurveyActivity;
-import org.opendatakit.survey.utilities.FormInfo;
-import org.opendatakit.survey.utilities.FormListLoader;
-
 import android.app.ListFragment;
 import android.app.LoaderManager;
 import android.content.Loader;
@@ -30,6 +23,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import org.opendatakit.activities.IAppAwareActivity;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.activities.IOdkSurveyActivity;
+import org.opendatakit.survey.utilities.FormInfo;
+import org.opendatakit.survey.utilities.FormListLoader;
 import org.opendatakit.survey.utilities.TableIdFormIdVersionListAdapter;
 
 import java.util.ArrayList;
@@ -42,23 +41,18 @@ import java.util.ArrayList;
 public class FormChooserListFragment extends ListFragment
     implements LoaderManager.LoaderCallbacks<ArrayList<FormInfo>> {
 
-  @SuppressWarnings("unused") private static final String t = "FormChooserListFragment";
+  @SuppressWarnings("unused")
+  private static final String TAG = FormChooserListFragment.class.getSimpleName();
   private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
-
-  public static final int ID = R.layout.form_chooser_list;
-
-  // data to retain across orientation changes
-
-  // data that is not retained
-
   private TableIdFormIdVersionListAdapter mAdapter;
-  private View view;
 
-  @Override public void onCreate(Bundle savedInstanceState) {
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
   }
 
-  @Override public void onActivityCreated(Bundle savedInstanceState) {
+  @Override
+  public void onActivityCreated(Bundle savedInstanceState) {
     super.onActivityCreated(savedInstanceState);
 
     // render total instance view
@@ -69,21 +63,24 @@ public class FormChooserListFragment extends ListFragment
     getLoaderManager().initLoader(FORM_CHOOSER_LIST_LOADER, null, this);
   }
 
-  @Override public View onCreateView(LayoutInflater inflater, ViewGroup container,
+  @Override
+  public View onCreateView(LayoutInflater inflater, ViewGroup container,
       Bundle savedInstanceState) {
-    view = inflater.inflate(ID, container, false);
-    return view;
+    return inflater.inflate(R.layout.form_chooser_list, container, false);
   }
 
-  @Override public void onResume() {
+  @Override
+  public void onResume() {
     super.onResume();
   }
 
-  @Override public void onPause() {
+  @Override
+  public void onPause() {
     super.onPause();
   }
 
-  @Override public void onListItemClick(ListView l, View v, int position, long id) {
+  @Override
+  public void onListItemClick(ListView l, View v, int position, long id) {
     super.onListItemClick(l, v, position, id);
 
     // get uri to form
@@ -95,14 +92,15 @@ public class FormChooserListFragment extends ListFragment
     ((IOdkSurveyActivity) getActivity()).chooseForm(formUri);
   }
 
-  @Override public Loader<ArrayList<FormInfo>> onCreateLoader(int id, Bundle args) {
+  @Override
+  public Loader<ArrayList<FormInfo>> onCreateLoader(int id, Bundle args) {
     // This is called when a new Loader needs to be created. This
     // sample only has one Loader, so we don't care about the ID.
     return new FormListLoader(getActivity(), ((IAppAwareActivity) getActivity()).getAppName());
   }
 
-  @Override public void onLoadFinished(Loader<ArrayList<FormInfo>> loader,
-      ArrayList<FormInfo> dataset) {
+  @Override
+  public void onLoadFinished(Loader<ArrayList<FormInfo>> loader, ArrayList<FormInfo> dataset) {
     // Swap the new cursor in. (The framework will take care of closing the
     // old cursor once we return.)
     mAdapter.clear();
@@ -110,7 +108,8 @@ public class FormChooserListFragment extends ListFragment
     mAdapter.notifyDataSetChanged();
   }
 
-  @Override public void onLoaderReset(Loader<ArrayList<FormInfo>> loader) {
+  @Override
+  public void onLoaderReset(Loader<ArrayList<FormInfo>> loader) {
     // This is called when the last Cursor provided to onLoadFinished()
     // above is about to be closed. We need to make sure we are no
     // longer using it.

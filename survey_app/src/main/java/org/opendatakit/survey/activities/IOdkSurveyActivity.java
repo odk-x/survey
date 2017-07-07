@@ -26,53 +26,137 @@ import org.opendatakit.activities.IOdkDataActivity;
  */
 public interface IOdkSurveyActivity extends IOdkCommonActivity, IOdkDataActivity {
 
-  public String getUrlBaseLocation(boolean ifChanged);
+  /**
+   * Gets the base uri for the web view
+   * @param ifChanged unused
+   * @return the uri
+   */
+  String getUrlBaseLocation(boolean ifChanged);
 
-  public void clearAuxillaryHash();
+  /**
+   * Clears the extra stuff after the # in the url
+   */
+  void clearAuxillaryHash();
 
-  public String getUrlLocationHash();
+  /**
+   * Gets the full hash (stuff after the #) from the url, including the auxillary hash
+   * @return the full hash containing the form path, instance id, screen path and auxillary hash
+   */
+  String getUrlLocationHash();
 
-  public String getUploadTableId();
+  /**
+   * Returns the refId for the activity
+   * @return An id that ties the javascript interface to a particular activity
+   */
+  String getRefId();
 
-  public String getRefId();
+  /**
+   * If refId is null, clears the instanceId. If refId matches the current refId, sets the
+   * instanceId.
+   *
+   * @param instanceId the instance id for the row add/edit
+   */
+  void setInstanceId(String instanceId);
 
-  public void setInstanceId(String instanceId);
+  /**
+   * Get the instanceId for this web page. Returns null if the refId does not match.
+   *
+   * @return the instance id if the refId is valid or null
+   */
+  String getInstanceId();
 
-  public String getInstanceId();
+  /**
+   * Pushes the current screen state into the history
+   */
+  void pushSectionScreenState();
 
-  public void pushSectionScreenState();
+  /**
+   * Updates the current screen state to the new parameters
+   * @param screenPath the screen path to be updated in MainMenuActivity
+   * @param state      the state to be updated in MainMenuActivity
+   */
+  void setSectionScreenState(String screenPath, String state);
 
-  public void setSectionScreenState(String screenPath, String state);
+  /**
+   * Clears the current screen state
+   */
+  void clearSectionScreenState();
 
-  public void clearSectionScreenState();
+  /**
+   * Returns the current screen state
+   * @return the current screen state
+   */
+  String getControllerState();
 
-  public String getControllerState();
+  /**
+   * Returns the current screen path
+   * @return the current screen path
+   */
+  String getScreenPath();
 
-  public String getScreenPath();
+  /**
+   * Returns whether there is screen history
+   * @return whether the screen has history
+   */
+  boolean hasScreenHistory();
 
-  public boolean hasScreenHistory();
+  /**
+   * Returns and removes the last thing from the screen history
+   * @return the popped history item
+   */
+  String popScreenHistory();
 
-  public String popScreenHistory();
+  /**
+   * Returns whether there is a stack of screens
+   * @return whether there is a stack of screen objects with histories
+   */
+  boolean hasSectionStack();
 
-  public boolean hasSectionStack();
+  /**
+   * Returns and removes the last screen from the stack
+   * @return the popped screen item
+   */
+  String popSectionStack();
 
-  public String popSectionStack();
+  /**
+   * Saves the changes as completed and finishes the activity
+   * @param instanceId the instance id for the row add/edit
+   * @param asComplete whether to save as finalized or save as incomplete
+   */
+  void saveAllChangesCompleted(String instanceId, boolean asComplete);
 
-  public void saveAllChangesCompleted(String instanceId, boolean asComplete);
+  /**
+   * Saves the changes as failed and finishes the activity
+   * @param instanceId the instance id for the row add/edit
+   */
+  void saveAllChangesFailed(String instanceId);
 
-  public void saveAllChangesFailed(String instanceId);
+  /**
+   * Ignores all changes and doesn't save anything, then finishes
+   * @param instanceId the instance id for the row add/edit
+   */
+  void ignoreAllChangesCompleted(String instanceId);
 
-  public void ignoreAllChangesCompleted(String instanceId);
+  /**
+   * Ignores all changes and doesn't save anything
+   * @param instanceId the instance id for the row add/edit
+   */
+  void ignoreAllChangesFailed(String instanceId);
 
-  public void ignoreAllChangesFailed(String instanceId);
+  /**
+   * Launches an activity to edit the row using the given form
+   * for FormChooserListFragment
+   * @param formUri the uri of the form to use to edit the row
+   */
+  void chooseForm(Uri formUri);
 
-  // for FormChooserListFragment
-  public void chooseForm(Uri formUri);
+  /**
+   * Saves the checkpoint and finishes the activity
+   */
+  void saveAllAsIncompleteThenPopBackStack();
 
-  // for back press suppression
-  // trigger save...
-  public void saveAllAsIncompleteThenPopBackStack();
-
-  // trigger resolve...
-  public void resolveAllCheckpointsThenPopBackStack();
+  /**
+   * Resolves all checkpoints then finishes
+   */
+  void resolveAllCheckpointsThenPopBackStack();
 }

@@ -23,14 +23,12 @@ import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
-
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
 import org.opendatakit.utilities.MediaUtils;
 import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.survey.R;
 
 import java.io.File;
 import java.io.IOException;
@@ -39,32 +37,50 @@ import java.io.IOException;
  * Simple shim for media interactions.
  *
  * @author mitchellsundt@gmail.com
- *
  */
 public class MediaCaptureImageActivity extends BaseActivity {
-  private static final String t = "MediaCaptureImageActivity";
-
-  protected static final int ACTION_CODE = 1;
+  private static final String TMP_EXTENSION = ".tmp.jpg";
+  private static final String TAG = "MediaCaptureImageActivity";
   private static final String MEDIA_CLASS = "image/";
-
-  protected static final String TMP_EXTENSION = ".tmp.jpg";
-
   private static final String URI_FRAGMENT_NEW_FILE_BASE = "uriFragmentNewFileBase";
   private static final String HAS_LAUNCHED = "hasLaunched";
   private static final String AFTER_RESULT = "afterResult";
   private static final String ERROR_NO_FILE = "Media file does not exist! ";
   private static final String ERROR_COPY_FILE = "Media file copy failed! ";
 
+  /**
+   * The app name
+   */
   protected String appName = null;
+  /**
+   * The id of the table the image will go into
+   */
   protected String tableId = null;
+  /**
+   * The instance id of the row add/edit
+   */
   protected String instanceId = null;
+  /**
+   * The folder to save new images to
+   */
   protected String uriFragmentNewFileBase = null;
+  /**
+   * The full path to the image
+   */
   protected String uriFragmentToMedia = null;
+  /**
+   * the rowpath uri
+   */
   protected String currentUriFragment = null;
+  /**
+   * set to true in finish()
+   */
   protected boolean afterResult = false;
-  protected boolean hasLaunched = false;
+  private boolean hasLaunched = false;
+  /**
+   * The intent used to launch this activity
+   */
   protected Intent launchIntent = null;
-
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
@@ -87,36 +103,38 @@ public class MediaCaptureImageActivity extends BaseActivity {
       tableId = savedInstanceState.getString(IntentConsts.INTENT_KEY_TABLE_ID);
       instanceId = savedInstanceState.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
       uriFragmentToMedia = savedInstanceState.getString(IntentConsts.INTENT_KEY_URI_FRAGMENT);
-      currentUriFragment = extras.getString(IntentConsts.INTENT_KEY_CURRENT_URI_FRAGMENT);
+      if (extras != null) {
+        currentUriFragment = extras.getString(IntentConsts.INTENT_KEY_CURRENT_URI_FRAGMENT);
+      }
       hasLaunched = savedInstanceState.getBoolean(HAS_LAUNCHED);
       afterResult = savedInstanceState.getBoolean(AFTER_RESULT);
       uriFragmentNewFileBase = savedInstanceState.getString(URI_FRAGMENT_NEW_FILE_BASE);
     }
 
     if (appName == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_APP_NAME
-            + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_APP_NAME + " key in intent bundle. Not found.");
     }
 
     if (tableId == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_TABLE_ID
-              + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_TABLE_ID + " key in intent bundle. Not found.");
     }
     if (instanceId == null) {
-      throw new IllegalArgumentException("Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID
-              + " key in intent bundle. Not found.");
+      throw new IllegalArgumentException(
+          "Expected " + IntentConsts.INTENT_KEY_INSTANCE_ID + " key in intent bundle. Not found.");
     }
 
     if (uriFragmentToMedia == null) {
       if (uriFragmentNewFileBase == null) {
-        throw new IllegalArgumentException("Expected " + URI_FRAGMENT_NEW_FILE_BASE
-            + " key in intent bundle. Not found.");
+        throw new IllegalArgumentException(
+            "Expected " + URI_FRAGMENT_NEW_FILE_BASE + " key in intent bundle. Not found.");
       }
       afterResult = false;
       hasLaunched = false;
     }
   }
-  
+
   @Override
   public String getAppName() {
     return appName;
@@ -130,8 +148,8 @@ public class MediaCaptureImageActivity extends BaseActivity {
       // this occurs if we re-orient the phone during the save-recording
       // action
       returnResult();
-    } else if (!hasLaunched && !afterResult) {
-      Intent i = null;
+    } else if (!hasLaunched) {
+      Intent i;
       if (launchIntent == null) {
         i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
       } else {
@@ -143,7 +161,8 @@ public class MediaCaptureImageActivity extends BaseActivity {
         uriFragmentToMedia = uriFragmentNewFileBase + TMP_EXTENSION;
       }
       // to make the name unique...
-      File mediaFile = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia);
+      File mediaFile = ODKFileUtils
+          .getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia);
       if (!mediaFile.exists()) {
         boolean success = false;
         String errorString = " Could not create: " + mediaFile.getAbsolutePath();
@@ -156,11 +175,12 @@ public class MediaCaptureImageActivity extends BaseActivity {
         } finally {
           if (!success) {
             String err = getString(R.string.media_save_failed);
-            WebLogger.getLogger(appName).e(t, err + errorString);
+            WebLogger.getLogger(appName).e(TAG, err + errorString);
             deleteMedia();
             Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
             setResult(Activity.RESULT_CANCELED);
             finish();
+            //noinspection ReturnInsideFinallyBlock
             return;
           }
         }
@@ -169,15 +189,12 @@ public class MediaCaptureImageActivity extends BaseActivity {
 
       try {
         hasLaunched = true;
-        startActivityForResult(i, ACTION_CODE);
+        startActivity(i);
       } catch (ActivityNotFoundException e) {
-        String intentActivityName = null;
-        if (launchIntent != null && launchIntent.getComponent() != null ) {
-          intentActivityName = launchIntent.getComponent().getClassName();
-        }
         String err = getString(R.string.activity_not_found,
             android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
-        WebLogger.getLogger(appName).e(t, err);
+        WebLogger.getLogger(appName).e(TAG, err);
+        WebLogger.getLogger(appName).printStackTrace(e);
         deleteMedia();
         Toast.makeText(this, err, Toast.LENGTH_SHORT).show();
         setResult(Activity.RESULT_CANCELED);
@@ -199,6 +216,9 @@ public class MediaCaptureImageActivity extends BaseActivity {
     outState.putBoolean(AFTER_RESULT, afterResult);
   }
 
+  /**
+   * Deletes the image
+   */
   protected void deleteMedia() {
     if (uriFragmentToMedia == null) {
       return;
@@ -208,7 +228,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
     String path = f.getAbsolutePath();
     // delete from media provider
     int del = MediaUtils.deleteImageFileFromMediaProvider(this, appName, path);
-    WebLogger.getLogger(appName).i(t, "Deleted " + del + " rows from image media content provider");
+    WebLogger.getLogger(appName).i(TAG, "Deleted " + del + " rows from image media content provider");
   }
 
   @Override
@@ -223,7 +243,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
 
     if (uriFragmentToMedia == null) {
       // we are in trouble
-      WebLogger.getLogger(appName).e(t, "Unexpectedly null uriFragmentToMedia!");
+      WebLogger.getLogger(appName).e(TAG, "Unexpectedly null uriFragmentToMedia!");
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
@@ -231,7 +251,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
 
     if (uriFragmentNewFileBase == null) {
       // we are in trouble
-      WebLogger.getLogger(appName).e(t, "Unexpectedly null newFileBase!");
+      WebLogger.getLogger(appName).e(TAG, "Unexpectedly null newFileBase!");
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
@@ -243,15 +263,17 @@ public class MediaCaptureImageActivity extends BaseActivity {
     // this...
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = MediaUtils.getPathFromUri(this, (Uri)mediaUri, Images.Media.DATA);
-    String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
+    String binaryPath = MediaUtils.getPathFromUri(this, mediaUri, Images.Media.DATA);
+    String extension = binaryPath.substring(binaryPath.lastIndexOf('.'));
 
     File source = new File(binaryPath);
-    File sourceMedia = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
+    File sourceMedia = ODKFileUtils
+        .getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
     try {
-      FileUtils.copyFile(source, sourceMedia);
+      ODKFileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
-      WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).e(TAG, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName).printStackTrace(e);
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();
@@ -266,43 +288,50 @@ public class MediaCaptureImageActivity extends BaseActivity {
       values.put(Audio.Media.DATE_ADDED, System.currentTimeMillis());
       values.put(Audio.Media.DATA, sourceMedia.getAbsolutePath());
 
-      Uri MediaURI = getApplicationContext().getContentResolver().insert(
-          Images.Media.EXTERNAL_CONTENT_URI, values);
-      WebLogger.getLogger(appName).i(t, "Inserting IMAGE returned uri = " + MediaURI.toString());
+      Uri MediaURI = getApplicationContext().getContentResolver()
+          .insert(Images.Media.EXTERNAL_CONTENT_URI, values);
+      WebLogger.getLogger(appName).i(TAG, "Inserting IMAGE returned uri = " + MediaURI);
 
       if (uriFragmentToMedia != null) {
         deleteMedia();
       }
       uriFragmentToMedia = ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia);
-      WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
+      WebLogger.getLogger(appName)
+          .i(TAG, "Setting current answer to " + sourceMedia.getAbsolutePath());
     } else {
       if (uriFragmentToMedia != null) {
         deleteMedia();
       }
       uriFragmentToMedia = null;
-      WebLogger.getLogger(appName).e(t, "Inserting Image file FAILED");
+      WebLogger.getLogger(appName).e(TAG, "Inserting Image file FAILED");
     }
 
     /*
      * We saved the image to the instance directory. Verify that it is there...
      */
     returnResult();
-    return;
   }
 
+  /**
+   * Sets the result of the activity based on whether we got a sourceMedia or not, and finish
+   */
   protected void returnResult() {
-    File sourceMedia = (uriFragmentToMedia != null) ?
-        ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia) : null;
+    File sourceMedia = uriFragmentToMedia != null ?
+        ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentToMedia) :
+        null;
     if (sourceMedia != null && sourceMedia.exists()) {
       Intent i = new Intent();
-      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT, ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia));
+      i.putExtra(IntentConsts.INTENT_KEY_URI_FRAGMENT,
+          ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia));
       String name = sourceMedia.getName();
-      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE, MEDIA_CLASS + name.substring(name.lastIndexOf(".") + 1));
+      i.putExtra(IntentConsts.INTENT_KEY_CONTENT_TYPE,
+          MEDIA_CLASS + name.substring(name.lastIndexOf('.') + 1));
       setResult(Activity.RESULT_OK, i);
       finish();
     } else {
-      WebLogger.getLogger(appName).e(t, ERROR_NO_FILE
-          + ((uriFragmentToMedia != null) ? sourceMedia.getAbsolutePath() : "null mediaPath"));
+      WebLogger.getLogger(appName).e(TAG, ERROR_NO_FILE + (uriFragmentToMedia != null ?
+          sourceMedia != null ? sourceMedia.getAbsolutePath() : "null sourceMedia" :
+          "null " + "mediaPath"));
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
       setResult(Activity.RESULT_CANCELED);
       finish();

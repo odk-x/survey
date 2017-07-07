@@ -34,8 +34,11 @@ import android.location.LocationProvider;
 import android.os.Bundle;
 import android.widget.Toast;
 
+/**
+ * Lets the user select a location
+ */
 public class GeoPointActivity extends BaseActivity implements LocationListener {
-  private static final String t = "GeoPointActivity";
+  private static final String TAG = "GeoPointActivity";
 
   // default location accuracy
   private static final double LOCATION_ACCURACY = 5;
@@ -52,10 +55,10 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     super.onCreate(savedInstanceState);
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
-    if ( mAppName == null || mAppName.length() == 0 ) {
+    if ( mAppName == null || mAppName.isEmpty()) {
       mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
-    WebLogger.getLogger(mAppName).i(t, t + ".onCreate appName=" + mAppName);
+    WebLogger.getLogger(mAppName).i(TAG, TAG + ".onCreate appName=" + mAppName);
 
     setTitle(mAppName + " > " + getString(R.string.get_location));
 
@@ -131,6 +134,8 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
           mLocation = null;
           finish();
           break;
+        default:
+          // do nothing
         }
       }
     };
@@ -172,7 +177,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     }
   }
 
-  private String truncateDouble(float number) {
+  private static String truncateDouble(float number) {
     DecimalFormat df = new DecimalFormat("#.##");
     return df.format(number);
   }
@@ -192,12 +197,14 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     switch (status) {
     case LocationProvider.AVAILABLE:
       if (mLocation != null) {
-        mLocationDialog.setMessage(getString(R.string.location_accuracy, mLocation.getAccuracy()));
+        mLocationDialog.setMessage(getString(R.string.location_accuracy, truncateDouble(mLocation.getAccuracy())));
       }
       break;
     case LocationProvider.OUT_OF_SERVICE:
-      break;
     case LocationProvider.TEMPORARILY_UNAVAILABLE:
+      // TODO
+      break;
+    default:
       break;
     }
   }

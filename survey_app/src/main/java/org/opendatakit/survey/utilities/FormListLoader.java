@@ -18,11 +18,14 @@ import android.content.AsyncTaskLoader;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.utilities.LocalizationUtils;
 import org.opendatakit.survey.R;
+import org.opendatakit.utilities.LocalizationUtils;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -33,74 +36,80 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
 
   private final String appName;
 
-
+  /**
+   * Simple constructor that just saves the app name
+   *
+   * @param context unused
+   * @param appName the app name
+   */
   public FormListLoader(Context context, String appName) {
     super(context);
     this.appName = appName;
   }
 
-  @Override public ArrayList<FormInfo> loadInBackground() {
+  @Override
+  public ArrayList<FormInfo> loadInBackground() {
     // This is called when a new Loader needs to be created. This
     // sample only has one Loader, so we don't care about the ID.
     // First, pick the base URI to use depending on whether we are
     // currently filtering.
     Uri baseUri = Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName);
+    PropertiesSingleton props = CommonToolProperties.get(getContext(), appName);
 
-    ArrayList<FormInfo> forms = new ArrayList<FormInfo>();
+    ArrayList<FormInfo> forms = new ArrayList<>();
 
     Cursor c = null;
     try {
       c = getContext().getContentResolver().query(baseUri, null, null, null, null);
 
-      if ( c.moveToFirst() ) {
+      if (c != null && c.moveToFirst()) {
         int idxTableId = c.getColumnIndex(FormsColumns.TABLE_ID);
         int idxFormId = c.getColumnIndex(FormsColumns.FORM_ID);
         int idxFormTitle = c.getColumnIndex(FormsColumns.DISPLAY_NAME);
         int idxLastUpdateDate = c.getColumnIndex(FormsColumns.DATE);
         int idxFormVersion = c.getColumnIndex(FormsColumns.FORM_VERSION);
 
-        SimpleDateFormat formatter = new SimpleDateFormat(getContext().getString(R.string
-            .last_updated_on_date_at_time), Locale.getDefault());
+        DateFormat formatter = new SimpleDateFormat(
+            getContext().getString(R.string.last_updated_on_date_at_time), Locale.getDefault());
 
         do {
-          String formVersion = c.isNull(idxFormVersion) ? null :
-              c.getString(idxFormVersion);
+          String tableId = c.getString(idxTableId);
+          String formVersion = c.isNull(idxFormVersion) ? null : c.getString(idxFormVersion);
           long timestamp = c.getLong(idxLastUpdateDate);
           Date lastModificationDate = new Date(timestamp);
           String formTitle = c.getString(idxFormTitle);
 
-          FormInfo info = new FormInfo(
-              c.getString(idxTableId),
-              c.getString(idxFormId),
-              formVersion,
-              LocalizationUtils.getLocalizedDisplayName(formTitle),
-              formatter.format(lastModificationDate));
+          FormInfo info = new FormInfo(tableId, c.getString(idxFormId), formVersion,
+              LocalizationUtils
+                  .getLocalizedDisplayName(appName, tableId, props.getUserSelectedDefaultLocale(),
+                      formTitle), formatter.format(lastModificationDate));
           forms.add(info);
-        } while ( c.moveToNext());
+        } while (c.moveToNext());
       }
     } finally {
-      if ( c != null && !c.isClosed() ) {
+      if (c != null && !c.isClosed()) {
         c.close();
       }
     }
 
     // order this by the localized display name
     Collections.sort(forms, new Comparator<FormInfo>() {
-      @Override public int compare(FormInfo lhs, FormInfo rhs) {
+      @Override
+      public int compare(FormInfo lhs, FormInfo rhs) {
         int cmp = lhs.formDisplayName.compareTo(rhs.formDisplayName);
-        if ( cmp != 0 ) {
+        if (cmp != 0) {
           return cmp;
         }
         cmp = lhs.tableId.compareTo(rhs.tableId);
-        if ( cmp != 0 ) {
+        if (cmp != 0) {
           return cmp;
         }
         cmp = lhs.formId.compareTo(rhs.formId);
-        if ( cmp != 0 ) {
+        if (cmp != 0) {
           return cmp;
         }
         cmp = lhs.formVersion.compareTo(rhs.formVersion);
-        if ( cmp != 0 ) {
+        if (cmp != 0) {
           return cmp;
         }
         cmp = lhs.formDisplaySubtext.compareTo(rhs.formDisplaySubtext);
@@ -111,7 +120,8 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
     return forms;
   }
 
-  @Override protected void onStartLoading() {
+  @Override
+  protected void onStartLoading() {
     super.onStartLoading();
     forceLoad();
   }
