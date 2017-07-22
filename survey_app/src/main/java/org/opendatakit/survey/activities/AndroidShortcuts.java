@@ -14,6 +14,7 @@
 
 package org.opendatakit.survey.activities;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -192,7 +193,7 @@ public class AndroidShortcuts extends BaseActivity {
     finish();
   }
 
-  private void createErrorDialog(CharSequence errorMsg, final boolean shouldExit) {
+  private void createErrorDialog(String errorMsg, final boolean shouldExit) {
     AlertDialog mAlertDialog = new AlertDialog.Builder(this).create();
     mAlertDialog.setIcon(android.R.drawable.ic_dialog_info);
     mAlertDialog.setMessage(errorMsg);

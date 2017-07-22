@@ -26,11 +26,6 @@ import org.opendatakit.activities.IOdkDataActivity;
  */
 public interface IOdkSurveyActivity extends IOdkCommonActivity, IOdkDataActivity {
 
-  /**
-   * Gets the base uri for the web view
-   * @param ifChanged unused
-   * @return the uri
-   */
   String getUrlBaseLocation(boolean ifChanged);
 
   /**
