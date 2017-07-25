@@ -168,10 +168,10 @@ public class SplashScreenActivity extends BaseActivity {
     PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
 
     String toolFirstRunKey = PropertiesSingleton
-        .toolFirstRunPropertyName(getCommonApplication().getToolName());
+        .toolFirstRunPropertyName(((ToolAwareApplication) getApplication()).getToolName());
 
     String toolVersionKey = PropertiesSingleton
-        .toolVersionPropertyName(getCommonApplication().getToolName());
+        .toolVersionPropertyName(((ToolAwareApplication) getApplication()).getToolName());
 
     Boolean firstRun = props.getBooleanProperty(toolFirstRunKey);
     Boolean showSplash = props.getBooleanProperty(CommonToolProperties.KEY_SHOW_SPLASH);

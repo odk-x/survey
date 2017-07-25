@@ -31,6 +31,19 @@ public class Survey extends CommonApplication {
   @SuppressWarnings("unused")
   public static final String TAG = Survey.class.getSimpleName();
 
+  /**
+   * Gets the application singleton that can be used to get the database interface
+   * @param act an activity to pull the application from
+   * @return act.getApplication() if possible
+   */
+  public static CommonApplication getInstance(Activity act) {
+    Application app = act.getApplication();
+    if (app instanceof CommonApplication) {
+      return (CommonApplication) app;
+    }
+    throw new IllegalArgumentException("Bad application");
+  }
+
   @Override
   public int getApkDisplayNameResourceId() {
     return R.string.app_name;

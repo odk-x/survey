@@ -219,7 +219,7 @@ public class AndroidShortcuts extends BaseActivity {
 
   @Override
   public String getAppName() {
-    return getCommonApplication().getToolName();
+    return ((ToolAwareApplication) getApplication()).getToolName();
   }
 
   private static class Choice {
