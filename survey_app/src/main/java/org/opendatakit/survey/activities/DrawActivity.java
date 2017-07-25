@@ -10,16 +10,24 @@ import android.graphics.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.*;
+import android.view.Display;
+import android.view.KeyEvent;
+import android.view.LayoutInflater;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.utilities.ColorPickerDialog;
+import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.utilities.BitmapUtils;
 import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.utilities.ColorPickerDialog;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,44 +38,17 @@ import java.io.IOException;
  * Created by clarice on 8/19/16.
  */
 public class DrawActivity extends BaseActivity {
-  /**
-   * Bundle key for the type of draw activity
-   */
+  public static final String t = "DrawActivity";
+
   public static final String OPTION = "option";
-  /**
-   * Bundle VALUE for a signature activity
-   */
   public static final String OPTION_SIGNATURE = "signature";
-  /**
-   * Unused
-   */
-  @Deprecated
   public static final String OPTION_ANNOTATE = "annotate";
-  /**
-   * Bundle VALUE for a draw/sketch activity
-   */
   public static final String OPTION_DRAW = "draw";
-  /**
-   * Bundle key for an image uri
-   */
   public static final String REF_IMAGE = "refImage";
-  /**
-   * Bundle key for a uri to an image or video (?)
-   */
   public static final String EXTRA_OUTPUT = android.provider.MediaStore.EXTRA_OUTPUT;
-  /**
-   * Bundle key for saving savepointImage to the saved instance state
-   */
   public static final String SAVEPOINT_IMAGE = "savepointImage"; // during
-  /**
-   * Used for logging
-   */
-  private static final String TAG = DrawActivity.class.getSimpleName();
-  /**
-   * The JPEG quality to save the image with
-   */
-  public static final int QUALITY = 70;
   // restore
+
   // incoming options...
   private String loadOption = null;
   private File refImage = null;
@@ -75,12 +56,15 @@ public class DrawActivity extends BaseActivity {
   private File savepointImage = null;
 
   private Button btnDrawColor;
+  private Button btnFinished;
+  private Button btnReset;
+  private Button btnCancel;
   private Paint paint;
   private Paint pointPaint;
-  @SuppressWarnings("MagicNumber")
-  private int currentColor = Color.argb(0xff, 0, 0, 0); // white
+  private int currentColor = 0xFF000000;
   private DrawView drawView;
   private String alertTitleString;
+  private AlertDialog alertDialog;
   private String mAppName;
 
   @Override
@@ -94,9 +78,9 @@ public class DrawActivity extends BaseActivity {
     try {
       saveFile(savepointImage);
     } catch (FileNotFoundException e) {
-      WebLogger.getLogger(getAppName()).printStackTrace(e);
+      e.printStackTrace();
     }
-    if (savepointImage.exists()) {
+    if ( savepointImage.exists() ) {
       outState.putString(SAVEPOINT_IMAGE, savepointImage.getAbsolutePath());
     }
   }
@@ -106,13 +90,13 @@ public class DrawActivity extends BaseActivity {
     super.onCreate(savedInstanceState);
 
     mAppName = this.getIntent().getStringExtra(IntentConsts.INTENT_KEY_APP_NAME);
-    if (mAppName == null || mAppName.isEmpty()) {
+    if ( mAppName == null || mAppName.length() == 0 ) {
       mAppName = ODKFileUtils.getOdkDefaultAppName();
     }
 
     requestWindowFeature(Window.FEATURE_NO_TITLE);
     getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
-        WindowManager.LayoutParams.FLAG_FULLSCREEN);
+            WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
     Bundle extras = getIntent().getExtras();
 
@@ -120,9 +104,7 @@ public class DrawActivity extends BaseActivity {
       loadOption = OPTION_DRAW;
       refImage = null;
       savepointImage = new File(ODKFileUtils.getTempDrawFile(mAppName));
-      if (!savepointImage.delete()) {
-        WebLogger.getLogger(getAppName()).e(TAG, "Could not delete " + savepointImage.getPath());
-      }
+      savepointImage.delete();
       output = new File(ODKFileUtils.getTempFile(mAppName));
     } else {
       loadOption = extras.getString(OPTION);
@@ -137,24 +119,23 @@ public class DrawActivity extends BaseActivity {
       String savepoint = extras.getString(SAVEPOINT_IMAGE);
       if (savepoint != null) {
         savepointImage = new File(savepoint);
-        if (!savepointImage.exists() && refImage != null && refImage.exists()) {
+        if (!savepointImage.exists() && refImage != null
+                && refImage.exists()) {
           try {
             ODKFileUtils.copyFile(refImage, savepointImage);
           } catch (IOException e) {
-            WebLogger.getLogger(getAppName()).printStackTrace(e);
+            e.printStackTrace();
           }
         }
       } else {
         savepointImage = new File(ODKFileUtils.getTempDrawFile(mAppName));
-        try {
-          if (!savepointImage.delete()) {
-            throw new IOException("Could not delete " + savepointImage.getPath());
-          }
-          if (refImage != null && refImage.exists()) {
+        savepointImage.delete();
+        if (refImage != null && refImage.exists()) {
+          try {
             ODKFileUtils.copyFile(refImage, savepointImage);
+          } catch (IOException e) {
+            e.printStackTrace();
           }
-        } catch (IOException e) {
-          WebLogger.getLogger(getAppName()).printStackTrace(e);
         }
       }
       Uri uri = (Uri) extras.get(EXTRA_OUTPUT);
@@ -175,23 +156,27 @@ public class DrawActivity extends BaseActivity {
     if (OPTION_SIGNATURE.equals(loadOption)) {
       // set landscape
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-      alertTitleString = getString(R.string.quit_application, getString(R.string.sign_button));
+      alertTitleString = getString(R.string.quit_application,
+              getString(R.string.sign_button));
     } else if (OPTION_ANNOTATE.equals(loadOption)) {
       setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-      alertTitleString = getString(R.string.quit_application, getString(R.string.markup_image));
-    } else if (OPTION_DRAW.equals(loadOption)) {
-      alertTitleString = getString(R.string.quit_application, getString(R.string.draw_image));
+      alertTitleString = getString(R.string.quit_application,
+              getString(R.string.markup_image));
     } else {
-      WebLogger.getLogger(getAppName()).e(TAG, "Unknown loadOption!");
+      alertTitleString = getString(R.string.quit_application,
+              getString(R.string.draw_image));
     }
 
-    setTitle(getString(R.string.app_name) + " > " + getString(R.string.draw_image));
+    setTitle(getString(R.string.app_name) + " > "
+            + getString(R.string.draw_image));
 
     LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-    RelativeLayout v = (RelativeLayout) inflater.inflate(R.layout.draw_layout, null);
-    ViewGroup ll = (ViewGroup) v.findViewById(R.id.drawViewLayout);
+    RelativeLayout v = (RelativeLayout) inflater.inflate(
+            R.layout.draw_layout, null);
+    LinearLayout ll = (LinearLayout) v.findViewById(R.id.drawViewLayout);
 
-    drawView = new DrawView(this, OPTION_SIGNATURE.equals(loadOption), savepointImage);
+    drawView = new DrawView(this, OPTION_SIGNATURE.equals(loadOption),
+            savepointImage);
 
     ll.addView(drawView);
 
@@ -214,55 +199,61 @@ public class DrawActivity extends BaseActivity {
 
     btnDrawColor = (Button) findViewById(R.id.btnSelectColor);
     btnDrawColor.setTextColor(getInverseColor(currentColor));
-    btnDrawColor.getBackground().setColorFilter(currentColor, PorterDuff.Mode.SRC_ATOP);
+    btnDrawColor.getBackground().setColorFilter(currentColor,
+            PorterDuff.Mode.SRC_ATOP);
     btnDrawColor.setText(getString(R.string.set_color));
     btnDrawColor.setOnClickListener(new View.OnClickListener() {
       public void onClick(View v) {
-        WebLogger.getLogger(mAppName).i(TAG, "setColorButton: click");
-        new ColorPickerDialog(DrawActivity.this, new ColorPickerDialog.OnColorChangedListener() {
-          public void colorChanged(String key, int color) {
-            btnDrawColor.setTextColor(getInverseColor(color));
-            btnDrawColor.getBackground().setColorFilter(color, PorterDuff.Mode.SRC_ATOP);
-            currentColor = color;
-            paint.setColor(color);
-            pointPaint.setColor(color);
-          }
-        }, "key", currentColor, currentColor, getString(R.string.select_drawing_color)).show();
+        WebLogger.getLogger(mAppName).i(t, "setColorButton: click");
+        ColorPickerDialog cpd = new ColorPickerDialog(
+                DrawActivity.this,
+                new ColorPickerDialog.OnColorChangedListener() {
+                  public void colorChanged(String key, int color) {
+                    btnDrawColor
+                            .setTextColor(getInverseColor(color));
+                    btnDrawColor.getBackground().setColorFilter(
+                            color, PorterDuff.Mode.SRC_ATOP);
+                    currentColor = color;
+                    paint.setColor(color);
+                    pointPaint.setColor(color);
+                  }
+                }, "key", currentColor, currentColor,
+                getString(R.string.select_drawing_color));
+        cpd.show();
       }
     });
-    View btnFinished = findViewById(R.id.btnFinishDraw);
+    btnFinished = (Button) findViewById(R.id.btnFinishDraw);
     btnFinished.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        WebLogger.getLogger(mAppName).i(TAG, "saveAndCloseButton: click");
+        WebLogger.getLogger(mAppName).i(t, "saveAndCloseButton: click");
         SaveAndClose();
       }
     });
-    View btnReset = findViewById(R.id.btnResetDraw);
+    btnReset = (Button) findViewById(R.id.btnResetDraw);
     btnReset.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        WebLogger.getLogger(mAppName).i(TAG, "resetButton: click");
+        WebLogger.getLogger(mAppName).i(t, "resetButton: click");
         Reset();
       }
     });
-    View btnCancel = findViewById(R.id.btnCancelDraw);
+    btnCancel = (Button) findViewById(R.id.btnCancelDraw);
     btnCancel.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
-        WebLogger.getLogger(mAppName).i(TAG, "cancelAndCloseButton: click");
+        WebLogger.getLogger(mAppName).i(t, "cancelAndCloseButton: click");
         CancelAndClose();
       }
     });
 
   }
 
-  private static int getInverseColor(int color) {
+  private int getInverseColor(int color) {
     int red = Color.red(color);
     int green = Color.green(color);
     int blue = Color.blue(color);
     int alpha = Color.alpha(color);
-    //noinspection MagicNumber
     return Color.argb(alpha, 255 - red, 255 - green, 255 - blue);
   }
 
@@ -271,45 +262,45 @@ public class DrawActivity extends BaseActivity {
       saveFile(output);
       setResult(Activity.RESULT_OK);
     } catch (FileNotFoundException e) {
-      WebLogger.getLogger(getAppName()).printStackTrace(e);
+      e.printStackTrace();
       setResult(Activity.RESULT_CANCELED);
     }
     this.finish();
   }
 
   private void saveFile(File f) throws FileNotFoundException {
-    if (drawView.getWidth() == 0 || drawView.getHeight() == 0) {
+    if ( drawView.getWidth() == 0 || drawView.getHeight() == 0 ) {
       // apparently on 4.x, the orientation change notification can occur
       // sometime before the view is rendered. In that case, the view
       // dimensions will not be known.
-      Log.e(TAG, "view has zero width or zero height");
+      Log.e(t,"view has zero width or zero height");
     } else {
       FileOutputStream fos;
       fos = new FileOutputStream(f);
-      Bitmap bitmap = Bitmap
-          .createBitmap(drawView.getWidth(), drawView.getHeight(), Bitmap.Config.ARGB_8888);
+      Bitmap bitmap = Bitmap.createBitmap(drawView.getWidth(),
+              drawView.getHeight(), Bitmap.Config.ARGB_8888);
       Canvas canvas = new Canvas(bitmap);
       drawView.draw(canvas);
-      bitmap.compress(Bitmap.CompressFormat.JPEG, QUALITY, fos);
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
       try {
-        fos.flush();
-        fos.close();
-      } catch (Exception e) {
-        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        if ( fos != null ) {
+          fos.flush();
+          fos.close();
+        }
+      } catch ( Exception e) {
       }
     }
   }
 
   private void Reset() {
-    try {
-      if (savepointImage.exists() && !savepointImage.delete()) {
-        throw new IOException("Failed to delete " + savepointImage.getPath());
-      }
-      if (!OPTION_SIGNATURE.equals(loadOption) && refImage != null && refImage.exists()) {
+    savepointImage.delete();
+    if (!OPTION_SIGNATURE.equals(loadOption) && refImage != null
+            && refImage.exists()) {
+      try {
         ODKFileUtils.copyFile(refImage, savepointImage);
+      } catch (IOException e) {
+        e.printStackTrace();
       }
-    } catch (IOException e) {
-      WebLogger.getLogger(getAppName()).printStackTrace(e);
     }
     drawView.reset();
     drawView.invalidate();
@@ -328,26 +319,24 @@ public class DrawActivity extends BaseActivity {
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
     switch (keyCode) {
-    case KeyEvent.KEYCODE_BACK:
-      WebLogger.getLogger(mAppName).i(TAG, "onKeyDown.KEYCODE_BACK: quit");
-      createQuitDrawDialog();
-      return true;
-    case KeyEvent.KEYCODE_DPAD_RIGHT:
-      if (event.isAltPressed()) {
-        WebLogger.getLogger(mAppName).i(TAG, "onKeyDown.KEYCODE_DPAD_RIGHT: showNext");
+      case KeyEvent.KEYCODE_BACK:
+        WebLogger.getLogger(mAppName).i(t, "onKeyDown.KEYCODE_BACK: quit");
         createQuitDrawDialog();
         return true;
-      }
-      break;
-    case KeyEvent.KEYCODE_DPAD_LEFT:
-      if (event.isAltPressed()) {
-        WebLogger.getLogger(mAppName).i(TAG, "onKeyDown.KEYCODE_DPAD_LEFT: showPrevious");
-        createQuitDrawDialog();
-        return true;
-      }
-      break;
-    default:
-      break;
+      case KeyEvent.KEYCODE_DPAD_RIGHT:
+        if (event.isAltPressed()) {
+          WebLogger.getLogger(mAppName).i(t, "onKeyDown.KEYCODE_DPAD_RIGHT: showNext");
+          createQuitDrawDialog();
+          return true;
+        }
+        break;
+      case KeyEvent.KEYCODE_DPAD_LEFT:
+        if (event.isAltPressed()) {
+          WebLogger.getLogger(mAppName).i(t,"onKeyDown.KEYCODE_DPAD_LEFT: showPrevious");
+          createQuitDrawDialog();
+          return true;
+        }
+        break;
     }
     return super.onKeyDown(keyCode, event);
   }
@@ -357,54 +346,48 @@ public class DrawActivity extends BaseActivity {
    * saving
    */
   private void createQuitDrawDialog() {
-    String[] items = { getString(R.string.keep_changes), getString(R.string.do_not_save) };
+    String[] items = { getString(R.string.keep_changes),
+            getString(R.string.do_not_save) };
 
-    WebLogger.getLogger(mAppName).i(TAG, "createQuitDrawDialog: show");
-    AlertDialog alertDialog = new AlertDialog.Builder(this)
-        .setIcon(android.R.drawable.ic_dialog_info).setTitle(alertTitleString)
-        .setNeutralButton(getString(R.string.do_not_exit), new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int id) {
+    WebLogger.getLogger(mAppName).i(t, "createQuitDrawDialog: show");
+    alertDialog = new AlertDialog.Builder(this)
+            .setIcon(android.R.drawable.ic_dialog_info)
+            .setTitle(alertTitleString)
+            .setNeutralButton(getString(R.string.do_not_exit),
+                    new DialogInterface.OnClickListener() {
+                      @Override
+                      public void onClick(DialogInterface dialog, int id) {
 
-            WebLogger.getLogger(mAppName).i(TAG, "createQuitDrawDialog: cancel");
-            dialog.cancel();
+                        WebLogger.getLogger(mAppName).i(t, "createQuitDrawDialog: cancel");
+                        dialog.cancel();
 
-          }
-        }).setItems(items, new DialogInterface.OnClickListener() {
-          @Override
-          public void onClick(DialogInterface dialog, int which) {
-            switch (which) {
-            case 0: // save and exit
-              WebLogger.getLogger(mAppName).i(TAG, "createQuitDrawDialog: saveAndExit");
-              SaveAndClose();
-              break;
-            case 1: // discard changes and exit
-              WebLogger.getLogger(mAppName).i(TAG, "createQuitDrawDialog: discardAndExit");
-              CancelAndClose();
-              break;
-            case 2:// do nothing
-              WebLogger.getLogger(mAppName).i(TAG, "createQuitDrawDialog: cancel");
-              break;
-            default:
-              break;
-            }
-          }
-        }).create();
+                      }
+                    })
+            .setItems(items, new DialogInterface.OnClickListener() {
+              @Override
+              public void onClick(DialogInterface dialog, int which) {
+                switch (which) {
+
+                  case 0: // save and exit
+                    WebLogger.getLogger(mAppName).i(t, "createQuitDrawDialog: saveAndExit");
+                    SaveAndClose();
+                    break;
+
+                  case 1: // discard changes and exit
+
+                    WebLogger.getLogger(mAppName).i(t, "createQuitDrawDialog: discardAndExit");
+                    CancelAndClose();
+                    break;
+
+                  case 2:// do nothing
+                    WebLogger.getLogger(mAppName).i(t, "createQuitDrawDialog: cancel");
+                    break;
+                }
+              }
+            }).create();
     alertDialog.show();
   }
 
-  @Override
-  public void databaseAvailable() {
-  }
-
-  @Override
-  public void databaseUnavailable() {
-  }
-
-  /**
-   * A view with a canvas users can draw on
-   */
-  @SuppressWarnings("MagicNumber")
   public class DrawView extends View {
     private boolean isSignature;
     private Bitmap mBitmap;
@@ -412,39 +395,25 @@ public class DrawActivity extends BaseActivity {
     private Path mCurrentPath;
     private Paint mBitmapPaint;
     private File mBackgroundBitmapFile;
-    private float mX, mY;
 
-    /**
-     * Simple constructor that sets up internal variables
-     * @param c unused
-     */
     public DrawView(final Context c) {
       super(c);
       isSignature = false;
       mBitmapPaint = new Paint(Paint.DITHER_FLAG);
       mCurrentPath = new Path();
-      setBackgroundColor(Color.argb(0xff, 0xff, 0xff, 0xff)); // black?
+      setBackgroundColor(0xFFFFFFFF);
       mBackgroundBitmapFile = new File(ODKFileUtils.getTempDrawFile(mAppName));
     }
 
-    /**
-     * Simple constructor that sets up internal variables based on the given file and isSignature
-     * @param c unused
-     * @param isSignature whether we should draw the signature line or not
-     * @param f the background image
-     */
     public DrawView(Context c, boolean isSignature, File f) {
       this(c);
       this.isSignature = isSignature;
       mBackgroundBitmapFile = f;
     }
 
-    /**
-     * Resets the entire view
-     */
     public void reset() {
-      Display display = ((WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE))
-          .getDefaultDisplay();
+      Display display = ((WindowManager) getContext().getSystemService(
+              Context.WINDOW_SERVICE)).getDefaultDisplay();
       Point size = new Point();
       display.getSize(size);
       int screenWidth = size.x;
@@ -452,15 +421,11 @@ public class DrawActivity extends BaseActivity {
       resetImage(screenWidth, screenHeight);
     }
 
-    /**
-     * Resets the image to a new bitmap with the given width and height
-     * @param w width
-     * @param h height
-     */
     public void resetImage(int w, int h) {
       if (mBackgroundBitmapFile.exists()) {
-        mBitmap = BitmapUtils.getBitmapScaledToDisplay(mAppName, mBackgroundBitmapFile, w, h)
-            .copy(Bitmap.Config.ARGB_8888, true);
+        mBitmap = BitmapUtils.getBitmapScaledToDisplay(mAppName,
+                mBackgroundBitmapFile, w, h).copy(
+                Bitmap.Config.ARGB_8888, true);
         // mBitmap =
         // Bitmap.createScaledBitmap(BitmapFactory.decodeFile(mBackgroundBitmapFile.getPath()),
         // w, h, true);
@@ -468,7 +433,7 @@ public class DrawActivity extends BaseActivity {
       } else {
         mBitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         mCanvas = new Canvas(mBitmap);
-        mCanvas.drawColor(Color.BLACK);
+        mCanvas.drawColor(0xFFFFFFFF);
         if (isSignature)
           drawSignLine();
       }
@@ -482,10 +447,12 @@ public class DrawActivity extends BaseActivity {
 
     @Override
     protected void onDraw(Canvas canvas) {
-      canvas.drawColor(Color.argb(0xff, 0xaa, 0xaa, 0xaa));
+      canvas.drawColor(0xFFAAAAAA);
       canvas.drawBitmap(mBitmap, 0, 0, mBitmapPaint);
       canvas.drawPath(mCurrentPath, paint);
     }
+
+    private float mX, mY;
 
     private void touch_start(float x, float y) {
       mCurrentPath.reset();
@@ -494,13 +461,9 @@ public class DrawActivity extends BaseActivity {
       mY = y;
     }
 
-    /**
-     * Draws a horizontal line 70% of the way down the screen
-     */
     public void drawSignLine() {
-      //noinspection NumericCastThatLosesPrecision
-      mCanvas.drawLine(0, (int) (mCanvas.getHeight() * .7), mCanvas.getWidth(),
-          (int) (mCanvas.getHeight() * .7), paint);
+      mCanvas.drawLine(0, (int) (mCanvas.getHeight() * .7),
+              mCanvas.getWidth(), (int) (mCanvas.getHeight() * .7), paint);
     }
 
     private void touch_move(float x, float y) {
@@ -527,22 +490,28 @@ public class DrawActivity extends BaseActivity {
       float y = event.getY();
 
       switch (event.getAction()) {
-      case MotionEvent.ACTION_DOWN:
-        touch_start(x, y);
-        invalidate();
-        break;
-      case MotionEvent.ACTION_MOVE:
-        touch_move(x, y);
-        invalidate();
-        break;
-      case MotionEvent.ACTION_UP:
-        touch_up();
-        invalidate();
-        break;
-      default:
-        return super.onTouchEvent(event);
+        case MotionEvent.ACTION_DOWN:
+          touch_start(x, y);
+          invalidate();
+          break;
+        case MotionEvent.ACTION_MOVE:
+          touch_move(x, y);
+          invalidate();
+          break;
+        case MotionEvent.ACTION_UP:
+          touch_up();
+          invalidate();
+          break;
       }
       return true;
     }
+  }
+
+  @Override
+  public void databaseAvailable() {
+  }
+
+  @Override
+  public void databaseUnavailable() {
   }
 }

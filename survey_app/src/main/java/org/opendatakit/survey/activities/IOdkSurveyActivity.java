@@ -26,137 +26,53 @@ import org.opendatakit.activities.IOdkDataActivity;
  */
 public interface IOdkSurveyActivity extends IOdkCommonActivity, IOdkDataActivity {
 
-  /**
-   * Gets the base uri for the web view
-   * @param ifChanged unused
-   * @return the uri
-   */
-  String getUrlBaseLocation(boolean ifChanged);
+  public String getUrlBaseLocation(boolean ifChanged);
 
-  /**
-   * Clears the extra stuff after the # in the url
-   */
-  void clearAuxillaryHash();
+  public void clearAuxillaryHash();
 
-  /**
-   * Gets the full hash (stuff after the #) from the url, including the auxillary hash
-   * @return the full hash containing the form path, instance id, screen path and auxillary hash
-   */
-  String getUrlLocationHash();
+  public String getUrlLocationHash();
 
-  /**
-   * Returns the refId for the activity
-   * @return An id that ties the javascript interface to a particular activity
-   */
-  String getRefId();
+  public String getUploadTableId();
 
-  /**
-   * If refId is null, clears the instanceId. If refId matches the current refId, sets the
-   * instanceId.
-   *
-   * @param instanceId the instance id for the row add/edit
-   */
-  void setInstanceId(String instanceId);
+  public String getRefId();
 
-  /**
-   * Get the instanceId for this web page. Returns null if the refId does not match.
-   *
-   * @return the instance id if the refId is valid or null
-   */
-  String getInstanceId();
+  public void setInstanceId(String instanceId);
 
-  /**
-   * Pushes the current screen state into the history
-   */
-  void pushSectionScreenState();
+  public String getInstanceId();
 
-  /**
-   * Updates the current screen state to the new parameters
-   * @param screenPath the screen path to be updated in MainMenuActivity
-   * @param state      the state to be updated in MainMenuActivity
-   */
-  void setSectionScreenState(String screenPath, String state);
+  public void pushSectionScreenState();
 
-  /**
-   * Clears the current screen state
-   */
-  void clearSectionScreenState();
+  public void setSectionScreenState(String screenPath, String state);
 
-  /**
-   * Returns the current screen state
-   * @return the current screen state
-   */
-  String getControllerState();
+  public void clearSectionScreenState();
 
-  /**
-   * Returns the current screen path
-   * @return the current screen path
-   */
-  String getScreenPath();
+  public String getControllerState();
 
-  /**
-   * Returns whether there is screen history
-   * @return whether the screen has history
-   */
-  boolean hasScreenHistory();
+  public String getScreenPath();
 
-  /**
-   * Returns and removes the last thing from the screen history
-   * @return the popped history item
-   */
-  String popScreenHistory();
+  public boolean hasScreenHistory();
 
-  /**
-   * Returns whether there is a stack of screens
-   * @return whether there is a stack of screen objects with histories
-   */
-  boolean hasSectionStack();
+  public String popScreenHistory();
 
-  /**
-   * Returns and removes the last screen from the stack
-   * @return the popped screen item
-   */
-  String popSectionStack();
+  public boolean hasSectionStack();
 
-  /**
-   * Saves the changes as completed and finishes the activity
-   * @param instanceId the instance id for the row add/edit
-   * @param asComplete whether to save as finalized or save as incomplete
-   */
-  void saveAllChangesCompleted(String instanceId, boolean asComplete);
+  public String popSectionStack();
 
-  /**
-   * Saves the changes as failed and finishes the activity
-   * @param instanceId the instance id for the row add/edit
-   */
-  void saveAllChangesFailed(String instanceId);
+  public void saveAllChangesCompleted(String instanceId, boolean asComplete);
 
-  /**
-   * Ignores all changes and doesn't save anything, then finishes
-   * @param instanceId the instance id for the row add/edit
-   */
-  void ignoreAllChangesCompleted(String instanceId);
+  public void saveAllChangesFailed(String instanceId);
 
-  /**
-   * Ignores all changes and doesn't save anything
-   * @param instanceId the instance id for the row add/edit
-   */
-  void ignoreAllChangesFailed(String instanceId);
+  public void ignoreAllChangesCompleted(String instanceId);
 
-  /**
-   * Launches an activity to edit the row using the given form
-   * for FormChooserListFragment
-   * @param formUri the uri of the form to use to edit the row
-   */
-  void chooseForm(Uri formUri);
+  public void ignoreAllChangesFailed(String instanceId);
 
-  /**
-   * Saves the checkpoint and finishes the activity
-   */
-  void saveAllAsIncompleteThenPopBackStack();
+  // for FormChooserListFragment
+  public void chooseForm(Uri formUri);
 
-  /**
-   * Resolves all checkpoints then finishes
-   */
-  void resolveAllCheckpointsThenPopBackStack();
+  // for back press suppression
+  // trigger save...
+  public void saveAllAsIncompleteThenPopBackStack();
+
+  // trigger resolve...
+  public void resolveAllCheckpointsThenPopBackStack();
 }

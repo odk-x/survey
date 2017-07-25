@@ -43,8 +43,9 @@ public class BackPressWebkitConfirmationDialogFragment extends DialogFragment {
       public void onClick(DialogInterface dialog, int which) {
 
 
-        // user code should dismiss the dialog since this is a cancellation action... dialog
-        // .dismiss();
+        // user code should dismiss the dialog
+        // since this is a cancellation action...
+        // dialog.dismiss();
         BackPressWebkitConfirmationDialogFragment.this.saveAllAsIncompleteOutcomeDialog();
       }
     };
@@ -54,8 +55,9 @@ public class BackPressWebkitConfirmationDialogFragment extends DialogFragment {
       @Override
       public void onClick(DialogInterface dialog, int which) {
 
-        // user code should dismiss the dialog since this is a cancellation action... dialog
-        // .dismiss();
+        // user code should dismiss the dialog
+        // since this is a cancellation action...
+        // dialog.dismiss();
         BackPressWebkitConfirmationDialogFragment.this.resolveAllCheckpointsOutcomeDialog();
       }
     };
@@ -86,11 +88,8 @@ public class BackPressWebkitConfirmationDialogFragment extends DialogFragment {
     return alertDialog;
   }
 
-  /**
-   * Called when the user clicks the save button
-   */
   public void saveAllAsIncompleteOutcomeDialog() {
-    getDialog().dismiss();
+    this.getDialog().dismiss();
     // trigger save AFTER dismiss is complete...
     handler.post(new Runnable() {
       @Override public void run() {
@@ -100,11 +99,8 @@ public class BackPressWebkitConfirmationDialogFragment extends DialogFragment {
     });
   }
 
-  /**
-   * Called when the user clicks the ignore changes button
-   */
   public void resolveAllCheckpointsOutcomeDialog() {
-    getDialog().dismiss();
+    this.getDialog().dismiss();
     // trigger ignore AFTER dismiss is complete...
     handler.post(new Runnable() {
       @Override public void run() {
@@ -114,10 +110,7 @@ public class BackPressWebkitConfirmationDialogFragment extends DialogFragment {
     });
   }
 
-  /**
-   * Called when the user clicks the cancel button
-   */
   public void cancelOutcomeDialog() {
-    getDialog().dismiss();
+    this.getDialog().dismiss();
   }
 }
