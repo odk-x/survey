@@ -13,9 +13,12 @@
  */
 package org.opendatakit.survey.application;
 
-import android.app.Activity;
 import org.opendatakit.application.CommonApplication;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.survey.R;
+
+import android.annotation.SuppressLint;
 
 /**
  * Extends the Application class to implement
@@ -24,17 +27,20 @@ import org.opendatakit.survey.R;
  *
  */
 public class Survey extends CommonApplication {
-  /**
-   * Used for logging
-   */
-  @SuppressWarnings("unused")
-  public static final String TAG = Survey.class.getSimpleName();
+  public static final String t = "Survey";
 
-  public static CommonApplication getInstance(Activity act) {
-    if (act.getApplication() instanceof CommonApplication) {
-      return (CommonApplication) act.getApplication();
-    }
-    throw new IllegalArgumentException("Bad application");
+  private static Survey singleton = null;
+
+  public static Survey getInstance() {
+    return singleton;
+  }
+
+  @SuppressLint("NewApi")
+  @Override
+  public void onCreate() {
+    singleton = this;
+
+    super.onCreate();
   }
 
   @Override
