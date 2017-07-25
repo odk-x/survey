@@ -26,7 +26,7 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-/*import android.support.annotation.NonNull;*/
+import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -133,9 +133,9 @@ public class AndroidShortcuts extends BaseActivity {
 
     builder.setAdapter(new ArrayAdapter<Choice>(this, R.layout.shortcut_item, choices) {
 
-      /*@NonNull*/
+      @NonNull
       @Override
-      public View getView(int position, View convertView, /*@NonNull*/ ViewGroup parent) {
+      public View getView(int position, View convertView, @NonNull ViewGroup parent) {
         View row;
 
         if (convertView == null) {
