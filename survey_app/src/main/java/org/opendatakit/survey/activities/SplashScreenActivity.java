@@ -28,6 +28,7 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.consts.IntentConsts;
@@ -55,13 +56,17 @@ import java.util.List;
 public class SplashScreenActivity extends BaseActivity {
 
   private static final String TAG = SplashScreenActivity.class.getSimpleName();
-  private static final boolean EXIT = true;
-  private static final int ACTION_CODE = 1;
+
   private int mImageMaxWidth;
   //private int mSplashTimeout = 10000; // milliseconds
-  //private int mSplashTimeout = 2000;
-  private int mSplashTimeout = 0;
+  private int mSplashTimeout = 2000;
+  //private int mSplashTimeout = 0;
+
   private String appName;
+  private AlertDialog mAlertDialog;
+  private static final boolean EXIT = true;
+
+  private static final int ACTION_CODE = 1;
   /**
    * We need this variable here (and we need to save it to the saved instance state) because if
    * we start MainMenuActivity, then get destroyed, then MainMenuActivity finish()-es back to us,
@@ -114,10 +119,12 @@ public class SplashScreenActivity extends BaseActivity {
       if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
           .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
-        if (segments != null && segments.size() >= 1) {
+        if (segments != null && segments.size() == 1) {
+          appName = segments.get(0);
+        } else if (segments != null && segments.size() >= 2) {
           appName = segments.get(0);
         } else {
-          String err = "Invalid " + uri + " uri. Expected two segments.";
+          String err = "Invalid " + uri.toString() + " uri. Expected two segments.";
           WebLogger.getLogger(appName).e(TAG, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
@@ -131,7 +138,7 @@ public class SplashScreenActivity extends BaseActivity {
           appName = segments.get(0);
         } else {
           String err =
-              "Invalid " + uri + " uri. Expected one segment (the application name).";
+              "Invalid " + uri.toString() + " uri. Expected one segment (the application name).";
           WebLogger.getLogger(appName).e(TAG, err);
           Intent i = new Intent();
           setResult(RESULT_CANCELED, i);
@@ -157,7 +164,7 @@ public class SplashScreenActivity extends BaseActivity {
       packageInfo = getPackageManager()
           .getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
     } catch (NameNotFoundException e) {
-      WebLogger.getLogger(getAppName()).printStackTrace(e);
+      e.printStackTrace();
     }
 
     boolean dependable = DependencyChecker.checkDependencies(this);
@@ -180,9 +187,10 @@ public class SplashScreenActivity extends BaseActivity {
 
     // if you've increased version code, then update the version number and set firstRun to true
     String sKeyLastVer = props.getProperty(toolVersionKey);
-    long keyLastVer =
-        sKeyLastVer == null || sKeyLastVer.isEmpty() ? -1L : Long.valueOf(sKeyLastVer);
-    if (packageInfo != null && keyLastVer < packageInfo.versionCode) {
+    long keyLastVer = (sKeyLastVer == null || sKeyLastVer.length() == 0) ?
+        -1L :
+        Long.valueOf(sKeyLastVer);
+    if (keyLastVer < packageInfo.versionCode) {
       props.setProperties(
           Collections.singletonMap(toolVersionKey, Integer.toString(packageInfo.versionCode)));
 
@@ -190,7 +198,7 @@ public class SplashScreenActivity extends BaseActivity {
     }
 
     // do all the first run things
-    if ((firstRun == null ? true : firstRun) && (showSplash == null ? false : showSplash)) {
+    if (((firstRun == null) ? true : firstRun) && ((showSplash == null) ? false : showSplash)) {
       props.setProperties(Collections.singletonMap(toolFirstRunKey, Boolean.toString(false)));
       startSplashScreen(splashPath);
     } else {
@@ -239,32 +247,26 @@ public class SplashScreenActivity extends BaseActivity {
       try {
         fis.close();
       } catch (IOException e) {
-        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        e.printStackTrace();
       }
 
-      long scale = 1;
+      int scale = 1;
       if (o.outHeight > mImageMaxWidth || o.outWidth > mImageMaxWidth) {
-        scale = Math.round(Math.pow(2, Math.round(
-            Math.log(mImageMaxWidth / (double) Math.max(o.outHeight, o.outWidth)) / Math
-                .log(0.5))));
+        scale = (int) Math.pow(2, (int) Math.round(
+            Math.log(mImageMaxWidth / (double) Math.max(o.outHeight, o.outWidth)) / Math.log(0.5)));
       }
 
       // Decode with inSampleSize
       BitmapFactory.Options o2 = new BitmapFactory.Options();
-      if (scale > Integer.MAX_VALUE) {
-        throw new IllegalArgumentException("Image too large");
-      }
-      //noinspection NumericCastThatLosesPrecision
-      o2.inSampleSize = (int) scale;
+      o2.inSampleSize = scale;
       fis = new FileInputStream(f);
       b = BitmapFactory.decodeStream(fis, null, o2);
       try {
         fis.close();
       } catch (IOException e) {
-        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        e.printStackTrace();
       }
     } catch (FileNotFoundException e) {
-      WebLogger.getLogger(getAppName()).printStackTrace(e);
     }
     return b;
   }
@@ -273,7 +275,7 @@ public class SplashScreenActivity extends BaseActivity {
 
     // add items to the splash screen here. makes things less distracting.
     ImageView iv = (ImageView) findViewById(R.id.splash);
-    View ll = findViewById(R.id.splash_default);
+    LinearLayout ll = (LinearLayout) findViewById(R.id.splash_default);
 
     File f = new File(path);
     if (f.exists()) {
@@ -284,17 +286,18 @@ public class SplashScreenActivity extends BaseActivity {
 
     // create a thread that counts up to the timeout
     Thread t = new Thread() {
+      int count = 0;
+
       @Override
       public void run() {
-        int count = 0;
         try {
           super.run();
-          while (count <= mSplashTimeout) {
+          while (count < mSplashTimeout) {
             sleep(100);
             count += 100;
           }
         } catch (Exception e) {
-          WebLogger.getLogger(getAppName()).printStackTrace(e);
+          e.printStackTrace();
         } finally {
           endSplashScreen();
         }
@@ -303,15 +306,19 @@ public class SplashScreenActivity extends BaseActivity {
     t.start();
   }
 
-  private void createErrorDialog(CharSequence errorMsg, final boolean shouldExit) {
-    AlertDialog mAlertDialog = new AlertDialog.Builder(this).create();
+  private void createErrorDialog(String errorMsg, final boolean shouldExit) {
+    mAlertDialog = new AlertDialog.Builder(this).create();
     mAlertDialog.setIcon(android.R.drawable.ic_dialog_info);
     mAlertDialog.setMessage(errorMsg);
     DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int i) {
-        if (shouldExit && i == DialogInterface.BUTTON_POSITIVE) {
-          finish();
+        switch (i) {
+        case DialogInterface.BUTTON_POSITIVE:
+          if (shouldExit) {
+            finish();
+          }
+          break;
         }
       }
     };

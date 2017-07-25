@@ -14,15 +14,17 @@
 
 package org.opendatakit.survey.fragments;
 
+import android.widget.TextView;
+import org.opendatakit.application.CommonApplication;
+import org.opendatakit.listener.DatabaseConnectionListener;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.application.Survey;
+
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.listener.DatabaseConnectionListener;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.views.OdkSurveyWebView;
 
 /**
@@ -30,14 +32,24 @@ import org.opendatakit.survey.views.OdkSurveyWebView;
  * view visible or gone based upon which of these fragments is 'chosen'.
  *
  * @author mitchellsundt@gmail.com
+ *
  */
 public class WebViewFragment extends Fragment implements DatabaseConnectionListener {
 
+  private static final int ID = R.layout.web_view_container;
+
   @Override
-  public View onCreateView(LayoutInflater inflater, ViewGroup container,
+  public View onCreateView(
+      LayoutInflater inflater,
+      ViewGroup container,
       Bundle savedInstanceState) {
 
-    return inflater.inflate(R.layout.web_view_container, container, false);
+    View v = inflater.inflate(
+        R.layout.web_view_container,
+        container,
+        false);
+
+    return v;
   }
 
   @Override
@@ -47,25 +59,22 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
   }
 
   public OdkSurveyWebView getWebKit() {
-    if (getView() == null) {
+    if ( getView() == null ) {
       return null;
     }
 
     return (OdkSurveyWebView) getView().findViewById(R.id.webkit);
   }
 
-  /**
-   * Sets the visibility of the two webkit objects based on whether the database is up or not
-   */
   public void setWebKitVisibility() {
-    if (getView() == null) {
+    if ( getView() == null ) {
       return;
     }
 
-    View webView = getView().findViewById(R.id.webkit);
-    View noDatabase = getView().findViewById(android.R.id.empty);
+    OdkSurveyWebView webView = (OdkSurveyWebView) getView().findViewById(R.id.webkit);
+    TextView noDatabase = (TextView) getView().findViewById(android.R.id.empty);
 
-    if (((BaseActivity) getActivity()).getDatabase() != null) {
+    if (((CommonApplication) getActivity().getApplication()).getDatabase() != null) {
       webView.setVisibility(View.VISIBLE);
       noDatabase.setVisibility(View.GONE);
     } else {
@@ -77,7 +86,7 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
   @Override
   public void databaseAvailable() {
 
-    if (getView() != null) {
+    if ( getView() != null ) {
       setWebKitVisibility();
       getWebKit().reloadPage();
     }
@@ -85,7 +94,7 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
 
   @Override
   public void databaseUnavailable() {
-    if (getView() != null) {
+    if ( getView() != null ) {
       setWebKitVisibility();
       getWebKit().setForceLoadDuringReload();
     }
