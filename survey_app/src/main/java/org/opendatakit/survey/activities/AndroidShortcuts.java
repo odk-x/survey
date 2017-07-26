@@ -14,6 +14,21 @@
 
 package org.opendatakit.survey.activities;
 
+import java.io.File;
+import java.util.ArrayList;
+
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
+import org.opendatakit.provider.FormsColumns;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.database.utilities.CursorUtils;
+import org.opendatakit.utilities.LocalizationUtils;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.application.Survey;
+
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -25,27 +40,12 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.support.annotation.NonNull;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.application.ToolAwareApplication;
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.database.utilities.CursorUtils;
-import org.opendatakit.properties.CommonToolProperties;
-import org.opendatakit.properties.PropertiesSingleton;
-import org.opendatakit.provider.FormsColumns;
-import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.survey.R;
-import org.opendatakit.utilities.LocalizationUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-
-import java.io.File;
-import java.util.ArrayList;
 
 /**
  * Allows the user to create desktop shortcuts to any form currently avaiable to
@@ -56,8 +56,26 @@ import java.util.ArrayList;
  */
 public class AndroidShortcuts extends BaseActivity {
 
+  private AlertDialog mAlertDialog;
   private static final boolean EXIT = true;
-  private ArrayList<Choice> choices = new ArrayList<>();
+
+  private class Choice {
+    public final int iconResourceId;
+    public final Bitmap icon;
+    public final Uri command;
+    public final String name;
+    public final String appName;
+
+    public Choice(int iconResourceId, Bitmap icon, Uri command, String name, String appName) {
+      this.iconResourceId = iconResourceId;
+      this.icon = icon;
+      this.command = command;
+      this.name = name;
+      this.appName = appName;
+    }
+  }
+
+  private ArrayList<Choice> choices = new ArrayList<Choice>();
 
   @Override
   public void onCreate(Bundle bundle) {
@@ -102,24 +120,26 @@ public class AndroidShortcuts extends BaseActivity {
 
       Cursor c = null;
       try {
-        c = getContentResolver()
-            .query(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, null, null,
-                null);
+        c = getContentResolver().query(
+            Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName), null, null, null,
+            null);
 
         if (c != null && c.getCount() > 0) {
           c.moveToPosition(-1);
           while (c.moveToNext()) {
-            String tableId = CursorUtils
-                .getIndexAsString(c, c.getColumnIndex(FormsColumns.TABLE_ID));
-            String localizableDisplayName = CursorUtils
-                .getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
-            String formName = app.getName() + " > " + LocalizationUtils
-                .getLocalizedDisplayName(appName, tableId, props.getUserSelectedDefaultLocale(),
-                    localizableDisplayName);
+            String tableId = CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns
+                .TABLE_ID));
+            String localizableDisplayName =
+                CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.DISPLAY_NAME));
+            String formName = app.getName() + " > "
+                + LocalizationUtils.getLocalizedDisplayName(appName, tableId,
+                props.getUserSelectedDefaultLocale(),
+                localizableDisplayName);
             uri = Uri.withAppendedPath(
-                Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
-                    CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.TABLE_ID))),
-                CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
+                    Uri.withAppendedPath(
+                      Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
+                        CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.TABLE_ID))),
+                          CursorUtils.getIndexAsString(c, c.getColumnIndex(FormsColumns.FORM_ID)));
             choices.add(new Choice(R.drawable.snotes_form, formIcon, uri, formName, appName));
           }
         }
@@ -132,24 +152,21 @@ public class AndroidShortcuts extends BaseActivity {
 
     builder.setAdapter(new ArrayAdapter<Choice>(this, R.layout.shortcut_item, choices) {
 
-      @NonNull
       @Override
-      public View getView(int position, View convertView, @NonNull ViewGroup parent) {
+      public View getView(int position, View convertView, ViewGroup parent) {
         View row;
 
         if (convertView == null) {
-          row = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE))
-              .inflate(R.layout.shortcut_item, null);
+          row = ((LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(
+              R.layout.shortcut_item, null);
         } else {
           row = convertView;
         }
         TextView vw = (TextView) row.findViewById(R.id.shortcut_title);
+        vw.setText(getItem(position).name);
+
         ImageView iv = (ImageView) row.findViewById(R.id.shortcut_icon);
-        Choice item;
-        if ((item = getItem(position)) != null) {
-          vw.setText(item.name);
-          iv.setImageBitmap(item.icon);
-        }
+        iv.setImageBitmap(getItem(position).icon);
 
         return row;
       }
@@ -165,6 +182,7 @@ public class AndroidShortcuts extends BaseActivity {
         AndroidShortcuts sc = AndroidShortcuts.this;
         sc.setResult(RESULT_CANCELED);
         sc.finish();
+        return;
       }
     });
 
@@ -190,17 +208,22 @@ public class AndroidShortcuts extends BaseActivity {
 
     setResult(RESULT_OK, intent);
     finish();
+    return;
   }
 
-  private void createErrorDialog(CharSequence errorMsg, final boolean shouldExit) {
-    AlertDialog mAlertDialog = new AlertDialog.Builder(this).create();
+  private void createErrorDialog(String errorMsg, final boolean shouldExit) {
+    mAlertDialog = new AlertDialog.Builder(this).create();
     mAlertDialog.setIcon(android.R.drawable.ic_dialog_info);
     mAlertDialog.setMessage(errorMsg);
     DialogInterface.OnClickListener errorListener = new DialogInterface.OnClickListener() {
       @Override
       public void onClick(DialogInterface dialog, int i) {
-        if (i == DialogInterface.BUTTON_POSITIVE && shouldExit) {
-          finish();
+        switch (i) {
+        case DialogInterface.BUTTON_POSITIVE:
+          if (shouldExit) {
+            finish();
+          }
+          break;
         }
       }
     };
@@ -216,50 +239,10 @@ public class AndroidShortcuts extends BaseActivity {
   @Override
   public void databaseUnavailable() {
   }
-
+  
   @Override
   public String getAppName() {
-    return getCommonApplication().getToolName();
-  }
-
-  private static class Choice {
-    /**
-     * The display name of the choice in the list
-     */
-    public final String name;
-    /**
-     * the app name
-     */
-    public final String appName;
-    /**
-     * The resource id for the icon of the choice
-     */
-    final int iconResourceId;
-    /**
-     * the actual icon for the choice
-     */
-    final Bitmap icon;
-    /**
-     * The uri needed to start survey to a particular form
-     */
-    final Uri command;
-
-    /**
-     * Constructor that just stores its arguments
-     *
-     * @param iconResourceId The resource id for the icon of the choice
-     * @param icon           the actual icon for the choice
-     * @param command        The uri needed to start survey to a particular form
-     * @param name           The display name of the choice in the list
-     * @param appName        the app name
-     */
-    Choice(int iconResourceId, Bitmap icon, Uri command, String name, String appName) {
-      this.iconResourceId = iconResourceId;
-      this.icon = icon;
-      this.command = command;
-      this.name = name;
-      this.appName = appName;
-    }
+    return ((Survey) getApplication()).getToolName();
   }
 
 }

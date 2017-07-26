@@ -24,52 +24,37 @@ import java.lang.ref.WeakReference;
  * The class mapped to 'odkSurvey' in the Javascript
  *
  * @author mitchellsundt@gmail.com
+ *
  */
-class OdkSurveyStateManagement {
+public class OdkSurveyStateManagement {
 
-  /**
-   * Used for logging
-   */
-  @SuppressWarnings("unused")
-  private static final String TAG = OdkSurveyStateManagement.class.getSimpleName();
-  private final WebLoggerIf log;
+  public static final String t = "OdkSurveyStateManagement";
+
   private WeakReference<OdkSurveyWebView> mWebView;
   private IOdkSurveyActivity mActivity;
+  private final WebLoggerIf log;
 
-  /**
-   * Constructs a new
-   * @param activity the activity, saved and used to delegate javascript actions
-   * @param webView the web view, which is saved in a weak reference
-   */
-  OdkSurveyStateManagement(IOdkSurveyActivity activity, OdkSurveyWebView webView) {
-    mWebView = new WeakReference<>(webView);
+  public OdkSurveyStateManagement(IOdkSurveyActivity activity, OdkSurveyWebView webView) {
+    mWebView = new WeakReference<OdkSurveyWebView>(webView);
     mActivity = activity;
     log = WebLogger.getLogger(mActivity.getAppName());
   }
 
-  boolean isInactive() {
-    return mWebView.get() == null || mWebView.get().isInactive();
+  public boolean isInactive() {
+    return (mWebView.get() == null) || (mWebView.get().isInactive());
   }
 
-  OdkSurveyStateManagementIf getJavascriptInterfaceWithWeakReference() {
+
+  public OdkSurveyStateManagementIf getJavascriptInterfaceWithWeakReference() {
     return new OdkSurveyStateManagementIf(this);
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#clearAuxillaryHash()}
-   */
-  void clearAuxillaryHash() {
+  public void clearAuxillaryHash() {
     log.d("odkSurvey", "DO: clearAuxillaryHash()");
     mActivity.clearAuxillaryHash();
   }
 
-  /**
-   * Clear the instanceId. The ODK Survey webpage is no longer associated with a specific
-   * instanceId or rowId.
-   *
-   * @param refId An id that ties the javascript interface to a particular activity
-   */
-  void clearInstanceId(String refId) {
+  public void clearInstanceId(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: clearInstanceId(" + refId + ")");
       return;
@@ -79,14 +64,13 @@ class OdkSurveyStateManagement {
   }
 
   /**
-   * Thin wrapper for {@link IOdkSurveyActivity#pushSectionScreenState} on the saved activity
-   * If refId is null, clears the instanceId. If refId matches the current refId, sets the
-   * instanceId.
+   * If refId is null, clears the instanceId. If refId matches the current
+   * refId, sets the instanceId.
    *
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param instanceId the instance id for the row add/edit
+   * @param refId
+   * @param instanceId
    */
-  void setInstanceId(String refId, String instanceId) {
+  public void setInstanceId(String refId, String instanceId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: setInstanceId(" + refId + ", " + instanceId + ")");
       return;
@@ -95,13 +79,7 @@ class OdkSurveyStateManagement {
     mActivity.setInstanceId(instanceId);
   }
 
-  /**
-   * Get the instanceId for this web page. Returns null if the refId does not match.
-   *
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return the instance id if the refId is valid or null
-   */
-  String getInstanceId(String refId) {
+  public String getInstanceId(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: getInstanceId(" + refId + ")");
       return null;
@@ -110,11 +88,7 @@ class OdkSurveyStateManagement {
     return mActivity.getInstanceId();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#pushSectionScreenState} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   */
-  void pushSectionScreenState(String refId) {
+  public void pushSectionScreenState(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: pushSectionScreenState(" + refId + ")");
       return;
@@ -123,28 +97,17 @@ class OdkSurveyStateManagement {
     mActivity.pushSectionScreenState();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#setSectionScreenState} on the saved activity
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param screenPath the screen path to be updated in MainMenuActivity
-   * @param state      the state to be updated in MainMenuActivity
-   */
-  void setSectionScreenState(String refId, String screenPath, String state) {
+  public void setSectionScreenState(String refId, String screenPath, String state) {
     if (!mActivity.getRefId().equals(refId)) {
-      log.w("odkSurvey",
-          "IGNORED: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
+      log.w("odkSurvey", "IGNORED: setSectionScreenState(" + refId + ", " + screenPath + ", " + state
+          + ")");
       return;
     }
-    log.d("odkSurvey",
-        "DO: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
+    log.d("odkSurvey", "DO: setSectionScreenState(" + refId + ", " + screenPath + ", " + state + ")");
     mActivity.setSectionScreenState(screenPath, state);
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#clearSectionScreenState} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   */
-  void clearSectionScreenState(String refId) {
+  public void clearSectionScreenState(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: clearSectionScreenState(" + refId + ")");
       return;
@@ -153,12 +116,7 @@ class OdkSurveyStateManagement {
     mActivity.clearSectionScreenState();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#getControllerState} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return the current controller state
-   */
-  String getControllerState(String refId) {
+  public String getControllerState(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: getControllerState(" + refId + ")");
       return null;
@@ -167,12 +125,7 @@ class OdkSurveyStateManagement {
     return mActivity.getControllerState();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#getScreenPath} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return the current screen path
-   */
-  String getScreenPath(String refId) {
+  public String getScreenPath(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: getScreenPath(" + refId + ")");
       return null;
@@ -181,12 +134,7 @@ class OdkSurveyStateManagement {
     return mActivity.getScreenPath();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#hasScreenHistory} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return whether the screen has history
-   */
-  boolean hasScreenHistory(String refId) {
+  public boolean hasScreenHistory(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: hasScreenHistory(" + refId + ")");
       return false;
@@ -195,12 +143,7 @@ class OdkSurveyStateManagement {
     return mActivity.hasScreenHistory();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#popScreenHistory} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return the last thing in the page history
-   */
-  String popScreenHistory(String refId) {
+  public String popScreenHistory(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: popScreenHistory(" + refId + ")");
       return null;
@@ -209,12 +152,7 @@ class OdkSurveyStateManagement {
     return mActivity.popScreenHistory();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#hasSectionStack} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return whether the section state has history
-   */
-  boolean hasSectionStack(String refId) {
+  public boolean hasSectionStack(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: hasSectionStack(" + refId + ")");
       return false;
@@ -223,12 +161,7 @@ class OdkSurveyStateManagement {
     return mActivity.hasSectionStack();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#popSectionStack} on the saved activity
-   * @param refId An id that ties the javascript interface to a particular activity
-   * @return the last item in the state history
-   */
-  String popSectionStack(String refId) {
+  public String popSectionStack(String refId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: popSectionStack(" + refId + ")");
       return null;
@@ -237,12 +170,7 @@ class OdkSurveyStateManagement {
     return mActivity.popSectionStack();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#getRefId} on the saved activity
-   * @param refId   An id that ties the javascript interface to a particular activity
-   * @param outcome whether the framework load was successful
-   */
-  void frameworkHasLoaded(String refId, boolean outcome) {
+  public void frameworkHasLoaded(String refId, boolean outcome) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: frameworkHasLoaded(" + refId + ", " + outcome + ")");
       return;
@@ -251,12 +179,7 @@ class OdkSurveyStateManagement {
     mWebView.get().frameworkHasLoaded();
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#ignoreAllChangesCompleted} on the saved activity
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param instanceId the instance id for the row add/edit
-   */
-  void ignoreAllChangesCompleted(String refId, String instanceId) {
+  public void ignoreAllChangesCompleted(String refId, String instanceId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: ignoreAllChangesCompleted(" + refId + ", " + instanceId + ")");
       return;
@@ -265,12 +188,7 @@ class OdkSurveyStateManagement {
     mActivity.ignoreAllChangesCompleted(instanceId);
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#ignoreAllChangesFailed} on the saved activity
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param instanceId the instance id for the row add/edit
-   */
-  void ignoreAllChangesFailed(String refId, String instanceId) {
+  public void ignoreAllChangesFailed(String refId, String instanceId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: ignoreAllChangesFailed(" + refId + ", " + instanceId + ")");
       return;
@@ -279,32 +197,20 @@ class OdkSurveyStateManagement {
     mActivity.ignoreAllChangesFailed(instanceId);
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#saveAllChangesCompleted} on the saved activity
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param instanceId the instance id for the row add/edit
-   * @param asComplete whether to save as finalized or save as incomplete
-   */
-  void saveAllChangesCompleted(String refId, String instanceId, boolean asComplete) {
+  public void saveAllChangesCompleted(String refId, String instanceId, boolean asComplete) {
     if (!mActivity.getRefId().equals(refId)) {
-      log.w("odkSurvey",
-          "IGNORED: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete
-              + ")");
+      log.w("odkSurvey", "IGNORED: saveAllChangesCompleted(" + refId + ", " + instanceId + ", "
+          + asComplete + ")");
       return;
     }
     // go through the FC because there are additional keys that should be
     // set here...
-    log.d("odkSurvey",
-        "DO: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete + ")");
+    log.d("odkSurvey", "DO: saveAllChangesCompleted(" + refId + ", " + instanceId + ", " + asComplete
+        + ")");
     mActivity.saveAllChangesCompleted(instanceId, asComplete);
   }
 
-  /**
-   * Thin wrapper for {@link IOdkSurveyActivity#saveAllChangesFailed} on the saved activity
-   * @param refId      An id that ties the javascript interface to a particular activity
-   * @param instanceId the instance id for the row add/edit
-   */
-  void saveAllChangesFailed(String refId, String instanceId) {
+  public void saveAllChangesFailed(String refId, String instanceId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: saveAllChangesFailed(" + refId + ", " + instanceId + ")");
       return;
