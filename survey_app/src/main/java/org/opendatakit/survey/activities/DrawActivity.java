@@ -6,12 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.PorterDuff;
+import android.graphics.*;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -26,10 +21,10 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.utilities.BitmapUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.utilities.ColorPickerDialog;
@@ -127,7 +122,7 @@ public class DrawActivity extends BaseActivity {
         if (!savepointImage.exists() && refImage != null
                 && refImage.exists()) {
           try {
-            FileUtils.copyFile(refImage, savepointImage);
+            ODKFileUtils.copyFile(refImage, savepointImage);
           } catch (IOException e) {
             e.printStackTrace();
           }
@@ -137,7 +132,7 @@ public class DrawActivity extends BaseActivity {
         savepointImage.delete();
         if (refImage != null && refImage.exists()) {
           try {
-            FileUtils.copyFile(refImage, savepointImage);
+            ODKFileUtils.copyFile(refImage, savepointImage);
           } catch (IOException e) {
             e.printStackTrace();
           }
@@ -302,7 +297,7 @@ public class DrawActivity extends BaseActivity {
     if (!OPTION_SIGNATURE.equals(loadOption) && refImage != null
             && refImage.exists()) {
       try {
-        FileUtils.copyFile(refImage, savepointImage);
+        ODKFileUtils.copyFile(refImage, savepointImage);
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -419,14 +414,16 @@ public class DrawActivity extends BaseActivity {
     public void reset() {
       Display display = ((WindowManager) getContext().getSystemService(
               Context.WINDOW_SERVICE)).getDefaultDisplay();
-      int screenWidth = display.getWidth();
-      int screenHeight = display.getHeight();
+      Point size = new Point();
+      display.getSize(size);
+      int screenWidth = size.x;
+      int screenHeight = size.y;
       resetImage(screenWidth, screenHeight);
     }
 
     public void resetImage(int w, int h) {
       if (mBackgroundBitmapFile.exists()) {
-        mBitmap = ODKFileUtils.getBitmapScaledToDisplay(mAppName,
+        mBitmap = BitmapUtils.getBitmapScaledToDisplay(mAppName,
                 mBackgroundBitmapFile, w, h).copy(
                 Bitmap.Config.ARGB_8888, true);
         // mBitmap =

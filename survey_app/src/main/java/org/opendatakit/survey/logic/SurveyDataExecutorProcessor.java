@@ -15,6 +15,7 @@
 package org.opendatakit.survey.logic;
 
 import org.opendatakit.database.data.UserTable;
+import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.views.ExecutorContext;
 import org.opendatakit.views.ExecutorProcessor;
 import org.opendatakit.database.data.KeyValueStoreEntry;
@@ -33,7 +34,8 @@ public class SurveyDataExecutorProcessor extends ExecutorProcessor {
   }
 
   @Override
-  protected void extendQueryMetadata(DbHandle dbHandle, List<KeyValueStoreEntry> entries,
+  protected void extendQueryMetadata(UserDbInterface dbInterface, DbHandle dbHandle,
+      List<KeyValueStoreEntry> entries,
       UserTable userTable, Map<String, Object> metadata) {
     // do nothing -- survey does not enhance the returned object
   }

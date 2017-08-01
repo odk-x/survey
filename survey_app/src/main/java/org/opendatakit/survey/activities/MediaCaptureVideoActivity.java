@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.utilities.MediaUtils;
@@ -244,7 +243,7 @@ public class MediaCaptureVideoActivity extends BaseActivity {
     deleteMedia();
 
     try {
-      FileUtils.copyFile(source, sourceMedia);
+      ODKFileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
       WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();

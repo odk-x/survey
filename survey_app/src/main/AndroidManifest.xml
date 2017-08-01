@@ -13,15 +13,11 @@
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 	<uses-permission android:name="com.android.vending.CHECK_LICENSE"/>
-    
-    <permission
-          android:name="org.opendatakit.webkitserver.RUN_WEBSERVER"
-          android:protectionLevel="signature" />
+
+    <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.webkitserver.RUN_WEBSERVER" />
 
-    <permission
-          android:name="org.opendatakit.database.RUN_DATABASE"
-          android:protectionLevel="signature" />
+    <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.database.RUN_DATABASE" />
 	
     <supports-screens
@@ -50,19 +46,19 @@
         </activity>
         <activity
             android:name="org.opendatakit.survey.activities.MediaCaptureImageActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.SignatureActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.DrawActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaChooseImageActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaDeleteImageActivity"
@@ -70,11 +66,11 @@
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaCaptureAudioActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaChooseAudioActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaDeleteAudioActivity"
@@ -82,11 +78,11 @@
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaCaptureVideoActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaChooseVideoActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.MediaDeleteVideoActivity"
@@ -94,7 +90,7 @@
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.GeoPointActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.SplashScreenActivity"

@@ -1,9 +1,7 @@
 package org.opendatakit.survey.views;
 
 import android.content.Context;
-import android.os.Looper;
 import android.util.AttributeSet;
-import org.opendatakit.activities.IOdkDataActivity;
 import org.opendatakit.views.ODKWebView;
 import org.opendatakit.survey.activities.IOdkSurveyActivity;
 
@@ -11,106 +9,69 @@ import org.opendatakit.survey.activities.IOdkSurveyActivity;
  * @author mitchellsundt@gmail.com
  */
 public class OdkSurveyWebView extends ODKWebView {
-  private static final String t = "OdkSurveyWebView";
+   private static final String t = "OdkSurveyWebView";
 
-  private OdkSurvey odkSurvey;
+   private OdkSurveyStateManagement odkSurveyStateManagement;
 
-  public OdkSurveyWebView(Context context, AttributeSet attrs) {
-    super(context, attrs);
+   public OdkSurveyWebView(Context context, AttributeSet attrs) {
+      super(context, attrs);
 
-    // stomp on the odkSurvey object...
-    odkSurvey = new OdkSurvey((IOdkSurveyActivity) context, this);
-    addJavascriptInterface(odkSurvey.getJavascriptInterfaceWithWeakReference(), "odkSurvey");
-  }
+      // stomp on the odkSurveyStateManagement object...
+      odkSurveyStateManagement = new OdkSurveyStateManagement((IOdkSurveyActivity) context, this);
+      addJavascriptInterface(odkSurveyStateManagement.getJavascriptInterfaceWithWeakReference(), "odkSurveyStateManagement");
+   }
 
-  @Override
-  public boolean hasPageFramework() {
-    return true;
-  }
+   @Override public boolean hasPageFramework() {
+      return true;
+   }
 
-  @Override
-  public synchronized void loadPage() {
-    /**
-     * NOTE: Reload the web framework only if it has changed.
-     */
+   /**
+    * IMPORTANT: This function should only be called with the context of the database listeners
+    * OR if called from elsewhere there should be an if statement before invoking that checks
+    * if the database is currently available.
+    */
+   @Override public synchronized void loadPage() {
+      /**
+       * NOTE: Reload the web framework only if it has changed.
+       */
 
-    if ( ((IOdkDataActivity) getContext()).getDatabase() == null ) {
-      // do not initiate reload until we have the database set up...
-      return;
-    }
+      log.i(t, "loadPage: current loadPageUrl: " + getLoadPageUrl());
+      String baseUrl = ((IOdkSurveyActivity) getContext())
+          .getUrlBaseLocation(hasPageFrameworkFinishedLoading() && getLoadPageUrl() != null);
+      String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
 
-    log.i(t, "loadPage: current loadPageUrl: " + getLoadPageUrl());
-    String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(
-        hasPageFrameworkFinishedLoading() && getLoadPageUrl() != null);
-    String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
+      if (baseUrl != null) {
+         // for Survey, we do care about the URL
+         String fullUrl = baseUrl + hash;
 
-    if ( baseUrl != null ) {
-      // for Survey, we do care about the URL
-      final String fullUrl = baseUrl + hash;
+         loadPageOnUiThread(fullUrl, null, false);
 
-      resetLoadPageStatus(fullUrl);
-
-      log.i(t, "loadPage: full reload: " + fullUrl);
-
-      // Ensure that this is run on the UI thread
-      if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-        post(new Runnable() {
-          public void run() {
-            loadUrl(fullUrl);
-          }
-        });
+      } else if (hasPageFrameworkFinishedLoading()) {
+         log.i(t, "loadPage: delegate to gotoUrlHash: " + hash);
+         gotoUrlHash(hash);
       } else {
-        loadUrl(fullUrl);
+         log.w(t, "loadPage: framework did not load -- cannot load anything!");
       }
+   }
 
-    } else if ( hasPageFrameworkFinishedLoading() ) {
-      log.i(t,  "loadPage: delegate to gotoUrlHash: " + hash);
-      gotoUrlHash(hash);
-    } else {
-      log.w(t, "loadPage: framework did not load -- cannot load anything!");
-    }
-  }
+   /**
+    * IMPORTANT: This function should only be called with the context of the database listeners
+    * OR if called from elsewhere there should be an if statement before invoking that checks
+    * if the database is currently available.
+    */
+   @Override public synchronized void reloadPage() {
 
-  @Override
-  public synchronized void reloadPage() {
-    if ( ((IOdkDataActivity) getContext()).getDatabase() == null ) {
-      // do not initiate reload until we have the database set up...
-      return;
-    }
+      log.i(t, "reloadPage: current loadPageUrl: " + getLoadPageUrl());
+      String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(false);
+      String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
 
-    log.i(t, "reloadPage: current loadPageUrl: " + getLoadPageUrl());
-    String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(false);
-    String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
-
-    if ( baseUrl != null ) {
-      // for Survey, we do care about the URL
-      final String fullUrl = baseUrl + hash;
-
-      if ( shouldForceLoadDuringReload() ||
-          hasPageFrameworkFinishedLoading() || !fullUrl.equals(getLoadPageUrl()) ) {
-
-        resetLoadPageStatus(fullUrl);
-
-        log.i(t, "reloadPage: full reload: " + fullUrl);
-
-        // Ensure that this is run on the UI thread
-        if (Thread.currentThread() != Looper.getMainLooper().getThread()) {
-          post(new Runnable() {
-            public void run() {
-              loadUrl(fullUrl);
-            }
-          });
-        } else {
-          loadUrl(fullUrl);
-        }
-
+      if (baseUrl != null) {
+         // for Survey, we do care about the URL
+         String fullUrl = baseUrl + hash;
+         loadPageOnUiThread(fullUrl, null, true);
       } else {
-        log.w(t, "reloadPage: framework in process of loading -- ignoring request!");
+         log.w(t, "reloadPage: framework did not load -- cannot load anything!");
       }
-    } else {
-      log.w(t, "reloadPage: framework did not load -- cannot load anything!");
-    }
-  }
-
+   }
 
 }

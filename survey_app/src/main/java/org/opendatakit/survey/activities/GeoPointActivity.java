@@ -192,7 +192,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     switch (status) {
     case LocationProvider.AVAILABLE:
       if (mLocation != null) {
-        mLocationDialog.setMessage(getString(R.string.location_accuracy, mLocation.getAccuracy()));
+        mLocationDialog.setMessage(getString(R.string.location_accuracy, truncateDouble(mLocation.getAccuracy())));
       }
       break;
     case LocationProvider.OUT_OF_SERVICE:

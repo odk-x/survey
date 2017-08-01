@@ -22,14 +22,14 @@ import java.lang.ref.WeakReference;
  * @author mitchellsundt@gmail.com
  *
  */
-public class OdkSurveyIf {
+public class OdkSurveyStateManagementIf {
 
-  public static final String t = "OdkSurveyIf";
+  public static final String t = "OdkSurveyStateManagementIf";
 
-  private WeakReference<OdkSurvey> weakSurvey;
+  private WeakReference<OdkSurveyStateManagement> weakSurvey;
 
-  OdkSurveyIf(OdkSurvey odkData) {
-    weakSurvey = new WeakReference<OdkSurvey>(odkData);
+  OdkSurveyStateManagementIf(OdkSurveyStateManagement odkData) {
+    weakSurvey = new WeakReference<OdkSurveyStateManagement>(odkData);
   }
 
   private boolean isInactive() {

@@ -34,13 +34,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
+import org.opendatakit.database.queries.BindArgs;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
@@ -51,15 +52,13 @@ import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.webkitserver.utilities.SerializationUtils;
-import org.opendatakit.webkitserver.utilities.SerializationUtils.MacroStringExpander;
+import org.opendatakit.provider.FormsProviderUtils;
+import org.opendatakit.views.*;
+import org.opendatakit.webkitserver.utilities.DoActionUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.webkitserver.utilities.UrlUtils;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.logging.WebLoggerIf;
-import org.opendatakit.views.ExecutorContext;
-import org.opendatakit.views.ExecutorProcessor;
-import org.opendatakit.views.ODKWebView;
 import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.database.service.DbHandle;
 import org.opendatakit.database.service.TableHealthInfo;
@@ -74,6 +73,7 @@ import org.opendatakit.survey.logic.FormIdStruct;
 import org.opendatakit.survey.logic.SurveyDataExecutorProcessor;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -90,13 +90,11 @@ import java.util.UUID;
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
   private static final String t = "MainMenuActivity";
-
-  public static enum ScreenList {
+  public enum ScreenList {
     MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
 
   // Extra returned from gp activity
-  // TODO: move to Survey???
   public static final String LOCATION_LATITUDE_RESULT = "latitude";
   public static final String LOCATION_LONGITUDE_RESULT = "longitude";
   public static final String LOCATION_ALTITUDE_RESULT = "altitude";
@@ -141,6 +139,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private static final String BACKPRESS_DIALOG_TAG = "backPressDialog";
 
   private static final boolean EXIT = true;
+
+  /*
+    * canceled and ignore all changes -> do not set savepoint type, and set instance id, and set result to cancelled
+    * canceled and save to resume later -> set savepoint type to incomplete and set instance id, and set result to OK
+    * other -> result ok, everything else ignore
+    */
+  private enum PopBackStackArgs {CANCEL_IGNORE_CHANGES,SAVE_INCOMPLETE,NOT_A_FORM}
 
   private static class ScreenState {
     String screenPath;
@@ -317,42 +322,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     setAppName(newForm.appName);
     setCurrentForm(newForm);
     clearSectionScreenState();
-    String fragment = uri.getFragment();
-    if (fragment != null && fragment.length() != 0) {
-      // and process the fragment to find the instanceId, screenPath and other
-      // kv pairs
-      String[] pargs = fragment.split("&");
-      boolean first = true;
-      StringBuilder b = new StringBuilder();
-      int i;
-      for (i = 0; i < pargs.length; ++i) {
-        String[] keyValue = pargs[i].split("=");
-        if ("instanceId".equals(keyValue[0])) {
-          if (keyValue.length == 2) {
-            setInstanceId(StringEscapeUtils.unescapeHtml4(keyValue[1]));
-          }
-        } else if ("screenPath".equals(keyValue[0])) {
-          if (keyValue.length == 2) {
-            setSectionScreenState(StringEscapeUtils.unescapeHtml4(keyValue[1]), null);
-          }
-        } else if ("refId".equals(keyValue[0]) || "formPath".equals(keyValue[0])) {
-          // ignore
-        } else {
-          if (!first) {
-            b.append("&");
-          }
-          first = false;
-          b.append(pargs[i]);
-        }
-      }
-      String aux = b.toString();
-      if (aux.length() != 0) {
-        setAuxillaryHash(aux);
-      }
-    } else {
-      setInstanceId(null);
-      setAuxillaryHash(null);
+
+    FormsProviderUtils.ParsedFragment pf;
+    try {
+      pf = FormsProviderUtils.parseUri(uri);
+    } catch ( UnsupportedEncodingException e ) {
+      WebLogger.getLogger(getAppName()).e(t, "transitionToFormHelper: " + e.toString());
+      throw new IllegalStateException("unexpected");
     }
+    setInstanceId(pf.instanceId);
+    if ( pf.screenPath != null ) {
+      setSectionScreenState(pf.screenPath, null);
+    }
+    setAuxillaryHash(pf.auxillaryHash);
     currentFragment = ScreenList.WEBKIT;
   }
 
@@ -507,9 +489,20 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getActiveUser() {
-    PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
+    try {
+      return getDatabase().getActiveUser(getAppName());
+    } catch (ServicesAvailabilityException e) {
+      WebLogger.getLogger(getAppName()).printStackTrace(e);
+      return CommonToolProperties.ANONYMOUS_USER;
+    }
+  }
 
-    return props.getActiveUser();
+  @Override
+  public String getTableId() {
+    if ( getCurrentForm() != null ) {
+      return getCurrentForm().tableId;
+    }
+    return null;
   }
 
   @Override
@@ -519,9 +512,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
         form == null ? null : getCurrentForm().tableId, getInstanceId(),
-            props.getActiveUser(), props.getLocale(),
-            props.getProperty(CommonToolProperties.KEY_USERNAME),
-            props.getProperty(CommonToolProperties.KEY_ACCOUNT));
+            getActiveUser(), props.getUserSelectedDefaultLocale());
 
     String value = mPropertyManager.getSingularProperty(propertyId, cb);
     return value;
@@ -601,29 +592,36 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getUrlLocationHash() {
-    if (currentForm == null) {
-      // we want framework...
-      File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName, 
-          FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
-      
-      String hashUrl = "#formPath="
-          + StringEscapeUtils.escapeHtml4(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
-          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath="
-              + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
-          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
-      return hashUrl;
-    } else {
-      String hashUrl = "#formPath="
-          + StringEscapeUtils.escapeHtml4((currentForm == null) ? "" : currentForm.formPath)
-          + ((instanceId == null) ? "" : "&instanceId=" + StringEscapeUtils.escapeHtml4(instanceId))
-          + ((getScreenPath() == null) ? "" : "&screenPath="
-              + StringEscapeUtils.escapeHtml4(getScreenPath()))
-          + ("&refId=" + StringEscapeUtils.escapeHtml4(refId))
-          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+    try {
+      if (currentForm == null) {
+        // we want framework...
+        File frameworkFormDef = new File( ODKFileUtils.getFormFolder(appName,
+            FormsColumns.COMMON_BASE_FORM_ID, FormsColumns.COMMON_BASE_FORM_ID), "formDef.json");
 
-      return hashUrl;
+        String hashUrl = "#formPath="
+          + FormsProviderUtils.encodeFragmentUnquotedStringValue(ODKFileUtils.getRelativeFormPath(appName, frameworkFormDef))
+          + ((instanceId == null) ? "" : "&instanceId=" +
+              FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
+          + ((getScreenPath() == null) ? "" : "&screenPath="
+              + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
+          + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
+          + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+        return hashUrl;
+      } else{
+          String hashUrl = "#formPath=" +
+              FormsProviderUtils.encodeFragmentUnquotedStringValue((currentForm == null) ? "" : currentForm.formPath)
+              + ((instanceId == null) ? "" : "&instanceId=" +
+                FormsProviderUtils.encodeFragmentUnquotedStringValue(instanceId))
+              + ((getScreenPath() == null) ? "" : "&screenPath="
+                + FormsProviderUtils.encodeFragmentUnquotedStringValue(getScreenPath()))
+              + ("&refId=" + FormsProviderUtils.encodeFragmentUnquotedStringValue(refId))
+              + ((auxillaryHash == null) ? "" : "&" + auxillaryHash);
+
+        return hashUrl;
+      }
+    } catch ( UnsupportedEncodingException e ) {
+      WebLogger.getLogger(getAppName()).i(t, "getUrlLocationHash: " + e.toString());
+      throw new IllegalStateException("Unexpected");
     }
   }
 
@@ -677,7 +675,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             String appName = segments.get(0);
             setAppName(appName);
             String tableId = segments.get(1);
-            String formId = (segments.size() > 2) ? segments.get(2) : null;
+            String formId = (segments.size() > 2) ? segments.get(2) : "";
+            String formDir = ODKFileUtils.getFormFolder(appName, tableId, formId);
+            File f = new File(formDir);
+            File formDefJson = new File(f, ODKFileUtils.FORMDEF_JSON_FILENAME);
+            if (!f.exists() || !f.isDirectory() || !formDefJson.exists() || !formDefJson.isFile()) {
+              createErrorDialog(getString(R.string.invalid_form_id, formId, formId), EXIT);
+              return;
+            }
             formUri = Uri.withAppendedPath(
                 Uri.withAppendedPath(Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI, appName),
                     tableId), formId);
@@ -789,11 +794,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // request specifies a specific formUri -- try to open that
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
         if (newForm == null) {
-          // can't find it -- launch the initialization dialog to hopefully
-          // discover it.
-          WebLogger.getLogger(getAppName()).i(t, "onCreate -- calling setRunInitializationTask");
-          ((Survey) getApplication()).setRunInitializationTask(getAppName());
-          currentFragment = ScreenList.WEBKIT;
+          // can't find it -- display list of forms
+          currentFragment = ScreenList.FORM_CHOOSER;
         } else {
           transitionToFormHelper(uri, newForm);
         }
@@ -826,7 +828,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public boolean onCreateOptionsMenu(Menu menu) {
     super.onCreateOptionsMenu(menu);
-    PropertiesSingleton props = CommonToolProperties.get(this, getAppName());
 
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
@@ -930,17 +931,25 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     mAlertDialog.show();
   }
 
-  private void popBackStack() {
+
+  private void popBackStack(PopBackStackArgs arg) {
     FragmentManager mgr = getFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
       Intent result = new Intent();
       // If we are in a WEBKIT, return the instanceId and the savepoint_type...
-      if (this.getInstanceId() != null && currentFragment == ScreenList.WEBKIT) {
+      if (this.getInstanceId() != null && !arg.equals(PopBackStackArgs.NOT_A_FORM)) {
         result.putExtra("instanceId", getInstanceId());
         // in this case, the savepoint_type is null (a checkpoint).
       }
-      this.setResult(RESULT_OK, result);
+      if (arg.equals(PopBackStackArgs.SAVE_INCOMPLETE)) {
+        result.putExtra("savepoint_type", "INCOMPLETE");
+      }
+      if (arg.equals(PopBackStackArgs.CANCEL_IGNORE_CHANGES)) {
+        this.setResult(RESULT_CANCELED, result);
+      } else {
+        this.setResult(RESULT_OK, result);
+      }
       finish();
     } else {
       BackStackEntry entry = mgr.getBackStackEntryAt(idxLast);
@@ -950,7 +959,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void initializationCompleted() {
-    popBackStack();
+    popBackStack(PopBackStackArgs.NOT_A_FORM);
   }
 
   @Override
@@ -970,7 +979,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       }
       dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
     } else {
-      popBackStack();
+      popBackStack(PopBackStackArgs.NOT_A_FORM);
     }
   }
 
@@ -1012,7 +1021,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
       }
     }
-    popBackStack();
+    popBackStack(PopBackStackArgs.SAVE_INCOMPLETE);
   }
 
   // trigger resolve UI...
@@ -1051,7 +1060,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         }
       }
     }
-    popBackStack();
+    popBackStack(PopBackStackArgs.CANCEL_IGNORE_CHANGES);
   }
 
   public void hideWebkitView() {
@@ -1426,26 +1435,13 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   /**
    * Invoked from within Javascript to launch an activity.
    *
-   * @param dispatchString   Opaque string -- typically identifies prompt and user action
+   * See interface for argument spec.
    *
-   * @param action
-   *          -- the intent to be launched
-   * @param valueContentMap
-   *          -- parameters to pass to the intent
-   *          {
-   *            uri: uriValue, // parse to a uri and set as the data of the
-   *                           // intent
-   *            extras: extrasMap, // added as extras to the intent
-   *            package: packageStr, // the name of a package to launch
-   *            type: typeStr, // will be set as the type
-   *            data: dataUri // will be parsed to a uri and set as the data of
-   *                          // the intent. For now this is equivalent to the
-   *                          // uri field, although that name is less precise.
-   *          }
+   * @return "OK" if successfully launched intent
    */
   @Override
   public String doAction(
-      String dispatchString,
+      String dispatchStructAsJSONstring,
       String action,
       JSONObject valueContentMap) {
 
@@ -1456,122 +1452,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       return "IGNORE";
     }
 
-    Intent i;
-    boolean isSurveyApp = false;
-    boolean isOpendatakitApp = false;
-    if (action.startsWith("org.opendatakit.survey")) {
-      Class<?> clazz;
-      try {
-        clazz = Class.forName(action);
-        i = new Intent(this, clazz);
-        isSurveyApp = true;
-      } catch (ClassNotFoundException e) {
-        WebLogger.getLogger(getAppName()).printStackTrace(e);
-        i = new Intent(action);
-      }
-    } else {
-      i = new Intent(action);
+    Intent i = DoActionUtils.buildIntent(this, mPropertyManager, dispatchStructAsJSONstring, action,
+        valueContentMap);
+
+    if ( i == null ) {
+      return "JSONException";
     }
 
-    if (action.startsWith("org.opendatakit.")) {
-      isOpendatakitApp = true;
-    }
-
-    try {
-      
-      String uriKey = "uri";
-      String extrasKey = "extras";
-      String packageKey = "package";
-      String typeKey = "type";
-      String dataKey = "data";
-      
-      JSONObject valueMap = null;
-      if (valueContentMap != null) {
-        
-        // do type first, as it says in the spec this call deletes any other
-        // data (eg by setData()) on the intent.
-        if (valueContentMap.has(typeKey)) {
-          String type = valueContentMap.getString(typeKey);
-          i.setType(type);
-        }
-        
-        if (valueContentMap.has(uriKey) || valueContentMap.has(dataKey)) {
-          // as it currently stands, the data property can be in either the uri
-          // or data keys.
-          String uriValueStr = null;
-          if (valueContentMap.has(uriKey)) {
-            uriValueStr = valueContentMap.getString(uriKey);
-          }
-          // go ahead and overwrite with data if it's present.
-          if (valueContentMap.has(dataKey)) {
-            uriValueStr = valueContentMap.getString(dataKey);
-          }
-          if (uriValueStr != null) {
-            Uri uri = Uri.parse(uriValueStr);
-            i.setData(uri);
-          }
-        }
-        
-        if (valueContentMap.has(extrasKey)) {
-          valueMap = valueContentMap.getJSONObject(extrasKey);
-        }
-        
-        if (valueContentMap.has(packageKey)) {
-          String packageStr = valueContentMap.getString(packageKey);
-          i.setPackage(packageStr);
-        }
-        
-      }
-
-      if (valueMap != null) {
-        Bundle b;    
-        PropertiesSingleton props = CommonToolProperties.get(MainMenuActivity.this, getAppName());
-
-        final DynamicPropertiesCallback cb = new DynamicPropertiesCallback(getAppName(),
-            getCurrentForm().tableId, getInstanceId(),
-            props.getActiveUser(), props.getLocale(),
-            props.getProperty(CommonToolProperties.KEY_USERNAME),
-            props.getProperty(CommonToolProperties.KEY_ACCOUNT));
-
-        b = SerializationUtils.convertToBundle(valueMap, new MacroStringExpander() {
-
-          @Override
-          public String expandString(String value) {
-            if (value != null && value.startsWith("opendatakit-macro(") && value.endsWith(")")) {
-              String term = value.substring("opendatakit-macro(".length(), value.length() - 1)
-                  .trim();
-              String v = mPropertyManager.getSingularProperty(term, cb);
-              if (v != null) {
-                return v;
-              } else {
-                WebLogger.getLogger(getAppName()).e(t, "Unable to process opendatakit-macro: " + value);
-                throw new IllegalArgumentException(
-                    "Unable to process opendatakit-macro expression: " + value);
-              }
-            } else {
-              return value;
-            }
-          }
-        });
-
-        i.putExtras(b);
-      }
-
-      if (isSurveyApp || isOpendatakitApp) {
-        // ensure that we supply our appName...
-        if (!i.hasExtra(IntentConsts.INTENT_KEY_APP_NAME)) {
-          i.putExtra(IntentConsts.INTENT_KEY_APP_NAME, getAppName());
-          WebLogger.getLogger(getAppName()).w(t, "doAction into Survey or Tables does not supply an appName. Adding: "
-              + getAppName());
-        }
-      }
-    } catch (Exception ex) {
-      WebLogger.getLogger(getAppName()).e(t, "JSONException: " + ex.toString());
-      WebLogger.getLogger(getAppName()).printStackTrace(ex);
-      return "JSONException: " + ex.toString();
-    }
-
-    dispatchStringWaitingForData = dispatchString;
+    dispatchStringWaitingForData = dispatchStructAsJSONstring;
     actionWaitingForData = action;
 
     try {
@@ -1614,7 +1502,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public void signalResponseAvailable(String responseJSON) {
+  public void signalResponseAvailable(String responseJSON, String viewID) {
+    // Ignore viewID as there is only one webkit
+
     if ( responseJSON == null ) {
       WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
     } else {
@@ -1686,47 +1576,40 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       try {
-        String jsonObject = null;
-        Bundle b = (intent == null) ? null : intent.getExtras();
-        JSONObject val = (b == null) ? null : SerializationUtils.convertFromBundle(getAppName(), b);
-        JSONObject jsonValue = new JSONObject();
-        jsonValue.put("status", resultCode);
-        if ( val != null ) {
-          jsonValue.put("result", val);
-        }
-        JSONObject result = new JSONObject();
-        result.put("dispatchString", dispatchStringWaitingForData);
-        result.put("action",  actionWaitingForData);
-        result.put("jsonValue", jsonValue);
-        
-        String actionOutcome = result.toString();
-        this.queueActionOutcome(actionOutcome);
-        
-        WebLogger.getLogger(getAppName()).i(t, "HANDLER_ACTIVITY_CODE: " + jsonObject);
-
-        view.signalQueuedActionAvailable();
-      } catch (Exception e) {
-        try {
-          JSONObject jsonValue = new JSONObject();
-          jsonValue.put("status", 0);
-          jsonValue.put("result", e.toString());
-          JSONObject result = new JSONObject();
-          result.put("dispatchString", dispatchStringWaitingForData);
-          result.put("action",  actionWaitingForData);
-          result.put("jsonValue", jsonValue);
-          this.queueActionOutcome(result.toString());
-
-          view.signalQueuedActionAvailable();
-        } catch (Exception ex) {
-          ex.printStackTrace();
-        }
+        DoActionUtils.processActivityResult(this, view, resultCode, intent,
+            dispatchStringWaitingForData, actionWaitingForData);
       } finally {
         dispatchStringWaitingForData = null;
         actionWaitingForData = null;
       }
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      ((Survey) getApplication()).setRunInitializationTask(getAppName());
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
+  }
+
+  @Override
+  public ViewDataQueryParams getViewQueryParams(String viewID){
+    // Ignore viewID as there is only one fragment
+
+    Bundle bundle = this.getIntentExtras();
+
+    String tableId = bundle.getString(OdkData.IntentKeys.TABLE_ID);
+    if (tableId == null || tableId.isEmpty()) {
+      throw new IllegalArgumentException("Tables view launched without tableId specified");
+    }
+
+    String rowId = bundle.getString(IntentConsts.INTENT_KEY_INSTANCE_ID);
+    String whereClause = bundle.getString(OdkData.IntentKeys.SQL_WHERE);
+    String selArgs = bundle.getString(OdkData.IntentKeys.SQL_SELECTION_ARGS);
+    String[] groupBy = bundle.getStringArray(OdkData.IntentKeys.SQL_GROUP_BY_ARGS);
+    String havingClause = bundle.getString(OdkData.IntentKeys.SQL_HAVING);
+    String orderByElemKey = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_ELEMENT_KEY);
+    String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
+
+    BindArgs bindArgs = new BindArgs(selArgs);
+    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
+        groupBy, havingClause, orderByElemKey, orderByDir);
+
+    return params;
   }
 }

@@ -24,7 +24,6 @@ import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
 
-import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
@@ -249,7 +248,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
     File source = new File(binaryPath);
     File sourceMedia = ODKFileUtils.getRowpathFile(appName, tableId, instanceId, uriFragmentNewFileBase + extension);
     try {
-      FileUtils.copyFile(source, sourceMedia);
+      ODKFileUtils.copyFile(source, sourceMedia);
     } catch (IOException e) {
       WebLogger.getLogger(appName).e(t, ERROR_COPY_FILE + sourceMedia.getAbsolutePath());
       Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
