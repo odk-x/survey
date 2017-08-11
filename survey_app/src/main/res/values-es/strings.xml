@@ -220,7 +220,7 @@
     <string name="unrecognized_uri">URI %1$s no conocido. Solo uno de %2$s o %3$s permitido.</string>
     <string name="updating_form_information">Actualizando impreso %1$s (%2$d de %3$d)</string>
     <string name="table_id_form_id">• Tabula: %1$s • Impreso: %2$s</string>
-    <string name="table_id_form_id_version">• Tabula: %1$s • Impreso: %2$s</string>
+    <string name="table_id_form_id_version">\u2022 Tabula: %1$s\n\u2022 Impreso: %2$s Versión: %3$s</string>
     <string name="waiting_auth">Esperando autorización…</string>
     <string name="waiting_auth_title">Autorizando…</string>
 </resources>
