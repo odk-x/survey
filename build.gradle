@@ -2,6 +2,9 @@
 buildscript {
     repositories {
         jcenter()
+		maven {
+			url 'https://maven.google.com'
+		}
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
@@ -20,6 +23,9 @@ allprojects {
         ivy {
             url 'http://cwe.cs.washington.edu:8082/artifactory/libs-snapshot/'
         }
+		maven {
+			url 'https://maven.google.com'
+		}
     }
 }
 
