@@ -120,7 +120,7 @@ public class SplashScreenActivity extends BaseLauncherActivity {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      final Uri uriWebView = UrlUtils.getWebViewContentUri();
       if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
           .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
