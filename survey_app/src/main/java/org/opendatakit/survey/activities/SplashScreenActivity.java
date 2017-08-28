@@ -29,7 +29,7 @@ import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.activities.BaseLauncherActivity;
 import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.dependencies.DependencyChecker;
@@ -53,7 +53,7 @@ import java.util.List;
  *
  * @author Carl Hartung
  */
-public class SplashScreenActivity extends BaseActivity {
+public class SplashScreenActivity extends BaseLauncherActivity {
 
   private static final String TAG = SplashScreenActivity.class.getSimpleName();
 
@@ -82,8 +82,15 @@ public class SplashScreenActivity extends BaseActivity {
   }
 
   @Override
-  public void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
+    // this splash screen should be a blank slate
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+
     super.onCreate(savedInstanceState);
+  }
+
+  @Override
+  protected void onCreateWithPermission(Bundle savedInstanceState) {
     if (savedInstanceState != null && savedInstanceState.containsKey("started")) {
       started = savedInstanceState.getBoolean("started");
     }
@@ -100,8 +107,6 @@ public class SplashScreenActivity extends BaseActivity {
     getWindowManager().getDefaultDisplay().getMetrics(dm);
     mImageMaxWidth = dm.widthPixels;
 
-    // this splash screen should be a blank slate
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.splash_screen);
 
     // external intent
@@ -326,6 +331,8 @@ public class SplashScreenActivity extends BaseActivity {
     mAlertDialog.setButton(AlertDialog.BUTTON_POSITIVE, getString(R.string.ok), errorListener);
     mAlertDialog.show();
   }
+
+
 
   @Override
   public void databaseAvailable() {
