@@ -82,6 +82,14 @@ public class SplashScreenActivity extends BaseLauncherActivity {
   }
 
   @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    // this splash screen should be a blank slate
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+
+    super.onCreate(savedInstanceState);
+  }
+
+  @Override
   protected void onCreateWithPermission(Bundle savedInstanceState) {
     if (savedInstanceState != null && savedInstanceState.containsKey("started")) {
       started = savedInstanceState.getBoolean("started");
@@ -99,8 +107,6 @@ public class SplashScreenActivity extends BaseLauncherActivity {
     getWindowManager().getDefaultDisplay().getMetrics(dm);
     mImageMaxWidth = dm.widthPixels;
 
-    // this splash screen should be a blank slate
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.splash_screen);
 
     // external intent
