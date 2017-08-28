@@ -1527,7 +1527,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public String getResponseJSON() {
+  public String getResponseJSON(String unused) {
     if ( queueResponseJSON.isEmpty() ) {
       return null;
     }
@@ -1575,13 +1575,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
-      try {
-        DoActionUtils.processActivityResult(this, view, resultCode, intent,
-            dispatchStringWaitingForData, actionWaitingForData);
-      } finally {
-        dispatchStringWaitingForData = null;
-        actionWaitingForData = null;
-      }
+      // save persisted values into a local variable
+      String dispatchString = dispatchStringWaitingForData;
+      String action = actionWaitingForData;
+
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+
+      // DoActionUtils may invoke queueActionOutcome and add the response to the
+      // queued actions. If it does, it will then also signal the view that there
+      // are responses available. Clear the persisted values before this signal.
+      DoActionUtils.processActivityResult(this, view, resultCode, intent,
+          dispatchString, action);
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
