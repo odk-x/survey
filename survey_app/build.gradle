@@ -100,6 +100,7 @@ allprojects {
 dependencies {
     compile fileTree(include: '*.jar', dir: 'libs')
     compile 'com.android.support:support-annotations:25.4.0'
+    compile 'com.android.support:support-v13:25.4.0'
 
     if (libraryProjectPath.exists() && gradle.useLocal) { // Local project is favoured
         compile project(libraryProjectName)
