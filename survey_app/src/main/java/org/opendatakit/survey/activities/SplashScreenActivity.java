@@ -344,6 +344,12 @@ public class SplashScreenActivity extends BaseLauncherActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    super.onActivityResult(requestCode, resultCode, intent);
+
+    if (resultCode != ACTION_CODE) {
+      return;
+    }
+
     setResult(resultCode, intent);
     WebLogger.getLogger(appName).i(TAG,
         "MainMenu finish()'d back to SplashScreen: " + (requestCode == ACTION_CODE ?
