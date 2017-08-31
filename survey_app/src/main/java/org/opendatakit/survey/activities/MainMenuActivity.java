@@ -1508,17 +1508,20 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if ( responseJSON == null ) {
       WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
     } else {
-      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got "
+      WebLogger.getLogger(getAppName()).d(t, "signalResponseAvailable -- got "
           + responseJSON.length() + " long responseJSON!");
     }
     if ( responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
-        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
+        final String appName = getAppName();
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
+            WebLogger.getLogger(appName).d(t, "signalResponseAvailable [" + this.hashCode() +
+                "][WebView: " + webView.hashCode() +
+                "] onUiThread: webView.loadUrl(\"javascript:odkData.responseAvailable();\")");
             webView.loadUrl("javascript:odkData.responseAvailable();");
           }
         });
