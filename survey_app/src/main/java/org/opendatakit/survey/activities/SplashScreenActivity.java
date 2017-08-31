@@ -32,7 +32,6 @@ import android.widget.LinearLayout;
 import org.opendatakit.activities.BaseLauncherActivity;
 import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.dependencies.DependencyChecker;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
@@ -170,11 +169,6 @@ public class SplashScreenActivity extends BaseLauncherActivity {
           .getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
     } catch (NameNotFoundException e) {
       e.printStackTrace();
-    }
-
-    boolean dependable = DependencyChecker.checkDependencies(this);
-    if (!dependable) { // dependencies missing
-      return;
     }
 
     PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
