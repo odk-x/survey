@@ -340,7 +340,7 @@ public class SplashScreenActivity extends BaseLauncherActivity {
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     super.onActivityResult(requestCode, resultCode, intent);
 
-    if (resultCode != ACTION_CODE) {
+    if (requestCode != ACTION_CODE) {
       return;
     }
 
