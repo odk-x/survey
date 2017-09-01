@@ -114,18 +114,16 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       mLocationDialog.dismiss();
   }
 
+  @SuppressLint("MissingPermission") // checked
   @Override
   protected void onResume() {
     super.onResume();
 
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-      mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-    }
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-      mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
-    }
+    if (mEnabledProviders.size() > 0) {
+      for (String provider : mEnabledProviders) {
+        mLocationManager.requestLocationUpdates(provider, 0, 0, this);
+      }
 
-    if (RuntimePermissionUtils.checkSelfAnyPermission(this, RuntimePermissionUtils.FINE_AND_COARSE_LOCATION)) {
       mLocationDialog.show();
     }
   }
