@@ -15,26 +15,33 @@
 package org.opendatakit.survey.activities;
 
 import java.text.DecimalFormat;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.utilities.ODKFileUtils;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.survey.R;
+import org.opendatakit.utilities.RuntimePermissionUtils;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.v13.app.ActivityCompat;
 import android.widget.Toast;
 
-public class GeoPointActivity extends BaseActivity implements LocationListener {
+public class GeoPointActivity extends BaseActivity implements LocationListener, ActivityCompat.OnRequestPermissionsResultCallback {
   private static final String t = "GeoPointActivity";
 
   // default location accuracy
@@ -43,8 +50,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
   private ProgressDialog mLocationDialog;
   private LocationManager mLocationManager;
   private Location mLocation;
-  private boolean mGPSOn = false;
-  private boolean mNetworkOn = false;
+  private Set<String> mEnabledProviders;
   private String mAppName;
 
   @Override
@@ -60,25 +66,32 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
     setTitle(mAppName + " > " + getString(R.string.get_location));
 
     mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+    mEnabledProviders = new HashSet<>();
 
-    // make sure we have a good location provider before continuing
-    List<String> providers = mLocationManager.getProviders(true);
-    for (String provider : providers) {
-      if (provider.equalsIgnoreCase(LocationManager.GPS_PROVIDER)) {
-        mGPSOn = true;
+    // only check for fine location
+    // but request coarse and fine in case we can only get coarse
+    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(
+          this,
+          new String[] {
+              Manifest.permission.ACCESS_FINE_LOCATION,
+              Manifest.permission.ACCESS_COARSE_LOCATION
+          },
+          0
+      );
+    } else {
+      checkAndEnableProvider(LocationManager.GPS_PROVIDER);
+      checkAndEnableProvider(LocationManager.GPS_PROVIDER);
+
+      if (mEnabledProviders.size() < 1) {
+        Toast
+            .makeText(this, getString(R.string.provider_disabled_error), Toast.LENGTH_SHORT)
+            .show();
       }
-      if (provider.equalsIgnoreCase(LocationManager.NETWORK_PROVIDER)) {
-        mNetworkOn = true;
-      }
-    }
-    if (!mGPSOn && !mNetworkOn) {
-      Toast.makeText(this, getString(R.string.provider_disabled_error),
-          Toast.LENGTH_SHORT).show();
-      finish();
     }
 
     setupLocationDialog();
-
   }
   
   @Override
@@ -101,16 +114,18 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
       mLocationDialog.dismiss();
   }
 
+  @SuppressLint("MissingPermission") // checked
   @Override
   protected void onResume() {
     super.onResume();
-    if (mGPSOn) {
-      mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+    if (mEnabledProviders.size() > 0) {
+      for (String provider : mEnabledProviders) {
+        mLocationManager.requestLocationUpdates(provider, 0, 0, this);
+      }
+
+      mLocationDialog.show();
     }
-    if (mNetworkOn) {
-      mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, this);
-    }
-    mLocationDialog.show();
   }
 
   /**
@@ -210,4 +225,66 @@ public class GeoPointActivity extends BaseActivity implements LocationListener {
   public void databaseUnavailable() {
   }
 
+  @SuppressLint("MissingPermission") // checked in helper method
+  @Override
+  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+    checkAndEnableProvider(LocationManager.GPS_PROVIDER);
+    checkAndEnableProvider(LocationManager.NETWORK_PROVIDER);
+
+    if (mEnabledProviders.size() > 0) {
+      for (String provider : mEnabledProviders) {
+        mLocationManager.requestLocationUpdates(provider, 0, 0, this);
+      }
+
+      mLocationDialog.show();
+      return;
+    }
+
+    if (RuntimePermissionUtils.shouldShowAnyPermissionRationale(this, permissions)) {
+      RuntimePermissionUtils.createPermissionRationaleDialog(this, requestCode, permissions)
+          .setMessage(R.string.location_permission_rationale)
+          .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+              dialog.cancel();
+              finish();
+            }
+          })
+          .show();
+    } else {
+      Toast
+          .makeText(GeoPointActivity.this, R.string.location_permission_perm_denied, Toast.LENGTH_LONG)
+          .show();
+      finish();
+    }
+  }
+
+  private void checkAndEnableProvider(String provider) {
+    if (mLocationManager == null) {
+      return;
+    }
+
+    switch (provider) {
+      case LocationManager.GPS_PROVIDER:
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED &&
+            mLocationManager.isProviderEnabled(provider)) {
+          mEnabledProviders.add(provider);
+        }
+        break;
+
+      case LocationManager.NETWORK_PROVIDER:
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            == PackageManager.PERMISSION_GRANTED &&
+            mLocationManager.isProviderEnabled(provider)) {
+          mEnabledProviders.add(provider);
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
 }

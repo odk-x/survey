@@ -520,7 +520,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getWebViewContentUri() {
-    Uri u = UrlUtils.getWebViewContentUri(this);
+    Uri u = UrlUtils.getWebViewContentUri();
 
     String uriString = u.toString();
 
@@ -549,7 +549,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       return null;
     }
 
-    String fullPath = UrlUtils.getAsWebViewUri(this, appName,
+    String fullPath = UrlUtils.getAsWebViewUri(appName,
         ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
@@ -665,7 +665,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // initialize to the URI, then we will customize further based upon the
         // savedInstanceState...
         final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-        final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+        final Uri uriWebView = UrlUtils.getWebViewContentUri();
         if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
           List<String> segments = uri.getPathSegments();
           if (segments != null && segments.size() == 1) {
@@ -1527,7 +1527,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public String getResponseJSON() {
+  public String getResponseJSON(String unused) {
     if ( queueResponseJSON.isEmpty() ) {
       return null;
     }
@@ -1575,13 +1575,19 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
-      try {
-        DoActionUtils.processActivityResult(this, view, resultCode, intent,
-            dispatchStringWaitingForData, actionWaitingForData);
-      } finally {
-        dispatchStringWaitingForData = null;
-        actionWaitingForData = null;
-      }
+      // save persisted values into a local variable
+      String dispatchString = dispatchStringWaitingForData;
+      String action = actionWaitingForData;
+
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+
+      // DoActionUtils may invoke queueActionOutcome and add the response to the
+      // queued actions. If it does, it will then also signal the view that there
+      // are responses available. Clear the persisted values before this signal.
+      DoActionUtils.processActivityResult(this, view, resultCode, intent,
+          dispatchString, action);
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
