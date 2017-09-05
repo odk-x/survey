@@ -1522,7 +1522,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             WebLogger.getLogger(appName).d(t, "signalResponseAvailable [" + this.hashCode() +
                 "][WebView: " + webView.hashCode() +
                 "] onUiThread: webView.loadUrl(\"javascript:odkData.responseAvailable();\")");
-            webView.loadUrl("javascript:odkData.responseAvailable();");
+            webView.signalResponseAvailable();
           }
         });
       }
