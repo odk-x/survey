@@ -26,6 +26,7 @@ import org.opendatakit.survey.R;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
@@ -245,7 +246,14 @@ public class MediaCaptureAudioActivity extends BaseActivity {
       uriFragmentToMedia = ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia);
       WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
 
-      int delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      int delCount = -1;
+      if (mediaUri.getScheme().equals("file")) {
+        delCount = MediaUtils.deleteAudioFileFromMediaProvider(this, appName, mediaUri.getPath());
+      } else if (mediaUri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
+        delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      } else {
+        WebLogger.getLogger(appName).e(t, "Deleting Video file FAILED");
+      }
       WebLogger.getLogger(appName).i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
       WebLogger.getLogger(appName).e(t, "Inserting Audio file FAILED");
