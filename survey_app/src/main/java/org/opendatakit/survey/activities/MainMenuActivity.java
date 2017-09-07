@@ -1466,9 +1466,17 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
       WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
       WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
+    } catch (Throwable t) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+      return "Exception";
     }
   }
   

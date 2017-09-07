@@ -52,9 +52,12 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
   }
 
   @Override
-  public void onResume() {
-    super.onResume();
-    Survey.getInstance().possiblyFireDatabaseCallback(getActivity(), this);
+  public void onPause() {
+    OdkSurveyWebView view = getWebKit();
+    if ( view != null ) {
+      view.onPause();
+    }
+    super.onPause();
   }
 
   public OdkSurveyWebView getWebKit() {
