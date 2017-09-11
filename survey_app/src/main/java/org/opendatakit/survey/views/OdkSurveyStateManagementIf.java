@@ -155,12 +155,6 @@ public class OdkSurveyStateManagementIf {
   }
 
   @android.webkit.JavascriptInterface
-  public void frameworkHasLoaded(String refId, boolean outcome) {
-    if (isInactive()) return;
-    weakSurvey.get().frameworkHasLoaded(refId, outcome);
-  }
-
-  @android.webkit.JavascriptInterface
   public void ignoreAllChangesCompleted(String refId, String instanceId) {
     if (isInactive()) return;
     weakSurvey.get().ignoreAllChangesCompleted(refId, instanceId);
