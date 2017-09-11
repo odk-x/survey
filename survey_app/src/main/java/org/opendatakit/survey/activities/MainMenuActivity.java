@@ -1466,9 +1466,17 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
       WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
       WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
+    } catch (Throwable t) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+      return "Exception";
     }
   }
   
@@ -1508,18 +1516,21 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if ( responseJSON == null ) {
       WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
     } else {
-      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got "
+      WebLogger.getLogger(getAppName()).d(t, "signalResponseAvailable -- got "
           + responseJSON.length() + " long responseJSON!");
     }
     if ( responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
-        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
+        final String appName = getAppName();
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            webView.loadUrl("javascript:odkData.responseAvailable();");
+            WebLogger.getLogger(appName).d(t, "signalResponseAvailable [" + this.hashCode() +
+                "][WebView: " + webView.hashCode() +
+                "] onUiThread: webView.loadUrl(\"javascript:odkData.responseAvailable();\")");
+            webView.signalResponseAvailable();
           }
         });
       }
