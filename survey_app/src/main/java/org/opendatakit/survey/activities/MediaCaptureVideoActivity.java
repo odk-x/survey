@@ -29,6 +29,7 @@ import org.opendatakit.survey.R;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
@@ -266,16 +267,20 @@ public class MediaCaptureVideoActivity extends BaseActivity {
       WebLogger.getLogger(appName).i(t, "Inserting VIDEO returned uri = " + MediaURI.toString());
       uriFragmentToMedia = ODKFileUtils.asRowpathUri(appName, tableId, instanceId, sourceMedia);
       WebLogger.getLogger(appName).i(t, "Setting current answer to " + sourceMedia.getAbsolutePath());
-      
+
       // Need to have this ugly code to account for 
       // a bug in the Nexus 7 on 4.3 not returning the mediaUri in the data
       // of the intent - uri in this case is a file 
-      int delCount = 0;
+      int delCount = -1;
       if (NEXUS7.equals(android.os.Build.MODEL) && Build.VERSION.SDK_INT == 18) {
         File fileToDelete = new File(mediaUri.getPath());
         delCount = fileToDelete.delete() ? 1 : 0;
-      } else {
+      } else if (mediaUri.getScheme().equals("file")) {
+        delCount = MediaUtils.deleteVideoFileFromMediaProvider(this, appName, mediaUri.getPath());
+      } else if (mediaUri.getScheme().equals(ContentResolver.SCHEME_CONTENT)) {
         delCount = getApplicationContext().getContentResolver().delete(mediaUri, null, null);
+      } else {
+        WebLogger.getLogger(appName).e(t, "Deleting Video file FAILED");
       }
       WebLogger.getLogger(appName).i(t, "Deleting original capture of file: " + mediaUri.toString() + " count: " + delCount);
     } else {
