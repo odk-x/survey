@@ -55,7 +55,7 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
     try {
       c = getContext().getContentResolver().query(baseUri, null, null, null, null);
 
-      if ( c.moveToFirst() ) {
+      if ( c != null && c.moveToFirst() ) {
         int idxTableId = c.getColumnIndex(FormsColumns.TABLE_ID);
         int idxFormId = c.getColumnIndex(FormsColumns.FORM_ID);
         int idxFormTitle = c.getColumnIndex(FormsColumns.DISPLAY_NAME);
