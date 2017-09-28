@@ -44,6 +44,7 @@ import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
 import org.opendatakit.database.queries.ResumableQuery;
 import org.opendatakit.database.queries.SingleRowQuery;
+import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
@@ -1628,9 +1629,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     BindArgs bindArgs = new BindArgs(selArgs);
     ResumableQuery query = new SingleRowQuery(tableId, rowId, bindArgs, whereClause, groupBy,
-        havingClause,
-        (orderByElemKey == null ? emptyArray : new String[] {orderByElemKey}),
-        (orderByDir == null ? emptyArray : new String[] {orderByDir}),
+        havingClause, QueryUtil.convertStringToArray(orderByElemKey),
+        QueryUtil.convertStringToArray(orderByDir),
         -1, 0);
 
     return query;
