@@ -42,6 +42,9 @@ import org.opendatakit.application.CommonApplication;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
+import org.opendatakit.database.queries.ResumableQuery;
+import org.opendatakit.database.queries.SingleRowQuery;
+import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
@@ -1605,8 +1608,9 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public ViewDataQueryParams getViewQueryParams(String viewID){
+  public ResumableQuery getViewQuery(String viewID){
     // Ignore viewID as there is only one fragment
+    String[] emptyArray = {};
 
     Bundle bundle = this.getIntentExtras();
 
@@ -1624,9 +1628,11 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
 
     BindArgs bindArgs = new BindArgs(selArgs);
-    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
-        groupBy, havingClause, orderByElemKey, orderByDir);
+    ResumableQuery query = new SingleRowQuery(tableId, rowId, bindArgs, whereClause, groupBy,
+        havingClause, QueryUtil.convertStringToArray(orderByElemKey),
+        QueryUtil.convertStringToArray(orderByDir),
+        -1, 0);
 
-    return params;
+    return query;
   }
 }
