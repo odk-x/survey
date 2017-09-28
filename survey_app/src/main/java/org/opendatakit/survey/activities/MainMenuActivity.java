@@ -1609,6 +1609,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public ResumableQuery getViewQuery(String viewID){
     // Ignore viewID as there is only one fragment
+    String[] emptyArray = {};
 
     Bundle bundle = this.getIntentExtras();
 
@@ -1627,8 +1628,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     BindArgs bindArgs = new BindArgs(selArgs);
     ResumableQuery query = new SingleRowQuery(tableId, rowId, bindArgs, whereClause, groupBy,
-        havingClause, (orderByElemKey == null ? null : new String[] {orderByElemKey}),
-        (orderByDir == null ? null : new String[] {orderByDir}), -1, 0);
+        havingClause,
+        (orderByElemKey == null ? emptyArray : new String[] {orderByElemKey}),
+        (orderByDir == null ? emptyArray : new String[] {orderByDir}),
+        -1, 0);
 
     return query;
   }
