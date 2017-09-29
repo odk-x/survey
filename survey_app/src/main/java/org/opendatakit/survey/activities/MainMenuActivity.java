@@ -126,11 +126,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   // menu options
 
-  private static final int MENU_FILL_FORM = Menu.FIRST;
-  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 1;
-  private static final int MENU_PREFERENCES = Menu.FIRST + 2;
-  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 3;
-  private static final int MENU_ABOUT = Menu.FIRST + 4;
+  private static final int MENU_CLOUD_FORMS = Menu.FIRST ;
+  private static final int MENU_PREFERENCES = Menu.FIRST + 1;
+  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 2;
+  private static final int MENU_ABOUT = Menu.FIRST + 3;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
@@ -838,9 +837,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       ActionBar actionBar = getActionBar();
       actionBar.show();
 
-      item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
-      item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
-
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
       item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
 
@@ -860,10 +856,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
 
-    if (item.getItemId() == MENU_FILL_FORM) {
-      swapToFragmentView(ScreenList.FORM_CHOOSER);
-      return true;
-    } else if (item.getItemId() == MENU_CLOUD_FORMS) {
+    if (item.getItemId() == MENU_CLOUD_FORMS) {
       try {
         Intent syncIntent = new Intent();
         syncIntent.setComponent(new ComponentName(
