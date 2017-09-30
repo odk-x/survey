@@ -68,9 +68,4 @@ public class Survey extends CommonApplication {
   public int getSystemZipResourceId() {
     return R.raw.systemzip;
   }
-
-  @Override
-  public int getWebKitResourceId() {
-    return R.id.webkit;
-  }
 }

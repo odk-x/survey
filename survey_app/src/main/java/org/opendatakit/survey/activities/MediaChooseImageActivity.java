@@ -84,6 +84,16 @@ public class MediaChooseImageActivity extends BaseActivity {
               + " key in intent bundle. Not found.");
     }
 
+    // On Nexus 6 running 6.0.1, the directory needs to exist before the capture.
+    // need to ensure that the directory exists before we launch the camera app.
+    if ( !ODKFileUtils.createFolder(ODKFileUtils.getInstanceFolder(appName, tableId, instanceId)) ) {
+      Toast.makeText(this, R.string.media_save_failed, Toast.LENGTH_SHORT).show();
+      // keep the image as a captured image so user can choose it.
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
+
     if (uriFragmentNewFileBase == null) {
       throw new IllegalArgumentException("Expected " + URI_FRAGMENT_NEW_FILE_BASE
           + " key in intent bundle. Not found.");
