@@ -18,6 +18,12 @@ import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.survey.R;
 
+import com.google.firebase.analytics.FirebaseAnalytics ;
+
+import android.content.Context;
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
+
 import android.annotation.SuppressLint;
 
 /**
@@ -28,6 +34,8 @@ import android.annotation.SuppressLint;
  */
 public class Survey extends CommonApplication {
   public static final String t = "Survey";
+
+  private FirebaseAnalytics analytics;
 
   private static Survey singleton = null;
 
@@ -41,6 +49,9 @@ public class Survey extends CommonApplication {
     singleton = this;
 
     super.onCreate();
+
+    Fabric.with(this, new Crashlytics());
+    analytics = FirebaseAnalytics.getInstance(this);
   }
 
   @Override
@@ -56,10 +67,5 @@ public class Survey extends CommonApplication {
   @Override
   public int getSystemZipResourceId() {
     return R.raw.systemzip;
-  }
-
-  @Override
-  public int getWebKitResourceId() {
-    return R.id.webkit;
   }
 }

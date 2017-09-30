@@ -29,10 +29,9 @@ import android.view.View;
 import android.view.Window;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.activities.BaseLauncherActivity;
 import org.opendatakit.application.ToolAwareApplication;
 import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.dependencies.DependencyChecker;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
@@ -53,7 +52,7 @@ import java.util.List;
  *
  * @author Carl Hartung
  */
-public class SplashScreenActivity extends BaseActivity {
+public class SplashScreenActivity extends BaseLauncherActivity {
 
   private static final String TAG = SplashScreenActivity.class.getSimpleName();
 
@@ -82,8 +81,15 @@ public class SplashScreenActivity extends BaseActivity {
   }
 
   @Override
-  public void onCreate(Bundle savedInstanceState) {
+  protected void onCreate(Bundle savedInstanceState) {
+    // this splash screen should be a blank slate
+    requestWindowFeature(Window.FEATURE_NO_TITLE);
+
     super.onCreate(savedInstanceState);
+  }
+
+  @Override
+  protected void onCreateWithPermission(Bundle savedInstanceState) {
     if (savedInstanceState != null && savedInstanceState.containsKey("started")) {
       started = savedInstanceState.getBoolean("started");
     }
@@ -100,8 +106,6 @@ public class SplashScreenActivity extends BaseActivity {
     getWindowManager().getDefaultDisplay().getMetrics(dm);
     mImageMaxWidth = dm.widthPixels;
 
-    // this splash screen should be a blank slate
-    requestWindowFeature(Window.FEATURE_NO_TITLE);
     setContentView(R.layout.splash_screen);
 
     // external intent
@@ -115,7 +119,7 @@ public class SplashScreenActivity extends BaseActivity {
       // initialize to the URI, then we will customize further based upon the
       // savedInstanceState...
       final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-      final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+      final Uri uriWebView = UrlUtils.getWebViewContentUri();
       if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority()
           .equalsIgnoreCase(uriFormsProvider.getAuthority())) {
         List<String> segments = uri.getPathSegments();
@@ -165,11 +169,6 @@ public class SplashScreenActivity extends BaseActivity {
           .getPackageInfo(getPackageName(), PackageManager.GET_META_DATA);
     } catch (NameNotFoundException e) {
       e.printStackTrace();
-    }
-
-    boolean dependable = DependencyChecker.checkDependencies(this);
-    if (!dependable) { // dependencies missing
-      return;
     }
 
     PropertiesSingleton props = CommonToolProperties.get(getApplicationContext(), appName);
@@ -327,6 +326,8 @@ public class SplashScreenActivity extends BaseActivity {
     mAlertDialog.show();
   }
 
+
+
   @Override
   public void databaseAvailable() {
   }
@@ -337,6 +338,12 @@ public class SplashScreenActivity extends BaseActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    super.onActivityResult(requestCode, resultCode, intent);
+
+    if (requestCode != ACTION_CODE) {
+      return;
+    }
+
     setResult(resultCode, intent);
     WebLogger.getLogger(appName).i(TAG,
         "MainMenu finish()'d back to SplashScreen: " + (requestCode == ACTION_CODE ?

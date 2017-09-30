@@ -47,8 +47,7 @@ public class OdkSurveyWebView extends ODKWebView {
          loadPageOnUiThread(fullUrl, null, false);
 
       } else if (hasPageFrameworkFinishedLoading()) {
-         log.i(t, "loadPage: delegate to gotoUrlHash: " + hash);
-         gotoUrlHash(hash);
+         log.i(t, "loadPage: framework has already finished -- ignore gotoUrlHash: " + hash);
       } else {
          log.w(t, "loadPage: framework did not load -- cannot load anything!");
       }

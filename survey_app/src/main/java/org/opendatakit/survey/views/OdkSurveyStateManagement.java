@@ -170,15 +170,6 @@ public class OdkSurveyStateManagement {
     return mActivity.popSectionStack();
   }
 
-  public void frameworkHasLoaded(String refId, boolean outcome) {
-    if (!mActivity.getRefId().equals(refId)) {
-      log.w("odkSurvey", "IGNORED: frameworkHasLoaded(" + refId + ", " + outcome + ")");
-      return;
-    }
-    log.d("odkSurvey", "DO: frameworkHasLoaded(" + refId + ", " + outcome + ")");
-    mWebView.get().frameworkHasLoaded();
-  }
-
   public void ignoreAllChangesCompleted(String refId, String instanceId) {
     if (!mActivity.getRefId().equals(refId)) {
       log.w("odkSurvey", "IGNORED: ignoreAllChangesCompleted(" + refId + ", " + instanceId + ")");

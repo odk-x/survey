@@ -1,24 +1,25 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.opendatakit.survey" >
 
-
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
-    <uses-permission android:name="android.permission.USE_CREDENTIALS" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-	<uses-permission android:name="com.android.vending.CHECK_LICENSE"/>
 
     <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.webkitserver.RUN_WEBSERVER" />
 
     <!-- this is defined in org.opendatakit.services -->
     <uses-permission android:name="org.opendatakit.database.RUN_DATABASE" />
+
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
 	
     <supports-screens
         android:anyDensity="true"
@@ -45,15 +46,15 @@
             android:windowSoftInputMode="adjustResize" >
         </activity>
         <activity
-            android:name="org.opendatakit.survey.activities.MediaCaptureImageActivity"
-            android:exported="true"
-            android:label="@string/app_name" />
-        <activity
             android:name="org.opendatakit.survey.activities.SignatureActivity"
             android:exported="true"
             android:label="@string/app_name" />
         <activity
             android:name="org.opendatakit.survey.activities.DrawActivity"
+            android:exported="true"
+            android:label="@string/app_name" />
+        <activity
+            android:name="org.opendatakit.survey.activities.MediaCaptureImageActivity"
             android:exported="true"
             android:label="@string/app_name" />
         <activity

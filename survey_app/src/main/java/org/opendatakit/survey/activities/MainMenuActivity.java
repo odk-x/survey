@@ -42,6 +42,9 @@ import org.opendatakit.application.CommonApplication;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
+import org.opendatakit.database.queries.ResumableQuery;
+import org.opendatakit.database.queries.SingleRowQuery;
+import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
@@ -123,11 +126,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   // menu options
 
-  private static final int MENU_FILL_FORM = Menu.FIRST;
-  private static final int MENU_CLOUD_FORMS = Menu.FIRST + 1;
-  private static final int MENU_PREFERENCES = Menu.FIRST + 2;
-  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 3;
-  private static final int MENU_ABOUT = Menu.FIRST + 4;
+  private static final int MENU_CLOUD_FORMS = Menu.FIRST ;
+  private static final int MENU_PREFERENCES = Menu.FIRST + 1;
+  private static final int MENU_EDIT_INSTANCE = Menu.FIRST + 2;
+  private static final int MENU_ABOUT = Menu.FIRST + 3;
 
   // activity callback codes
   private static final int HANDLER_ACTIVITY_CODE = 20;
@@ -520,7 +522,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public String getWebViewContentUri() {
-    Uri u = UrlUtils.getWebViewContentUri(this);
+    Uri u = UrlUtils.getWebViewContentUri();
 
     String uriString = u.toString();
 
@@ -549,7 +551,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       return null;
     }
 
-    String fullPath = UrlUtils.getAsWebViewUri(this, appName,
+    String fullPath = UrlUtils.getAsWebViewUri(appName,
         ODKFileUtils.asUriFragment(appName, htmlFile));
 
     if (fullPath == null) {
@@ -665,7 +667,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         // initialize to the URI, then we will customize further based upon the
         // savedInstanceState...
         final Uri uriFormsProvider = FormsProviderAPI.CONTENT_URI;
-        final Uri uriWebView = UrlUtils.getWebViewContentUri(this);
+        final Uri uriWebView = UrlUtils.getWebViewContentUri();
         if (uri.getScheme().equalsIgnoreCase(uriFormsProvider.getScheme()) && uri.getAuthority().equalsIgnoreCase(uriFormsProvider.getAuthority())) {
           List<String> segments = uri.getPathSegments();
           if (segments != null && segments.size() == 1) {
@@ -835,9 +837,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       ActionBar actionBar = getActionBar();
       actionBar.show();
 
-      item = menu.add(Menu.NONE, MENU_FILL_FORM, Menu.NONE, getString(R.string.enter_data_button));
-      item.setIcon(R.drawable.ic_action_collections_collection).setShowAsAction(showOption);
-
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
       item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
 
@@ -857,10 +856,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
 
-    if (item.getItemId() == MENU_FILL_FORM) {
-      swapToFragmentView(ScreenList.FORM_CHOOSER);
-      return true;
-    } else if (item.getItemId() == MENU_CLOUD_FORMS) {
+    if (item.getItemId() == MENU_CLOUD_FORMS) {
       try {
         Intent syncIntent = new Intent();
         syncIntent.setComponent(new ComponentName(
@@ -1466,9 +1462,17 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       startActivityForResult(i, HANDLER_ACTIVITY_CODE);
       return "OK";
     } catch (ActivityNotFoundException ex) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
       WebLogger.getLogger(getAppName()).e(t, "Unable to launch activity: " + ex.toString());
       WebLogger.getLogger(getAppName()).printStackTrace(ex);
       return "Application not found";
+    } catch (Throwable t) {
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+      return "Exception";
     }
   }
   
@@ -1508,18 +1512,21 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if ( responseJSON == null ) {
       WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got null responseJSON!");
     } else {
-      WebLogger.getLogger(getAppName()).e(t, "signalResponseAvailable -- got "
+      WebLogger.getLogger(getAppName()).d(t, "signalResponseAvailable -- got "
           + responseJSON.length() + " long responseJSON!");
     }
     if ( responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
       final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
       if (webView != null) {
-        WebLogger.getLogger(getAppName()).i(t, "[" + this.hashCode() + "][WebView: " + webView.hashCode() + "] signalResponseAvailable webView.loadUrl will be called");
+        final String appName = getAppName();
         runOnUiThread(new Runnable() {
           @Override
           public void run() {
-            webView.loadUrl("javascript:odkData.responseAvailable();");
+            WebLogger.getLogger(appName).d(t, "signalResponseAvailable [" + this.hashCode() +
+                "][WebView: " + webView.hashCode() +
+                "] onUiThread: webView.loadUrl(\"javascript:odkData.responseAvailable();\")");
+            webView.signalResponseAvailable();
           }
         });
       }
@@ -1527,7 +1534,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   }
 
   @Override
-  public String getResponseJSON() {
+  public String getResponseJSON(String unused) {
     if ( queueResponseJSON.isEmpty() ) {
       return null;
     }
@@ -1575,21 +1582,28 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
-      try {
-        DoActionUtils.processActivityResult(this, view, resultCode, intent,
-            dispatchStringWaitingForData, actionWaitingForData);
-      } finally {
-        dispatchStringWaitingForData = null;
-        actionWaitingForData = null;
-      }
+      // save persisted values into a local variable
+      String dispatchString = dispatchStringWaitingForData;
+      String action = actionWaitingForData;
+
+      // clear the persisted values
+      dispatchStringWaitingForData = null;
+      actionWaitingForData = null;
+
+      // DoActionUtils may invoke queueActionOutcome and add the response to the
+      // queued actions. If it does, it will then also signal the view that there
+      // are responses available. Clear the persisted values before this signal.
+      DoActionUtils.processActivityResult(this, view, resultCode, intent,
+          dispatchString, action);
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
       this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
     }
   }
 
   @Override
-  public ViewDataQueryParams getViewQueryParams(String viewID){
+  public ResumableQuery getViewQuery(String viewID){
     // Ignore viewID as there is only one fragment
+    String[] emptyArray = {};
 
     Bundle bundle = this.getIntentExtras();
 
@@ -1607,9 +1621,11 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     String orderByDir = bundle.getString(OdkData.IntentKeys.SQL_ORDER_BY_DIRECTION);
 
     BindArgs bindArgs = new BindArgs(selArgs);
-    ViewDataQueryParams params = new ViewDataQueryParams(tableId, rowId, whereClause, bindArgs,
-        groupBy, havingClause, orderByElemKey, orderByDir);
+    ResumableQuery query = new SingleRowQuery(tableId, rowId, bindArgs, whereClause, groupBy,
+        havingClause, QueryUtil.convertStringToArray(orderByElemKey),
+        QueryUtil.convertStringToArray(orderByDir),
+        -1, 0);
 
-    return params;
+    return query;
   }
 }
