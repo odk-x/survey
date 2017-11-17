@@ -62,7 +62,7 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
     }
   }
 
-  public CommonApplication getCommonApplication() {
+  private CommonApplication getCommonApplication() {
     Application app = getActivity().getApplication();
     if (app instanceof CommonApplication) {
       return (CommonApplication) app;
