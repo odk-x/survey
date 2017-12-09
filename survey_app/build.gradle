@@ -135,7 +135,7 @@ dependencies {
                 version: latestVersion, ext: 'aar')
         masterImplementation(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
                 version: masterArtifactVersion, ext: 'aar')
-        snapshotImplementatione(group: groupId, name: commonSnapshotArtifactName,
+        snapshotImplementation(group: groupId, name: commonSnapshotArtifactName,
                 classifier: snapshotRelease, version: latestVersion, ext: 'aar')
     }
 
