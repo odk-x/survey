@@ -29,17 +29,27 @@ android {
         testInstrumentationRunner(instrumentationRunner)
     }
 
+    flavorDimensions "stage", "testing"
+
     productFlavors {
         demo {
+            dimension 'stage'
         }
 
         master {
+            dimension 'stage'
         }
 
         snapshot {
+            dimension 'stage'
+        }
+
+        basic {
+            dimension 'testing'
         }
 
         uitest {
+            dimension 'testing'
         }
     }
 
@@ -99,43 +109,39 @@ allprojects {
 }
 
 dependencies {
-    compile fileTree(include: '*.jar', dir: 'libs')
-    compile 'com.android.support:support-annotations:25.4.0'
-    compile 'com.android.support:support-v13:25.4.0'
-    compile 'com.google.firebase:firebase-core:10.0.1'
-    compile ('com.crashlytics.sdk.android:crashlytics:2.6.8@aar') {
+    implementation fileTree(include: '*.jar', dir: 'libs')
+    implementation 'com.android.support:support-annotations:27.0.1'
+    implementation 'com.android.support:support-v13:27.0.1'
+    implementation 'com.google.firebase:firebase-core:11.6.2'
+    implementation ('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
         transitive =true;
     }
 
     if (libraryProjectPath.exists() && gradle.useLocal) { // Local project is favoured
-        compile project(libraryProjectName)
+        implementation project(libraryProjectName)
     } else {
-        demoCompile(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
+        demoImplementation(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
                 version: latestVersion, ext: 'aar')
-        masterCompile(group: groupId, name: libraryMasterArtifactName, classifier: masterRelease,
+        masterImplementation(group: groupId, name: libraryMasterArtifactName, classifier: masterRelease,
                 version: masterArtifactVersion, ext: 'aar')
-        snapshotCompile(group: groupId, name: librarySnapshotArtifactName,
+        snapshotImplementation(group: groupId, name: librarySnapshotArtifactName,
                 classifier: snapshotRelease, version: latestVersion, ext: 'aar')
-        uitestCompile(group: groupId, name: librarySnapshotArtifactName,
-                      classifier: snapshotRelease, version: latestVersion, ext: 'aar')
     }
 
     if (commonProjectPath.exists() && gradle.useLocal) { // Local project is favoured
-        compile project(commonProjectName)
+        implementation project(commonProjectName)
     } else {
-        demoCompile(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
+        demoImplementation(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
                 version: latestVersion, ext: 'aar')
-        masterCompile(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
+        masterImplementation(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
                 version: masterArtifactVersion, ext: 'aar')
-        snapshotCompile(group: groupId, name: commonSnapshotArtifactName,
+        snapshotImplementatione(group: groupId, name: commonSnapshotArtifactName,
                 classifier: snapshotRelease, version: latestVersion, ext: 'aar')
-        uitestCompile(group: groupId, name: commonSnapshotArtifactName,
-                      classifier: snapshotRelease, version: latestVersion, ext: 'aar')
     }
 
     // Testing dependencies
     testCompile 'junit:junit:4.12'
-    androidTestCompile 'com.android.support.test:runner:1.0.0'
-    androidTestCompile 'com.android.support:support-annotations:25.4.0'
+    androidTestCompile 'com.android.support.test:runner:1.0.1'
+    androidTestCompile 'com.android.support:support-annotations:27.0.1'
 
 }
