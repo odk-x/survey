@@ -1,4 +1,4 @@
-gradle.ext.gradleConfigVersion = 87
+gradle.ext.gradleConfigVersion = 88
 
 if ( !gradle.ext.has('workspacePath') ) {
 	def env = System.getProperties();
@@ -34,11 +34,17 @@ settingsScripts.each {
 include(surveyProjectChild)
 
 if (libraryProjectPath.exists() && gradle.ext.useLocal) { // check if local library project is present
-    include libraryProjectName
+    if (!ext.librarySubProjectDictory.exists()) {
+        ext.librarySubProjectDictory.mkdirs()
+    }
+	include libraryProjectName
     project(libraryProjectName).setProjectDir(libraryProjectPath) // set local location
 }
 
 if (commonProjectPath.exists() && gradle.ext.useLocal) { // check if local common project is present
-    include commonProjectName
+    if (!ext.commonSubProjectDictory.exists()) {
+        ext.commonSubProjectDictory.mkdirs()
+    }
+	include commonProjectName
     project(commonProjectName).setProjectDir(commonProjectPath) // set local location
 }
