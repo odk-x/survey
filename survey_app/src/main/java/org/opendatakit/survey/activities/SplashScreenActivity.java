@@ -81,6 +81,11 @@ public class SplashScreenActivity extends BaseLauncherActivity {
   }
 
   @Override
+  protected void setAppSpecificPerms() {
+    return;
+  }
+
+  @Override
   protected void onCreate(Bundle savedInstanceState) {
     // this splash screen should be a blank slate
     requestWindowFeature(Window.FEATURE_NO_TITLE);
