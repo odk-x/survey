@@ -14,16 +14,18 @@
 
 package org.opendatakit.survey.fragments;
 
-import android.widget.TextView;
-import org.opendatakit.listener.DatabaseConnectionListener;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.application.Survey;
-
+import android.app.Application;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+
+import org.opendatakit.application.CommonApplication;
+import org.opendatakit.listener.DatabaseConnectionListener;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.views.OdkSurveyWebView;
 
 /**
@@ -60,9 +62,18 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
     }
   }
 
+  private CommonApplication getCommonApplication() {
+    Application app = getActivity().getApplication();
+    if (app instanceof CommonApplication) {
+      return (CommonApplication) app;
+    }
+    throw new IllegalStateException("Bad app");
+  }
+
   @Override
   public void onResume() {
     super.onResume();
+    getCommonApplication().possiblyFireDatabaseCallback(getActivity(), this);
     OdkSurveyWebView view = getWebKit();
     if ( view != null ) {
       view.onResume();
