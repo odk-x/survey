@@ -36,8 +36,9 @@ public class OdkSurveyWebView extends ODKWebView {
        */
 
       log.i(t, "loadPage: current loadPageUrl: " + getLoadPageUrl());
+      boolean pageFrameworkLoaded = hasPageFrameworkFinishedLoading();
       String baseUrl = ((IOdkSurveyActivity) getContext())
-          .getUrlBaseLocation(hasPageFrameworkFinishedLoading() && getLoadPageUrl() != null);
+          .getUrlBaseLocation( pageFrameworkLoaded && getLoadPageUrl() != null);
       String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
 
       if (baseUrl != null) {
@@ -46,7 +47,7 @@ public class OdkSurveyWebView extends ODKWebView {
 
          loadPageOnUiThread(fullUrl, null, false);
 
-      } else if (hasPageFrameworkFinishedLoading()) {
+      } else if (pageFrameworkLoaded) {
          log.i(t, "loadPage: framework has already finished -- ignore gotoUrlHash: " + hash);
       } else {
          log.w(t, "loadPage: framework did not load -- cannot load anything!");
