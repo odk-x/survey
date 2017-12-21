@@ -1201,8 +1201,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             transitionToFormHelper(uri, newForm);
           }
         }
-      } else if (currentFragmentType == ScreenList.WEBKIT && getCurrentForm() != null) {
-
       }
 
       if ( trans != null ) {
