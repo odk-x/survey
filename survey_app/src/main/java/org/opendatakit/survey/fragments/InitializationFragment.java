@@ -47,6 +47,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
   private static final String t = "InitializationFragment";
 
   private static final int ID = R.layout.copy_expansion_files_layout;
+  private static final String ALERT_DIALOG_TAG = "alertDialogSurvey";
+  private static final String PROGRESS_DIALOG_TAG = "progressDialogSurvey";
 
   private static enum DialogState {
     Init, Progress, Alert, None
@@ -162,12 +164,12 @@ public class InitializationFragment extends Fragment implements InitializationLi
     FragmentManager mgr = getFragmentManager();
 
     // dismiss dialogs...
-    AlertDialogFragment alertDialog = (AlertDialogFragment) mgr.findFragmentByTag("alertDialog");
+    AlertDialogFragment alertDialog = (AlertDialogFragment) mgr.findFragmentByTag(ALERT_DIALOG_TAG);
     if (alertDialog != null) {
       alertDialog.dismiss();
     }
     ProgressDialogFragment progressDialog = (ProgressDialogFragment) mgr
-        .findFragmentByTag("progressDialog");
+        .findFragmentByTag(PROGRESS_DIALOG_TAG);
     if (progressDialog != null) {
       progressDialog.dismiss();
     }
@@ -188,7 +190,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
     if (overallSuccess && result.isEmpty()) {
       // do not require an OK if everything went well
-      Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+      Fragment progress = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
       if (progress != null) {
         ((ProgressDialogFragment) progress).dismiss();
         mDialogState = DialogState.None;
@@ -209,12 +211,12 @@ public class InitializationFragment extends Fragment implements InitializationLi
   }
 
   private void restoreProgressDialog() {
-    Fragment alert = getFragmentManager().findFragmentByTag("alertDialog");
+    Fragment alert = getFragmentManager().findFragmentByTag(ALERT_DIALOG_TAG);
     if (alert != null) {
       ((AlertDialogFragment) alert).dismiss();
     }
 
-    Fragment dialog = getFragmentManager().findFragmentByTag("progressDialog");
+    Fragment dialog = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
 
     if (dialog != null && ((ProgressDialogFragment) dialog).getDialog() != null) {
       mDialogState = DialogState.Progress;
@@ -224,12 +226,12 @@ public class InitializationFragment extends Fragment implements InitializationLi
     } else {
 
       ProgressDialogFragment f = ProgressDialogFragment
-          .newInstance(mAlertTitle, mAlertMsg);
+          .newInstance(mAlertTitle, mAlertMsg, false);
 
       mDialogState = DialogState.Progress;
       if ( mPendingDialogState != mDialogState ) {
         mPendingDialogState = mDialogState;
-        f.show(getFragmentManager(), "progressDialog");
+        f.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
       }
     }
   }
@@ -249,7 +251,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
     }
     FragmentManager mgr = getFragmentManager();
     if ( mgr != null ) {
-      Fragment dialog = mgr.findFragmentByTag("progressDialog");
+      Fragment dialog = mgr.findFragmentByTag(PROGRESS_DIALOG_TAG);
       if (dialog != null) {
         ((ProgressDialogFragment) dialog).dismiss();
         mPendingDialogState = DialogState.None;
@@ -260,12 +262,12 @@ public class InitializationFragment extends Fragment implements InitializationLi
   }
 
   private void restoreAlertDialog() {
-    Fragment progress = getFragmentManager().findFragmentByTag("progressDialog");
+    Fragment progress = getFragmentManager().findFragmentByTag(PROGRESS_DIALOG_TAG);
     if (progress != null) {
       ((ProgressDialogFragment) progress).dismiss();
     }
 
-    Fragment dialog = getFragmentManager().findFragmentByTag("alertDialog");
+    Fragment dialog = getFragmentManager().findFragmentByTag(ALERT_DIALOG_TAG);
 
     if (dialog != null && ((AlertDialogFragment) dialog).getDialog() != null) {
       mDialogState = DialogState.Alert;
@@ -279,7 +281,7 @@ public class InitializationFragment extends Fragment implements InitializationLi
       mDialogState = DialogState.Alert;
       if ( mPendingDialogState != mDialogState ) {
         mPendingDialogState = mDialogState;
-        f.show(getFragmentManager(), "alertDialog");
+        f.show(getFragmentManager(), ALERT_DIALOG_TAG);
       }
     }
   }
