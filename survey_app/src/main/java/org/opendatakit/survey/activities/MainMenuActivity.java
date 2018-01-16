@@ -47,6 +47,7 @@ import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
+import org.opendatakit.fragment.ProgressDialogFragment;
 import org.opendatakit.listener.DatabaseConnectionListener;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.DynamicPropertiesCallback;
@@ -91,7 +92,7 @@ import java.util.UUID;
  */
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
-  private static final String t = "MainMenuActivity";
+  private static final String t = MainMenuActivity.class.getSimpleName();
   public enum ScreenList {
     MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
@@ -1631,4 +1632,5 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     return query;
   }
+
 }
