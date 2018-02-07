@@ -14,19 +14,6 @@
 
 package org.opendatakit.survey.activities;
 
-import java.text.DecimalFormat;
-import java.util.HashSet;
-import java.util.Set;
-
-import android.app.Fragment;
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.fragment.ProgressDialogFragment;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-import org.opendatakit.utilities.RuntimePermissionUtils;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -41,6 +28,17 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v13.app.ActivityCompat;
 import android.widget.Toast;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.fragment.ProgressDialogFragment;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.utilities.RuntimePermissionUtils;
+
+import java.text.DecimalFormat;
+import java.util.HashSet;
+import java.util.Set;
 
 public class GeoPointActivity extends BaseActivity implements LocationListener, ActivityCompat
     .OnRequestPermissionsResultCallback, ProgressDialogFragment.ProgressDialogListener {
@@ -129,7 +127,8 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
   private void showLocationProgressDialog() {
 
     mLocationProgressDialog = ProgressDialogFragment.eitherReuseOrCreateNew(
-        PROGRESS_DIALOG_TAG, getFragmentManager(), getString(R.string.getting_location),
+        PROGRESS_DIALOG_TAG, mLocationProgressDialog, getFragmentManager(), getString(R.string
+            .getting_location),
         getString(R.string.please_wait_long), true, getString(R.string.accept_location),
         getString(R.string.cancel_location), null);
 

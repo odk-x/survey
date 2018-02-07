@@ -14,8 +14,11 @@
 
 package org.opendatakit.survey.fragments;
 
-import java.util.ArrayList;
-
+import android.app.Fragment;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
 import org.opendatakit.activities.IAppAwareActivity;
 import org.opendatakit.activities.IInitResumeActivity;
 import org.opendatakit.fragment.AlertDialogFragment.ConfirmAlertDialog;
@@ -26,11 +29,7 @@ import org.opendatakit.logging.WebLogger;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.application.Survey;
 
-import android.app.Fragment;
-import android.os.Bundle;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import java.util.ArrayList;
 
 /**
  * Attempt to initialize data directories using the APK Expansion files.
