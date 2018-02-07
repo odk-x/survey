@@ -25,34 +25,6 @@ public class OdkSurveyWebView extends ODKWebView {
       return true;
    }
 
-   /**
-    * IMPORTANT: This function should only be called with the context of the database listeners
-    * OR if called from elsewhere there should be an if statement before invoking that checks
-    * if the database is currently available.
-    */
-   @Override public synchronized void loadPage() {
-      /**
-       * NOTE: Reload the web framework only if it has changed.
-       */
-
-      log.i(t, "loadPage: current loadPageUrl: " + getLoadPageUrl());
-      boolean pageFrameworkLoaded = hasPageFrameworkFinishedLoading();
-      String baseUrl = ((IOdkSurveyActivity) getContext())
-          .getUrlBaseLocation( pageFrameworkLoaded && getLoadPageUrl() != null);
-      String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
-
-      if (baseUrl != null) {
-         // for Survey, we do care about the URL
-         String fullUrl = baseUrl + hash;
-
-         loadPageOnUiThread(fullUrl, null, LoadType.FULL_LOAD);
-
-      } else if (pageFrameworkLoaded) {
-         log.i(t, "loadPage: framework has already finished -- ignore gotoUrlHash: " + hash);
-      } else {
-         log.w(t, "loadPage: framework did not load -- cannot load anything!");
-      }
-   }
 
    /**
     * IMPORTANT: This function should only be called with the context of the database listeners
@@ -68,7 +40,7 @@ public class OdkSurveyWebView extends ODKWebView {
       if (baseUrl != null) {
          // for Survey, we do care about the URL
          String fullUrl = baseUrl + hash;
-         loadPageOnUiThread(fullUrl, null, LoadType.RELOAD);
+         loadPageOnUiThread(fullUrl, null);
       } else {
          log.w(t, "reloadPage: framework did not load -- cannot load anything!");
       }

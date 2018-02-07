@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <lint>
     <issue id="InvalidPackage">
-	<!-- See https://github.com/FasterXML/jackson-databind/issues/1192 -->
-        <ignore regexp="Invalid package reference in library; not included in Android: `java.nio.file`\. Referenced from `com\.fasterxml\.jackson\.databind\.ext\.Java7SupportImpl`\." />
+        <ignore regexp="javax.activation" />
+        <ignore regexp="javax.xml" />
     </issue>
 </lint>
