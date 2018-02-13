@@ -22,11 +22,15 @@ import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.utilities.LocalizationUtils;
 import org.opendatakit.survey.R;
+import org.opendatakit.utilities.LocalizationUtils;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * @author mitchellsundt@gmail.com

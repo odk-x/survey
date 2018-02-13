@@ -2,7 +2,6 @@ package org.opendatakit.survey.activities;
 
 import android.content.Intent;
 import android.net.Uri;
-
 import org.opendatakit.utilities.ODKFileUtils;
 
 import java.io.File;

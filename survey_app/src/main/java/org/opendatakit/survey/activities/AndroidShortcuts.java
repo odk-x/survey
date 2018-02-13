@@ -14,21 +14,6 @@
 
 package org.opendatakit.survey.activities;
 
-import java.io.File;
-import java.util.ArrayList;
-
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.properties.CommonToolProperties;
-import org.opendatakit.properties.PropertiesSingleton;
-import org.opendatakit.provider.FormsColumns;
-import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.database.utilities.CursorUtils;
-import org.opendatakit.utilities.LocalizationUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.application.Survey;
-
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -46,6 +31,20 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.database.utilities.CursorUtils;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
+import org.opendatakit.provider.FormsColumns;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.application.Survey;
+import org.opendatakit.utilities.LocalizationUtils;
+import org.opendatakit.utilities.ODKFileUtils;
+
+import java.io.File;
+import java.util.ArrayList;
 
 /**
  * Allows the user to create desktop shortcuts to any form currently avaiable to

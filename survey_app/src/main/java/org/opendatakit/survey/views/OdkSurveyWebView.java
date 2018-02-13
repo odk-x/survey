@@ -2,8 +2,8 @@ package org.opendatakit.survey.views;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import org.opendatakit.views.ODKWebView;
 import org.opendatakit.survey.activities.IOdkSurveyActivity;
+import org.opendatakit.views.ODKWebView;
 
 /**
  * @author mitchellsundt@gmail.com

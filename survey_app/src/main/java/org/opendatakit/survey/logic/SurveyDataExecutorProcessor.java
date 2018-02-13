@@ -14,12 +14,12 @@
 
 package org.opendatakit.survey.logic;
 
+import org.opendatakit.database.data.KeyValueStoreEntry;
 import org.opendatakit.database.data.UserTable;
+import org.opendatakit.database.service.DbHandle;
 import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.views.ExecutorContext;
 import org.opendatakit.views.ExecutorProcessor;
-import org.opendatakit.database.data.KeyValueStoreEntry;
-import org.opendatakit.database.service.DbHandle;
 
 import java.util.List;
 import java.util.Map;
