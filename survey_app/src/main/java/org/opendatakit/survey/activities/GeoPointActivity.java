@@ -119,8 +119,10 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       for (String provider : mEnabledProviders) {
         mLocationManager.requestLocationUpdates(provider, 0, 0, this);
       }
+
+      // show location dialog only if we have at least 1 location provider
+      showLocationProgressDialog();
     }
-    showLocationProgressDialog();
   }
 
 
@@ -132,7 +134,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
         getString(R.string.please_wait_long), true, getString(R.string.accept_location),
         getString(R.string.cancel_location), null);
 
-    if(mLocationProgressDialog.isAdded()) {
+    if(!mLocationProgressDialog.isAdded()) {
       mLocationProgressDialog.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
     }
   }
