@@ -14,13 +14,6 @@
 
 package org.opendatakit.survey.fragments;
 
-import org.opendatakit.activities.IAppAwareActivity;
-import org.opendatakit.provider.FormsProviderAPI;
-import org.opendatakit.survey.R;
-import org.opendatakit.survey.activities.IOdkSurveyActivity;
-import org.opendatakit.survey.utilities.FormInfo;
-import org.opendatakit.survey.utilities.FormListLoader;
-
 import android.app.ListFragment;
 import android.app.LoaderManager;
 import android.content.Loader;
@@ -30,6 +23,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+import org.opendatakit.activities.IAppAwareActivity;
+import org.opendatakit.provider.FormsProviderAPI;
+import org.opendatakit.survey.R;
+import org.opendatakit.survey.activities.IOdkSurveyActivity;
+import org.opendatakit.survey.utilities.FormInfo;
+import org.opendatakit.survey.utilities.FormListLoader;
 import org.opendatakit.survey.utilities.TableIdFormIdVersionListAdapter;
 
 import java.util.ArrayList;

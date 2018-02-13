@@ -23,13 +23,12 @@ import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
-
 import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.logging.WebLogger;
 import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
 import org.opendatakit.utilities.MediaUtils;
 import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.survey.R;
 
 import java.io.File;
 import java.io.IOException;

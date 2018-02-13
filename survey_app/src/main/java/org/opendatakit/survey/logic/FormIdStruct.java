@@ -14,16 +14,15 @@
 
 package org.opendatakit.survey.logic;
 
-import java.io.File;
-import java.util.Date;
-
-import org.opendatakit.provider.FormsColumns;
-import org.opendatakit.database.utilities.CursorUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-
 import android.content.ContentResolver;
 import android.database.Cursor;
 import android.net.Uri;
+import org.opendatakit.database.utilities.CursorUtils;
+import org.opendatakit.provider.FormsColumns;
+import org.opendatakit.utilities.ODKFileUtils;
+
+import java.io.File;
+import java.util.Date;
 
 /**
  * Basic definitions of the current form being processed.

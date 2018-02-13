@@ -14,19 +14,6 @@
 
 package org.opendatakit.survey.activities;
 
-import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
-
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.utilities.MediaUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
@@ -39,6 +26,18 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
 import android.widget.Toast;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
+import org.opendatakit.utilities.MediaUtils;
+import org.opendatakit.utilities.ODKFileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Simple shim for media interactions.

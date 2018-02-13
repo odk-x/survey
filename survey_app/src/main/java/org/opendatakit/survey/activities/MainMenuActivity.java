@@ -33,21 +33,26 @@ import android.os.Parcelable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-
 import org.json.JSONObject;
-import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
+import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
 import org.opendatakit.database.queries.ResumableQuery;
 import org.opendatakit.database.queries.SingleRowQuery;
+import org.opendatakit.database.service.DbHandle;
+import org.opendatakit.database.service.TableHealthInfo;
+import org.opendatakit.database.service.TableHealthStatus;
+import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
 import org.opendatakit.listener.DatabaseConnectionListener;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.logging.WebLoggerIf;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.DynamicPropertiesCallback;
 import org.opendatakit.properties.PropertiesSingleton;
@@ -55,16 +60,6 @@ import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.provider.FormsProviderUtils;
-import org.opendatakit.views.*;
-import org.opendatakit.webkitserver.utilities.DoActionUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.webkitserver.utilities.UrlUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.logging.WebLoggerIf;
-import org.opendatakit.database.service.UserDbInterface;
-import org.opendatakit.database.service.DbHandle;
-import org.opendatakit.database.service.TableHealthInfo;
-import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.fragments.BackPressWebkitConfirmationDialogFragment;
@@ -73,6 +68,13 @@ import org.opendatakit.survey.fragments.InitializationFragment;
 import org.opendatakit.survey.fragments.WebViewFragment;
 import org.opendatakit.survey.logic.FormIdStruct;
 import org.opendatakit.survey.logic.SurveyDataExecutorProcessor;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.views.ExecutorContext;
+import org.opendatakit.views.ExecutorProcessor;
+import org.opendatakit.views.ODKWebView;
+import org.opendatakit.views.OdkData;
+import org.opendatakit.webkitserver.utilities.DoActionUtils;
+import org.opendatakit.webkitserver.utilities.UrlUtils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -91,7 +93,7 @@ import java.util.UUID;
  */
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
-  private static final String t = "MainMenuActivity";
+  private static final String t = MainMenuActivity.class.getSimpleName();
   public enum ScreenList {
     MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
@@ -1631,4 +1633,5 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     return query;
   }
+
 }
