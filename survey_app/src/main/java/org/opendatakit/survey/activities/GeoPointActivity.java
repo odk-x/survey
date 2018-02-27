@@ -27,6 +27,7 @@ import android.location.LocationProvider;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v13.app.ActivityCompat;
+import android.util.Log;
 import android.widget.Toast;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
@@ -84,7 +85,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       );
     } else {
       checkAndEnableProvider(LocationManager.GPS_PROVIDER);
-      checkAndEnableProvider(LocationManager.GPS_PROVIDER);
+      checkAndEnableProvider(LocationManager.NETWORK_PROVIDER);
 
       if (mEnabledProviders.size() < 1) {
         Toast
@@ -117,6 +118,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
     if (mEnabledProviders.size() > 0) {
       for (String provider : mEnabledProviders) {
+        Log.i(t, "requesting location updates from " + provider);
         mLocationManager.requestLocationUpdates(provider, 0, 0, this);
       }
 
@@ -172,12 +174,12 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
   @Override
   public void onProviderDisabled(String provider) {
-
+    Log.w(t, provider + " disabled");
   }
 
   @Override
   public void onProviderEnabled(String provider) {
-
+    Log.i(t, provider + " enabled");
   }
 
   @Override
@@ -189,8 +191,10 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       }
       break;
     case LocationProvider.OUT_OF_SERVICE:
+      Log.w(t, provider + " out of service");
       break;
     case LocationProvider.TEMPORARILY_UNAVAILABLE:
+      Log.w(t, provider + " temporarily unavailable");
       break;
     }
   }
@@ -213,6 +217,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
     if (mEnabledProviders.size() > 0) {
       for (String provider : mEnabledProviders) {
+        Log.i(t, "requesting location updates from " + provider);
         mLocationManager.requestLocationUpdates(provider, 0, 0, this);
       }
 
