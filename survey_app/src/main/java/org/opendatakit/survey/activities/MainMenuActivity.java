@@ -33,22 +33,26 @@ import android.os.Parcelable;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.json.JSONObject;
-import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.application.CommonApplication;
+import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.database.data.OrderedColumns;
 import org.opendatakit.database.data.UserTable;
 import org.opendatakit.database.queries.BindArgs;
 import org.opendatakit.database.queries.ResumableQuery;
 import org.opendatakit.database.queries.SingleRowQuery;
+import org.opendatakit.database.service.DbHandle;
+import org.opendatakit.database.service.TableHealthInfo;
+import org.opendatakit.database.service.TableHealthStatus;
+import org.opendatakit.database.service.UserDbInterface;
 import org.opendatakit.database.utilities.QueryUtil;
 import org.opendatakit.exception.ActionNotAuthorizedException;
 import org.opendatakit.exception.ServicesAvailabilityException;
 import org.opendatakit.fragment.AboutMenuFragment;
 import org.opendatakit.listener.DatabaseConnectionListener;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.logging.WebLoggerIf;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.DynamicPropertiesCallback;
 import org.opendatakit.properties.PropertiesSingleton;
@@ -56,16 +60,6 @@ import org.opendatakit.properties.PropertyManager;
 import org.opendatakit.provider.FormsColumns;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.provider.FormsProviderUtils;
-import org.opendatakit.views.*;
-import org.opendatakit.webkitserver.utilities.DoActionUtils;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.webkitserver.utilities.UrlUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.logging.WebLoggerIf;
-import org.opendatakit.database.service.UserDbInterface;
-import org.opendatakit.database.service.DbHandle;
-import org.opendatakit.database.service.TableHealthInfo;
-import org.opendatakit.database.service.TableHealthStatus;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.application.Survey;
 import org.opendatakit.survey.fragments.BackPressWebkitConfirmationDialogFragment;
@@ -74,6 +68,13 @@ import org.opendatakit.survey.fragments.InitializationFragment;
 import org.opendatakit.survey.fragments.WebViewFragment;
 import org.opendatakit.survey.logic.FormIdStruct;
 import org.opendatakit.survey.logic.SurveyDataExecutorProcessor;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.views.ExecutorContext;
+import org.opendatakit.views.ExecutorProcessor;
+import org.opendatakit.views.ODKWebView;
+import org.opendatakit.views.OdkData;
+import org.opendatakit.webkitserver.utilities.DoActionUtils;
+import org.opendatakit.webkitserver.utilities.UrlUtils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -92,7 +93,7 @@ import java.util.UUID;
  */
 public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity {
 
-  private static final String t = "MainMenuActivity";
+  private static final String t = MainMenuActivity.class.getSimpleName();
   public enum ScreenList {
     MAIN_SCREEN, FORM_CHOOSER, WEBKIT, INITIALIZATION_DIALOG, ABOUT_MENU
   };
@@ -116,7 +117,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   private static final String SESSION_VARIABLES = "sessionVariables";
   private static final String SECTION_STATE_SCREEN_HISTORY = "sectionStateScreenHistory";
 
-  private static final String CURRENT_FRAGMENT = "currentFragment";
+  private static final String CURRENT_FRAGMENT_TYPE = "currentFragment";
 
   private static final String QUEUED_ACTIONS = "queuedActions";
   private static final String RESPONSE_JSON = "responseJSON";
@@ -211,7 +212,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
    * Member variables that are saved and restored across orientation changes.
    */
 
-  private ScreenList currentFragment = ScreenList.FORM_CHOOSER;
+  private ScreenList currentFragmentType = ScreenList.FORM_CHOOSER;
 
   private String dispatchStringWaitingForData = null;
   private String actionWaitingForData = null;
@@ -275,7 +276,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if (actionWaitingForData != null) {
       outState.putString(ACTION_WAITING_FOR_DATA, actionWaitingForData);
     }
-    outState.putString(CURRENT_FRAGMENT, currentFragment.name());
+    outState.putString(CURRENT_FRAGMENT_TYPE, currentFragmentType.name());
 
     if (getCurrentForm() != null) {
       outState.putString(FORM_URI, getCurrentForm().formUri.toString());
@@ -337,7 +338,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       setSectionScreenState(pf.screenPath, null);
     }
     setAuxillaryHash(pf.auxillaryHash);
-    currentFragment = ScreenList.WEBKIT;
+    currentFragmentType = ScreenList.WEBKIT;
   }
 
   @Override
@@ -423,8 +424,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       resolveAnyConflicts();
     }
     FragmentManager mgr = this.getFragmentManager();
-    if ( currentFragment != null ) {
-      Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
+    if ( currentFragmentType != null ) {
+      Fragment fragment = mgr.findFragmentByTag(currentFragmentType.name());
       if (fragment instanceof DatabaseConnectionListener) {
         ((DatabaseConnectionListener) fragment).databaseAvailable();
       }
@@ -437,8 +438,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void databaseUnavailable() {
     FragmentManager mgr = this.getFragmentManager();
-    if ( currentFragment != null ) {
-      Fragment fragment = mgr.findFragmentByTag(currentFragment.name());
+    if ( currentFragmentType != null ) {
+      Fragment fragment = mgr.findFragmentByTag(currentFragmentType.name());
       if (fragment instanceof DatabaseConnectionListener) {
         ((DatabaseConnectionListener) fragment).databaseUnavailable();
       }
@@ -744,9 +745,10 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
             savedInstanceState.getString(ACTION_WAITING_FOR_DATA) :
             null;
 
-        currentFragment = ScreenList.valueOf(savedInstanceState.containsKey(CURRENT_FRAGMENT) ?
-            savedInstanceState.getString(CURRENT_FRAGMENT) :
-            currentFragment.name());
+        currentFragmentType = ScreenList.valueOf(savedInstanceState.containsKey(
+            CURRENT_FRAGMENT_TYPE) ?
+            savedInstanceState.getString(CURRENT_FRAGMENT_TYPE) :
+            currentFragmentType.name());
 
         if (savedInstanceState.containsKey(FORM_URI)) {
           FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), Uri.parse(savedInstanceState.getString(FORM_URI)));
@@ -797,7 +799,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         FormIdStruct newForm = FormIdStruct.retrieveFormIdStruct(getContentResolver(), formUri);
         if (newForm == null) {
           // can't find it -- display list of forms
-          currentFragment = ScreenList.FORM_CHOOSER;
+          currentFragmentType = ScreenList.FORM_CHOOSER;
         } else {
           transitionToFormHelper(uri, newForm);
         }
@@ -818,7 +820,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     ((Survey) getApplication()).establishDoNotFireDatabaseConnectionListener(this);
 
-    swapToFragmentView(currentFragment);
+    swapToFragmentView(currentFragmentType);
   }
 
   @Override
@@ -833,7 +835,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
-    if (currentFragment != ScreenList.WEBKIT) {
+    if (currentFragmentType != ScreenList.WEBKIT) {
       ActionBar actionBar = getActionBar();
       actionBar.show();
 
@@ -960,7 +962,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void onBackPressed() {
-    if ( (currentFragment == ScreenList.WEBKIT) &&
+    if ( (currentFragmentType == ScreenList.WEBKIT) &&
         getInstanceId() != null && getCurrentForm() != null &&
         getCurrentForm().tableId != null) {
 
@@ -1127,23 +1129,25 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
         trans = null;
       }
       // flush backward, to the screen we want to go back to
-      currentFragment = newScreenType;
-      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] popping back stack " + currentFragment.name());
-      mgr.popBackStackImmediate(currentFragment.name(), 0);
+      currentFragmentType = newScreenType;
+      WebLogger.getLogger(getAppName()).e(t,  "[" + this.hashCode() + "] popping back stack " + currentFragmentType
+          .name());
+      mgr.popBackStackImmediate(currentFragmentType.name(), 0);
     } else {
       // add transaction to show the screen we want
       if ( trans == null ) {
         trans = mgr.beginTransaction();
       }
-      currentFragment = newScreenType;
-      trans.replace(R.id.main_content, newFragment, currentFragment.name());
-      WebLogger.getLogger(getAppName()).i(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragment.name());
-      trans.addToBackStack(currentFragment.name());
+      currentFragmentType = newScreenType;
+      trans.replace(R.id.main_content, newFragment, currentFragmentType.name());
+      WebLogger.getLogger(getAppName()).i(t,  "[" + this.hashCode() + "] adding to back stack " + currentFragmentType
+          .name());
+      trans.addToBackStack(currentFragmentType.name());
     }
 
     
     // and see if we should re-initialize...
-    if ((currentFragment != ScreenList.INITIALIZATION_DIALOG)
+    if ((currentFragmentType != ScreenList.INITIALIZATION_DIALOG)
         && ((Survey) getApplication()).shouldRunInitializationTask(getAppName())) {
       WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView -- calling clearRunInitializationTask");
       // and immediately clear the should-run flag...
@@ -1162,7 +1166,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     } else {
       // before we actually switch to a WebKit, be sure
       // we have the form definition for it...
-      if (currentFragment == ScreenList.WEBKIT && getCurrentForm() == null) {
+      if (currentFragmentType == ScreenList.WEBKIT && getCurrentForm() == null) {
         // we were sent off to the initialization dialog to try to
         // discover the form. We need to inquire about the form again
         // and, if we cannot find it, report an error to the user.
@@ -1596,7 +1600,8 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       DoActionUtils.processActivityResult(this, view, resultCode, intent,
           dispatchString, action);
     } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      this.swapToFragmentView((currentFragment == null) ? ScreenList.FORM_CHOOSER : currentFragment);
+      this.swapToFragmentView((currentFragmentType == null) ? ScreenList.FORM_CHOOSER :
+          currentFragmentType);
     }
   }
 
@@ -1628,4 +1633,5 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
     return query;
   }
+
 }

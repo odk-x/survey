@@ -14,20 +14,8 @@
 
 package org.opendatakit.survey.activities;
 
-import java.text.DecimalFormat;
-import java.util.HashSet;
-import java.util.Set;
-
-import org.opendatakit.consts.IntentConsts;
-import org.opendatakit.activities.BaseActivity;
-import org.opendatakit.utilities.ODKFileUtils;
-import org.opendatakit.logging.WebLogger;
-import org.opendatakit.survey.R;
-import org.opendatakit.utilities.RuntimePermissionUtils;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -39,15 +27,30 @@ import android.location.LocationProvider;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v13.app.ActivityCompat;
+import android.util.Log;
 import android.widget.Toast;
+import org.opendatakit.activities.BaseActivity;
+import org.opendatakit.consts.IntentConsts;
+import org.opendatakit.fragment.ProgressDialogFragment;
+import org.opendatakit.logging.WebLogger;
+import org.opendatakit.survey.R;
+import org.opendatakit.utilities.ODKFileUtils;
+import org.opendatakit.utilities.RuntimePermissionUtils;
 
-public class GeoPointActivity extends BaseActivity implements LocationListener, ActivityCompat.OnRequestPermissionsResultCallback {
-  private static final String t = "GeoPointActivity";
+import java.text.DecimalFormat;
+import java.util.HashSet;
+import java.util.Set;
+
+public class GeoPointActivity extends BaseActivity implements LocationListener, ActivityCompat
+    .OnRequestPermissionsResultCallback, ProgressDialogFragment.ProgressDialogListener {
+  private static final String t = GeoPointActivity.class.getSimpleName();
+
+  private static final String PROGRESS_DIALOG_TAG = "progressDialogGeoPoint";
 
   // default location accuracy
   private static final double LOCATION_ACCURACY = 5;
 
-  private ProgressDialog mLocationDialog;
+  private ProgressDialogFragment mLocationProgressDialog;
   private LocationManager mLocationManager;
   private Location mLocation;
   private Set<String> mEnabledProviders;
@@ -82,7 +85,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       );
     } else {
       checkAndEnableProvider(LocationManager.GPS_PROVIDER);
-      checkAndEnableProvider(LocationManager.GPS_PROVIDER);
+      checkAndEnableProvider(LocationManager.NETWORK_PROVIDER);
 
       if (mEnabledProviders.size() < 1) {
         Toast
@@ -91,7 +94,6 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       }
     }
 
-    setupLocationDialog();
   }
   
   @Override
@@ -107,11 +109,6 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
     // goes to sleep.
     mLocationManager.removeUpdates(this);
 
-    // We're not using managed dialogs, so we have to dismiss the dialog to
-    // prevent it from
-    // leaking memory.
-    if (mLocationDialog != null && mLocationDialog.isShowing())
-      mLocationDialog.dismiss();
   }
 
   @SuppressLint("MissingPermission") // checked
@@ -121,46 +118,29 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
     if (mEnabledProviders.size() > 0) {
       for (String provider : mEnabledProviders) {
+        Log.i(t, "requesting location updates from " + provider);
         mLocationManager.requestLocationUpdates(provider, 0, 0, this);
       }
 
-      mLocationDialog.show();
+      // show location dialog only if we have at least 1 location provider
+      showLocationProgressDialog();
     }
   }
 
-  /**
-   * Sets up the look and actions for the progress dialog while the GPS is
-   * searching.
-   */
-  private void setupLocationDialog() {
-    // dialog displayed while fetching gps location
-    mLocationDialog = new ProgressDialog(this);
-    DialogInterface.OnClickListener geopointButtonListener = new DialogInterface.OnClickListener() {
-      @Override
-      public void onClick(DialogInterface dialog, int which) {
-        switch (which) {
-        case DialogInterface.BUTTON_POSITIVE:
-          returnLocation();
-          break;
-        case DialogInterface.BUTTON_NEGATIVE:
-          mLocation = null;
-          finish();
-          break;
-        }
-      }
-    };
 
-    // back button doesn't cancel
-    mLocationDialog.setCancelable(false);
-    mLocationDialog.setIndeterminate(true);
-    mLocationDialog.setIcon(android.R.drawable.ic_dialog_info);
-    mLocationDialog.setTitle(getString(R.string.getting_location));
-    mLocationDialog.setMessage(getString(R.string.please_wait_long));
-    mLocationDialog.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.accept_location),
-        geopointButtonListener);
-    mLocationDialog.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.cancel_location),
-        geopointButtonListener);
+  private void showLocationProgressDialog() {
+
+    mLocationProgressDialog = ProgressDialogFragment.eitherReuseOrCreateNew(
+        PROGRESS_DIALOG_TAG, mLocationProgressDialog, getFragmentManager(), getString(R.string
+            .getting_location),
+        getString(R.string.please_wait_long), true, getString(R.string.accept_location),
+        getString(R.string.cancel_location), null);
+
+    if(!mLocationProgressDialog.isAdded()) {
+      mLocationProgressDialog.show(getFragmentManager(), PROGRESS_DIALOG_TAG);
+    }
   }
+
 
   private void returnLocation() {
     if (mLocation != null) {
@@ -178,7 +158,7 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
   public void onLocationChanged(Location location) {
     mLocation = location;
     if (mLocation != null) {
-      mLocationDialog.setMessage(getString(R.string.location_provider_accuracy,
+      mLocationProgressDialog.setMessage(getString(R.string.location_provider_accuracy,
           mLocation.getProvider(), truncateDouble(mLocation.getAccuracy())));
 
       if (mLocation.getAccuracy() <= LOCATION_ACCURACY) {
@@ -194,12 +174,12 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
   @Override
   public void onProviderDisabled(String provider) {
-
+    Log.w(t, provider + " disabled");
   }
 
   @Override
   public void onProviderEnabled(String provider) {
-
+    Log.i(t, provider + " enabled");
   }
 
   @Override
@@ -207,12 +187,14 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
     switch (status) {
     case LocationProvider.AVAILABLE:
       if (mLocation != null) {
-        mLocationDialog.setMessage(getString(R.string.location_accuracy, truncateDouble(mLocation.getAccuracy())));
+        mLocationProgressDialog.setMessage(getString(R.string.location_accuracy, truncateDouble(mLocation.getAccuracy())));
       }
       break;
     case LocationProvider.OUT_OF_SERVICE:
+      Log.w(t, provider + " out of service");
       break;
     case LocationProvider.TEMPORARILY_UNAVAILABLE:
+      Log.w(t, provider + " temporarily unavailable");
       break;
     }
   }
@@ -235,10 +217,11 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
 
     if (mEnabledProviders.size() > 0) {
       for (String provider : mEnabledProviders) {
+        Log.i(t, "requesting location updates from " + provider);
         mLocationManager.requestLocationUpdates(provider, 0, 0, this);
       }
 
-      mLocationDialog.show();
+      showLocationProgressDialog();
       return;
     }
 
@@ -286,5 +269,32 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
       default:
         break;
     }
+  }
+
+  /**
+   * Callback from progressDialogFragment
+   * @param dialog the progressDialogFragment that was pressed
+   */
+  public void onProgressDialogPositiveButtonClick(ProgressDialogFragment dialog) {
+    // take location
+    returnLocation();
+  }
+
+  /**
+   * Callback from progressDialogFragment
+   * @param dialog the progressDialogFragment that was pressed
+   */
+  public void onProgressDialogNegativeButtonClick(ProgressDialogFragment dialog) {
+    // cancel
+    mLocation = null;
+    finish();
+  }
+
+  /**
+   * Callback from progressDialogFragment
+   * @param dialog the progressDialogFragment that was pressed
+   */
+  public void onProgressDialogNeutralButtonClick(ProgressDialogFragment dialog) {
+    // do nothing as no button specified
   }
 }

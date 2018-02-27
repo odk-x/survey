@@ -13,18 +13,12 @@
  */
 package org.opendatakit.survey.application;
 
-import org.opendatakit.application.CommonApplication;
-import org.opendatakit.properties.CommonToolProperties;
-import org.opendatakit.properties.PropertiesSingleton;
-import org.opendatakit.survey.R;
-
-import com.google.firebase.analytics.FirebaseAnalytics ;
-
-import android.content.Context;
-import com.crashlytics.android.Crashlytics;
-import io.fabric.sdk.android.Fabric;
-
 import android.annotation.SuppressLint;
+import com.crashlytics.android.Crashlytics;
+import com.google.firebase.analytics.FirebaseAnalytics;
+import io.fabric.sdk.android.Fabric;
+import org.opendatakit.application.CommonApplication;
+import org.opendatakit.survey.R;
 
 /**
  * Extends the Application class to implement
