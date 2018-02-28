@@ -16,13 +16,21 @@ package org.opendatakit.survey.fragments;
 
 import android.app.ListFragment;
 import android.app.LoaderManager;
+import android.content.Context;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
+
+import org.apache.commons.lang3.ArrayUtils;
 import org.opendatakit.activities.IAppAwareActivity;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.survey.R;
@@ -32,6 +40,8 @@ import org.opendatakit.survey.utilities.FormListLoader;
 import org.opendatakit.survey.utilities.TableIdFormIdVersionListAdapter;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 /**
  * Fragment displaying the list of available forms to fill out.
@@ -40,6 +50,16 @@ import java.util.ArrayList;
  */
 public class FormChooserListFragment extends ListFragment
     implements LoaderManager.LoaderCallbacks<ArrayList<FormInfo>> {
+
+  private static ArrayList<FormInfo> mItems = new ArrayList<FormInfo>();
+  private TableIdFormIdVersionListAdapter mAdapter;
+  private SharedPreferences mPreferences;
+  private static final String SORT_BY_TABLEID = "sortByTableID";
+  private static final String SORT_BY_NAME = "sortByName";
+
+  // used as key while saving user selected sorting order
+  private static final String SORTING_KEY = "sortKey";
+
 
   @SuppressWarnings("unused") private static final String t = "FormChooserListFragment";
   private static final int FORM_CHOOSER_LIST_LOADER = 0x02;
@@ -50,15 +70,63 @@ public class FormChooserListFragment extends ListFragment
 
   // data that is not retained
 
-  private TableIdFormIdVersionListAdapter mAdapter;
+
   private View view;
+
+  @Override
+  public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+
+    inflater.inflate(R.menu.sort,menu);
+
+    if(mPreferences.getString(SORTING_KEY,SORT_BY_NAME).equals(SORT_BY_NAME)){
+      menu.findItem(R.id.nameSort).setChecked(true);
+    }else {
+      menu.findItem(R.id.tableIdSort).setChecked(true);
+    }
+
+    super.onCreateOptionsMenu(menu, inflater);
+  }
+
+  @Override
+  public boolean onOptionsItemSelected(MenuItem item) {
+
+    switch(item.getItemId()){
+
+      case R.id.nameSort:
+        if (!item.isChecked()) {
+          item.setChecked(true);
+        }
+        changeSortingOrder(mPreferences,SORT_BY_NAME);
+        sortFormList(mItems,SORT_BY_NAME);
+        break;
+
+      case R.id.tableIdSort:
+        changeSortingOrder(mPreferences,SORT_BY_TABLEID);
+        sortFormList(mItems,SORT_BY_TABLEID);
+        if (!item.isChecked()) {
+          item.setChecked(true);
+        }
+        break;
+
+      default:
+        return super.onOptionsItemSelected(item);
+    }
+
+    mAdapter.swapData(mItems);
+    return true;
+
+  }
 
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setHasOptionsMenu(true);
   }
+
 
   @Override public void onActivityCreated(Bundle savedInstanceState) {
     super.onActivityCreated(savedInstanceState);
+
+    mPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
 
     // render total instance view
     mAdapter = new TableIdFormIdVersionListAdapter(getActivity(), R.layout.two_item, R.id.text1,
@@ -102,17 +170,89 @@ public class FormChooserListFragment extends ListFragment
 
   @Override public void onLoadFinished(Loader<ArrayList<FormInfo>> loader,
       ArrayList<FormInfo> dataset) {
+
+    String sortingOrder = getActivity().getPreferences(Context.MODE_PRIVATE)
+                          .getString(SORTING_KEY,SORT_BY_NAME);
+    mItems = dataset;
+    sortFormList(dataset,sortingOrder);
+
     // Swap the new cursor in. (The framework will take care of closing the
     // old cursor once we return.)
-    mAdapter.clear();
-    mAdapter.addAll(dataset);
-    mAdapter.notifyDataSetChanged();
+    mAdapter.swapData(dataset);
   }
+
 
   @Override public void onLoaderReset(Loader<ArrayList<FormInfo>> loader) {
     // This is called when the last Cursor provided to onLoadFinished()
     // above is about to be closed. We need to make sure we are no
     // longer using it.
     mAdapter.clear();
+  }
+
+  //  Sorts the forms list according to sorting order
+  private void sortFormList(ArrayList<FormInfo> forms, String sortingOrder) {
+
+    if (sortingOrder.equals(SORT_BY_NAME)) {
+      Collections.sort(forms, new Comparator<FormInfo>() {
+        @Override
+        public int compare(FormInfo lhs, FormInfo rhs) {
+          int cmp = lhs.formDisplayName.compareTo(rhs.formDisplayName);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = lhs.tableId.compareTo(rhs.tableId);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = lhs.formId.compareTo(rhs.formId);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = lhs.formVersion.compareTo(rhs.formVersion);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = lhs.formDisplaySubtext.compareTo(rhs.formDisplaySubtext);
+          return cmp;
+        }
+      });
+    } else if (sortingOrder.equals(SORT_BY_TABLEID)) {
+
+      Collections.sort(mItems, new Comparator<FormInfo>() {
+        @Override
+        public int compare(FormInfo left, FormInfo right) {
+          int cmp = left.tableId.compareTo(right.tableId);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = left.formDisplayName.compareTo(right.formDisplayName);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = left.formId.compareTo(right.formId);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = left.formVersion.compareTo(right.formVersion);
+          if (cmp != 0) {
+            return cmp;
+          }
+          cmp = left.formDisplaySubtext.compareTo(right.formDisplaySubtext);
+          return cmp;
+        }
+      });
+      mAdapter.swapData(mItems);
+
+    }
+  }
+
+  // Saves/changes user selected sorting order in preference file
+
+  private  void changeSortingOrder(SharedPreferences preferences,String order){
+
+    SharedPreferences.Editor editor = preferences.edit();
+    editor.putString(SORTING_KEY,order);
+    editor.commit();
+
   }
 }

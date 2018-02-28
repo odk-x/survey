@@ -55,8 +55,10 @@ public class TableIdFormIdVersionListAdapter extends BaseAdapter {
     mItems.clear();
   }
 
-  public void addAll(ArrayList<FormInfo> items) {
+  public void swapData(ArrayList<FormInfo> items) {
+    mItems.clear();
     mItems.addAll(items);
+    notifyDataSetChanged();
   }
 
   @Override
