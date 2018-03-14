@@ -32,6 +32,8 @@ import android.widget.ListView;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.opendatakit.activities.IAppAwareActivity;
+import org.opendatakit.properties.CommonToolProperties;
+import org.opendatakit.properties.PropertiesSingleton;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.survey.R;
 import org.opendatakit.survey.activities.IOdkSurveyActivity;
@@ -43,6 +45,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import static org.opendatakit.properties.CommonToolProperties.*;
+
 /**
  * Fragment displaying the list of available forms to fill out.
  *
@@ -53,12 +57,13 @@ public class FormChooserListFragment extends ListFragment
 
   private static ArrayList<FormInfo> mItems = new ArrayList<FormInfo>();
   private TableIdFormIdVersionListAdapter mAdapter;
-  private SharedPreferences mPreferences;
+  private  PropertiesSingleton mPropSingleton;
+  private static String mAppName;
   private static final String SORT_BY_TABLEID = "sortByTableID";
-  private static final String SORT_BY_NAME = "sortByName";
 
-  // used as key while saving user selected sorting order
-  private static final String SORTING_KEY = "sortKey";
+  /*this is also used in CommonToolProperties.java to set default value for sorting order ,if updated
+    change there too..*/
+  private static final String SORT_BY_NAME = "sortByName";
 
 
   @SuppressWarnings("unused") private static final String t = "FormChooserListFragment";
@@ -73,12 +78,13 @@ public class FormChooserListFragment extends ListFragment
 
   private View view;
 
+
   @Override
   public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
 
     inflater.inflate(R.menu.sort,menu);
 
-    if(mPreferences.getString(SORTING_KEY,SORT_BY_NAME).equals(SORT_BY_NAME)){
+    if(mPropSingleton.getProperty(KEY_SURVEY_SORT_ORDER).equals(SORT_BY_NAME)){
       menu.findItem(R.id.nameSort).setChecked(true);
     }else {
       menu.findItem(R.id.tableIdSort).setChecked(true);
@@ -96,12 +102,12 @@ public class FormChooserListFragment extends ListFragment
         if (!item.isChecked()) {
           item.setChecked(true);
         }
-        changeSortingOrder(mPreferences,SORT_BY_NAME);
+        mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER,SORT_BY_NAME));
         sortFormList(mItems,SORT_BY_NAME);
         break;
 
       case R.id.tableIdSort:
-        changeSortingOrder(mPreferences,SORT_BY_TABLEID);
+        mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER,SORT_BY_TABLEID));
         sortFormList(mItems,SORT_BY_TABLEID);
         if (!item.isChecked()) {
           item.setChecked(true);
@@ -126,7 +132,8 @@ public class FormChooserListFragment extends ListFragment
   @Override public void onActivityCreated(Bundle savedInstanceState) {
     super.onActivityCreated(savedInstanceState);
 
-    mPreferences = getActivity().getPreferences(Context.MODE_PRIVATE);
+    mAppName = ((IAppAwareActivity) getActivity()).getAppName();
+    mPropSingleton = CommonToolProperties.get(getActivity(),mAppName);
 
     // render total instance view
     mAdapter = new TableIdFormIdVersionListAdapter(getActivity(), R.layout.two_item, R.id.text1,
@@ -157,7 +164,7 @@ public class FormChooserListFragment extends ListFragment
     FormInfo info = (FormInfo) mAdapter.getItem(position);
     Uri formUri = Uri.withAppendedPath(Uri.withAppendedPath(
         Uri.withAppendedPath(FormsProviderAPI.CONTENT_URI,
-            ((IAppAwareActivity) getActivity()).getAppName()), info.tableId), info.formId);
+            mAppName), info.tableId), info.formId);
 
     ((IOdkSurveyActivity) getActivity()).chooseForm(formUri);
   }
@@ -171,8 +178,7 @@ public class FormChooserListFragment extends ListFragment
   @Override public void onLoadFinished(Loader<ArrayList<FormInfo>> loader,
       ArrayList<FormInfo> dataset) {
 
-    String sortingOrder = getActivity().getPreferences(Context.MODE_PRIVATE)
-                          .getString(SORTING_KEY,SORT_BY_NAME);
+    String sortingOrder = mPropSingleton.getProperty(KEY_SURVEY_SORT_ORDER);
     mItems = dataset;
     sortFormList(dataset,sortingOrder);
 
@@ -196,48 +202,48 @@ public class FormChooserListFragment extends ListFragment
       Collections.sort(forms, new Comparator<FormInfo>() {
         @Override
         public int compare(FormInfo lhs, FormInfo rhs) {
-          int cmp = lhs.formDisplayName.compareTo(rhs.formDisplayName);
+          int cmp = lhs.formDisplayName.compareToIgnoreCase(rhs.formDisplayName);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = lhs.tableId.compareTo(rhs.tableId);
+          cmp = lhs.tableId.compareToIgnoreCase(rhs.tableId);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = lhs.formId.compareTo(rhs.formId);
+          cmp = lhs.formId.compareToIgnoreCase(rhs.formId);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = lhs.formVersion.compareTo(rhs.formVersion);
+          cmp = lhs.formVersion.compareToIgnoreCase(rhs.formVersion);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = lhs.formDisplaySubtext.compareTo(rhs.formDisplaySubtext);
+          cmp = lhs.formDisplaySubtext.compareToIgnoreCase(rhs.formDisplaySubtext);
           return cmp;
         }
       });
     } else if (sortingOrder.equals(SORT_BY_TABLEID)) {
 
-      Collections.sort(mItems, new Comparator<FormInfo>() {
+      Collections.sort(forms, new Comparator<FormInfo>() {
         @Override
         public int compare(FormInfo left, FormInfo right) {
-          int cmp = left.tableId.compareTo(right.tableId);
+          int cmp = left.tableId.compareToIgnoreCase(right.tableId);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = left.formDisplayName.compareTo(right.formDisplayName);
+          cmp = left.formDisplayName.compareToIgnoreCase(right.formDisplayName);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = left.formId.compareTo(right.formId);
+          cmp = left.formId.compareToIgnoreCase(right.formId);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = left.formVersion.compareTo(right.formVersion);
+          cmp = left.formVersion.compareToIgnoreCase(right.formVersion);
           if (cmp != 0) {
             return cmp;
           }
-          cmp = left.formDisplaySubtext.compareTo(right.formDisplaySubtext);
+          cmp = left.formDisplaySubtext.compareToIgnoreCase(right.formDisplaySubtext);
           return cmp;
         }
       });
@@ -246,13 +252,4 @@ public class FormChooserListFragment extends ListFragment
     }
   }
 
-  // Saves/changes user selected sorting order in preference file
-
-  private  void changeSortingOrder(SharedPreferences preferences,String order){
-
-    SharedPreferences.Editor editor = preferences.edit();
-    editor.putString(SORTING_KEY,order);
-    editor.commit();
-
-  }
 }
