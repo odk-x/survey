@@ -57,6 +57,7 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
 
     Cursor c = null;
     try {
+
       c = getContext().getContentResolver().query(baseUri, null, null, null, null);
 
       if ( c != null && c.moveToFirst() ) {
@@ -94,29 +95,6 @@ public class FormListLoader extends AsyncTaskLoader<ArrayList<FormInfo>> {
       }
     }
 
-    // order this by the localized display name
-    Collections.sort(forms, new Comparator<FormInfo>() {
-      @Override public int compare(FormInfo lhs, FormInfo rhs) {
-        int cmp = lhs.formDisplayName.compareTo(rhs.formDisplayName);
-        if ( cmp != 0 ) {
-          return cmp;
-        }
-        cmp = lhs.tableId.compareTo(rhs.tableId);
-        if ( cmp != 0 ) {
-          return cmp;
-        }
-        cmp = lhs.formId.compareTo(rhs.formId);
-        if ( cmp != 0 ) {
-          return cmp;
-        }
-        cmp = lhs.formVersion.compareTo(rhs.formVersion);
-        if ( cmp != 0 ) {
-          return cmp;
-        }
-        cmp = lhs.formDisplaySubtext.compareTo(rhs.formDisplaySubtext);
-        return cmp;
-      }
-    });
 
     return forms;
   }
