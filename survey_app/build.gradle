@@ -111,10 +111,10 @@ allprojects {
 
 dependencies {
     implementation fileTree(include: '*.jar', dir: 'libs')
-    implementation 'com.android.support:support-annotations:27.0.2'
-    implementation 'com.android.support:support-v13:27.0.2'
-    implementation 'com.google.firebase:firebase-core:11.6.2'
-    implementation ('com.crashlytics.sdk.android:crashlytics:2.8.0@aar') {
+    implementation 'com.android.support:support-annotations:27.1.0'
+    implementation 'com.android.support:support-v13:27.1.0'
+    implementation 'com.google.firebase:firebase-core:11.8.0'
+    implementation ('com.crashlytics.sdk.android:crashlytics:2.9.1@aar') {
         transitive =true;
     }
 
@@ -143,6 +143,13 @@ dependencies {
     // Testing dependencies
     testCompile 'junit:junit:4.12'
     androidTestCompile 'com.android.support.test:runner:1.0.1'
-    androidTestCompile 'com.android.support:support-annotations:27.0.2'
+    androidTestCompile 'com.android.support:support-annotations:27.1.0'
 
+}
+
+task grantPermissionForODKApp () {
+    doLast {
+        grantServicesReadExternalStoragePermission.execute()
+        grantServicesWriteExternalStoragePermission.execute()
+    }
 }
