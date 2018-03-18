@@ -161,10 +161,10 @@ public class AndroidShortcuts extends BaseActivity {
         } else {
           row = convertView;
         }
-        TextView vw = (TextView) row.findViewById(R.id.shortcut_title);
+        TextView vw = row.findViewById(R.id.shortcut_title);
         vw.setText(getItem(position).name);
 
-        ImageView iv = (ImageView) row.findViewById(R.id.shortcut_icon);
+        ImageView iv = row.findViewById(R.id.shortcut_icon);
         iv.setImageBitmap(getItem(position).icon);
 
         return row;

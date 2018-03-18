@@ -178,7 +178,7 @@ public class DrawActivity extends BaseActivity {
     LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
     RelativeLayout v = (RelativeLayout) inflater.inflate(
             R.layout.draw_layout, null);
-    LinearLayout ll = (LinearLayout) v.findViewById(R.id.drawViewLayout);
+    LinearLayout ll = v.findViewById(R.id.drawViewLayout);
 
     drawView = new DrawView(this, OPTION_SIGNATURE.equals(loadOption),
             savepointImage);
@@ -202,7 +202,7 @@ public class DrawActivity extends BaseActivity {
     pointPaint.setStyle(Paint.Style.FILL_AND_STROKE);
     pointPaint.setStrokeWidth(10);
 
-    btnDrawColor = (Button) findViewById(R.id.btnSelectColor);
+    btnDrawColor = findViewById(R.id.btnSelectColor);
     btnDrawColor.setTextColor(getInverseColor(currentColor));
     btnDrawColor.getBackground().setColorFilter(currentColor,
             PorterDuff.Mode.SRC_ATOP);
@@ -227,7 +227,7 @@ public class DrawActivity extends BaseActivity {
         cpd.show();
       }
     });
-    btnFinished = (Button) findViewById(R.id.btnFinishDraw);
+    btnFinished = findViewById(R.id.btnFinishDraw);
     btnFinished.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -235,7 +235,7 @@ public class DrawActivity extends BaseActivity {
         SaveAndClose();
       }
     });
-    btnReset = (Button) findViewById(R.id.btnResetDraw);
+    btnReset = findViewById(R.id.btnResetDraw);
     btnReset.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {
@@ -243,7 +243,7 @@ public class DrawActivity extends BaseActivity {
         Reset();
       }
     });
-    btnCancel = (Button) findViewById(R.id.btnCancelDraw);
+    btnCancel = findViewById(R.id.btnCancelDraw);
     btnCancel.setOnClickListener(new View.OnClickListener() {
       @Override
       public void onClick(View v) {

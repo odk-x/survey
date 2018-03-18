@@ -278,8 +278,8 @@ public class SplashScreenActivity extends BaseLauncherActivity {
   private void startSplashScreen(String path) {
 
     // add items to the splash screen here. makes things less distracting.
-    ImageView iv = (ImageView) findViewById(R.id.splash);
-    LinearLayout ll = (LinearLayout) findViewById(R.id.splash_default);
+    ImageView iv = findViewById(R.id.splash);
+    LinearLayout ll = findViewById(R.id.splash_default);
 
     File f = new File(path);
     if (f.exists()) {
