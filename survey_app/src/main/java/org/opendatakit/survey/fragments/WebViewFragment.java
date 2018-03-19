@@ -92,8 +92,8 @@ public class WebViewFragment extends Fragment implements DatabaseConnectionListe
       return;
     }
 
-    OdkSurveyWebView webView = (OdkSurveyWebView) getView().findViewById(R.id.webkit);
-    TextView noDatabase = (TextView) getView().findViewById(android.R.id.empty);
+    OdkSurveyWebView webView = getView().findViewById(R.id.webkit);
+    TextView noDatabase = getView().findViewById(android.R.id.empty);
 
     if ( Survey.getInstance().getDatabase() != null ) {
       webView.setVisibility(View.VISIBLE);

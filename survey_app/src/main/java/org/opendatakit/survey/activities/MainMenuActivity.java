@@ -1521,7 +1521,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     }
     if ( responseJSON != null) {
       this.queueResponseJSON.push(responseJSON);
-      final ODKWebView webView = (ODKWebView) findViewById(R.id.webkit);
+      final ODKWebView webView = findViewById(R.id.webkit);
       if (webView != null) {
         final String appName = getAppName();
         runOnUiThread(new Runnable() {
@@ -1583,7 +1583,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
     WebLogger.getLogger(getAppName()).i(t, "onActivityResult");
-    ODKWebView view = (ODKWebView) findViewById(R.id.webkit);
+    ODKWebView view = findViewById(R.id.webkit);
 
     if (requestCode == HANDLER_ACTIVITY_CODE) {
       // save persisted values into a local variable
