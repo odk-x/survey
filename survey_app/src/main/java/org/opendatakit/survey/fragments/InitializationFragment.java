@@ -102,8 +102,6 @@ public class InitializationFragment extends Fragment implements InitializationLi
     if (initState == InitializationState.START) {
       WebLogger.getLogger(((IAppAwareActivity) getActivity()).getAppName()).i(t,
           "onResume -- calling initializeAppName");
-      msgManager.createProgressDialog(mainDialogTitle, getString(R.string.please_wait),
-          getFragmentManager());
       Survey.getInstance().initializeAppName(((IAppAwareActivity) getActivity()).getAppName(), this);
       initState = InitializationState.IN_PROGRESS;
     } else {
@@ -163,8 +161,8 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
   @Override
   public void initializationProgressUpdate(String displayString) {
-    if(msgManager != null && msgManager.displayingProgressDialog()) {
-      msgManager.updateProgressDialogMessage(displayString, getFragmentManager());
+    if(msgManager != null) {
+      updateProgressDialog(displayString);
     }
   }
   /**
@@ -184,9 +182,19 @@ public class InitializationFragment extends Fragment implements InitializationLi
 
   @Override
   public void databaseUnavailable() {
-    if(msgManager != null && msgManager.displayingProgressDialog()) {
-      msgManager.updateProgressDialogMessage(getString(R.string.database_unavailable), getFragmentManager());
+    if(msgManager != null) {
+      updateProgressDialog(getString(R.string.database_unavailable));
     }
   }
 
+  private void updateProgressDialog(String displayString) {
+    if (!msgManager.displayingProgressDialog()) {
+      msgManager.createProgressDialog(mainDialogTitle, getString(R.string.please_wait),
+          getFragmentManager());
+    } else {
+      if (msgManager.hasDialogBeenCreated()) {
+        msgManager.updateProgressDialogMessage(displayString, getFragmentManager());
+      }
+    }
+  }
 }
