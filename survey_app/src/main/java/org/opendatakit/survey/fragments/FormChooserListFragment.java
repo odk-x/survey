@@ -14,10 +14,10 @@
 
 package org.opendatakit.survey.fragments;
 
-import android.app.ListFragment;
-import android.app.LoaderManager;
+import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
 import android.content.Context;
-import android.content.Loader;
+import android.support.v4.content.Loader;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;

@@ -17,11 +17,11 @@ package org.opendatakit.survey.activities;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.AlertDialog;
-import android.app.DialogFragment;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentManager.BackStackEntry;
-import android.app.FragmentTransaction;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentManager.BackStackEntry;
+import android.support.v4.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.ComponentName;
 import android.content.DialogInterface;
@@ -423,7 +423,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     if ( getAppName() != null ) {
       resolveAnyConflicts();
     }
-    FragmentManager mgr = this.getFragmentManager();
+    FragmentManager mgr = this.getSupportFragmentManager();
     if ( currentFragmentType != null ) {
       Fragment fragment = mgr.findFragmentByTag(currentFragmentType.name());
       if (fragment instanceof DatabaseConnectionListener) {
@@ -437,7 +437,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public void databaseUnavailable() {
-    FragmentManager mgr = this.getFragmentManager();
+    FragmentManager mgr = this.getSupportFragmentManager();
     if ( currentFragmentType != null ) {
       Fragment fragment = mgr.findFragmentByTag(currentFragmentType.name());
       if (fragment instanceof DatabaseConnectionListener) {
@@ -931,7 +931,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
 
   private void popBackStack(PopBackStackArgs arg) {
-    FragmentManager mgr = getFragmentManager();
+    FragmentManager mgr = getSupportFragmentManager();
     int idxLast = mgr.getBackStackEntryCount() - 2;
     if (idxLast < 0) {
       Intent result = new Intent();
@@ -968,14 +968,14 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
       // try to retrieve the active dialog
       DialogFragment dialog = (DialogFragment)
-          getFragmentManager().findFragmentByTag(BACKPRESS_DIALOG_TAG);
+          getSupportFragmentManager().findFragmentByTag(BACKPRESS_DIALOG_TAG);
 
       if (dialog != null && dialog.getDialog() != null) {
         // as-is
       } else {
         dialog = new BackPressWebkitConfirmationDialogFragment();
       }
-      dialog.show(getFragmentManager(), BACKPRESS_DIALOG_TAG);
+      dialog.show(getSupportFragmentManager(), BACKPRESS_DIALOG_TAG);
     } else {
       popBackStack(PopBackStackArgs.NOT_A_FORM);
     }
@@ -1083,7 +1083,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   public void swapToFragmentView(ScreenList newScreenType) {
     WebLogger.getLogger(getAppName()).i(t, "swapToFragmentView: " + newScreenType.name());
-    FragmentManager mgr = getFragmentManager();
+    FragmentManager mgr = getSupportFragmentManager();
     FragmentTransaction trans = null;
     Fragment newFragment = null;
     if (newScreenType == ScreenList.MAIN_SCREEN) {
