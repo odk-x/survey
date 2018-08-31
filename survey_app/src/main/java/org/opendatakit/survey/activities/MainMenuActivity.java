@@ -1594,9 +1594,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       // are responses available. Clear the persisted values before this signal.
       DoActionUtils.processActivityResult(this, view, resultCode, intent,
           dispatchString, action);
-    } else if (requestCode == SYNC_ACTIVITY_CODE) {
-      this.swapToFragmentView((currentFragmentType == null) ? ScreenList.FORM_CHOOSER :
-          currentFragmentType);
     }
   }
 
