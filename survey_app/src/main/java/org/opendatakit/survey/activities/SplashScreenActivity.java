@@ -77,6 +77,7 @@ public class SplashScreenActivity extends BaseLauncherActivity {
 
   @Override
   public void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
     outState.putBoolean("started", started);
   }
 
