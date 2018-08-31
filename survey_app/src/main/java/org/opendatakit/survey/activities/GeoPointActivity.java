@@ -131,7 +131,8 @@ public class GeoPointActivity extends BaseActivity implements LocationListener, 
   private void showLocationProgressDialog() {
 
     mLocationProgressDialog = ProgressDialogFragment.eitherReuseOrCreateNew(
-        PROGRESS_DIALOG_TAG, mLocationProgressDialog, getFragmentManager(), getString(R.string
+        PROGRESS_DIALOG_TAG, mLocationProgressDialog, getSupportFragmentManager(), getString(R
+            .string
             .getting_location),
         getString(R.string.please_wait_long), true, getString(R.string.accept_location),
         getString(R.string.cancel_location), null);

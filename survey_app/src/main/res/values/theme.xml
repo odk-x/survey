@@ -2,17 +2,18 @@
 <resources>
     <!-- ActionBar style -->
     <style name="OdkActionBar"
-           parent="@android:style/Widget.Holo.Light.ActionBar.Solid">
+        parent="Widget.AppCompat.Light.ActionBar.Solid">
         <item name="android:displayOptions">useLogo</item>
         <item name="android:background">#ffffff</item>
     </style>
-    
-    <style name="Opendatakit" parent="android:style/Theme.Holo.Light">
+
+    <style name="Opendatakit" parent="Theme.AppCompat.Light">
 	    <item name="android:scrollbarThumbHorizontal">@drawable/thumb</item>
 	    <item name="android:scrollbarThumbVertical">@drawable/thumb</item>
 	    <item name="android:scrollbarSize">2.5mm</item>
 	    <item name="android:scrollbarAlwaysDrawVerticalTrack">true</item>
 	    <item name="android:scrollbarAlwaysDrawHorizontalTrack">true</item>
         <item name="android:actionBarStyle">@style/OdkActionBar</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
     </style>
 </resources>
