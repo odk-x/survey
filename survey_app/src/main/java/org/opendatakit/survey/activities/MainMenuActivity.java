@@ -808,9 +808,6 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       createErrorDialog(e.getMessage(), EXIT);
     } finally {
       setContentView(R.layout.main_screen);
-
-      ActionBar actionBar = getActionBar();
-      actionBar.show();
     }
   }
 
@@ -836,8 +833,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
     int showOption = MenuItem.SHOW_AS_ACTION_IF_ROOM;
     MenuItem item;
     if (currentFragmentType != ScreenList.WEBKIT) {
-      ActionBar actionBar = getActionBar();
-      actionBar.show();
+      getSupportActionBar().show();
 
       item = menu.add(Menu.NONE, MENU_CLOUD_FORMS, Menu.NONE, getString(R.string.get_forms));
       item.setIcon(R.drawable.ic_cached_black_24dp).setShowAsAction(showOption);
@@ -848,8 +844,7 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
       item = menu.add(Menu.NONE, MENU_ABOUT, Menu.NONE, getString(R.string.about));
       item.setIcon(R.drawable.ic_info_outline_black_24dp).setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER);
     } else {
-      ActionBar actionBar = getActionBar();
-      actionBar.hide();
+      getSupportActionBar().hide();
     }
 
     return true;
