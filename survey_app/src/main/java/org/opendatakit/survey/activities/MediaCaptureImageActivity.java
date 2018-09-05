@@ -22,11 +22,13 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
+import android.support.v4.content.FileProvider;
 import android.widget.Toast;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.logging.WebLogger;
 import org.opendatakit.survey.R;
+import org.opendatakit.survey.consts.ProviderConsts;
 import org.opendatakit.utilities.MediaUtils;
 import org.opendatakit.utilities.ODKFileUtils;
 
@@ -173,7 +175,12 @@ public class MediaCaptureImageActivity extends BaseActivity {
           }
         }
       }
-      i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, Uri.fromFile(mediaFile));
+
+      Uri uri = FileProvider.getUriForFile(
+          getApplicationContext(), ProviderConsts.FILE_PROVIDER_AUTHORITY, mediaFile);
+
+      i.putExtra(android.provider.MediaStore.EXTRA_OUTPUT, uri);
+      i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 
       try {
         hasLaunched = true;

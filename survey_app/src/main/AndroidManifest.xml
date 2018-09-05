@@ -125,6 +125,16 @@
             </intent-filter>
         </activity>
 
+        <provider
+            android:authorities="org.opendatakit.survey.fileprovider"
+            android:name="android.support.v4.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true" >
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <meta-data
             android:name="com.google.android.maps.v2.API_KEY"
             android:value="AIzaSyBBdNVHO1BUmWpFp1LxOUwZEMaWd3gsqxw"/>
