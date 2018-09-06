@@ -3,6 +3,5 @@ build
 .idea
 local.properties
 *.iml
-survey_app/google-services.json
 survey_app/fabric.properties
 odkanalytics/
