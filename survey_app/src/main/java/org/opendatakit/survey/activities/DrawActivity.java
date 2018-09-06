@@ -26,6 +26,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.logging.WebLogger;
@@ -38,6 +39,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * Created by clarice on 8/19/16.
@@ -58,6 +60,7 @@ public class DrawActivity extends BaseActivity {
   private String loadOption = null;
   private File refImage = null;
   private File output = null;
+  private Uri outputUri = null;
   private File savepointImage = null;
 
   private Button btnDrawColor;
@@ -81,7 +84,7 @@ public class DrawActivity extends BaseActivity {
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     try {
-      saveFile(savepointImage);
+      saveFile(new FileOutputStream(savepointImage));
     } catch (FileNotFoundException e) {
       e.printStackTrace();
     }
@@ -145,7 +148,8 @@ public class DrawActivity extends BaseActivity {
       }
       Uri uri = (Uri) extras.get(EXTRA_OUTPUT);
       if (uri != null) {
-        output = new File(uri.getPath());
+        output = null;
+        outputUri = uri;
       } else {
         output = new File(ODKFileUtils.getTempFile(mAppName));
       }
@@ -264,7 +268,15 @@ public class DrawActivity extends BaseActivity {
 
   private void SaveAndClose() {
     try {
-      saveFile(output);
+      OutputStream outputStream;
+      if (output != null) {
+        outputStream = new FileOutputStream(output);
+      } else if (outputUri != null) {
+        outputStream = getContentResolver().openOutputStream(outputUri, "rw");
+      } else {
+        throw new IllegalStateException("Neither output nor outputUri is non-null");
+      }
+      saveFile(outputStream);
       setResult(Activity.RESULT_OK);
     } catch (FileNotFoundException e) {
       e.printStackTrace();
@@ -273,24 +285,22 @@ public class DrawActivity extends BaseActivity {
     this.finish();
   }
 
-  private void saveFile(File f) throws FileNotFoundException {
+  private void saveFile(OutputStream outputStream) {
     if ( drawView.getWidth() == 0 || drawView.getHeight() == 0 ) {
       // apparently on 4.x, the orientation change notification can occur
       // sometime before the view is rendered. In that case, the view
       // dimensions will not be known.
       Log.e(t,"view has zero width or zero height");
     } else {
-      FileOutputStream fos;
-      fos = new FileOutputStream(f);
       Bitmap bitmap = Bitmap.createBitmap(drawView.getWidth(),
               drawView.getHeight(), Bitmap.Config.ARGB_8888);
       Canvas canvas = new Canvas(bitmap);
       drawView.draw(canvas);
-      bitmap.compress(Bitmap.CompressFormat.JPEG, 70, fos);
+      bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream);
       try {
-        if ( fos != null ) {
-          fos.flush();
-          fos.close();
+        if ( outputStream != null ) {
+          outputStream.flush();
+          outputStream.close();
         }
       } catch ( Exception e) {
       }
