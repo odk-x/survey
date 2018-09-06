@@ -155,3 +155,5 @@ task grantPermissionForODKApp () {
         grantServicesWriteExternalStoragePermission.execute()
     }
 }
+
+apply plugin: 'com.google.gms.google-services'

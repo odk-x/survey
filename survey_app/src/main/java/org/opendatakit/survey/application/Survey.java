@@ -46,6 +46,8 @@ public class Survey extends CommonApplication {
 
     Fabric.with(this, new Crashlytics());
     analytics = FirebaseAnalytics.getInstance(this);
+    analytics.logEvent(FirebaseAnalytics.Event.APP_OPEN, null);
+
   }
 
   @Override
