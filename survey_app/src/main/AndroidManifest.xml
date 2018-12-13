@@ -117,7 +117,7 @@
         <activity
             android:name="org.opendatakit.survey.activities.AndroidShortcuts"
             android:label="@string/shortcut_name"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" >
+            android:theme="@style/Theme.AppCompat.Light.Dialog" >
             <intent-filter>
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />
 
