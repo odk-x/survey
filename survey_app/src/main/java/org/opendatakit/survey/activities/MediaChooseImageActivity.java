@@ -22,6 +22,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
+
+import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.logging.WebLogger;
@@ -31,6 +33,7 @@ import org.opendatakit.utilities.ODKFileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Simple shim for media interactions.
@@ -143,7 +146,35 @@ public class MediaChooseImageActivity extends BaseActivity {
 
     // get gp of chosen file
     Uri selectedMedia = intent.getData();
-    String sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Images.Media.DATA);
+
+    String scheme = selectedMedia.getScheme();
+    File tempOutputFile;
+    String sourceMediaPath;
+    boolean isContentUri = scheme.equals("content");
+
+    if (isContentUri) {
+      try {
+        // if the uri is a content uri, copy the contents of the select media to
+        // a temp cache dir, and use the absolute path of this temp file
+        // as the sourceMediaPath
+        InputStream inputContent = getContentResolver().openInputStream(selectedMedia);
+        String uriType = getContentResolver().getType(selectedMedia);
+        String imageSuffix = "." + uriType.split("/")[1];
+        tempOutputFile = File.createTempFile("tempImage", imageSuffix, getCacheDir());
+        FileUtils.copyInputStreamToFile(inputContent, tempOutputFile);
+        sourceMediaPath = tempOutputFile.getAbsolutePath();
+      } catch (Exception e) {
+        Toast.makeText(this, "DEBUGG: Unable to read file URI to convert to input stream",
+                Toast.LENGTH_SHORT).show();
+        // keep the image as a captured image so user can choose it.
+        setResult(Activity.RESULT_CANCELED);
+        finish();
+        return;
+      }
+    } else {
+      sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Images.Media.DATA);
+    }
+
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
