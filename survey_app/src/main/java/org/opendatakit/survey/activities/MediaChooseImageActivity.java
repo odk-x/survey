@@ -148,7 +148,7 @@ public class MediaChooseImageActivity extends BaseActivity {
     Uri selectedMedia = intent.getData();
 
     String scheme = selectedMedia.getScheme();
-    File tempOutputFile;
+    File tempOutputFile = null;
     String sourceMediaPath;
     boolean isContentUri = scheme.equals("content");
 
@@ -159,12 +159,13 @@ public class MediaChooseImageActivity extends BaseActivity {
         // as the sourceMediaPath
         InputStream inputContent = getContentResolver().openInputStream(selectedMedia);
         String uriType = getContentResolver().getType(selectedMedia);
-        String imageSuffix = "." + uriType.split("/")[1];
-        tempOutputFile = File.createTempFile("tempImage", imageSuffix, getCacheDir());
+        String selectedFileSuffix = "." + uriType.split("/")[1];
+        tempOutputFile = File.createTempFile("tempImage", selectedFileSuffix, getCacheDir());
         FileUtils.copyInputStreamToFile(inputContent, tempOutputFile);
         sourceMediaPath = tempOutputFile.getAbsolutePath();
       } catch (Exception e) {
-        Toast.makeText(this, "DEBUGG: Unable to read file URI to convert to input stream",
+        WebLogger.getLogger(appName).e(t, "Failed to copy " + tempOutputFile.getAbsolutePath());
+        Toast.makeText(this, "Copy of media attachment failed",
                 Toast.LENGTH_SHORT).show();
         // keep the image as a captured image so user can choose it.
         setResult(Activity.RESULT_CANCELED);
@@ -188,6 +189,13 @@ public class MediaChooseImageActivity extends BaseActivity {
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
+    } finally {
+      // delete the tempOutputFile if created
+      if (tempOutputFile != null) {
+        if (!tempOutputFile.delete()) {
+          WebLogger.getLogger(appName).e(t, "Failed to delete " + tempOutputFile.getAbsolutePath());
+        }
+      }
     }
 
     WebLogger.getLogger(appName).i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
