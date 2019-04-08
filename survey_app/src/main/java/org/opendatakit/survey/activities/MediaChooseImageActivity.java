@@ -146,8 +146,26 @@ public class MediaChooseImageActivity extends BaseActivity {
 
     // get gp of chosen file
     Uri selectedMedia = intent.getData();
+    if (selectedMedia == null) {
+      WebLogger.getLogger(appName).e(t, "Selected Media URI is null");
+      Toast.makeText(this, "Selected Media has a null URI",
+              Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
 
+    // Get the scheme to determine whether the selected media URI is a content URI
     String scheme = selectedMedia.getScheme();
+    if (scheme == null) {
+      WebLogger.getLogger(appName).e(t, "Selected Media URI scheme is null");
+      Toast.makeText(this, "Selected Media URI has a null scheme",
+              Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
+
     File tempOutputFile = null;
     String sourceMediaPath;
     boolean isContentUri = scheme.equals("content");
@@ -158,16 +176,45 @@ public class MediaChooseImageActivity extends BaseActivity {
         // a temp cache dir, and use the absolute path of this temp file
         // as the sourceMediaPath
         InputStream inputContent = getContentResolver().openInputStream(selectedMedia);
+        if (inputContent == null) {
+          WebLogger.getLogger(appName).e(t, "Unable to open input stream for selected media. " +
+                  "Input stream was null");
+          Toast.makeText(this, "Input stream for the selected media was null",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
+
+        // Get the file type of the selected media
         String uriType = getContentResolver().getType(selectedMedia);
+        if (uriType == null) {
+          WebLogger.getLogger(appName).e(t, "MIME type of selected media is null");
+          Toast.makeText(this, "MIME type of selected media is null",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
+
         String selectedFileSuffix = "." + uriType.split("/")[1];
         tempOutputFile = File.createTempFile("tempImage", selectedFileSuffix, getCacheDir());
         FileUtils.copyInputStreamToFile(inputContent, tempOutputFile);
         sourceMediaPath = tempOutputFile.getAbsolutePath();
+        if (sourceMediaPath == null) {
+          WebLogger.getLogger(appName).e(t, "Source Media Path for the selected media (with " +
+                  "content URI) was null");
+          Toast.makeText(this, "Unable to get path for selected media with Content URI",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
       } catch (Exception e) {
-        WebLogger.getLogger(appName).e(t, "Failed to copy " + tempOutputFile.getAbsolutePath());
+        WebLogger.getLogger(appName).e(t, "Failed to copy selected media with content URI to " +
+                        "a temporary output file");
         Toast.makeText(this, "Copy of media attachment failed",
                 Toast.LENGTH_SHORT).show();
-        // keep the image as a captured image so user can choose it.
         setResult(Activity.RESULT_CANCELED);
         finish();
         return;
