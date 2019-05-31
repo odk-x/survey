@@ -13,7 +13,7 @@ License.
 <resources>
 <string name="accept_location">Enregistrer lieu</string>
 <string name="activity_not_found">Pas d\'activité pour gérer: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Annuler</string>
 <string name="cancel_location">Annuler</string>
 <string name="change_language">Changer la Langue</string>
@@ -78,7 +78,7 @@ License.
 <string name="show_splash">Afficher l\'écran de Bienvenue</string>
 <string name="show_splash_summary">Montrer lors du démarrage</string>
 <string name="splash_path">Image sélectionnée</string>
-<string name="default_splash_path">Défaut d\'ODK</string>
+<string name="default_splash_path">Défaut d\'ODK-X</string>
 <string name="select_another_image">Sélectionner une autre Image</string>
 <string name="use_odk_default">Utiliser l\'Image par Défaut</string>
 <string name="change_splash_path">Modifier l\'Image</string>
@@ -151,7 +151,7 @@ License.
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>
