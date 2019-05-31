@@ -13,13 +13,13 @@
 <resources>
 <string name="accept_location">Įrašyti padėtį</string>
 <string name="activity_not_found">Nerasta, kas galėtų valdyti: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Atšaukti</string>
 <string name="cancel_location">Atšaukti</string>
 <string name="change_language">Pakeisti kalbą</string>
 <string name="change_password">Slaptažodis</string>
 <string name="change_server_url">Serverio URL</string>
-<string name="change_username">ODK naudotojo vardas</string>
+<string name="change_username">ODK-X naudotojo vardas</string>
 <string name="default_completed">Numatyta kaip užbaigta</string>
 <string name="default_completed_summary">Numatytuoju atveju pažymėti formą kaip užbaigtą</string>
 <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -78,7 +78,7 @@
 <string name="show_splash">Rodyti užsklandą</string>
 <string name="show_splash_summary">Rodyti užsklandą paleidžiant programą</string>
 <string name="splash_path">Parinkta užsklanda</string>
-<string name="default_splash_path">ODK numatytoji</string>
+<string name="default_splash_path">ODK-X numatytoji</string>
 <string name="select_another_image">Parinkti kitą paveikslėlį</string>
 <string name="use_odk_default">Naudoti numatytąjį paveikslėlį</string>
 <string name="change_splash_path">Pakeisti paveikslėlį</string>
@@ -151,7 +151,7 @@
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>
