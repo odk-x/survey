@@ -13,13 +13,13 @@
 <resources>
 <string name="accept_location">Ghi lại vị trí</string>
 <string name="activity_not_found">Không có hành động phù hợp với: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Huỷ</string>
 <string name="cancel_location">Huỷ</string>
 <string name="change_language">Đổi ngôn ngữ</string>
 <string name="change_password">Mật khẩu</string>
 <string name="change_server_url">Địa chỉ máy chủ</string>
-<string name="change_username">Tên truy cập ODK</string>
+<string name="change_username">Tên truy cập ODK-X</string>
 <string name="default_completed">Mặc định là hoàn thành</string>
 <string name="default_completed_summary">Đánh dấu biểu mẫu là hoàn thành theo mặc định</string>
 <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -78,7 +78,7 @@
 <string name="show_splash">Hiển thị màn hình chào</string>
 <string name="show_splash_summary">Hiển thị khi chương trình khởi động</string>
 <string name="splash_path">Chọn ảnh màn hình chào</string>
-<string name="default_splash_path">Mặc định ODK</string>
+<string name="default_splash_path">Mặc định ODK-X</string>
 <string name="select_another_image">Chọn ảnh khác</string>
 <string name="use_odk_default">Chọn ảnh mặc định</string>
 <string name="change_splash_path">Đổi ảnh</string>
@@ -151,7 +151,7 @@
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>

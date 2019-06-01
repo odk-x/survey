@@ -16,13 +16,13 @@
   <!-- start pre restructuring -->
   <string name="accept_location">Obtener localización</string>
   <string name="activity_not_found">No se ha encontrado ninguna actividad para controlar: %s</string>
-  <string name="app_name">ODK Survey</string>
+  <string name="app_name">ODK-X Survey</string>
   <string name="cancel">Cancelar</string>
   <string name="cancel_location">Cancelar</string>
   <string name="change_language">Cambiar el Idioma</string>
   <string name="change_password">Contraseña</string>
   <string name="change_server_url">URL del Servidor</string>
-  <string name="change_username">Nombre del Usuario de ODK</string>
+  <string name="change_username">Nombre del Usuario de ODK-X</string>
   <string name="default_completed">Marcar por defecto como finalizado</string>
   <string name="default_completed_summary">Marcar el formulario como terminado por defecto</string>
   <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -84,7 +84,7 @@
   <string name="show_splash">Mostar la Pantalla de Inicio</string>
   <string name="show_splash_summary">Muestrar cuando la aplicacion empieza</string>
   <string name="splash_path">Seleccione la Imagen para la Pantalla de Inicio</string>
-  <string name="default_splash_path">Predeterminado por ODK</string>
+  <string name="default_splash_path">Predeterminado por ODK-X</string>
   <string name="select_another_image">Seleccione Otra Imagen</string>
   <string name="use_odk_default">Usar la Imagen por Defecto</string>
   <string name="change_splash_path">Cambiar imagen</string>
@@ -114,7 +114,7 @@
   <string name="no_forms_uploaded">Ningún formulario fue subido.</string>
   <string name="google_account">Seleccione la cuenta de Google</string>
   <string name="selected_google_account_text">Cuenta de Google</string>
-  <string name="server_platform_odk_aggregate">ODK Aggregate</string>
+  <string name="server_platform_odk_aggregate">ODK-X Aggregate</string>
   <string name="server_platform_google_forms">Google Forms</string>
   <string name="server_platform_other">Otro</string>
   <string name="font_size_extra_large">Extra Grande</string>
@@ -168,7 +168,7 @@
   <string name="admin_password_incorrect">Lo sentimos, la contraseña es incorrecta!</string>
   <string name="enter_admin_password">Ingrese contraseña de administrador</string>
   <string name="found_in_menu">Encontrado usando el boton de menú en un formulario</string>
-  <string name="shortcut_name">ODK Survey Formulario</string>
+  <string name="shortcut_name">ODK-X Survey Formulario</string>
   <string name="form_load_error">Lo sentimos, no se puede cargar el formulario.</string>
   <string name="upload_in_progress">¡Lo sentimos, una subida de instancia ya está en progreso!</string>
   <string name="configuring_app">Configurando %1$s &#8230;</string>
@@ -200,7 +200,7 @@
   <string name="mismatched_form_version_info">El formDef.json para Id de formulario: %1$s no coincide con el reclamado formVersion: %2$s</string>
   <string name="delete_yes_with_options">Eliminar formularios &amp; datos</string>
   <string name="file_and_data_deleted_ok">%s formularios(s) y datos elimiados con éxito!</string>
-  <string name="sync_not_found">ODK Services no instalado</string>
+  <string name="sync_not_found">ODK-X Services no instalado</string>
   <string name="initializing">Inicializando Survey &#8230;</string>
   <string name="waiting_auth_title">Autenticando...</string>
   <string name="waiting_auth">Esperando autorización…</string>
@@ -229,8 +229,8 @@
   <string name="do_not_exit">Cancelar</string>
   <string name="save_and_close">Guardar y salir</string>
   <string name="reset_image">Reinicializar</string>
-  <string name="location_permission_rationale">ODK Survey necesita acceder a la ubicación de su dispositivo para poder grabarla</string>
-  <string name="location_permission_perm_denied">ODK Survey no puede obtener permiso de ubicación</string>
+  <string name="location_permission_rationale">ODK-X Survey necesita acceder a la ubicación de su dispositivo para poder grabarla</string>
+  <string name="location_permission_perm_denied">ODK-X Survey no puede obtener permiso de ubicación</string>
   <!--Used in sorting forms menu -->
   <string name="name">Nombre</string>
   <string name="tableId">Identificacion de tabla</string>

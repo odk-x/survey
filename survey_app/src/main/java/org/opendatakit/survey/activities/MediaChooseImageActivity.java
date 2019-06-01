@@ -22,6 +22,8 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Images;
 import android.widget.Toast;
+
+import org.apache.commons.io.FileUtils;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
 import org.opendatakit.logging.WebLogger;
@@ -31,6 +33,7 @@ import org.opendatakit.utilities.ODKFileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Simple shim for media interactions.
@@ -143,7 +146,83 @@ public class MediaChooseImageActivity extends BaseActivity {
 
     // get gp of chosen file
     Uri selectedMedia = intent.getData();
-    String sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Images.Media.DATA);
+    if (selectedMedia == null) {
+      WebLogger.getLogger(appName).e(t, "Selected Media URI is null");
+      Toast.makeText(this, "Selected Media has a null URI",
+              Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
+
+    // Get the scheme to determine whether the selected media URI is a content URI
+    String scheme = selectedMedia.getScheme();
+    if (scheme == null) {
+      WebLogger.getLogger(appName).e(t, "Selected Media URI scheme is null");
+      Toast.makeText(this, "Selected Media URI has a null scheme",
+              Toast.LENGTH_SHORT).show();
+      setResult(Activity.RESULT_CANCELED);
+      finish();
+      return;
+    }
+
+    File tempOutputFile = null;
+    String sourceMediaPath;
+    boolean isContentUri = scheme.equals("content");
+
+    if (isContentUri) {
+      try {
+        // if the uri is a content uri, copy the contents of the select media to
+        // a temp cache dir, and use the absolute path of this temp file
+        // as the sourceMediaPath
+        InputStream inputContent = getContentResolver().openInputStream(selectedMedia);
+        if (inputContent == null) {
+          WebLogger.getLogger(appName).e(t, "Unable to open input stream for selected media. " +
+                  "Input stream was null");
+          Toast.makeText(this, "Input stream for the selected media was null",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
+
+        // Get the file type of the selected media
+        String uriType = getContentResolver().getType(selectedMedia);
+        if (uriType == null) {
+          WebLogger.getLogger(appName).e(t, "MIME type of selected media is null");
+          Toast.makeText(this, "MIME type of selected media is null",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
+
+        String selectedFileSuffix = "." + uriType.split("/")[1];
+        tempOutputFile = File.createTempFile("tempImage", selectedFileSuffix, getCacheDir());
+        FileUtils.copyInputStreamToFile(inputContent, tempOutputFile);
+        sourceMediaPath = tempOutputFile.getAbsolutePath();
+        if (sourceMediaPath == null) {
+          WebLogger.getLogger(appName).e(t, "Source Media Path for the selected media (with " +
+                  "content URI) was null");
+          Toast.makeText(this, "Unable to get path for selected media with Content URI",
+                  Toast.LENGTH_SHORT).show();
+          setResult(Activity.RESULT_CANCELED);
+          finish();
+          return;
+        }
+      } catch (Exception e) {
+        WebLogger.getLogger(appName).e(t, "Failed to copy selected media with content URI to " +
+                        "a temporary output file");
+        Toast.makeText(this, "Copy of media attachment failed",
+                Toast.LENGTH_SHORT).show();
+        setResult(Activity.RESULT_CANCELED);
+        finish();
+        return;
+      }
+    } else {
+      sourceMediaPath = MediaUtils.getPathFromUri(this, selectedMedia, Images.Media.DATA);
+    }
+
     File sourceMedia = new File(sourceMediaPath);
     String extension = sourceMediaPath.substring(sourceMediaPath.lastIndexOf("."));
 
@@ -157,6 +236,13 @@ public class MediaChooseImageActivity extends BaseActivity {
       setResult(Activity.RESULT_CANCELED);
       finish();
       return;
+    } finally {
+      // delete the tempOutputFile if created
+      if (tempOutputFile != null) {
+        if (!tempOutputFile.delete()) {
+          WebLogger.getLogger(appName).e(t, "Failed to delete " + tempOutputFile.getAbsolutePath());
+        }
+      }
     }
 
     WebLogger.getLogger(appName).i(t, "copied " + sourceMedia.getAbsolutePath() + " to " + newMedia.getAbsolutePath());
