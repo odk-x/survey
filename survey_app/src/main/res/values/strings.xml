@@ -15,13 +15,13 @@
 <!-- start pre restructuring -->
 <string name="accept_location">Record Location</string>
 <string name="activity_not_found">No activity found to handle: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Cancel</string>
 <string name="cancel_location">Cancel</string>
 <string name="change_language">Change Language</string>
 <string name="change_password">Password</string>
 <string name="change_server_url">Server URL</string>
-<string name="change_username">ODK Username</string>
+<string name="change_username">ODK-X Username</string>
 <string name="default_completed">Default to Finalized</string>
 <string name="default_completed_summary">Mark form as finalized by default</string>
 <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -83,7 +83,7 @@
 <string name="show_splash">Show Splash Screen</string>
 <string name="show_splash_summary">Shows when application starts</string>
 <string name="splash_path">Selected Splash Image</string>
-<string name="default_splash_path">ODK Default</string>
+<string name="default_splash_path">ODK-X Default</string>
 <string name="select_another_image">Select Another Image</string>
 <string name="use_odk_default">Use Default Image</string>
 <string name="change_splash_path">Change Image</string>
@@ -163,7 +163,7 @@
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="configuring_app">Configuring %1$s &#8230;</string>
@@ -195,7 +195,7 @@
 <string name="mismatched_form_version_info">The formDef.json for formId: %1$s does not match the claimed formVersion: %2$s</string>
 <string name="delete_yes_with_options">Delete Forms &amp; Data</string>
 <string name="file_and_data_deleted_ok">%s form(s) and data successfully deleted!</string>
-<string name="sync_not_found">ODK Services is not installed</string>
+<string name="sync_not_found">ODK-X Services is not installed</string>
 <string name="initializing">Initializing Survey &#8230;</string>
 <string name="waiting_auth_title">Authenticating...</string>
 <string name="waiting_auth">Waiting on authentication...</string>
@@ -224,8 +224,8 @@
 <string name="do_not_exit">Cancel</string>
 <string name="save_and_close">Save and Close</string>
 <string name="reset_image">Reset</string>
-<string name="location_permission_rationale">ODK Survey needs access to your device\'s location to record it</string>
-<string name="location_permission_perm_denied">ODK Survey is unable to obtain location permissio</string>
+<string name="location_permission_rationale">ODK-X Survey needs access to your device\'s location to record it</string>
+<string name="location_permission_perm_denied">ODK-X Survey is unable to obtain location permission</string>
     <!--Used in sorting forms menu -->
 <string name="name">Name</string>
 <string name="tableId">Table ID</string>

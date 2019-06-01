@@ -13,13 +13,13 @@
 <resources>
 <string name="accept_location">Simpan lokasi</string>
 <string name="activity_not_found">Tidak ditemukan aktifitas untuk menyelesaikan: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Batal</string>
 <string name="cancel_location">Batal</string>
 <string name="change_language">Ubah bahasa</string>
 <string name="change_password">Kata sandi</string>
 <string name="change_server_url">Tautan server (URL)</string>
-<string name="change_username">ODK Username</string>
+<string name="change_username">ODK-X Username</string>
 <string name="default_completed">Siap kirim</string>
 <string name="default_completed_summary">Tandai formulir telah siap kirim secara otomatis</string>
 <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -78,7 +78,7 @@
 <string name="show_splash">"Perlihatkan tampilan pembuka"</string>
 <string name="show_splash_summary">Tampilkan pada awal aplikasi berjalan</string>
 <string name="splash_path">Gambar tampilan pembuka yang dipilih</string>
-<string name="default_splash_path">ODK Default</string>
+<string name="default_splash_path">ODK-X Default</string>
 <string name="select_another_image">Pilih gambar lainnya</string>
 <string name="use_odk_default">Gunakan gambar awal</string>
 <string name="change_splash_path">Ubah gambar</string>
@@ -151,7 +151,7 @@
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>

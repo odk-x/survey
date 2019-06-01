@@ -13,13 +13,13 @@
 <resources>
 <string name="accept_location">Positie vastleggen</string>
 <string name="activity_not_found">Geen programma gevonden voor: %s</string>
-<string name="app_name">ODK Survey</string>
+<string name="app_name">ODK-X Survey</string>
 <string name="cancel">Terug</string>
 <string name="cancel_location">Terug</string>
 <string name="change_language">Taal wijzigen</string>
 <string name="change_password">Wachtwoord</string>
 <string name="change_server_url">Server URL</string>
-<string name="change_username">ODK Username</string>
+<string name="change_username">ODK-X Username</string>
 <string name="default_completed">Standaard definitief</string>
 <string name="default_completed_summary">Formulier standaard als definitief markeren</string>
 <string name="default_server_url">https://opendatakit-2.appspot.com</string>
@@ -78,7 +78,7 @@
 <string name="show_splash">Toon welkomstscherm</string>
 <string name="show_splash_summary">Toon welkomstscherm bij opstarten van de applicatie</string>
 <string name="splash_path">Kies afbeelding voor welkomstscherm</string>
-<string name="default_splash_path">ODK Default</string>
+<string name="default_splash_path">ODK-X Default</string>
 <string name="select_another_image">Kies andere afbeelding</string>
 <string name="use_odk_default">Gebruik standaard afbeelding</string>
 <string name="change_splash_path">Wijzig afbeelding</string>
@@ -107,7 +107,7 @@
 <string name="no_forms_uploaded">Sorry, no form was uploaded.</string>
 <string name="google_account">Kies Google Account</string>
 <string name="selected_google_account_text">Google Account</string>
-<string name="server_platform_odk_aggregate">ODK Aggregate</string>
+<string name="server_platform_odk_aggregate">ODK-X Aggregate</string>
 <string name="server_platform_google_forms">Google Forms</string>
 <string name="server_platform_other">Anders</string>
 <string name="font_size_extra_large">Extra groot</string>
@@ -151,7 +151,7 @@
 <string name="admin_password_incorrect">Sorry, password is incorrect!</string>
 <string name="enter_admin_password">Enter Admin Password</string>
 <string name="found_in_menu">Found using Menu button in Form Entry</string>
-<string name="shortcut_name">ODK Survey Form</string>
+<string name="shortcut_name">ODK-X Survey Form</string>
 <string name="form_load_error">Sorry, unable to load form.</string>
 <string name="upload_in_progress">Sorry, instance upload is already in progress!</string>
 <string name="searching_for_expansion_files">Searching for APK expansion files</string>
