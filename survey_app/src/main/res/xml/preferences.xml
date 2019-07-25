@@ -43,12 +43,6 @@
 			android:dialogTitle="@string/change_password" 
 			android:persistent="false"/>
 		<!-- android:password="true" -->
-		<PreferenceScreen
-			android:id="@+id/selected_google_account"
-			android:key="common.account"
-			android:defaultValue=""
-			android:title="@string/selected_google_account_text"
-			android:persistent="false" />
 		<EditTextPreference
 			android:id="@+id/formlist_url"
 			android:key="legacy.formlist_url"

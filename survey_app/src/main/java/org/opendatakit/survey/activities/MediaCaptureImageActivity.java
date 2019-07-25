@@ -22,7 +22,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore.Audio;
 import android.provider.MediaStore.Images;
-import android.support.v4.content.FileProvider;
+import androidx.core.content.FileProvider;
 import android.widget.Toast;
 import org.opendatakit.activities.BaseActivity;
 import org.opendatakit.consts.IntentConsts;
@@ -228,6 +228,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    super.onActivityResult(requestCode, resultCode, intent);
 
     if (resultCode == Activity.RESULT_CANCELED) {
       // request was canceled -- propagate
