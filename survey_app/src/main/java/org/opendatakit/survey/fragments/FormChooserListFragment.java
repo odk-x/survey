@@ -14,14 +14,12 @@
 
 package org.opendatakit.survey.fragments;
 
-import android.support.v4.app.ListFragment;
-import android.support.v4.app.LoaderManager;
-import android.content.Context;
-import android.support.v4.content.Loader;
-import android.content.SharedPreferences;
+import androidx.fragment.app.ListFragment;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
+
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -30,7 +28,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.opendatakit.activities.IAppAwareActivity;
 import org.opendatakit.properties.CommonToolProperties;
 import org.opendatakit.properties.PropertiesSingleton;
