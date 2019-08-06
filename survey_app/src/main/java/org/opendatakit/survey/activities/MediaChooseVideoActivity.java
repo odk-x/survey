@@ -117,6 +117,7 @@ public class MediaChooseVideoActivity extends BaseActivity {
 
   @Override
   public void onActivityResult(int requestCode, int resultCode, Intent intent) {
+    super.onActivityResult(requestCode, resultCode, intent);
 
     if (resultCode == Activity.RESULT_CANCELED) {
       // request was canceled -- propagate
