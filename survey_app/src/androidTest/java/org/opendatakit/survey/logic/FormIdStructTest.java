@@ -14,21 +14,19 @@
 
 package org.opendatakit.survey.logic;
 
-import java.io.File;
-import java.util.Date;
+import android.net.Uri;
 
-import android.support.test.filters.LargeTest;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.test.filters.LargeTest;
+
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.utilities.ODKFileUtils;
 
-import android.net.Uri;
+import java.io.File;
+import java.util.Date;
 
 import static junit.framework.TestCase.assertEquals;
 
-@RunWith(AndroidJUnit4.class)
 @LargeTest
 public class FormIdStructTest {
   private static final String FORM_PATH = "tables/myTable/forms/formName";
