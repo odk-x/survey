@@ -11,7 +11,7 @@ buildscript {
         classpath 'com.android.tools.build:gradle:3.5.0'
         classpath 'io.fabric.tools:gradle:1.31.0'
         classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.9.8"
-        classpath 'com.google.gms:google-services:4.3.1'
+        classpath 'com.google.gms:google-services:4.3.2'
     }
 
 }
