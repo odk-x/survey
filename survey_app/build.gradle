@@ -115,6 +115,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.1.0'
     implementation 'androidx.preference:preference:1.1.0'
+    implementation 'androidx.fragment:fragment:1.2.0-alpha04'
     implementation 'com.google.firebase:firebase-core:17.2.0'
     implementation ('com.crashlytics.sdk.android:crashlytics:2.10.1') {
         transitive =true;
