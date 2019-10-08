@@ -34,8 +34,8 @@ public class OdkSurveyWebView extends ODKWebView {
    @Override public synchronized void reloadPage() {
 
       log.i(t, "reloadPage: current loadPageUrl: " + getLoadPageUrl());
-      String baseUrl = ((IOdkSurveyActivity) getContext()).getUrlBaseLocation(false);
-      String hash = ((IOdkSurveyActivity) getContext()).getUrlLocationHash();
+      String baseUrl = ((IOdkSurveyActivity) getOdkContext()).getUrlBaseLocation(false);
+      String hash = ((IOdkSurveyActivity) getOdkContext()).getUrlLocationHash();
 
       if (baseUrl != null) {
          // for Survey, we do care about the URL
