@@ -13,6 +13,10 @@
  */
 package org.opendatakit.survey.application;
 
+import android.content.Context;
+
+import androidx.multidex.MultiDex;
+
 import android.annotation.SuppressLint;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import org.opendatakit.application.CommonApplication;
@@ -34,6 +38,13 @@ public class Survey extends CommonApplication {
   public static Survey getInstance() {
     return singleton;
   }
+
+  @Override
+  protected void attachBaseContext(Context base) {
+    super.attachBaseContext(base);
+    MultiDex.install(this);
+  }
+
 
   @SuppressLint("NewApi")
   @Override
