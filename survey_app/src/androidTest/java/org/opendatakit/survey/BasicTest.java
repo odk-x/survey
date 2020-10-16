@@ -11,8 +11,7 @@ import static org.junit.Assert.assertTrue;
 public class BasicTest {
 
     @Test
-    public void testFailureUsedToVerifyBuildsCatchWhenSet() {
-        //assertTrue(false);
+    public void testBasicTrue() {
         assertTrue(true);
     }
 

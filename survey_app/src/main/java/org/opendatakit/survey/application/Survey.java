@@ -44,8 +44,7 @@ public class Survey extends CommonApplication {
     super.attachBaseContext(base);
     MultiDex.install(this);
   }
-
-
+  
   @SuppressLint("NewApi")
   @Override
   public void onCreate() {
