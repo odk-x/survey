@@ -10,8 +10,7 @@ Instructions on how to use Survey can be found [here](https://docs.odk-x.org/sur
 
 The developer [wiki](https://github.com/odk-x/tool-suite-X/wiki) (including release notes) and
 [issues tracker](https://github.com/odk-x/tool-suite-X/issues) are located under
-the [**
--X Tool Suite**](https://github.com/odk-x) project.
+the [**ODK-X Tool Suite**](https://github.com/odk-x) project.
 
 Engage with the community and get technical support on [the ODK-X forum](https://forum.odk-x.org)
 
