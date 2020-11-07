@@ -32,8 +32,8 @@ This project depends on ODK-X's [androidlibrary](https://github.com/odk-x/androi
 
 
   * Note that this only applies if you are modifying the library projects. If you use the maven dependencies (the default option), the projects will not show up in your directory. 
-    
-ODK-X [Core](https://github.com/opendatakit/core) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. ODK-X [Tables](https://github.com/odk-x/tables) and ODK-X [Sync](https://github.com/opendatakit/sync) also integrate well with ODK-X Survey, but are not required.
+
+ODK-X [Service](https://github.com/odk-x/services) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. [Tables](https://github.com/odk-x/tables) also integrates well with ODK-X Survey, but is not required.
 
 Now you should be ready to build.
 
