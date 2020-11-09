@@ -1,24 +1,21 @@
 {
   "project_info": {
-    "project_number": "322300403941",
-    "firebase_url": "https://api-project-322300403941.firebaseio.com",
-    "project_id": "api-project-322300403941",
-    "storage_bucket": "api-project-322300403941.appspot.com"
+    "project_number": "876360963794",
+    "firebase_url": "https://odk-x-97b95.firebaseio.com",
+    "project_id": "odk-x-97b95",
+    "storage_bucket": "odk-x-97b95.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:322300403941:android:7ca37ed61cc1cacb",
+        "mobilesdk_app_id": "1:876360963794:android:ac33eb679acdba89f5bf0b",
         "android_client_info": {
           "package_name": "org.opendatakit.survey"
         }
       },
       "api_key": [
         {
-          "current_key": "AIzaSyDzdzuFvfI_BgaMAbIOBpfrVG3AIwhGIP8"
-        },
-        {
-          "current_key": "AIzaSyBNMza9CWEOq6kLIYp6UtpQJu7dPdMUgkE"
+          "current_key": "AIzaSyBsjcNb77BHWv81ubNn2hwW_D20hjsC_qM"
         }
       ],
       "services": {
