@@ -16,9 +16,10 @@ package org.opendatakit.survey.logic;
 
 import android.net.Uri;
 
-import androidx.test.filters.LargeTest;
 
+import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runners.MethodSorters;
 import org.opendatakit.provider.FormsProviderAPI;
 import org.opendatakit.utilities.ODKFileUtils;
 
@@ -27,7 +28,7 @@ import java.util.Date;
 
 import static junit.framework.TestCase.assertEquals;
 
-@LargeTest
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class FormIdStructTest {
   private static final String FORM_PATH = "tables/myTable/forms/formName";
   private static final String FORM_ID = "formName";
