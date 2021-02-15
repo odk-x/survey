@@ -88,7 +88,7 @@
   <string name="select_another_image">Seleccione Otra Imagen</string>
   <string name="use_odk_default">Usar la Imagen por Defecto</string>
   <string name="change_splash_path">Cambiar imagen</string>
-  <string name="app_url">http://opendatakit.org</string>
+  <string name="app_url">https://odk-x.org</string>
   <string name="go_to_location">Ir a Ubicación</string>
   <string name="change_formlist_url">Lista de Fomulario en camino (anexa a la dirección URL del servidor)</string>
   <string name="protocol">Plataforma del servidor</string>
