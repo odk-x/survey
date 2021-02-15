@@ -82,7 +82,7 @@
 <string name="select_another_image">Kies andere afbeelding</string>
 <string name="use_odk_default">Gebruik standaard afbeelding</string>
 <string name="change_splash_path">Wijzig afbeelding</string>
-<string name="app_url">http://opendatakit.org</string>
+<string name="app_url">https://odk-x.org</string>
 <string name="go_to_location">Ga naar positie</string>
 <string name="change_formlist_url">Form List Path (toegevoegd aan Server URL)</string>
 <string name="protocol">Server Platform</string>
