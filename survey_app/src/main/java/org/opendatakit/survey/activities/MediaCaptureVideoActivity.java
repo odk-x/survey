@@ -225,7 +225,7 @@ public class MediaCaptureVideoActivity extends BaseActivity {
     deleteMedia();
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = MediaUtils.getPathFromUri(this, (Uri) mediaUri, Video.Media.DATA);
+    String binaryPath = MediaUtils.getPathFromUri(this, mediaUri, Video.Media.DATA);
     File source = new File(binaryPath);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 

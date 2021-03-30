@@ -99,16 +99,16 @@ public class TableIdFormIdVersionListAdapter extends BaseAdapter {
         (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
       view = layoutInflater.inflate(mLayout, parent, false);
     }
-    TextView formTitleView = (TextView) view.findViewById(mFormDisplayNameId);
+    TextView formTitleView = view.findViewById(mFormDisplayNameId);
     formTitleView.setText(info.formDisplayName);
 
     if ( mFormLastUpdateDateId != -1) {
-      TextView formDateView = (TextView) view.findViewById(mFormLastUpdateDateId);
+      TextView formDateView = view.findViewById(mFormLastUpdateDateId);
       formDateView.setText(info.formDisplaySubtext);
     }
 
     if ( mTableIdFormVersionId != -1 ) {
-      TextView v = (TextView) view.findViewById(mTableIdFormVersionId);
+      TextView v = view.findViewById(mTableIdFormVersionId);
       v.setVisibility(View.VISIBLE);
       if ( info.formVersion != null) {
         v.setText(mContext.getString(R.string.table_id_form_id_version, info.tableId, info.formId,

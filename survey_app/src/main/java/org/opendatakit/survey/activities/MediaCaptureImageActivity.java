@@ -259,7 +259,7 @@ public class MediaCaptureImageActivity extends BaseActivity {
     // this...
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = MediaUtils.getPathFromUri(this, (Uri)mediaUri, Images.Media.DATA);
+    String binaryPath = MediaUtils.getPathFromUri(this, mediaUri, Images.Media.DATA);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 
     File source = new File(binaryPath);
