@@ -168,4 +168,5 @@
 <string name="about">About</string>
 <string name="read_license_success">Read license file successfully</string>
 <string name="read_license_fail">Failed to read license file</string>
+<string name="sort_by">Sort by</string>
 </resources>
