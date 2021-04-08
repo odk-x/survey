@@ -229,5 +229,6 @@
     <!--Used in sorting forms menu -->
 <string name="name">Name</string>
 <string name="tableId">Table ID</string>
+<string name="sort_by">Sort by</string>
 
 </resources>

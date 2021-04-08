@@ -234,4 +234,5 @@
   <!--Used in sorting forms menu -->
   <string name="name">Nombre</string>
   <string name="tableId">Identificacion de tabla</string>
+  <string name="sort_by">Ordenar por</string>
 </resources>
