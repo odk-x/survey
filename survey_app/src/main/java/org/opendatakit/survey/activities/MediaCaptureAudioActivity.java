@@ -203,7 +203,7 @@ public class MediaCaptureAudioActivity extends BaseActivity {
     deleteMedia();
 
     // get the file path and create a copy in the instance folder
-    String binaryPath = MediaUtils.getPathFromUri(this, (Uri)mediaUri, Audio.Media.DATA);
+    String binaryPath = MediaUtils.getPathFromUri(this, mediaUri, Audio.Media.DATA);
     File source = new File(binaryPath);
     String extension = binaryPath.substring(binaryPath.lastIndexOf("."));
 

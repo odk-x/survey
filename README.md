@@ -1,28 +1,28 @@
-# survey
+# Survey
 
 This project is __*actively maintained*__
 
-It is part of the ODK 2.0 Android tools suite.
+It is part of the ODK-X Android tools suite.
 
-ODK Survey is a data collection application based upon HTML, CSS and Javascript.
+ODK-X Survey is a data collection application based upon HTML, CSS and Javascript.
 
-Instructions on how to use Survey can be found [here](https://opendatakit.org/use/2_0_tools/odk-survey-2-0-rev126/).
+Instructions on how to use Survey can be found [here](https://docs.odk-x.org/survey-using/).
 
-The developer [wiki](https://github.com/opendatakit/opendatakit/wiki) (including release notes) and
-[issues tracker](https://github.com/opendatakit/opendatakit/issues) are located under
-the [**opendatakit**](https://github.com/opendatakit/opendatakit) project.
+The developer [wiki](https://github.com/odk-x/tool-suite-X/wiki) (including release notes) and
+[issues tracker](https://github.com/odk-x/tool-suite-X/issues) are located under
+the [**ODK-X Tool Suite**](https://github.com/odk-x) project.
 
-The Google group for software engineering questions is: [opendatakit-developers@](https://groups.google.com/forum/#!forum/opendatakit-developers)
+Engage with the community and get technical support on [the ODK-X forum](https://forum.odk-x.org)
 
 ## Setting up your environment
 
-General instructions for setting up an ODK 2.0 environment can be found at our [DevEnv Setup wiki page](https://github.com/opendatakit/opendatakit/wiki/DevEnv-Setup)
+General instructions for setting up an ODK-X environment can be found at our [Developer Environment Setup wiki page](https://github.com/odk-x/tool-suite-X/wiki/Developer-Environment-Setup)
 
 Install [Android Studio](http://developer.android.com/tools/studio/index.html) and the [SDK](http://developer.android.com/sdk/index.html#Other).
 
-This project depends on ODK's [androidlibrary](https://github.com/opendatakit/androidlibrary) and [androidcommon](https://github.com/opendatakit/androidcommon) projects; their binaries will be downloaded automatically fom our maven repository during the build phase. If you wish to modify them yourself, you must clone them into the same parent directory as survey. You directory stucture should resemble the following:
+This project depends on ODK-X's [androidlibrary](https://github.com/odk-x/androidlibrary) and [androidcommon](https://github.com/odk-x/androidcommon) projects; their binaries will be downloaded automatically fom our maven repository during the build phase. If you wish to modify them yourself, you must clone them into the same parent directory as survey. You directory stucture should resemble the following:
 
-        |-- odk
+        |-- odk-x
 
             |-- androidcommon
 
@@ -32,8 +32,8 @@ This project depends on ODK's [androidlibrary](https://github.com/opendatakit/an
 
 
   * Note that this only applies if you are modifying the library projects. If you use the maven dependencies (the default option), the projects will not show up in your directory. 
-    
-ODK [Core](https://github.com/opendatakit/core) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. ODK [Tables](https://github.com/opendatakit/tables) and ODK [Sync](https://github.com/opendatakit/sync) also integrate well with ODK Survey, but are not required.
+
+ODK-X [Service](https://github.com/odk-x/services) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. [Tables](https://github.com/odk-x/tables) also integrates well with ODK-X Survey, but is not required.
 
 Now you should be ready to build.
 
@@ -43,7 +43,7 @@ Open the Survey project in Android Studio. Select `Build->Make Project` to build
 
 ## Running
 
-Be sure to install ODK Core onto your device before attempting to run Survey.
+Be sure to install ODK-X Core onto your device before attempting to run Survey.
 
 ## Source tree information
 Quick description of the content in the root folder:

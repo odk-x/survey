@@ -82,7 +82,7 @@ License.
 <string name="select_another_image">Sélectionner une autre Image</string>
 <string name="use_odk_default">Utiliser l\'Image par Défaut</string>
 <string name="change_splash_path">Modifier l\'Image</string>
-<string name="app_url">http://opendatakit.org</string>
+<string name="app_url">https://odk-x.org</string>
 <string name="go_to_location">Aller au Lieu</string>
 <string name="change_formlist_url">Chemin de la liste de formulaires (ajouté à l\'URL du serveur)</string>
 <string name="protocol">Protocole</string>
@@ -168,4 +168,5 @@ License.
 <string name="about">About</string>
 <string name="read_license_success">Read license file successfully</string>
 <string name="read_license_fail">Failed to read license file</string>
+<string name="sort_by">Sort by</string>
 </resources>
