@@ -82,7 +82,7 @@
 <string name="select_another_image">Selezionare un\'altra immagine</string>
 <string name="use_odk_default">Usa immagine di default</string>
 <string name="change_splash_path">Cambiare immagine</string>
-<string name="app_url">http://opendatakit.org</string>
+<string name="app_url">https://odk-x.org</string>
 <string name="go_to_location">Vai al punto di</string>
 <string name="change_formlist_url">La posizione dell\'elenco delle forme (allegata alla URL del server)</string>
 <string name="protocol">Piattaforma server</string>
@@ -168,4 +168,5 @@
 <string name="about">About</string>
 <string name="read_license_success">Read license file successfully</string>
 <string name="read_license_fail">Failed to read license file</string>
+    <string name="sort_by">Sort by</string>
 </resources>
