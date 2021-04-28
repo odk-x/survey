@@ -230,5 +230,6 @@
 <string name="name">Name</string>
 <string name="tableId">Table ID</string>
 <string name="sort_by">Sort by</string>
+<string name="show_sub_forms">Show Subforms</string>
 
 </resources>
