@@ -1,4 +1,4 @@
-gradle.ext.gradleConfigVersion = 152
+gradle.ext.gradleConfigVersion = 153
 
 if (!gradle.ext.has('workspacePath')) {
     logger.warn("rootDir: " + rootDir.getAbsolutePath());
