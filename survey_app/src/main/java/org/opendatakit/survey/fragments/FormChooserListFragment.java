@@ -57,7 +57,9 @@ public class FormChooserListFragment extends ListFragment
   private  PropertiesSingleton mPropSingleton;
   private static String mAppName;
   private static final String SORT_BY_TABLEID = "sortByTableID";
-
+  int[] tableIdHideform = {50 , 51};
+  int[] nameHideform = {14, 32};
+  int showForm = 0 ;
   /*this is also used in CommonToolProperties.java to set default value for sorting order ,if updated
     change there too..*/
   private static final String SORT_BY_NAME = "sortByName";
@@ -178,7 +180,13 @@ public class FormChooserListFragment extends ListFragment
     String sortingOrder = mPropSingleton.getProperty(KEY_SURVEY_SORT_ORDER);
     mItems = dataset;
     sortFormList(dataset,sortingOrder);
-
+    if(showForm==0){
+      for (int i = (nameHideform.length - 1); i >= 0; i--) {
+        dataset.remove(nameHideform[i]);
+        mAdapter.notifyDataSetChanged();
+      }
+      mAdapter.notifyDataSetChanged();
+    }
     // Swap the new cursor in. (The framework will take care of closing the
     // old cursor once we return.)
     mAdapter.swapData(dataset);
@@ -245,7 +253,13 @@ public class FormChooserListFragment extends ListFragment
         }
       });
       mAdapter.swapData(mItems);
-
+      if(showForm==0){
+        for (int i = (tableIdHideform.length - 1); i >= 0; i--) {
+          mItems.remove(tableIdHideform[i]);
+          mAdapter.notifyDataSetChanged();
+        }
+        mAdapter.notifyDataSetChanged();
+      }
     }
   }
 
