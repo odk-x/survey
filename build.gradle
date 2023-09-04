@@ -17,14 +17,23 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-        ivy {
-            url 'http://cwe.cs.washington.edu:8082/artifactory/libs-demo/'
+        maven {
+            name = "GithubPackages"
+            url = "https://maven.pkg.github.com/${System.getenv('GITHUB_ACTOR')}/androidlibrary"
+
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
         }
         maven {
-            url 'http://cwe.cs.washington.edu:8082/artifactory/libs-master/'
-        }
-        ivy {
-            url 'http://cwe.cs.washington.edu:8082/artifactory/libs-snapshot/'
+            name = "GithubPackages"
+            url = "https://maven.pkg.github.com/${System.getenv('GITHUB_ACTOR')}/androidcommon"
+
+            credentials {
+                username = System.getenv('GITHUB_ACTOR')
+                password = System.getenv('GITHUB_TOKEN')
+            }
         }
     }
 }

@@ -1,6 +1,11 @@
 /**************************************************************************************************
  GRADLE CONFIG
  *************************************************************************************************/
+plugins {
+    id 'com.android.application'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+}
 
 if ((new File(gradle.local)).exists()) {
     apply from: gradle.local
@@ -12,7 +17,6 @@ applicationScripts.each {
     apply from: it
 }
 
-apply plugin: 'com.android.application'
 
 android {
     // The following are set in the common.gradle file
@@ -110,44 +114,49 @@ allprojects {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.2.0'
+    implementation 'androidx.annotation:annotation:1.3.0'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'androidx.appcompat:appcompat:1.3.1'
     implementation 'androidx.preference:preference:1.1.1'
     implementation 'androidx.fragment:fragment:1.3.6'
     implementation 'com.google.android.material:material:1.4.0'
-    
+
     implementation 'com.google.firebase:firebase-analytics:19.0.2'
     implementation 'com.google.firebase:firebase-crashlytics:18.2.3'
 
     if (libraryProjectPath.exists() && gradle.useLocal) { // Local project is favoured
         implementation project(libraryProjectName)
     } else {
-        demoImplementation(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
-                version: latestVersion, ext: 'aar')
-        masterImplementation(group: groupId, name: libraryMasterArtifactName, classifier: masterRelease,
-                version: masterArtifactVersion, ext: 'aar')
-        snapshotImplementation(group: groupId, name: librarySnapshotArtifactName,
-                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        ///Todo: properly specify all flavour implementations of the androidLibrary
+        implementation(group:'org.opendatakit', name: 'androidlibrary_lib', classifier: 'snapshotBasicRelease', version: '1.0.0-+', ext: 'aar')
+
+//        demoImplementation(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
+//                version: latestVersion, ext: 'aar')
+//        masterImplementation(group: groupId, name: libraryMasterArtifactName, classifier: masterRelease,
+//                version: masterArtifactVersion, ext: 'aar')
+//        snapshotImplementation(group: groupId, name: librarySnapshotArtifactName,
+//                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
     }
 
     if (commonProjectPath.exists() && gradle.useLocal) { // Local project is favoured
         implementation project(commonProjectName)
     } else {
-        demoImplementation(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
-                version: latestVersion, ext: 'aar')
-        masterImplementation(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
-                version: masterArtifactVersion, ext: 'aar')
-        snapshotImplementation(group: groupId, name: commonSnapshotArtifactName,
-                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        ///Todo: properly specify all flavour implementations of the androidCommon
+        implementation(group:'org.opendatakit', name: 'androidcommon', classifier: 'snapshotBasicRelease', version: '1.0.0-+', ext: 'aar')
+//        demoImplementation(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
+//                version: latestVersion, ext: 'aar')
+//        masterImplementation(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
+//                version: masterArtifactVersion, ext: 'aar')
+//        snapshotImplementation(group: groupId, name: commonSnapshotArtifactName,
+//                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
     }
 
     // Testing dependencies
-    testImplementation 'junit:junit:4.13.1'
+    testImplementation 'junit:junit:4.13.2'
 
     androidTestImplementation 'androidx.test:runner:1.4.0'
     androidTestImplementation 'androidx.test:rules:1.4.0'
-    androidTestImplementation 'androidx.annotation:annotation:1.2.0'
+    androidTestImplementation 'androidx.annotation:annotation:1.3.0'
 
 }
 
@@ -155,6 +164,3 @@ task grantPermissionForODKApp {
     dependsOn grantServicesReadExternalStoragePermission
     dependsOn grantServicesWriteExternalStoragePermission
 }
-
-apply plugin: 'com.google.gms.google-services'
-apply plugin: 'com.google.firebase.crashlytics'
