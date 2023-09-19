@@ -19,7 +19,7 @@ allprojects {
         mavenCentral()
         maven {
             name = "GithubPackages"
-            url = "https://maven.pkg.github.com/${System.getenv('GITHUB_ACTOR')}/androidlibrary"
+            url = "https://maven.pkg.github.com/odk-x/androidlibrary"
 
             credentials {
                 username = System.getenv('GITHUB_ACTOR')
@@ -28,7 +28,7 @@ allprojects {
         }
         maven {
             name = "GithubPackages"
-            url = "https://maven.pkg.github.com/${System.getenv('GITHUB_ACTOR')}/androidcommon"
+            url = "https://maven.pkg.github.com/odk-x/androidcommon"
 
             credentials {
                 username = System.getenv('GITHUB_ACTOR')
