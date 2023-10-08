@@ -71,10 +71,12 @@ It is part of the ODK-X Android tools suite.
         - Android 4.x Devices refer to Android devices running versions in the 4.x series (e.g., Android 4.0, 4.1, etc.). ODK-X Survey may have specific compatibility considerations for these devices.
 
     - **[Android 5.x and Higher Devices:](https://docs.odk-x.org/survey-using/#android-5-x-and-higher-devices)**
+
         - Android 5.x and Higher Devices refer to Android devices running versions 5.0 (Lollipop) and later. These devices are typically more capable and may offer improved performance for ODK-X Survey.
 
     - **[Trying the New Launcher:](https://docs.odk-x.org/survey-using/#trying-the-new-launcher)**
-        -Trying the New Launcher involves experimenting with an updated launcher interface for ODK-X Survey, which may offer improved user experience and features.
+
+        - Trying the New Launcher involves experimenting with an updated launcher interface for ODK-X Survey, which may offer improved user experience and features.
 
     - **[Making a New AppName:](https://docs.odk-x.org/survey-using/#making-a-new-appname)**
         - Making a New AppName is the process of creating a custom name or identifier for an instance of ODK-X Survey. It allows you to differentiate between different projects or deployments of the application.
