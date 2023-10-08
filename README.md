@@ -9,7 +9,6 @@ It is part of the ODK-X Android tools suite.
 
 ## Table of Contents
 - [Getting Started](#getting-started)
-  - [Quick access](#quick-access)
   - [Instructions on how to use Survey](#instructions-on-how-to-use-survey)
   - [Setting up your environment](#setting-up-your-environment)
   - [Building the project](#building-the-project)
@@ -20,66 +19,6 @@ It is part of the ODK-X Android tools suite.
 - [FAQs](#faqs)
 - [Links for Users](#links-for-users)
 
-## Quick access
-
-- **[Prerequisites:](https://docs.odk-x.org/survey-using/#prerequisites)**
-  - Prerequisites refer to the necessary conditions or requirements that must be met before you can effectively use ODK-X Survey. These may include having the ODK-X Application Suite installed on your Android device and having a basic understanding of how Android devices work.
-
-- **[Using ODK-X Survey:](https://docs.odk-x.org/survey-using/#using-odk-x-survey)**
-  - Using ODK-X Survey involves the actions and procedures for creating, managing, and conducting surveys on Android devices using the ODK-X Survey application.
-
-- **[Opening a Form:](https://docs.odk-x.org/survey-using/#opening-a-form)**
-  - Opening a Form means launching the ODK-X Survey app and selecting a specific survey form from the list of available forms to begin data collection or data entry.
-
-    - **[Opening a Subform:](https://docs.odk-x.org/survey-using/#opening-a-subform)**
-        - Opening a Subform is the process of accessing and filling out a secondary or nested form within a primary survey form. Subforms are used for collecting related data within the main survey.
-
-- **[Ordering Forms List:](https://docs.odk-x.org/survey-using/#ordering-forms-list)**
-  - Ordering Forms List refers to the process of arranging the list of available survey forms in a specific order, such as by name, date, or other criteria, to make it easier to locate and select forms.
-
-- **[Saving a Form Instance:](https://docs.odk-x.org/survey-using/#saving-a-form-instance)**
-  - Saving a Form Instance involves preserving the progress made in filling out a survey form. It allows users to save partially completed forms and resume data entry at a later time.
-
-- **[Viewing Saved Form Instances:](https://docs.odk-x.org/survey-using/#viewing-saved-form-instances)**
-  - Viewing Saved Form Instances is the action of accessing and reviewing survey forms that have been partially or fully filled out and saved on the device but have not yet been submitted.
-
-    - **[Editing Saved Form Instances:](https://docs.odk-x.org/survey-using/#editing-saved-form-instances)**
-        - Editing Saved Form Instances means making changes or updates to previously saved survey forms. It allows users to modify responses or correct errors in completed forms.
-
-    - **[Deleting Saved Form Instances:](https://docs.odk-x.org/survey-using/#deleting-saved-form-instances)**
-        - Deleting Saved Form Instances involves removing survey forms that have been saved but are no longer needed. It helps manage the storage space on the device.
-
-- **[Navigating a Form:](https://docs.odk-x.org/survey-using/#navigating-a-form)**
-  - Navigating a Form refers to the process of moving through a survey form, including progressing from one question to the next, jumping to specific sections, or using navigation buttons.
-
-- **[Syncing Forms and Data:](https://docs.odk-x.org/survey-using/#syncing-forms-and-data)**
-  - Syncing Forms and Data involves uploading collected survey data from the device to a remote server or cloud storage to ensure data integrity and share data with others.
-
-- **[Setting up a Form Development Environment:](https://docs.odk-x.org/survey-using/#setting-up-a-form-development-environment)**
-  - Setting up a Form Development Environment includes configuring the necessary tools and resources for designing, creating, and testing survey forms before deploying them for data collection.
-
-- **[Designing a Form:](https://docs.odk-x.org/survey-using/#designing-a-form)**
-  - Designing a Form is the process of creating the structure and content of a survey form, including defining questions, answer options, skip logic, and form layout.
-
-    - **[Full XLSX Reference:](https://docs.odk-x.org/survey-using/#full-xlsx-reference)**
-        - Full XLSX Reference provides comprehensive documentation and guidance on the format and structure of XLSX files used for defining survey forms in ODK-X Survey.
-
-- **[Launching With a Different AppName:](https://docs.odk-x.org/survey-using/#launching-with-a-different-appname)**
-  - Launching With a Different AppName involves customizing the name by which ODK-X Survey is launched on the device. This can be useful for distinguishing between different instances of the application.
-
-    - **[Android 4.x Devices:](https://docs.odk-x.org/survey-using/#android-4-x-devices)**
-        - Android 4.x Devices refer to Android devices running versions in the 4.x series (e.g., Android 4.0, 4.1, etc.). ODK-X Survey may have specific compatibility considerations for these devices.
-
-    - **[Android 5.x and Higher Devices:](https://docs.odk-x.org/survey-using/#android-5-x-and-higher-devices)**
-
-        - Android 5.x and Higher Devices refer to Android devices running versions 5.0 (Lollipop) and later. These devices are typically more capable and may offer improved performance for ODK-X Survey.
-
-    - **[Trying the New Launcher:](https://docs.odk-x.org/survey-using/#trying-the-new-launcher)**
-
-        - Trying the New Launcher involves experimenting with an updated launcher interface for ODK-X Survey, which may offer improved user experience and features.
-
-    - **[Making a New AppName:](https://docs.odk-x.org/survey-using/#making-a-new-appname)**
-        - Making a New AppName is the process of creating a custom name or identifier for an instance of ODK-X Survey. It allows you to differentiate between different projects or deployments of the application.
 
 ## Instructions on how to use Survey.
 
