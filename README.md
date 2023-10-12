@@ -2,8 +2,8 @@
 
 This project is __*actively maintained*__
 
-**ODK-X Survey** is an Android application for performing data collection in the ODK-X framework. 
-It operates similarly to ODK Collect, but is based on HTML, CSS, and Javascript rather than native Android, and is more flexible in its presentation and execution. 
+**ODK-X Survey** is an Android application for performing data collection in the ODK-X framework.
+It operates similarly to ODK Collect, but is based on HTML, CSS, and Javascript rather than native Android, and is more flexible in its presentation and execution
 It is part of the ODK-X Android tools suite.
 
 
@@ -23,44 +23,6 @@ It is part of the ODK-X Android tools suite.
 ## Instructions on how to use Survey.
 
 Note: Detailed information on how to use the survey can be found [here](https://docs.odk-x.org/survey-using/).
-
-- **Install ODK-X Survey:**
-  - Install the ODK-X Survey application on your Android device from the Google Play Store.
-
-- **Design Your Survey Form:**
-  - Create your survey form using XLSForm syntax. You can use tools like ODK-X XlSX converter or manually create an XLSForm using a spreadsheet program like Microsoft Excel or Google Sheets.
-
-  - Define the survey questions, specify question types (text, numeric, multiple-choice, etc.), set constraints, and add skip logic if needed.
-
-    ### csv-table: Example Spreadsheet
-
-    | type        | name | display.prompt.text |
-    |-------------|------|---------------------|
-    | begin screen|      |                     |
-    | text        | name | Enter name:         |
-    | integer     | age  | Enter age:          |
-    | end screen  |      |                
-
-    Will result in a survey like this:
-    
-    ![Survey Screen](images/survey-screen.png)
-
-- **Move Your Survey Form To Device:**
-   - After designing your survey form, move it to the ODK-X Survey application.
-   You can do this by connecting your Android device to a computer and copying the XLSForm file to the appropriate directory on the device or by using a file-sharing service.
-
-- **Configure Settings:**
-    - Configure the settings of your survey project, including form-specific settings, device-specific settings, and server settings if you are using a server for data storage and synchronization.
-
-- **Collect Data:**
-    -  Open the ODK-X Survey app on your Android device.
-    - Select the survey form you want to use from the list of available forms.
-    - Fill out the survey form on the device by collecting responses from respondents.
-    The app will guide you through the survey, and you can save collected data on the device.
-
-- **Submit Data:**
-    - Once the survey is completed, you can submit the collected data. 
-    Depending on your configuration, you can submit data to a server for centralized storage and analysis or export it as files for further analysis.
 
 The developer [wiki](https://github.com/odk-x/tool-suite-X/wiki) (including release notes) and
 [issues tracker](https://github.com/odk-x/tool-suite-X/issues) are located under
@@ -85,7 +47,7 @@ This project depends on ODK-X's [androidlibrary](https://github.com/odk-x/androi
             |-- survey
 
 
-  * Note that this only applies if you are modifying the library projects. If you use the maven dependencies (the default option), the projects will not show up in your directory. 
+  * Note that this only applies if you are modifying the library projects. If you use the maven dependencies (the default option), the projects will not show up in your directory.
 
 ODK-X [Service](https://github.com/odk-x/services) __MUST__ be installed on your device, whether by installing the APK or by cloning the project and deploying it. [Tables](https://github.com/odk-x/tables) also integrates well with ODK-X Survey, but is not required.
 
@@ -119,7 +81,7 @@ Quick description of the content in the root folder:
                             |-- survey
 
                                 |-- android     -- The most relevant Java code lives here
-                                
+
             |-- androidTest    -- Source tree for Android implementation tests
 
 ## How to contribute
@@ -171,11 +133,11 @@ Pull requests are welcome, though please submit them against the development bra
     Yes, ODK-X Survey allows you to edit saved form instances, review their contents, and make modifications as needed. This feature is helpful for correcting errors or updating data.
 
 10. **How do I design complex surveys with skip logic and conditional branching?**
-    
+
     ODK-X Survey supports skip logic and conditional branching through XLSX files. You can define skip patterns and conditions within the XLSX form definition to create complex survey flows.
 
 11. **What is the difference between ODK-X Survey and ODK-X Tables?**
-    
+
     ODK-X Survey is primarily used for data collection, while ODK-X Tables is used for managing and viewing data collected through ODK-X Survey. Tables provides a more structured way to work with data, including data synchronization and viewing capabilities.
 
 12. **Is technical support available for ODK-X Survey?**
