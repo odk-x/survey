@@ -3,7 +3,8 @@
 This project is __*actively maintained*__
 
 **ODK-X Survey** is an Android application for performing data collection in the ODK-X framework.
-It operates similarly to ODK Collect, but is based on HTML, CSS, and Javascript rather than native Android, and is more flexible in its presentation and execution
+It is based on HTML, CSS, and Javascript rather than native Android, and is more flexible in its presentation and execution.
+
 It is part of the ODK-X Android tools suite.
 
 
