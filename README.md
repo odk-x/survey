@@ -16,7 +16,6 @@ It is part of the ODK-X Android tools suite.
   - [Android Version Compatibility](#android-version-compatibility)
 - [Source Tree Information](#source-tree-information)
 - [How to Contribute](#how-to-contribute)
-- [FAQs](#faqs)
 - [Links for Users](#links-for-users)
 
 
@@ -94,67 +93,6 @@ Once you’re up and running, you can choose an issue to start working on from h
 Issues tagged as [good first issue](https://github.com/odk-x/tool-suite-X/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) should be a good place to start.
 
 Pull requests are welcome, though please submit them against the development branch. We prefer verbose descriptions of the change you are submitting. If you are fixing a bug, please provide steps to reproduce it or a link to an issue that provides that information. If you are submitting a new feature, please provide a description of the need or a link to a forum discussion about it.
-
-## FAQs
-1. **What is ODK-X Survey?**
-
-    ODK-X Survey is an open-source, customizable data collection tool designed for Android devices. It allows users to create and manage structured data collection forms for various purposes, including surveys, assessments, and research.
-
-2. **How is ODK-X Survey different from ODK Collect?**
-
-    ODK-X Survey is an Android application for performing data collection in the ODK-X framework. It operates similarly to ODK Collect, but is based on HTML, CSS, and Javascript rather than native Android, and is more flexible in its presentation and execution
-
-3. **What are the key features of ODK-X Survey?**
-
-    ODK-X Survey offers features such as advanced form design, support for nested forms (subforms), customizable user interfaces, data synchronization and integration with ODK-X Tables for data management.
-
-4. **How do I create a form in ODK-X Survey?**
-
-    Forms in ODK-X Survey are typically created using XLSX files that define the form's structure, questions, and logic. You can design forms by manually editing XLSX files and convert them using ODK-X XLSX converter.
-
-5. **Can I use ODK-X Survey offline?**
-
-    Yes, ODK-X Survey is designed to work offline. Users can collect data in areas with limited or no internet connectivity, and the collected data can be synchronized with a server when an internet connection is available.
-
-6. **What is the process for syncing data with a server?**
-
-    To sync data, users need to establish an internet connection, open the ODK-X Survey app, and tap the "Sync" button. This action uploads collected data to a server or cloud storage, ensuring data is securely stored and backed up.
-
-7. **Is it possible to customize the appearance of survey forms in ODK-X Survey?**
-
-    Yes, ODK-X Survey allows for extensive customization of form appearance, including colors, fonts, and logos. You can tailor the user interface to match your organization's branding.
-
-8. **What is a subform, and how do I use it in ODK-X Survey?**
-
-    A subform in ODK-X Survey is a nested form within a primary form. It is used for collecting related data. You can open a subform within a main form, making it useful for scenarios where you need to collect multiple sets of data within a single survey.
-
-9. **Can I edit and review saved form instances in ODK-X Survey?**
-
-    Yes, ODK-X Survey allows you to edit saved form instances, review their contents, and make modifications as needed. This feature is helpful for correcting errors or updating data.
-
-10. **How do I design complex surveys with skip logic and conditional branching?**
-
-    ODK-X Survey supports skip logic and conditional branching through XLSX files. You can define skip patterns and conditions within the XLSX form definition to create complex survey flows.
-
-11. **What is the difference between ODK-X Survey and ODK-X Tables?**
-
-    ODK-X Survey is primarily used for data collection, while ODK-X Tables is used for managing and viewing data collected through ODK-X Survey. Tables provides a more structured way to work with data, including data synchronization and viewing capabilities.
-
-12. **Is technical support available for ODK-X Survey?**
-
-    ODK-X has an active community, and support is available through forums and online documentation. Users can seek help from the ODK-X community for troubleshooting and guidance.
-
-13. **Can I create custom survey applications using ODK-X Survey as a base?**
-
-    Yes, you can build custom survey applications using ODK-X Survey as a foundation. ODK-X is open source, allowing you to modify and extend its features to meet specific project requirements.
-
-14. **What Android versions are supported by ODK-X Survey?**
-
-    ODK-X Survey is compatible with Android 4.x devices as well as Android 5.x and higher devices. Compatibility may vary depending on the specific version of ODK-X Survey you are using.
-
-15. **How do I migrate data from ODK Collect to ODK-X Survey?**
-
-    Data migration between ODK Collect and ODK-X Survey may require converting form definitions and adapting data structures. It is recommended to consult the ODK-X documentation and community for guidance on migration processes.
 
 ## Links for users
 This document is aimed at helping developers and technical contributors. For information on how to get started as a user of ODK-X, see our [online documentation](https://docs.odk-x.org), or to learn more about the Open Data Kit project, visit [https://odk-x.org](https://odk-x.org).
