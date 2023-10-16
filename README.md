@@ -22,7 +22,7 @@ It is part of the ODK-X Android tools suite.
 
 ## Instructions on how to use Survey.
 
-Note: Detailed information on how to use the survey can be found [here](https://docs.odk-x.org/survey-using/).
+Note: Detailed information on how to use ODK-X survey can be found [here](https://docs.odk-x.org/survey-using/).
 
 The developer [wiki](https://github.com/odk-x/tool-suite-X/wiki) (including release notes) and
 [issues tracker](https://github.com/odk-x/tool-suite-X/issues) are located under
