@@ -41,7 +41,7 @@
         android:largeHeap="true"
         android:installLocation="auto"
         android:hardwareAccelerated="true"
-    	android:theme="@style/Opendatakit">
+    	android:theme="@style/ODKX">
 
         <activity
             android:name="org.opendatakit.survey.activities.MainMenuActivity"

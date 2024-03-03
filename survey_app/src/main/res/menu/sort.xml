@@ -1,14 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <item android:title="@string/sort_by" >
-        <menu>
-            <group android:checkableBehavior="single">
-                <item android:title="@string/tableId"
-                      android:id="@+id/tableIdSort"/>
-                <item android:title="@string/name"
-                      android:id="@+id/nameSort"/>
-            </group>
-        </menu>
-    </item>
+    <item
+        android:id="@+id/action_sync"
+        android:icon="@drawable/ic_sync_36"
+        android:title="@string/toolbar_item_sync"
+        app:showAsAction="always" />
+
+
+    <item
+        android:id="@+id/action_settings"
+        android:icon="@drawable/ic_settings_36"
+        android:title="@string/toolbar_item_settings"
+        app:showAsAction="always" />
+
+    <group android:checkableBehavior="single">
+        <item android:title="@string/tableId"
+              android:id="@+id/tableIdSort"/>
+        <item android:title="@string/name"
+              android:id="@+id/nameSort"/>
+    </group>
+
 </menu>
