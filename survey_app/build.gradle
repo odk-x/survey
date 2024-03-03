@@ -15,41 +15,33 @@ applicationScripts.each {
 apply plugin: 'com.android.application'
 
 android {
-    // The following are set in the common.gradle file
-    compileSdkVersion(compileVersion)
-    buildToolsVersion(buildTools)
+    namespace(surveyNamespace)
+    compileSdk(compileVersion)
 
     defaultConfig {
-        applicationId(groupId + surveyName)
         minSdkVersion(minVersion)
         targetSdkVersion(targetVersion)
-        versionCode(releaseVersionCode)
-        versionName(versionCodeName)
         testInstrumentationRunner(instrumentationRunner)
     }
 
-    flavorDimensions "stage", "testing"
+    buildFeatures {
+        aidl true
+        buildConfig true
+    }
+
+    flavorDimensions.add("stage")
 
     productFlavors {
-        demo {
+        primary {
             dimension 'stage'
-        }
-
-        master {
-            dimension 'stage'
+            versionCode(primaryVersionCode)
+            versionName(primaryVersion)
         }
 
         snapshot {
             dimension 'stage'
-        }
-
-        basic {
-            dimension 'testing'
-        }
-
-        uitest {
-            minSdkVersion(uitestMinSDK)
-            dimension 'testing'
+            versionCode(snapshotVersionCode)
+            versionName(snapshotVersion)
         }
     }
 
@@ -75,24 +67,22 @@ android {
         }
         debug {
             debuggable(true)
-            testCoverageEnabled(testCoverage) // Allows AndroidTest JaCoCo reports to be generated
+            //testCoverageEnabled(testCoverage) // Allows AndroidTest JaCoCo reports to be generated
         }
-    }
-
-    dexOptions {
-        javaMaxHeapSize "2g"
     }
 
     packagingOptions {
-        // Pick first occurrence of any files that cause conflicts, as defined in common.gradle
-        packageList.each {
-            pickFirst it
-        }
+        exclude 'META-INF/*'
     }
 
     compileOptions {
         sourceCompatibility javaVersion
         targetCompatibility javaVersion
+    }
+
+    publishing {
+        singleVariant("snapshotDebug")
+        singleVariant("primaryRelease")
     }
 }
 
@@ -110,12 +100,15 @@ allprojects {
 }
 
 dependencies {
-    implementation 'androidx.annotation:annotation:1.3.0'
+    implementation 'commons-io:commons-io:2.8.0'
+    implementation 'org.opendatakit:odkx-rest-interface:2.2.0-SNAPSHOT'
+
+    implementation 'androidx.annotation:annotation:1.7.1'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
-    implementation 'androidx.appcompat:appcompat:1.3.1'
-    implementation 'androidx.preference:preference:1.1.1'
-    implementation 'androidx.fragment:fragment:1.3.6'
-    implementation 'com.google.android.material:material:1.4.0'
+    implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'androidx.preference:preference:1.2.1'
+    implementation 'androidx.fragment:fragment:1.5.7'
+    implementation 'com.google.android.material:material:1.7.0'
     
     implementation 'com.google.firebase:firebase-analytics:19.0.2'
     implementation 'com.google.firebase:firebase-crashlytics:18.2.3'
@@ -123,35 +116,27 @@ dependencies {
     if (libraryProjectPath.exists() && gradle.useLocal) { // Local project is favoured
         implementation project(libraryProjectName)
     } else {
-        demoImplementation(group: groupId, name: libraryDemoArtifactName, classifier: demoRelease,
-                version: latestVersion, ext: 'aar')
-        masterImplementation(group: groupId, name: libraryMasterArtifactName, classifier: masterRelease,
-                version: masterArtifactVersion, ext: 'aar')
-        snapshotImplementation(group: groupId, name: librarySnapshotArtifactName,
-                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        primaryImplementation(group: odkxGroupId, name: libraryPackageName, version: primaryVersion)
+        snapshotImplementation(group: odkxGroupId, name: libraryPackageName, version: snapshotVersion)
     }
 
     if (commonProjectPath.exists() && gradle.useLocal) { // Local project is favoured
         implementation project(commonProjectName)
     } else {
-        demoImplementation(group: groupId, name: commonDemoArtifactName, classifier: demoRelease,
-                version: latestVersion, ext: 'aar')
-        masterImplementation(group: groupId, name: commonMasterArtifactName, classifier: masterRelease,
-                version: masterArtifactVersion, ext: 'aar')
-        snapshotImplementation(group: groupId, name: commonSnapshotArtifactName,
-                classifier: snapshotRelease, version: latestVersion, ext: 'aar')
+        pirmaryImplementation(group: odkxGroupId, name: commonPackageName, version: primaryVersion)
+        snapshotImplementation(group: odkxGroupId, name: commonPackageName, version: snapshotVersion);
     }
 
     // Testing dependencies
     testImplementation 'junit:junit:4.13.2'
 
-    androidTestImplementation 'androidx.test:runner:1.4.0'
-    androidTestImplementation 'androidx.test:rules:1.4.0'
-    androidTestImplementation 'androidx.annotation:annotation:1.3.0'
+    androidTestImplementation 'androidx.test:runner:1.5.2'
+    androidTestImplementation 'androidx.test:rules:1.5.0'
+    androidTestImplementation 'androidx.annotation:annotation:1.7.1'
 
 }
 
-task grantPermissionForODKApp {
+task grantPermissionForODKXApp {
     dependsOn grantServicesReadExternalStoragePermission
     dependsOn grantServicesWriteExternalStoragePermission
 }
