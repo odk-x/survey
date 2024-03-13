@@ -4,22 +4,26 @@
 
     <item
         android:id="@+id/action_sync"
-        android:icon="@drawable/ic_sync_36"
+        android:icon="@drawable/ic_sync"
         android:title="@string/toolbar_item_sync"
         app:showAsAction="always" />
 
 
     <item
         android:id="@+id/action_settings"
-        android:icon="@drawable/ic_settings_36"
+        android:icon="@drawable/ic_settings"
         android:title="@string/toolbar_item_settings"
         app:showAsAction="always" />
 
-    <group android:checkableBehavior="single">
-        <item android:title="@string/tableId"
-              android:id="@+id/tableIdSort"/>
-        <item android:title="@string/name"
-              android:id="@+id/nameSort"/>
-    </group>
+    <item  android:title="@string/sort_by_title">
+        <menu>
+            <group android:checkableBehavior="single">
+                <item android:title="@string/tableId"
+                    android:id="@+id/tableIdSort"/>
+                <item android:title="@string/name"
+                    android:id="@+id/nameSort"/>
+            </group>
+        </menu>
+    </item>
 
 </menu>
