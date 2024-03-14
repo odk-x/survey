@@ -232,5 +232,6 @@
 <string name="sort_by">Sort by</string>
     <string name="toolbar_item_settings" />
     <string name="toolbar_item_sync" />
+    <string name="sort_by_title">Sort by:</string>
 
 </resources>
