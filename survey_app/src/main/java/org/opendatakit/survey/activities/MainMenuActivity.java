@@ -844,42 +844,42 @@ public class MainMenuActivity extends BaseActivity implements IOdkSurveyActivity
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
-    switch (item.getItemId()) {
-      case R.id.action_sync:
-        try {
-          Intent syncIntent = new Intent();
-          syncIntent.setComponent(new ComponentName(
-                  IntentConsts.Sync.APPLICATION_NAME,
-                  IntentConsts.Sync.ACTIVITY_NAME));
-          syncIntent.setAction(Intent.ACTION_DEFAULT);
-          Bundle bundle = new Bundle();
-          bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
-          syncIntent.putExtras(bundle);
-          this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
-        } catch (ActivityNotFoundException e) {
-          WebLogger.getLogger(getAppName()).printStackTrace(e);
-          Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
-        }
-        return true;
-      /*case R.id.drawer_resolve_conflict:
-        swapToFragmentView(ScreenList.WEBKIT);
-        return true; */
-      case R.id.action_settings:
-        // Launch the intent for "Preferences"
-        Intent preferenceIntent = new Intent();
-        preferenceIntent.setComponent(new ComponentName(
-                IntentConsts.AppProperties.APPLICATION_NAME,
-                IntentConsts.AppProperties.ACTIVITY_NAME));
-        preferenceIntent.setAction(Intent.ACTION_DEFAULT);
+    int itemId = item.getItemId();
+
+    if (itemId == R.id.action_sync) {
+      try {
+        Intent syncIntent = new Intent();
+        syncIntent.setComponent(new ComponentName(
+                IntentConsts.Sync.APPLICATION_NAME,
+                IntentConsts.Sync.ACTIVITY_NAME));
+        syncIntent.setAction(Intent.ACTION_DEFAULT);
         Bundle bundle = new Bundle();
         bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
-        preferenceIntent.putExtras(bundle);
-        this.startActivityForResult(preferenceIntent, APP_PROPERTIES_ACTIVITY_CODE);
-        return true;
-      default:
-        return super.onOptionsItemSelected(item);
+        syncIntent.putExtras(bundle);
+        this.startActivityForResult(syncIntent, SYNC_ACTIVITY_CODE);
+      } catch (ActivityNotFoundException e) {
+        WebLogger.getLogger(getAppName()).printStackTrace(e);
+        Toast.makeText(this, R.string.sync_not_found, Toast.LENGTH_LONG).show();
+      }
+      return true;
+    }
+    else if (itemId == R.id.action_settings) {
+      // Launch the intent for "Preferences"
+      Intent preferenceIntent = new Intent();
+      preferenceIntent.setComponent(new ComponentName(
+              IntentConsts.AppProperties.APPLICATION_NAME,
+              IntentConsts.AppProperties.ACTIVITY_NAME));
+      preferenceIntent.setAction(Intent.ACTION_DEFAULT);
+      Bundle bundle = new Bundle();
+      bundle.putString(IntentConsts.INTENT_KEY_APP_NAME, appName);
+      preferenceIntent.putExtras(bundle);
+      this.startActivityForResult(preferenceIntent, APP_PROPERTIES_ACTIVITY_CODE);
+      return true;
+    } else {
+      return super.onOptionsItemSelected(item);
     }
   }
+
 
   @Override
   public void chooseForm(Uri formUri) {

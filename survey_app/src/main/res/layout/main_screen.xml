@@ -40,7 +40,8 @@
                     android:layout_height="40dp"
                     android:id="@+id/imgAppBarLogo"
                     app:srcCompat="@drawable/logo"
-                    tools:ignore="ImageContrastCheck">
+                    tools:ignore="ImageContrastCheck"
+                    android:contentDescription="">
                 </ImageView>
             </FrameLayout>
 

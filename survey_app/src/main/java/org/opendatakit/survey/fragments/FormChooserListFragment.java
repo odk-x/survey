@@ -92,33 +92,29 @@ public class FormChooserListFragment extends ListFragment
 
   @Override
   public boolean onOptionsItemSelected(MenuItem item) {
+    int itemId = item.getItemId();
 
-    switch(item.getItemId()){
-
-      case R.id.nameSort:
-        if (!item.isChecked()) {
-          item.setChecked(true);
-        }
-        mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER,SORT_BY_NAME));
-        sortFormList(mItems,SORT_BY_NAME);
-        break;
-
-      case R.id.tableIdSort:
-        mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER,SORT_BY_TABLEID));
-        sortFormList(mItems,SORT_BY_TABLEID);
-        if (!item.isChecked()) {
-          item.setChecked(true);
-        }
-        break;
-
-      default:
-        return super.onOptionsItemSelected(item);
+    if (itemId == R.id.nameSort) {
+      if (!item.isChecked()) {
+        item.setChecked(true);
+      }
+      mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER, SORT_BY_NAME));
+      sortFormList(mItems, SORT_BY_NAME);
+    } else if (itemId == R.id.tableIdSort) {
+      mPropSingleton.setProperties(Collections.singletonMap(KEY_SURVEY_SORT_ORDER, SORT_BY_TABLEID));
+      sortFormList(mItems, SORT_BY_TABLEID);
+      if (!item.isChecked()) {
+        item.setChecked(true);
+      }
+    } else {
+      super.onOptionsItemSelected(item);
+      return true;
     }
 
     mAdapter.swapData(mItems);
     return true;
-
   }
+
 
   @Override public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
