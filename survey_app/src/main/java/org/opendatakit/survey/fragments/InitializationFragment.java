@@ -188,12 +188,15 @@ public class InitializationFragment extends Fragment implements InitializationLi
   }
 
   private void updateProgressDialog(String displayString) {
-    if (!msgManager.displayingProgressDialog()) {
-      msgManager.createProgressDialog(mainDialogTitle, getString(R.string.please_wait),
-              getParentFragmentManager());
-    } else {
-      if (msgManager.hasDialogBeenCreated()) {
-        msgManager.updateProgressDialogMessage(displayString, getParentFragmentManager());
+
+    if (isVisible() && getActivity() != null) {
+      if (!msgManager.displayingProgressDialog()) {
+        msgManager.createProgressDialog(mainDialogTitle, getString(R.string.please_wait),
+                getParentFragmentManager());
+      } else {
+        if (msgManager.hasDialogBeenCreated()) {
+          msgManager.updateProgressDialogMessage(displayString, getParentFragmentManager());
+        }
       }
     }
   }
